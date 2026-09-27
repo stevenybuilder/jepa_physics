@@ -1,0 +1,453 @@
+{
+ "dataset": "speed",
+ "variable": "start_position",
+ "layer": 12,
+ "layer_role": "exploratory",
+ "all_roles": [],
+ "source": "/Users/stevenyang/Documents/world_mechanics_takehome/results/p1a_speed_speed_meanpool.json",
+ "provenance": {
+  "split_file": "/Users/stevenyang/Documents/world_mechanics_takehome/splits/split_v1.json",
+  "split_sha256": "98e6310c40bf29e81bd8b6bf4b1ac603b89e4104d40ac1047b15dd5dc2be2df2",
+  "seeds": {
+   "seed": 0
+  },
+  "commit": "96f11d0b5267e7afa39a4c2af046c2f76b8086e8",
+  "dirty": true,
+  "git_commit": "96f11d0b5267e7afa39a4c2af046c2f76b8086e8",
+  "git_dirty_src_or_scripts": true,
+  "timestamp_utc": "2026-09-27T21:33:18+00:00",
+  "layer": 12,
+  "pool": "meanpool",
+  "k": 64,
+  "grid": 6,
+  "K": 50
+ },
+ "grid": {
+  "G": 6,
+  "range": [
+   -1.1989833786683455,
+   1.198339900289193
+  ],
+  "held_out_cells": [
+   15,
+   16,
+   21,
+   22
+  ],
+  "held_out_centres": [
+   [
+    0.19945520072355194,
+    -0.20009867910270446
+   ],
+   [
+    0.5990090805498083,
+    -0.20009867910270446
+   ],
+   [
+    0.19945520072355194,
+    0.19945520072355194
+   ],
+   [
+    0.5990090805498083,
+    0.19945520072355194
+   ]
+  ]
+ },
+ "geometry_train": {
+  "n_cells": 36,
+  "min_count": 24,
+  "participation_ratio_centroids": 7.457244078908703,
+  "procrustes_r2_centroids_to_xy": 0.3781096423951241,
+  "unsupervised_top2_vs_xy_procrustes_r2": 0.8285623970969074,
+  "top2_frac_of_centroid_variance": 0.4286956133541798
+ },
+ "tps_smoothing": 10.0,
+ "tps_smoothing_choice": {
+  "mean_error": {
+   "0.0": 2.3801728687685433,
+   "0.001": 2.375455558633919,
+   "0.01": 2.337561892926737,
+   "0.1": 2.1522830216584907,
+   "1.0": 1.914992458273876,
+   "10.0": 1.8566496736783837,
+   "100.0": 1.878869824173138,
+   "linear_interp": 2.2181757246730753
+  },
+  "seeds": [
+   0,
+   1,
+   2,
+   3
+  ],
+  "best_tps_smoothing": 10.0,
+  "tps_beats_linear_interp": true
+ },
+ "linear_interp_nan_fallbacks": 0,
+ "arms": {
+  "tps": "thin-plate spline through kept cell centroids, walked along the straight (x, y) line",
+  "chord": "straight line between the TPS values at source and target (endpoint-matched)",
+  "chord_linear_interp": "straight line between Delaunay-linear interpolants at source and target (not endpoint-matched; nearest-neighbour fallback outside the hull)",
+  "chord_dose_matched": "chord delta rescaled per clip and waypoint to the tps arm's ||delta||",
+  "projected": "tps path's own chord with its arc-length spacing",
+  "reflected": "2 * projected - tps"
+ },
+ "summary": {
+  "tps": {
+   "err_end": 0.17816468517353057,
+   "err_path": 0.6051485628883769,
+   "nearest_real_R": 0.0007440853646370482,
+   "excess_to_ref": -0.014886763645405929,
+   "excess_to_nearest_real": -0.03808680719153445,
+   "delta_norm": 1.6867542779238125
+  },
+  "chord": {
+   "err_end": 0.1781646851735306,
+   "err_path": 0.6048728674935168,
+   "nearest_real_R": 0.0007440853646370633,
+   "excess_to_ref": -0.015931520578537067,
+   "excess_to_nearest_real": -0.03959704891064028,
+   "delta_norm": 1.6867542779238123
+  },
+  "chord_linear_interp": {
+   "err_end": 0.19686313218265442,
+   "err_path": 0.619385180395101,
+   "nearest_real_R": -0.005588034851438463,
+   "excess_to_ref": 0.047814319751025285,
+   "excess_to_nearest_real": 0.015118758678955643,
+   "delta_norm": 2.6142212958919804
+  },
+  "chord_dose_matched": {
+   "err_end": 0.17816468517353057,
+   "err_path": 0.5988390492470352,
+   "nearest_real_R": 0.0007440853646370626,
+   "excess_to_ref": -0.015927804868060686,
+   "excess_to_nearest_real": -0.03969061950048131,
+   "delta_norm": 1.6867542779238125
+  },
+  "projected": {
+   "err_end": 0.17816468517353057,
+   "err_path": 0.603801975175427,
+   "nearest_real_R": 0.0007440853646370477,
+   "excess_to_ref": -0.016055012533194468,
+   "excess_to_nearest_real": -0.03963905516794396,
+   "delta_norm": 1.6867542779238125
+  },
+  "reflected": {
+   "err_end": 0.17816468517353057,
+   "err_path": 0.6024733006680334,
+   "nearest_real_R": 0.0007440853646370522,
+   "excess_to_ref": -0.01584282578001697,
+   "excess_to_nearest_real": -0.03994394483669791,
+   "delta_norm": 1.6867542779238125
+  }
+ },
+ "gaps": {
+  "tps_minus_chord": {
+   "err_end": {
+    "mean": -1.476321958201095e-17,
+    "ci95": [
+     -4.105858456603367e-17,
+     1.1272904652758954e-17
+    ],
+    "n": 192,
+    "n_clips": 148
+   },
+   "err_path": {
+    "mean": 0.0002756953948601316,
+    "ci95": [
+     -1.2065511325869257e-05,
+     0.0005473496765698837
+    ],
+    "n": 192,
+    "n_clips": 148
+   },
+   "nearest_real_R": {
+    "mean": -1.5034270125132327e-17,
+    "ci95": [
+     -2.81704954974925e-17,
+     -3.0153056534323976e-18
+    ],
+    "n": 192,
+    "n_clips": 148
+   },
+   "excess_to_ref": {
+    "mean": 0.0010447569331311357,
+    "ci95": [
+     -0.0037038174865500375,
+     0.005391121153626919
+    ],
+    "n": 192,
+    "n_clips": 148
+   },
+   "excess_to_nearest_real": {
+    "mean": 0.0015102417191058353,
+    "ci95": [
+     -0.0005686653436286829,
+     0.003343138437255005
+    ],
+    "n": 192,
+    "n_clips": 148
+   },
+   "delta_norm": {
+    "mean": -2.8912057932946783e-19,
+    "ci95": [
+     -6.752119724122215e-17,
+     5.0790450785467374e-17
+    ],
+    "n": 192,
+    "n_clips": 148
+   }
+  },
+  "tps_minus_chord_linear_interp": {
+   "err_end": {
+    "mean": -0.018698447009123858,
+    "ci95": [
+     -0.029598621920131688,
+     -0.008050152842112034
+    ],
+    "n": 192,
+    "n_clips": 148
+   },
+   "err_path": {
+    "mean": -0.014236617506724109,
+    "ci95": [
+     -0.019022340256334543,
+     -0.00929082290054336
+    ],
+    "n": 192,
+    "n_clips": 148
+   },
+   "nearest_real_R": {
+    "mean": 0.006332120216075511,
+    "ci95": [
+     -0.0024638472800060395,
+     0.014864017481982192
+    ],
+    "n": 192,
+    "n_clips": 148
+   },
+   "excess_to_ref": {
+    "mean": -0.06270108339643121,
+    "ci95": [
+     -0.11773561193372997,
+     -0.00711157196277687
+    ],
+    "n": 192,
+    "n_clips": 148
+   },
+   "excess_to_nearest_real": {
+    "mean": -0.053205565870490086,
+    "ci95": [
+     -0.07189969555999201,
+     -0.035351242330748815
+    ],
+    "n": 192,
+    "n_clips": 148
+   },
+   "delta_norm": {
+    "mean": -0.9274670179681682,
+    "ci95": [
+     -1.0168004247828915,
+     -0.8410315026257037
+    ],
+    "n": 192,
+    "n_clips": 148
+   }
+  },
+  "tps_minus_chord_dose_matched": {
+   "err_end": {
+    "mean": 5.113820246889962e-18,
+    "ci95": [
+     -2.5209444121489357e-17,
+     3.90192062390956e-17
+    ],
+    "n": 192,
+    "n_clips": 148
+   },
+   "err_path": {
+    "mean": 0.006309513641341619,
+    "ci95": [
+     0.004462051354743255,
+     0.008075353779123322
+    ],
+    "n": 192,
+    "n_clips": 148
+   },
+   "nearest_real_R": {
+    "mean": -1.4456028966473393e-17,
+    "ci95": [
+     -2.6295993829240576e-17,
+     -4.024173514900091e-18
+    ],
+    "n": 192,
+    "n_clips": 148
+   },
+   "excess_to_ref": {
+    "mean": 0.0010410412226547576,
+    "ci95": [
+     -0.003465681564461236,
+     0.005156468984535491
+    ],
+    "n": 192,
+    "n_clips": 148
+   },
+   "excess_to_nearest_real": {
+    "mean": 0.0016038123089468688,
+    "ci95": [
+     -0.00041496039958213693,
+     0.0034279812364844914
+    ],
+    "n": 192,
+    "n_clips": 148
+   },
+   "delta_norm": {
+    "mean": -3.498359009886561e-17,
+    "ci95": [
+     -9.709339871685184e-17,
+     9.153510612589003e-18
+    ],
+    "n": 192,
+    "n_clips": 148
+   }
+  },
+  "tps_minus_projected": {
+   "err_end": {
+    "mean": -5.565571152092256e-18,
+    "ci95": [
+     -1.2835385567393953e-17,
+     1.196437833444877e-18
+    ],
+    "n": 192,
+    "n_clips": 148
+   },
+   "err_path": {
+    "mean": 0.0013465877129497687,
+    "ci95": [
+     -9.251891176968897e-06,
+     0.002634827936392092
+    ],
+    "n": 192,
+    "n_clips": 148
+   },
+   "nearest_real_R": {
+    "mean": 5.782411586589357e-19,
+    "ci95": [
+     -1.6739143783416827e-18,
+     3.544217462791872e-18
+    ],
+    "n": 192,
+    "n_clips": 148
+   },
+   "excess_to_ref": {
+    "mean": 0.0011682488877885384,
+    "ci95": [
+     -0.003442163668465386,
+     0.005578554563626185
+    ],
+    "n": 192,
+    "n_clips": 148
+   },
+   "excess_to_nearest_real": {
+    "mean": 0.0015522479764095108,
+    "ci95": [
+     -0.0004581406868481323,
+     0.0033451848067422743
+    ],
+    "n": 192,
+    "n_clips": 148
+   },
+   "delta_norm": {
+    "mean": -5.782411586589357e-18,
+    "ci95": [
+     -1.6369287698641185e-17,
+     3.4519199531030708e-18
+    ],
+    "n": 192,
+    "n_clips": 148
+   }
+  },
+  "tps_minus_reflected": {
+   "err_end": {
+    "mean": -4.8969798123928614e-18,
+    "ci95": [
+     -1.3879585448722206e-17,
+     4.663667113310277e-18
+    ],
+    "n": 192,
+    "n_clips": 148
+   },
+   "err_path": {
+    "mean": 0.002675262220343489,
+    "ci95": [
+     -3.762186317874859e-05,
+     0.0052511201150345225
+    ],
+    "n": 192,
+    "n_clips": 148
+   },
+   "nearest_real_R": {
+    "mean": -4.04768811061255e-18,
+    "ci95": [
+     -1.0344170809807735e-17,
+     1.6326809185664067e-18
+    ],
+    "n": 192,
+    "n_clips": 148
+   },
+   "excess_to_ref": {
+    "mean": 0.0009560621346110382,
+    "ci95": [
+     -0.008407818537321265,
+     0.009720498290329165
+    ],
+    "n": 192,
+    "n_clips": 148
+   },
+   "excess_to_nearest_real": {
+    "mean": 0.0018571376451634591,
+    "ci95": [
+     -0.002033423207822865,
+     0.005476809766361189
+    ],
+    "n": 192,
+    "n_clips": 148
+   },
+   "delta_norm": {
+    "mean": -5.782411586589357e-18,
+    "ci95": [
+     -2.019627826426831e-17,
+     8.838700915448633e-18
+    ],
+    "n": 192,
+    "n_clips": 148
+   }
+  }
+ },
+ "controls": {
+  "random_endpoint_matched": {
+   "err_path": {
+    "mean": 0.6456386114560442,
+    "p05": 0.6384528712814131,
+    "p95": 0.6505861831307219,
+    "spline": 0.6469417296946387,
+    "spline_rank": 13,
+    "n_draws": 20,
+    "frac_draws_spline_beats": 0.4
+   },
+   "excess_to_ref": {
+    "mean": -0.04947287731998102,
+    "p05": -0.05086361102913564,
+    "p95": -0.04694648788824307,
+    "spline": -0.04998650744455528,
+    "spline_rank": 8,
+    "n_draws": 20,
+    "frac_draws_spline_beats": 0.65
+   }
+  }
+ },
+ "notes": [
+  "err = distance (m) from the (x, y) probe readout to the target cell centre",
+  "energy reference: TPS through probe-fold cell centroids (all cells), dense 60 x 60 grid",
+  "gaps: paired bootstrap over clips (each clip's targets together)"
+ ]
+}
