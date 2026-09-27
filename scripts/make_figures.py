@@ -27,9 +27,14 @@ plt.rcParams.update({
 
 def load(results, pattern, role="peak"):
     """The results file whose name fully matches `pattern` (peak layer first if several), or None.
-    role='onset' returns only a file at the onset layer that is not also the peak (else None)."""
+    role='onset' returns only a file at the onset layer that is not also the peak (else None); role='paper' only the
+    paper's layer (point 9) and role='peak_only' only the peak."""
     hits = sorted(p for p in results.glob("*.json") if re.fullmatch(pattern, p.name))
     data = [json.loads(p.read_text()) for p in hits]
+    if role == "paper":
+        return next((d for d in data if d.get("is_paper_layer")), None)
+    if role == "peak_only":
+        return next((d for d in data if d.get("is_peak")), None)
     if role == "onset":
         data = [d for d in data if d.get("is_onset") and not d.get("is_peak")]
     data.sort(key=lambda d: not d.get("is_peak", True))
@@ -189,18 +194,25 @@ def fig1e(results, out):
 
 
 def load_adam(results, v):
-    """The Adam-recipe probe sequence for variable v (paper's layer 8 first), or None."""
-    hits = [json.loads(p.read_text()) for p in sorted(results.glob(f"p1b_{v}_{v}_meanpool_L*_adam.json"))]
-    hits.sort(key=lambda d: not d.get("is_paper_layer", False))
-    return hits[0] if hits else None
+    """Adam-recipe probe sequences for variable v at the paper's layer (point 9): {tag: run} for tags b64 / full."""
+    out = {}
+    for p in sorted(results.glob(f"p1b_{v}_{v}_meanpool_L*_adam_*.json")):
+        d = json.loads(p.read_text())
+        if d.get("is_paper_layer"):
+            out[p.stem.rsplit("_", 1)[1]] = d
+    return out
 
 
-def fig2(results, out, role="peak"):
+def fig2(results, out, role="paper"):
+    """Fig. 23-style panels at the paper's layer (fig2_inlp.png, with the Adam row), and the same at the peak
+    (fig2_inlp_peak.png) and onset (fig2_inlp_onset.png) layers."""
+    if role == "paper":
+        fig2(results, out, "peak_only")
     runs = {v: load(results, rf"p1b_{v}_{v}_meanpool_L\d+\.json", role) for v in ("direction", "speed")}
     runs = {v: r for v, r in runs.items() if r}
     if not runs:
         return
-    adam = {v: load_adam(results, v) for v in runs}
+    adam = {v: load_adam(results, v) if role == "paper" else {} for v in runs}
     n_rows = 3 if any(adam.values()) else 2
     fig, axes = plt.subplots(n_rows, len(runs), figsize=(5 * len(runs), 4.1 * n_rows), squeeze=False,
                              gridspec_kw={"hspace": 0.75})
@@ -245,32 +257,37 @@ def fig2(results, out, role="peak"):
         folds = f", folds {r['K_fold_min']}–{r['K_fold_max']}" if "K_fold_min" in r else ""
         kp = f"; paper K = {paper['K']}" if paper else ""
         ax.set(xlabel="dimensions removed", ylim=(-0.1, 1.02),
-               title=f"{v}: K = {r['K']} probes nested{folds}{kp}\n{r['dims']} dims (layer {r['frac']:.2f})")
+               title=f"{v}: K = {r['K']} probes nested{folds}{kp}\n{r['dims']} dims (point {r['point']}"
+                     + (" = paper's layer 8" if r.get("is_paper_layer") else f", layer {r['frac']:.2f}") + ")")
         ax.xaxis.set_major_locator(MaxNLocator(integer=True))
         ax.legend(loc="upper right", fontsize=8, handlelength=1.5)
     axes[0][0].set_ylabel("probe R²")
     if n_rows == 3:
         for ax, v in zip(axes[2], runs):
-            a = adam[v]
-            if not a:
+            if not adam[v]:
                 ax.axis("off")
                 continue
-            key = "test_acc15" if "test_acc15" in a["rounds"][0] else "test_r2"
-            k = np.array([row["round"] for row in a["rounds"]])
-            y = 100 * np.array([row[key] for row in a["rounds"]])
-            bad = np.array([row["failed_to_train"] for row in a["rounds"]])
-            ax.plot(k, y, "-", color=COLORS[v], lw=1.2, label="Adam probe sequence (C.11 recipe), test")
-            ax.plot(k[bad], y[bad], "x", color=COLORS["text"], ms=6, label="round failed to train")
-            dips = a["sawtooth"]["dips_vs_failed"]["isolated_dips"]
-            ax.plot(dips, [100 * a["rounds"][d - 1][key] for d in dips], "o", mfc="none", mec=COLORS["text"], ms=8,
-                    label="isolated dip (sawtooth tooth)")
+            ks = []
+            for tag, a in adam[v].items():
+                key = "test_acc15" if "test_acc15" in a["rounds"][0] else "test_r2"
+                k = np.array([row["round"] for row in a["rounds"]])
+                y = 100 * np.array([row[key] for row in a["rounds"]])
+                bad = np.array([row["failed_to_train"] for row in a["rounds"]])
+                name = "full batch" if tag == "full" else f"batch {tag[1:]}"
+                ax.plot(k, y, "-" if tag != "full" else ":", color=COLORS[v], lw=1.2,
+                        label=f"Adam sequence (C.11 recipe), {name}, test")
+                ax.plot(k[bad], y[bad], "x", color=COLORS["text"], ms=6)
+                dips = a["sawtooth"]["dips_vs_failed"]["isolated_dips"]
+                ax.plot(dips, [100 * a["rounds"][d - 1][key] for d in dips], "o", mfc="none", mec=COLORS["text"], ms=8)
+                ks.append(f"{name} {a['K_first']}" + (" (round cap)" if a["K_first"] == len(a["rounds"]) else ""))
+            ax.plot([], [], "x", color=COLORS["text"], label="round failed to train (moved < 0.25× round 1)")
+            ax.plot([], [], "o", mfc="none", mec=COLORS["text"], label="isolated dip (sawtooth tooth)")
             ax.set(xlabel="orthogonal probe number", ylim=(0, 102),
                    ylabel="test accuracy within 15° (%)" if key == "test_acc15" else "test R² (%)",
-                   title=f"{v}, Adam recipe (layer {a['frac']:.2f}): K = {a['K_first']} probes (first at chance"
-                         + (", round cap)" if a["K_first"] == len(a["rounds"]) else ")"))
+                   title=f"{v}, Adam recipe (layer {a['frac']:.2f}): K first at chance = " + ", ".join(ks))
             ax.xaxis.set_major_locator(MaxNLocator(integer=True))
             legend_top(ax, 1)
-    fig.savefig(out / f"fig2_inlp{suffix(role)}.png")
+    fig.savefig(out / ("fig2_inlp.png" if role == "paper" else f"fig2_inlp_{role.replace('_only', '')}.png"))
     plt.close(fig)
 
 
