@@ -19,7 +19,9 @@ parser.add_argument("--pool", default="meanpool", choices=["meanpool", "timepool
 parser.add_argument("--act-root", type=Path, default=None)
 parser.add_argument("--results", type=Path, default=None)
 parser.add_argument("--inlp-dir", type=Path, default=None)
+parser.add_argument("--null-draws", type=int, default=20, help="draws per random null (>= 20 per spec 5.3)")
 args = parser.parse_args()
 
 for dataset in [args.dataset] if args.dataset else VARIABLES:
-    run_steering(dataset, args.variable, args.layer, args.pool, args.act_root, args.results, args.inlp_dir)
+    run_steering(dataset, args.variable, args.layer, args.pool, args.act_root, args.results, args.inlp_dir,
+                 args.null_draws)

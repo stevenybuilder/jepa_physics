@@ -5,7 +5,8 @@ import pytest
 
 from wm.inlp import inlp
 from wm.probes import fit_ridge, predict, score
-from wm.steer import build_basis, encode, evaluate, readout_weights, steer
+from wm.steer import (build_basis, empirical_p, encode, eval_probe_cv, evaluate, matched_targets, random_nulls,
+                      readout_weights, steer)
 
 from synthetic import copies_code, split
 
@@ -65,3 +66,80 @@ def test_held_out_probe_reads_target_and_true_error_rises(world):
     ratio = np.array(res["per_clip_at_K"]["norm_ratio"])
     assert np.all(np.abs(ratio[shift < 15] - 1) < 0.1)
     assert len(res["shift_bins"]["mae_to_target"]) == res["K"] + 1
+
+
+ALL_T = np.arange(64) * 360 / 64
+
+
+@pytest.fixture(scope="module")
+def shrunk_world():
+    """Noisy planted code: ridge readouts shrink well below radius 1."""
+    rng = np.random.default_rng(0)
+    theta = rng.choice(ALL_T, 1500)
+    Y = encode(theta, "circular")
+    X = copies_code(Y, 3, d=40, seed=0, noise0=0.6, ratio=1.3)
+    tr, te, folds = split(len(Y))
+    _, Q, W, b = inlp(X[tr], Y[tr], X[te], Y[te], folds, 1.0, partial(score, kind="circular"), "circular")
+    eval_W, eval_b, report = eval_probe_cv(X[te], Y[te], "circular")
+    return X[tr], theta[tr], X[te], theta[te], {"Q": Q, "W": W, "b": b}, eval_W, eval_b, report
+
+
+def test_matched_target_recovers_planted_radius():
+    rng = np.random.default_rng(1)
+    theta = rng.choice(ALL_T, 800)
+    rho = 0.4                                              # every clip's code has radius 0.4
+    X = np.hstack([rho * encode(theta, "circular"), rng.standard_normal((800, 5))])
+    W = np.zeros((7, 2)); W[0, 0] = W[1, 1] = 1.0          # a probe that reads the code exactly
+    probes = {"Q": W[:, :2].copy(), "W": W[None], "b": np.zeros((1, 2))}
+    t = matched_targets(X, theta, probes, [90.0, 180.0])
+    assert np.allclose(t, [[rho, 0.0], [0.0, -rho]], atol=1e-12)
+
+
+def test_matched_arm_stays_at_data_radius_unit_arm_overshoots(shrunk_world):
+    Xtr, th_tr, X, theta, probes, eval_W, eval_b, _ = shrunk_world
+    m_all = matched_targets(Xtr, th_tr, probes, ALL_T)
+    unit = evaluate(X, theta, probes, eval_W, eval_b, "circular", 90.0, ALL_T)
+    matched = evaluate(X, theta, probes, eval_W, eval_b, "circular", 90.0, ALL_T,
+                       single_full=m_all[16], all_full=m_all)
+    r0 = unit["single"][0]["radius"]["median"]
+    assert r0 < 0.85                                       # shrinkage is present
+    assert unit["single"][-1]["radius"]["median"] > 0.95   # unit target pushes beyond the data
+    assert abs(matched["single"][-1]["radius"]["median"] - r0) < 0.15
+    assert abs(matched["single"][-1]["norm_ratio_median"] - 1) < abs(unit["single"][-1]["norm_ratio_median"] - 1)
+    assert matched["single"][-1]["mae_to_target"] < 20 and len(matched["per_clip_at_K"]["radius"]) == len(X)
+
+
+def test_eval_probe_reports_in_sample_and_out_of_fold(shrunk_world):
+    report = shrunk_world[-1]
+    assert report["out_of_fold"]["r2_fold_mean"] < report["in_sample"]["r2"]
+    assert report["alpha"] > 0
+
+
+def test_empirical_p_resolution():
+    assert empirical_p(0.0, np.ones(20)) == 1 / 21 and empirical_p(2.0, np.ones(20)) == 1.0
+
+
+def test_random_nulls_exclude_planted_and_contain_random(world):
+    X, theta, probes, eval_W, eval_b = world
+    nulls = random_nulls(X, theta, probes, eval_W, eval_b, "circular", 90.0, n_draws=20)
+    last = nulls["rows"][-1]
+    assert last["random_orientation"]["empirical_p_to_target"] == 1 / 21      # planted beats every draw
+    assert last["random_basis"]["empirical_p_to_target"] == 1 / 21
+    assert last["learned"]["mae_to_target"] < last["random_orientation"]["mae_to_target"]["p05"]
+    assert len(last["random_basis"]["mae_to_target"]["draws"]) == 20
+    # A random "learned" basis is exchangeable with the orientation null: strictly inside the draws.
+    rng = np.random.default_rng(7)
+    d = X.shape[1]
+    W = np.linalg.qr(rng.standard_normal((d, 6)))[0].reshape(d, 3, 2).transpose(1, 0, 2)
+    rand = {"Q": np.linalg.qr(np.hstack(list(W)))[0], "W": W, "b": np.zeros((3, 2))}
+    for row in random_nulls(X, theta, rand, eval_W, eval_b, "circular", 90.0, n_draws=20)["rows"]:
+        assert 1 / 21 < row["random_orientation"]["empirical_p_to_target"] < 1.0
+
+
+def test_orientation_null_keeps_per_clip_dose(world):
+    from wm.steer import steer_delta
+    X, theta, probes, _, _ = world
+    V = build_basis(probes["W"])
+    dc = steer_delta(X, V, probes, encode(90.0, "circular"), len(probes["W"]))
+    Q = np.linalg.qr(np.random.default_rng(3).standard_normal(V.shape))[0]
+    assert np.allclose(np.linalg.norm(dc @ Q.T, axis=1), np.linalg.norm(dc @ V.T, axis=1))

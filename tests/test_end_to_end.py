@@ -41,6 +41,10 @@ def test_pipeline_on_fake_activations(tmp_path):
     assert (inlp_dir / f"direction_direction_L{peak}.npz").exists()
     steer = json.loads((results / f"p1c_direction_L{peak}.json").read_text())
     assert steer["single"][-1]["mae_to_target"] < steer["single"][0]["mae_to_target"]
+    assert "test_radius" in sweep["layers"][peak] and str(peak) in sweep["test_radius"]
+    assert steer["eval_probe"]["out_of_fold"]["r2_fold_mean"] <= steer["eval_probe"]["in_sample"]["r2"]
+    assert "radius" in steer["single"][-1] and steer["radius_matched"]["single"][-1]["n"] == steer["K"]
+    assert len(steer["random_nulls"]["rows"]) == steer["K"] and steer["random_nulls"]["n_draws"] >= 20
     for name in ("fig1_layer_curves", "fig1b_direction_circle", "fig2_inlp", "fig2b_dim_vs_layer",
                  "fig3_steering", "fig3b_shift_heatmap"):
         assert (figs / f"{name}.png").exists(), name
