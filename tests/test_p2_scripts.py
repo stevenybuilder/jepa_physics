@@ -396,3 +396,38 @@ def test_speed_cells_edges_from_fit_rows_only():
     sb = cell.astype(int) // 16
     assert np.bincount(sb[fit], minlength=8).tolist() == [10] * 8       # octiles of the fit rows
     assert max(cs.values()) < 3                                         # bin speeds from fit rows only
+
+
+def test_position_sheet(tmp_path):
+    """A curved sheet (x, y, x^2 + y^2): TPS recovers it; its held-out endpoint beats the flat chord's."""
+    rng = np.random.default_rng(4)
+    n = 1800
+    xy = rng.uniform(-1.2, 1.2, (n, 2))
+    X = rng.standard_normal((n, N_LAYERS, D)).astype(np.float32) * 0.2
+    X[:, 1, 0], X[:, 1, 1] = 3 * xy[:, 0], 3 * xy[:, 1]
+    X[:, 1, 2] = 3 * (xy ** 2).sum(1)
+    act = tmp_path / "act"
+    act.mkdir()
+    np.save(act / "meanpool.npy", X)
+    ids = np.arange(n)
+    (act / "ids.json").write_text(json.dumps(ids.tolist()))
+    pd.DataFrame({"id": ids, "label": 1.0, "theta_degrees": 0.0, "speed_mps": rng.uniform(0.25, 4, n),
+                  "acceleration_mps2": 0.0, "motion": "velocity", "start_x": xy[:, 0],
+                  "start_y": xy[:, 1]}).to_csv(tmp_path / "table.csv", index=False)
+    (tmp_path / "split.json").write_text(json.dumps({"fold": {str(i): (-1 if i % 5 == 0 else int(i % 5 - 1)) for i in ids}}))
+    spec = importlib.util.spec_from_file_location("sheet", ROOT / "scripts" / "run_position_sheet.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    out = module.run(module.parse(["--layer", "1", "--k", "16", "--K", "11", "--n-clips", "20", "--n-controls", "5",
+                                   "--act-dir", str(act), "--table", str(tmp_path / "table.csv"),
+                                   "--split", str(tmp_path / "split.json"),
+                                   "--results-dir", str(tmp_path / "results"), "--figures-dir", str(tmp_path / "figures")]))
+    geo = out["geometry_train"]
+    assert geo["n_cells"] == 36 and geo["procrustes_r2_centroids_to_xy"] > 0.6
+    assert geo["unsupervised_top2_vs_xy_procrustes_r2"] > 0.9
+    assert len(out["grid"]["held_out_cells"]) == 4
+    s = out["summary"]
+    assert s["tps"]["excess_to_ref"] < s["chord"]["excess_to_ref"]
+    assert out["controls"]["random_endpoint_matched"]["excess_to_ref"]["spline_rank"] == 1
+    assert (tmp_path / "results" / "p2_sheet_speed_L1.json").exists()
+    assert (tmp_path / "figures" / "fig4_sheet_speed_L1.png").exists()
