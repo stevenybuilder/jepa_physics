@@ -216,12 +216,15 @@ def _curve_like(curve, points):
 
 
 def shuffled_curve(curve, rng):
-    """Control: the same centroids assigned to the knots in a random order (shuffled labels), same spline type."""
+    """Control ("shuffled_unmatched"): the same centroids assigned to the knots in a random order, same spline type.
+    Unmatched: a path along it does not share the spline path's endpoints, so endpoint metrics favour the spline
+    trivially; the endpoint-matched control is manifold.endpoint_matched_random."""
     return _curve_like(curve, curve.points[rng.permutation(len(curve.points))])
 
 
 def random_smooth_curve(curve, rng, n_freq=3):
-    """Control: a random smooth curve through the same PCA space, with the same knots, the same total arc length
+    """Control ("random_unmatched"; endpoints not matched, see shuffled_curve): a random smooth curve through the
+    same PCA space, with the same knots, the same total arc length
     and the same centre as `curve`. Points = a few random low-frequency sines/cosines of the knot coordinate
     (Fourier modes for a periodic curve), then rescaled."""
     t = curve.coords

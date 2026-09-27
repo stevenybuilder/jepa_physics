@@ -77,7 +77,7 @@ def test_scripts_end_to_end(tmp_path, dataset):
     assert len(res["held_out_values"]) == 16 and res["holdout"]["design"] == "scattered"
     s = res["summary"]
     # the real steer beats every shuffled-centroid draw
-    shuf = res["controls"]["shuffled_control"]["nearest_real_R"]
+    shuf = res["controls"]["shuffled_unmatched"]["nearest_real_R"]
     assert shuf["n_draws"] == 20 and shuf["spline_rank"] == 1
     assert s["manifold"]["overall"]["nearest_real_R"] > shuf["p95"]
     assert res["K"] == 11 and "behaviour_manifold" in res and "deviations_from_goodfire" in res
@@ -90,7 +90,11 @@ def test_scripts_end_to_end(tmp_path, dataset):
         assert len(lin["radius"]) == 11 and min(lin["radius"]) < 0.5 * min(man["radius"])   # radius collapse
         assert s["linear"]["by_shift"][-1]["behaviour_energy"] > 1.3 * s["manifold"]["by_shift"][-1]["behaviour_energy"]
         assert res["isometry_behaviour"] > 0.9 and res["isometry_probe"] > 0.9
-        assert "manifold_transport" in s
+        assert "manifold_transport" in s and "goodfire_manifold" in s     # Goodfire's replace arm runs by default
+        g = res["gaps"]["manifold_minus_linear"]["excess_to_curve"]
+        assert g["ci95"][1] < 0 and g["se_over_targets"] > 0 and len(g["by_shift"]) >= 3
+        em = res["controls"]["random_endpoint_matched"]["excess_to_curve"]
+        assert em["n_draws"] == 20
 
 
 @pytest.mark.parametrize("dataset,design", [("direction", "contiguous"), ("speed", "contiguous"),
@@ -104,7 +108,7 @@ def test_part2_holdout_designs(tmp_path, dataset, design):
     assert res["spline"] == "smoothing"
     assert len(res["sagitta_per_target"]) == 8 and all(r["sagitta"] >= 0 for r in res["sagitta_per_target"])
     assert set(res["goodfire_comparison"]["summary"]) == {"goodfire_linear", "goodfire_manifold"}
-    assert res["controls"]["random_control"]["nearest_real_R"]["n_draws"] == 3
+    assert res["controls"]["random_endpoint_matched"]["nearest_real_R"]["n_draws"] == 3
     if design == "extrapolation":
         assert res["held_out_values"] == sorted(res["held_out_values"])[-8:]
 

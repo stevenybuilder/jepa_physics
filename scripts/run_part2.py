@@ -37,7 +37,7 @@ from wm.p2_data import load_inputs
 
 MAIN_ARMS = ("manifold", "linear", "linear_dose_matched", "projected", "reflected")
 GOODFIRE_ARMS = ("goodfire_linear", "goodfire_manifold")
-CONTROLS = ("random_control", "shuffled_control")
+CONTROLS = ("random_endpoint_matched", "random_unmatched", "shuffled_unmatched")
 METRICS = ("probe_err_to_target", "probe_err_to_true", "nearest_real_R", "energy_to_curve", "energy_to_nearest_real",
            "excess_to_curve", "excess_to_nearest_real", "behaviour_energy", "behaviour_energy_mean", "norm_ratio",
            "delta_norm", "delta_norm_path", "probe_err_path", "probe_radius_min")
@@ -53,7 +53,8 @@ ARM_NOTES = {
     "manifold_transport": "spline walk that rotates the clip's offset from the loop with the loop's frame "
                           "(direction only); residual kept",
     "goodfire_linear": "Goodfire's linear baseline: the whole activation replaced by a full-space chord point",
-    "goodfire_manifold": "Goodfire's manifold arm: PCA part replaced by the curve point, residual kept (A.6)",
+    "goodfire_manifold": "Goodfire's manifold arm (A.6, mode=replace): PCA part replaced by the curve point, "
+                         "residual kept; runs by default",
 }
 
 
@@ -61,7 +62,7 @@ def shift_of(source, target, periodic):
     return mf.value_error(source, target, periodic)
 
 
-def build(d, k, angle, design="scattered", seed=0, n_controls=20, spline="interp"):
+def build(d, k, angle, design="scattered", seed=0, n_controls=20, spline="interp", behaviour_mode="spline"):
     """PCA, centroids and all curves from the knot clips at kept values (the held-out design decides which).
     angle: "unsupervised" (choose plane automatically, fall back to labels if the ring is not found) or "labels"."""
     knot_all = d["role"] == "knot"
@@ -91,10 +92,13 @@ def build(d, k, angle, design="scattered", seed=0, n_controls=20, spline="interp
     ref = d["role"] == "probe"
     ref_cent = mf.centroids(pca.project(d["X"][ref]), d["y"][ref])
     ref_curve = mf.fit_curve(ref_cent, d["periodic"], angle="labels", spline="smooth")
-    behaviour = mf.BehaviourManifold(d["X"][ref], d["y"][ref], d["periodic"])
+    behaviour = mf.BehaviourManifold(d["X"][ref], d["y"][ref], d["periodic"], mode=behaviour_mode, curve=ref_curve,
+                                     pca=pca)
     rng = np.random.default_rng(seed)
-    controls = {"random_control": [gc.random_smooth_curve(curve, rng) for _ in range(n_controls)],
-                "shuffled_control": [gc.shuffled_curve(curve, rng) for _ in range(n_controls)]}
+    controls = {"random_endpoint_matched": [rng.standard_normal((3, pca.components.shape[0])) / np.arange(1, 4)[:, None]
+                                            for _ in range(n_controls)],
+                "random_unmatched": [gc.random_smooth_curve(curve, rng) for _ in range(n_controls)],
+                "shuffled_unmatched": [gc.shuffled_curve(curve, rng) for _ in range(n_controls)]}
     return {"pca": pca, "cent": cent, "curve": curve, "angle_choice": choice, "plane": plane,
             "full_curve": full_curve, "held": held, "knot": knot, "design": design_info, "sagitta": sag,
             "controls": controls, "ref_curve": ref_curve, "X_ref": d["X"][ref], "behaviour": behaviour}
@@ -213,7 +217,7 @@ def run(args):
     d = load_inputs(args.dataset, args.layer, args.variable, args.act_dir, args.table, args.split)
     periodic = d["periodic"]
     angle = "labels" if args.labels_angle else "unsupervised"
-    m = build(d, args.k, angle, args.holdout, args.seed, args.n_controls, args.spline)
+    m = build(d, args.k, angle, args.holdout, args.seed, args.n_controls, args.spline, args.behaviour)
     probe_rows = d["role"] == "probe"
     probe = mf.ProbeReadout(d["X"][probe_rows], d["y"][probe_rows], periodic)
     test = np.flatnonzero(d["role"] == "test")
@@ -227,19 +231,21 @@ def run(args):
         ctest = np.flatnonzero(c["role"] == "test")
         ctx["near_ctx"] = mf.NearestRealReadout(c["X"][ctest], c["y"][ctest])
         d_steer = c
-    arms = MAIN_ARMS + (("manifold_transport",) if periodic else ()) + (GOODFIRE_ARMS if args.goodfire_baseline else ())
+    arms = (MAIN_ARMS + (("manifold_transport",) if periodic else ()) + ("goodfire_manifold",)
+            + (("goodfire_linear",) if args.goodfire_baseline else ()))
     picks = pick_clips(d_steer, m["held"], args.n_clips, args.seed)
 
     rows, shared = [], {a: [] for a in arms}
-    per_arm = {a: {q: [] for q in (*METRICS, "nearest_real_R_context", "_dose", "_energy", *WAYPOINT_SERIES, "shift")}
-               for a in arms}
+    per_arm = {a: {q: [] for q in (*METRICS, "nearest_real_R_context", "_dose", "_energy", *WAYPOINT_SERIES, "shift",
+                                   "_target")} for a in arms}
     ctrl = {kind: [{q: [] for q in RANKED} for _ in m["controls"][kind]] for kind in CONTROLS}
+    ctrl_ref = {q: [] for q in RANKED}         # the spline arm on the same clip subset as the control draws
     for tgt, pick in picks.items():
         x, src = d_steer["X"][pick].astype(float), d_steer["y"][pick]
         Z, resid = m["pca"].project(x), m["pca"].complement(x)
-        Ws = {a: compose(m["pca"], Zk, resid) for a, Zk in subspace_arms(Z, src, tgt, m, args.K).items()}
-        if args.goodfire_baseline:
-            Ws.update(goodfire_arms(x, src, tgt, m, args.K))
+        Zarms = subspace_arms(Z, src, tgt, m, args.K)
+        Ws = {a: compose(m["pca"], Zk, resid) for a, Zk in Zarms.items()}
+        Ws.update(goodfire_arms(x, src, tgt, m, args.K))
         shift = shift_of(src, tgt, periodic)
         for arm in arms:
             ev = evaluate(Ws[arm], x, src, tgt, m, ctx)
@@ -247,6 +253,8 @@ def run(args):
             for q in per_arm[arm]:
                 if q == "shift":
                     per_arm[arm][q].append(shift)
+                elif q == "_target":
+                    per_arm[arm][q].append(np.full(len(pick), tgt))
                 elif q in ev:
                     per_arm[arm][q].append(ev[q])
             for j in range(len(pick)):
@@ -255,9 +263,16 @@ def run(args):
                              **{q: float(ev[q][j]) for q in METRICS},
                              **({"nearest_real_R_context": float(ev["nearest_real_R_context"][j])}
                                 if "nearest_real_R_context" in ev else {})})
+        sub = slice(0, args.n_control_clips)
+        Zs_sub = Zarms["manifold"][sub]
+        ev = evaluate(Ws["manifold"][sub], x[sub], src[sub], tgt, m, ctx)
+        for q in RANKED:
+            ctrl_ref[q].append(ev[q])
         for kind in CONTROLS:
             for i, cv in enumerate(m["controls"][kind]):
-                ev = evaluate(compose(m["pca"], curve_coords(cv, Z, src, tgt, args.K), resid), x, src, tgt, m, ctx)
+                Zc = (mf.endpoint_matched_random(Zs_sub, cv) if kind == "random_endpoint_matched"
+                      else curve_coords(cv, Z[sub], src[sub], tgt, args.K))
+                ev = evaluate(compose(m["pca"], Zc, resid[sub]), x[sub], src[sub], tgt, m, ctx)
                 for q in RANKED:
                     ctrl[kind][i][q].append(ev[q])
     cat = {a: {q: np.concatenate(v) for q, v in qs.items() if v} for a, qs in per_arm.items()}
@@ -287,13 +302,18 @@ def run(args):
                "matched_linear": "Goodfire's linear arm replaces the whole activation with a full-space chord point; "
                                  "the main linear arm edits the same PCA-k subspace as the spline and keeps the "
                                  "residual (goodfire_linear reproduces theirs).",
-               "behaviour_scale": "Eq. 9 squared distances divided by the mean within-value squared distance "
-                                  "(tau = 0.5 in those units)"},
+               "behaviour_space": "Eq. 9 distances are taken in the PCA-k coordinates of the reference spline "
+                                  "(Goodfire's encoder output is itself 64-d); --behaviour centroid_sq is the "
+                                  "squared, spread-normalised variant"},
            "energy_reference": ("energy_to_curve / excess_to_curve: distance (PCA-k) to a count-weighted smoothing "
                                 "spline through probe-fold centroids at all values, which no arm was built from; "
                                 "energy_to_nearest_real: mean distance to the 5 nearest probe-fold clips (full space)"),
            "behaviour_manifold": {"source": mf.BehaviourManifold.source, "tau": m["behaviour"].tau,
-                                  "distance_scale": m["behaviour"].scale, "clips": "probe folds at the read layer",
+                                  "mode": m["behaviour"].mode, "distance_scale": m["behaviour"].scale,
+                                  "bins": ("B = 128 points along the reference spline (probe folds), distances in "
+                                           "PCA-k coordinates" if m["behaviour"].mode == "spline"
+                                           else "64 per-value centroids, full space"),
+                                  "caveat": mf.BehaviourManifold.caveat, "clips": "probe folds at the read layer",
                                   "metric": "behaviour_energy = E_BC, sum over the K waypoints of the Bhattacharyya "
                                             "distance to M_y (A.7); behaviour_energy_mean = per waypoint"},
            "waypoint_readout": waypoint_summary(cat, arms, periodic),
@@ -314,12 +334,17 @@ def run(args):
            "delta_norm_per_waypoint": {a: cat[a]["_dose"].mean(0).tolist() for a in arms},
            "rescue_harm": rescue_harm(cat, arms),
            "controls": {kind: {q: band([np.concatenate(dr[q]).mean() for dr in ctrl[kind]],
-                                       cat["manifold"][q].mean(), hb) for q, hb in RANKED.items()}
+                                       np.concatenate(ctrl_ref[q]).mean(), hb) for q, hb in RANKED.items()}
                         for kind in CONTROLS if m["controls"][kind]},
-           "summary": summarise(rows, periodic, [a for a in arms if a not in GOODFIRE_ARMS]),
+           "summary": summarise(rows, periodic, [a for a in arms if a != "goodfire_linear"]),
+           "gaps": paired_gaps(cat, [a for a in arms if a != "manifold"], periodic, args.seed),
+           "gaps_note": ("manifold minus each other arm on the same (clip, target) rows: 95% CI from a paired "
+                         "bootstrap over rows (1000 draws), and mean +/- SE across steer targets (Goodfire A.7 "
+                         "reports mean +/- SE over pairs); overall and by shift bin"),
            "rows": rows}
-    out["controls_note"] = (f"{args.n_controls} draws each; spline_rank = 1 + number of draws better than the spline "
-                            "arm (1 = spline best); band = 5-95% of the draws' means")
+    out["controls_note"] = (f"{args.n_controls} draws each, on the first {args.n_control_clips} steered clips per "
+                            "target (the spline value in each band is on the same clips); spline_rank = 1 + number "
+                            "of draws better than the spline arm (1 = spline best); band = 5-95% of the draws' means")
     if args.goodfire_baseline:
         out["goodfire_comparison"] = {
             "note": "Goodfire's own comparison: residual erased (linear) vs kept (manifold), so it mixes "
@@ -342,7 +367,7 @@ def run(args):
     Path(args.results_dir).mkdir(parents=True, exist_ok=True)
     Path(args.figures_dir).mkdir(parents=True, exist_ok=True)
     (Path(args.results_dir) / f"p2_steer_{tag}.json").write_text(json.dumps(out, indent=1))
-    main = [a for a in arms if a not in GOODFIRE_ARMS]
+    main = [a for a in arms if a != "goodfire_linear"]
     plot_gap(out["summary"], Path(args.figures_dir) / f"fig4_gap_vs_shift_{tag}.png", tag, periodic, main)
     plot_energy({a: cat[a]["_energy"] for a in main}, {a: cat[a]["shift"] for a in main},
                 Path(args.figures_dir) / f"fig4_path_energy_{tag}.png", tag)
@@ -393,6 +418,39 @@ def plot_waypoints(wp, path, tag, periodic, arms):
     fig.tight_layout()
     fig.savefig(path, dpi=150)
     plt.close(fig)
+
+
+def paired_bootstrap(diff, n_boot=1000, seed=0):
+    """Mean of paired differences with a 95% percentile-bootstrap CI over rows."""
+    diff = np.asarray(diff, dtype=float)
+    rng = np.random.default_rng(seed)
+    boots = diff[rng.integers(0, len(diff), (n_boot, len(diff)))].mean(1)
+    lo, hi = np.percentile(boots, [2.5, 97.5])
+    return {"mean": float(diff.mean()), "ci95": [float(lo), float(hi)], "n": int(len(diff))}
+
+
+def paired_gaps(cat, others, periodic, seed=0):
+    """manifold - other, per metric: paired bootstrap CI over rows and mean +/- SE across targets; by shift bin."""
+    metrics = [q for q in (*RANKED, "probe_err_path", "probe_radius_min", "delta_norm")
+               if not (q == "probe_radius_min" and not periodic)]
+    s, tgt = cat["manifold"]["shift"], cat["manifold"]["_target"]
+    edges = shift_bins(periodic)
+    if edges is None:
+        edges = np.quantile(s, np.linspace(0, 1, 6))
+        edges[-1] += 1e-9
+    out = {}
+    for o in others:
+        out[f"manifold_minus_{o}"] = res = {}
+        for q in metrics:
+            diff = cat["manifold"][q] - cat[o][q]
+            per_t = np.array([diff[tgt == t].mean() for t in np.unique(tgt)])
+            res[q] = {**paired_bootstrap(diff, seed=seed),
+                      "mean_over_targets": float(per_t.mean()),
+                      "se_over_targets": float(per_t.std(ddof=1) / np.sqrt(len(per_t))) if len(per_t) > 1 else None,
+                      "by_shift": [{"shift_lo": float(lo), "shift_hi": float(hi),
+                                    **paired_bootstrap(diff[(s >= lo) & (s < hi)], seed=seed)}
+                                   for lo, hi in zip(edges[:-1], edges[1:]) if ((s >= lo) & (s < hi)).any()]}
+    return out
 
 
 def rescue_harm(cat, arms):
@@ -496,6 +554,9 @@ def parse(argv=None):
                    help="interpolating (Goodfire A.3) or count-weighted smoothing spline (B.1); choose from the "
                         "geometry check's heldout_reconstruction")
     p.add_argument("--n-controls", type=int, default=20, help="draws per random-curve / shuffled-centroid control")
+    p.add_argument("--behaviour", default="spline", choices=("spline", "centroid_sq"),
+                   help="Eq. 9 behaviour: literal (unsquared, tau=0.5, 128 spline bins) or squared/spread-normalised")
+    p.add_argument("--n-control-clips", type=int, default=16, help="steered clips per target used by control draws")
     p.add_argument("--no-bf16", action="store_true", help="skip the BF16 repeat of the steering-energy comparison")
     p.add_argument("--context-dataset", default=None, choices=("direction", "speed", "acceleration"),
                    help="held-out context: steer this dataset's test clips with the spline built on --dataset")

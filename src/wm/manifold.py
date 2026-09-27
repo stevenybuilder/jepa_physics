@@ -133,11 +133,11 @@ class Curve:
         return t[idx] if np.ndim(Z) > 1 else t[idx[0]]
 
     def distance(self, Z, n=2000):
-        """Distance from each row of Z [.., k] to the curve."""
+        """Distance from each row of Z [.., k] to the curve (brute force against n dense points; a KD-tree is
+        slower than BLAS in 64 dimensions)."""
         Z = np.asarray(Z)
         _, pts = self.dense(n)
-        d, _ = cKDTree(pts).query(Z.reshape(-1, Z.shape[-1]))
-        return d.reshape(Z.shape[:-1])
+        return min_distance(Z, pts)
 
     def step(self, ta, tb):
         """Signed coordinate change from ta to tb; the short way round for a periodic curve."""
@@ -481,6 +481,32 @@ def transport_offset(o, curve, t):
     return rest[:, None] + a[:, None, None] * T + b[:, None, None] * N
 
 
+def endpoint_matched_random(Zk, coef, iters=40):
+    """Endpoint-matched random control for paths Zk [n, K, k]: the path's own chord (traversed with its arc-length
+    spacing f) plus a random smooth bend g(f) = sum_j coef_j sin(j pi f), which is zero at both ends, scaled per
+    clip so the path length equals the original path's (bisection on the amplitude). Same endpoints, dose, waypoint
+    count and length as the spline; only the shape of the bend is random. coef [n_freq, k], one draw."""
+    Zk = np.asarray(Zk, dtype=float)
+    chord, _ = chord_coords(Zk)
+    seg = lambda P: np.linalg.norm(np.diff(P, axis=1), axis=-1).sum(1)
+    target = seg(Zk)
+    s = np.concatenate([np.zeros((len(Zk), 1)), np.cumsum(np.linalg.norm(np.diff(Zk, axis=1), axis=-1), 1)], 1)
+    f = s / np.where(s[:, -1:] > 0, s[:, -1:], 1.0)
+    j = np.arange(1, len(coef) + 1)
+    bend = np.einsum("nkj,jd->nkd", np.sin(np.pi * f[..., None] * j), np.asarray(coef, float))   # [n, K, k]
+    lo, hi = np.zeros(len(Zk)), np.full(len(Zk), 1.0)
+    for _ in range(60):                                   # grow hi until it overshoots the target length
+        short = seg(chord + hi[:, None, None] * bend) < target
+        if not short.any():
+            break
+        hi = np.where(short, hi * 2, hi)
+    for _ in range(iters):
+        mid = (lo + hi) / 2
+        longer = seg(chord + mid[:, None, None] * bend) > target
+        hi, lo = np.where(longer, mid, hi), np.where(longer, lo, mid)
+    return chord + ((lo + hi) / 2)[:, None, None] * bend
+
+
 def linear_coords(Z, pa, pb, K):
     """Straight-line steer inside the PCA subspace: z + s (pb - pa), s = 0..1 in K steps. Z [n, k]; pa, pb [n, k]
     or [k] (the polyline points at the source and target values). Returns [n, K, k]. Lifted with the clip's own
@@ -616,29 +642,46 @@ def isometry(curve, readout_points, metric="euclidean"):
 # ---------------------------------------------------------------- behaviour manifold M_y (Goodfire section 5) -----
 
 class BehaviourManifold:
-    """Goodfire section 5 Eq. 9 / App. B.1: for a model with no output distribution, a behaviour is built from the
-    activations themselves: p(z) = softmax_b(-||z - mu_b||^2 / (tau * s2)), tau = 0.5, mu_b the per-value centroids
-    of real clips at the read layer. b_i = mean p over real clips at value i; M_y = a spline through sqrt(b_i) in the
-    tangent plane of the unit sphere at the normalised mean (log map; decoded by the exp map, App. A.4), parameterised
-    by the value (radians for direction). Energy E_BC = sum over waypoints of the Bhattacharyya distance
-    -log sum_i sqrt(p_i q_i) to the nearest point q of M_y (App. A.7).
+    """Goodfire section 5 Eq. 9 / App. B.1 Eq. 10: for a model with no output distribution, a behaviour is built from
+    the activations themselves. Default ("spline", literal): p(z) = softmax_b(-||z - mu_b||_2 / tau), tau = 0.5,
+    UNsquared L2, mu_b = B = 128 points evenly spaced in the intrinsic coordinate along a fitted activation spline
+    (`curve`, in the PCA-k coordinates of `pca`, where the spline lives). b_i = mean p over real clips at value i;
+    M_y = a spline through sqrt(b_i) in the tangent plane of the unit sphere at the normalised mean (log map; decoded
+    by the exp map, App. A.4), parameterised by the value (radians for direction). Energy E_BC = sum over waypoints
+    of the Bhattacharyya distance -log sum_i sqrt(p_i q_i) to the nearest point q of M_y (App. A.7).
 
-    s2: "within" (default) = the mean squared distance of a real clip to its own value's centroid, so tau is in units
-    of within-value spread; "raw" = 1 (literal Eq. 9; with 1024-d activations the softmax is then one-hot). The PDF
-    text cannot distinguish ||.||_2 from ||.||^2 in Eq. 9; squared distance (a Gaussian kernel) is used.
-    Build it from real clips that neither steering arm was built from.
+    Option "centroid_sq": the 64 raw per-value centroids in full space and squared distance divided by the mean
+    within-value squared distance (tau in units of within-value spread).
+
+    CAVEAT (circularity): at the steered layer F is itself a distance-to-centroid function of the edited
+    activation, so behaviour_energy and isometry_behaviour there partly restate the activation geometry the arms
+    were built on. They become informative only at later layers (after propagating the edit) or through the
+    predictor. Build it from real clips (and a curve) that neither steering arm was built from.
     """
-    source = "Goodfire Manifold Steering, section 5 Eq. 9 and App. B.1 (tau = 0.5), Hellinger/tangent spline App. A.4"
+    source = ("Goodfire Manifold Steering, section 5 Eq. 9 and App. B.1 Eq. 10 (unsquared L2, tau = 0.5, B = 128 "
+              "spline points); Hellinger/tangent spline App. A.4")
+    caveat = ("at the steered layer the behaviour function F is itself a distance-to-centroid function of the edited "
+              "activation, so behaviour_energy and isometry_behaviour are partly circular there; they become "
+              "informative only at later layers (propagation) or through the predictor")
 
-    def __init__(self, X_real, values_real, periodic, tau=0.5, scale="within", n_grid=2000):
+    def __init__(self, X_real, values_real, periodic, tau=0.5, mode="spline", curve=None, pca=None, n_bins=128,
+                 n_grid=2000):
         X, v = np.asarray(X_real, dtype=float), np.asarray(values_real, dtype=float)
         self.values = np.unique(v)
-        self.periodic, self.tau, self.scale = periodic, tau, scale
-        self.mu = np.array([X[v == u].mean(0) for u in self.values])                       # [B, D]
-        idx = np.searchsorted(self.values, v)
-        self.s2 = float(((X - self.mu[idx]) ** 2).sum(1).mean()) if scale == "within" else 1.0
+        self.periodic, self.tau, self.mode, self.pca = periodic, tau, mode, pca
+        if mode == "spline":
+            lo, hi = curve.t_range()
+            self.mu = curve(np.linspace(lo, hi, n_bins, endpoint=not curve.periodic))       # [B, k]
+            self.s2 = 1.0
+        elif mode == "centroid_sq":
+            self.mu = np.array([X[v == u].mean(0) for u in self.values])                   # [B, D]
+            idx = np.searchsorted(self.values, v)
+            self.s2 = float(((X - self.mu[idx]) ** 2).sum(1).mean())
+        else:
+            raise ValueError(mode)
+        self.scale = "none (literal)" if mode == "spline" else "within-value mean squared distance"
         P = self.F(X)
-        b = np.array([P[v == u].mean(0) for u in self.values])                             # [B, B]
+        b = np.array([P[v == u].mean(0) for u in self.values])                             # [values, B]
         h = np.sqrt(b)
         base = h.mean(0)
         self.base = base / np.linalg.norm(base)
@@ -654,11 +697,13 @@ class BehaviourManifold:
         self.grid = self.decode(self.grid_t)                                               # [G, B] unit vectors
 
     def F(self, Z):
-        """Eq. 9: distribution over the B values for activations Z [.., D]."""
+        """Eq. 9 / 10: distribution over the B bins for activations Z [.., D]."""
         Z = np.asarray(Z, dtype=float)
         flat = Z.reshape(-1, Z.shape[-1])
-        d2 = (flat ** 2).sum(1)[:, None] + (self.mu ** 2).sum(1)[None] - 2 * flat @ self.mu.T
-        logits = -np.maximum(d2, 0.0) / (self.tau * self.s2)
+        if self.mode == "spline":
+            flat = self.pca.project(flat)
+        d2 = np.maximum((flat ** 2).sum(1)[:, None] + (self.mu ** 2).sum(1)[None] - 2 * flat @ self.mu.T, 0.0)
+        logits = -(np.sqrt(d2) if self.mode == "spline" else d2) / (self.tau * self.s2)
         logits -= logits.max(1, keepdims=True)
         p = np.exp(logits)
         return (p / p.sum(1, keepdims=True)).reshape(Z.shape[:-1] + (len(self.mu),))

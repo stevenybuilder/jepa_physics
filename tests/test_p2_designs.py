@@ -224,9 +224,14 @@ def test_behaviour_manifold_eq9():
     X, th, _ = ring_data()
     pca = mf.fit_pca(X[::2], 16)
     curve = mf.fit_curve(mf.centroids(pca.project(X[::2]), th[::2]), True)
-    bm = mf.BehaviourManifold(X[1::2], th[1::2], True)
+    ref = mf.fit_curve(mf.centroids(pca.project(X[1::2]), th[1::2]), True, angle="labels", spline="smooth")
+    bm = mf.BehaviourManifold(X[1::2], th[1::2], True, curve=ref, pca=pca)             # literal Eq. 9
+    assert bm.mu.shape == (128, 16)
     P = bm.F(X[th == 90.0])
-    assert np.allclose(P.sum(1), 1) and np.all(bm.values[P.mean(0).argmax()] == 90.0)   # peaked at the true value
+    peak = np.degrees(ref.coords[0] + np.arange(128) * 2 * np.pi / 128)[P.mean(0).argmax()] % 360
+    assert np.allclose(P.sum(1), 1) and abs((peak - 90 + 180) % 360 - 180) < 6          # peaked at the true value
+    bm_sq = mf.BehaviourManifold(X[1::2], th[1::2], True, mode="centroid_sq")
+    assert bm_sq.values[bm_sq.F(X[th == 90.0]).mean(0).argmax()] == 90.0
     np.testing.assert_allclose(np.linalg.norm(bm.grid, axis=1), 1.0, atol=1e-9)         # M_y stays on the sphere
     x = X[th == 0.0][:5]
     Z, resid = pca.project(x), pca.complement(x)
@@ -268,3 +273,24 @@ def test_transport_keeps_offset_outward():
     cl = mf.fit_curve(mf.centroids(pl.project(Xl), v), False)
     with pytest.raises(ValueError):
         mf.manifold_coords(pl.project(Xl[:2]), cl, 1.0, 2.0, 3, "transport")
+
+
+def test_endpoint_matched_random_control():
+    X, th, _ = ring_data()
+    pca = mf.fit_pca(X, 16)
+    curve = mf.fit_curve(mf.centroids(pca.project(X), th), True)
+    Z = pca.project(X[:6])
+    Zs = mf.manifold_coords(Z, curve, np.zeros(6), np.linspace(0.5, 3.0, 6), K=30)
+    rng = np.random.default_rng(0)
+    L = lambda P: np.linalg.norm(np.diff(P, axis=1), axis=-1).sum(1)
+    for _ in range(3):
+        Zr = mf.endpoint_matched_random(Zs, rng.standard_normal((3, 16)))
+        np.testing.assert_allclose(Zr[:, [0, -1]], Zs[:, [0, -1]], atol=1e-9)
+        np.testing.assert_allclose(L(Zr), L(Zs), rtol=1e-4)
+        assert np.abs(Zr - Zs).max() > 0.1                  # a different bend
+
+
+def test_paired_bootstrap():
+    rng = np.random.default_rng(0)
+    b = P2.paired_bootstrap(1.0 + rng.standard_normal(400))
+    assert b["ci95"][0] < b["mean"] < b["ci95"][1] and b["ci95"][0] > 0.8 and b["ci95"][1] < 1.2
