@@ -1,0 +1,658 @@
+{
+ "dataset": "direction",
+ "variable": "direction",
+ "holdout": "contiguous",
+ "k": 64,
+ "spline": "smooth",
+ "provenance": {
+  "split_file": "/Users/stevenyang/Documents/world_mechanics_takehome/splits/split_v1.json",
+  "split_sha256": "98e6310c40bf29e81bd8b6bf4b1ac603b89e4104d40ac1047b15dd5dc2be2df2",
+  "seeds": {
+   "holdout_and_carriers": 0,
+   "mlp": 0
+  },
+  "commit": "8829195b7e3b372e4f0c0bbb3c9f163f11baedc3",
+  "dirty": false,
+  "git_commit": "8829195b7e3b372e4f0c0bbb3c9f163f11baedc3",
+  "git_dirty_src_or_scripts": false,
+  "timestamp_utc": "2026-09-27T23:13:27+00:00",
+  "layers": [
+   12,
+   22
+  ],
+  "k": 64,
+  "spline": "smooth",
+  "n_clips": 48
+ },
+ "roles": {
+  "knot": "folds 0-2 at kept values: PCA-64 + spline (run_part2.build)",
+  "probe": "folds 3-4: linear probe + MLP evaluator",
+  "test": "carriers (run_part2.pick_clips) and donors / nearest-real reference"
+ },
+ "arms": {
+  "donor_in_subspace": "donor PCA-64 coordinates + carrier off-subspace residual",
+  "donor_full": "donor full activation (residual swapped too)",
+  "spline": "run_part2 spline endpoint (shift mode), same carriers",
+  "chord": "run_part2 chord endpoint, same carriers"
+ },
+ "nearest_real_note": "R = 1 - D(steered, m)/D(carrier, m), m = mean of the real test clips at theta* excluding the donor; every arm is scored against the same leave-donor-out m and averaged over donors",
+ "layers": {
+  "12": {
+   "layer_role": "exploratory",
+   "held_out_values": [
+    303.75,
+    309.375,
+    315.0,
+    320.625,
+    326.25,
+    331.875,
+    337.5,
+    343.125
+   ],
+   "n_carriers": 384,
+   "summary": {
+    "donor_in_subspace": {
+     "probe_err": 5.985193241432792,
+     "probe_err_se": 0.11376932649168624,
+     "mlp_err": 25.19941348212817,
+     "mlp_err_se": 0.6956965251424616,
+     "nearest_real_R": 0.22737381025325104,
+     "nearest_real_R_se": 0.005518671781182761,
+     "norm_ratio": 1.005153026305046,
+     "norm_ratio_se": 0.00026620486984133717,
+     "n_pairs": 1584
+    },
+    "donor_full": {
+     "probe_err": 3.302445923120517,
+     "probe_err_se": 0.05989226711346387,
+     "mlp_err": 22.50564848621691,
+     "mlp_err_se": 0.5296327698721348,
+     "nearest_real_R": 0.23091543667281217,
+     "nearest_real_R_se": 0.005633392441680425,
+     "norm_ratio": 1.0051770613749764,
+     "norm_ratio_se": 0.00026603421488202353,
+     "n_pairs": 1584
+    },
+    "spline": {
+     "probe_err": 9.771919902834716,
+     "probe_err_se": 0.16224380690979312,
+     "mlp_err": 30.6506882737764,
+     "mlp_err_se": 0.8013536920703216,
+     "nearest_real_R": 0.19050019935549103,
+     "nearest_real_R_se": 0.0032478607382192526,
+     "norm_ratio": 1.0029051949992591,
+     "norm_ratio_se": 0.00010818099464550823,
+     "n_pairs": 1584
+    },
+    "chord": {
+     "probe_err": 9.663595405916531,
+     "probe_err_se": 0.16353485814638008,
+     "mlp_err": 33.09530380216395,
+     "mlp_err_se": 0.8383194393750928,
+     "nearest_real_R": 0.19082788332465925,
+     "nearest_real_R_se": 0.003219461203918142,
+     "norm_ratio": 1.0026795046947674,
+     "norm_ratio_se": 0.00010796600175024745,
+     "n_pairs": 1584
+    }
+   },
+   "per_target": {
+    "303.75": {
+     "n_donors": 5,
+     "n_carriers": 48,
+     "donor_in_subspace": {
+      "probe_err": 3.716454878977731,
+      "mlp_err": 32.39166040717972,
+      "nearest_real_R": 0.2658236579257264,
+      "norm_ratio": 1.0016424561447999
+     },
+     "donor_full": {
+      "probe_err": 4.626815930805469,
+      "mlp_err": 32.63306741898691,
+      "nearest_real_R": 0.2651277821804158,
+      "norm_ratio": 1.0017278025738756
+     },
+     "spline": {
+      "probe_err": 11.075982519892603,
+      "mlp_err": 22.8613674466857,
+      "nearest_real_R": 0.2278916465748834,
+      "norm_ratio": 1.003453711208165
+     },
+     "chord": {
+      "probe_err": 11.15691599443707,
+      "mlp_err": 23.86280728997646,
+      "nearest_real_R": 0.22758352253799147,
+      "norm_ratio": 1.0031783514113113
+     }
+    },
+    "309.375": {
+     "n_donors": 4,
+     "n_carriers": 48,
+     "donor_in_subspace": {
+      "probe_err": 6.108846229759131,
+      "mlp_err": 47.833819779739315,
+      "nearest_real_R": 0.19291748797558414,
+      "norm_ratio": 1.001212411558692
+     },
+     "donor_full": {
+      "probe_err": 3.366709435534702,
+      "mlp_err": 30.821636676992185,
+      "nearest_real_R": 0.20411263976500713,
+      "norm_ratio": 1.001473671498004
+     },
+     "spline": {
+      "probe_err": 10.174816774672085,
+      "mlp_err": 34.677838910951145,
+      "nearest_real_R": 0.19564032407454793,
+      "norm_ratio": 1.0029950972909643
+     },
+     "chord": {
+      "probe_err": 10.239364717795675,
+      "mlp_err": 38.167363545157905,
+      "nearest_real_R": 0.19467766256296262,
+      "norm_ratio": 1.0025968117137112
+     }
+    },
+    "315.0": {
+     "n_donors": 4,
+     "n_carriers": 48,
+     "donor_in_subspace": {
+      "probe_err": 5.867555348919036,
+      "mlp_err": 36.03067087657856,
+      "nearest_real_R": 0.23442806041935368,
+      "norm_ratio": 1.0066511451622182
+     },
+     "donor_full": {
+      "probe_err": 3.4806641452031215,
+      "mlp_err": 38.8081958036971,
+      "nearest_real_R": 0.24248275425538876,
+      "norm_ratio": 1.006497884081137
+     },
+     "spline": {
+      "probe_err": 10.0620519011702,
+      "mlp_err": 27.013450307331542,
+      "nearest_real_R": 0.1826918747150242,
+      "norm_ratio": 1.0024914544564216
+     },
+     "chord": {
+      "probe_err": 10.09821356276692,
+      "mlp_err": 31.049715725179027,
+      "nearest_real_R": 0.1849484794282322,
+      "norm_ratio": 1.0020800626937099
+     }
+    },
+    "320.625": {
+     "n_donors": 4,
+     "n_carriers": 48,
+     "donor_in_subspace": {
+      "probe_err": 7.0184269104558235,
+      "mlp_err": 13.36960769527756,
+      "nearest_real_R": 0.05394327599629723,
+      "norm_ratio": 1.003592256744455
+     },
+     "donor_full": {
+      "probe_err": 3.0168189338695726,
+      "mlp_err": 19.370745180102844,
+      "nearest_real_R": 0.05082922347831557,
+      "norm_ratio": 1.0035714705939014
+     },
+     "spline": {
+      "probe_err": 9.724106723269346,
+      "mlp_err": 34.18626982033134,
+      "nearest_real_R": 0.15461768819954982,
+      "norm_ratio": 1.0023820141443502
+     },
+     "chord": {
+      "probe_err": 9.444854931461785,
+      "mlp_err": 37.4435454030239,
+      "nearest_real_R": 0.16270269544637994,
+      "norm_ratio": 1.0020312383281107
+     }
+    },
+    "326.25": {
+     "n_donors": 4,
+     "n_carriers": 48,
+     "donor_in_subspace": {
+      "probe_err": 5.113179889329169,
+      "mlp_err": 10.844779865042506,
+      "nearest_real_R": 0.23887970781624168,
+      "norm_ratio": 1.0065738933043626
+     },
+     "donor_full": {
+      "probe_err": 1.4778146521078384,
+      "mlp_err": 10.551830454070284,
+      "nearest_real_R": 0.24880072724624572,
+      "norm_ratio": 1.0067805573431445
+     },
+     "spline": {
+      "probe_err": 9.202046652160684,
+      "mlp_err": 30.103396664744725,
+      "nearest_real_R": 0.18743476804139148,
+      "norm_ratio": 1.0032406157753784
+     },
+     "chord": {
+      "probe_err": 9.010981047929091,
+      "mlp_err": 33.42985268891346,
+      "nearest_real_R": 0.18922224865501178,
+      "norm_ratio": 1.0030014473769582
+     }
+    },
+    "331.875": {
+     "n_donors": 4,
+     "n_carriers": 48,
+     "donor_in_subspace": {
+      "probe_err": 5.964726281968782,
+      "mlp_err": 21.04986583120976,
+      "nearest_real_R": 0.2823158516121371,
+      "norm_ratio": 1.0110219243958631
+     },
+     "donor_full": {
+      "probe_err": 3.1188503605279294,
+      "mlp_err": 22.48724614788813,
+      "nearest_real_R": 0.2824365322096942,
+      "norm_ratio": 1.011020459663059
+     },
+     "spline": {
+      "probe_err": 11.051468058658267,
+      "mlp_err": 31.636423239393995,
+      "nearest_real_R": 0.16451975082568482,
+      "norm_ratio": 1.003108066662082
+     },
+     "chord": {
+      "probe_err": 10.721344120841769,
+      "mlp_err": 34.15970625081676,
+      "nearest_real_R": 0.1643425271755427,
+      "norm_ratio": 1.0029732583410131
+     }
+    },
+    "337.5": {
+     "n_donors": 4,
+     "n_carriers": 48,
+     "donor_in_subspace": {
+      "probe_err": 7.327976510999728,
+      "mlp_err": 13.707670604497544,
+      "nearest_real_R": 0.42296778236735405,
+      "norm_ratio": 1.0034277875129034
+     },
+     "donor_full": {
+      "probe_err": 3.477328204953963,
+      "mlp_err": 7.678771236059532,
+      "nearest_real_R": 0.42771089218498615,
+      "norm_ratio": 1.0035473964090003
+     },
+     "spline": {
+      "probe_err": 8.223702367973809,
+      "mlp_err": 31.387242443221187,
+      "nearest_real_R": 0.19997252030134424,
+      "norm_ratio": 1.0025965597244373
+     },
+     "chord": {
+      "probe_err": 8.044480472113928,
+      "mlp_err": 33.050806393890774,
+      "nearest_real_R": 0.1935533353275969,
+      "norm_ratio": 1.0025701300774326
+     }
+    },
+    "343.125": {
+     "n_donors": 4,
+     "n_carriers": 48,
+     "donor_in_subspace": {
+      "probe_err": 7.331564471666705,
+      "mlp_err": 24.56917106623746,
+      "nearest_real_R": 0.11810219599519518,
+      "norm_ratio": 1.0079799781571366
+     },
+     "donor_full": {
+      "probe_err": 3.5234732200403016,
+      "mlp_err": 15.161840238745796,
+      "nearest_real_R": 0.11726985568554284,
+      "norm_ratio": 1.007659563537965
+     },
+     "spline": {
+      "probe_err": 8.335168570616252,
+      "mlp_err": 35.286847564324255,
+      "nearest_real_R": 0.20188516030665415,
+      "norm_ratio": 1.0028369116800466
+     },
+     "chord": {
+      "probe_err": 8.219278252855878,
+      "mlp_err": 35.90675724840019,
+      "nearest_real_R": 0.20040368566022307,
+      "norm_ratio": 1.0028800259367563
+     }
+    }
+   },
+   "run_part2_reference": {
+    "source": "results/p2_steer_direction_direction_L12_contiguous.json",
+    "commit": "8d3cac8a15fbfdbb85444757c24a5ad5d294af50",
+    "spline": {
+     "probe_err_to_target": 9.731167946051672,
+     "nearest_real_R": 0.19607766503547866,
+     "norm_ratio": 1.0028880538677305,
+     "n_rows": 384
+    },
+    "angle_source": "unsupervised_angle",
+    "chord": {
+     "probe_err_to_target": 9.616929137525316,
+     "nearest_real_R": 0.1965183036417548,
+     "norm_ratio": 1.0026639157348753,
+     "n_rows": 384
+    },
+    "bakeoff_mlp_err_unmatched": {
+     "spline": 30.894104549622984,
+     "chord": 33.383819318169806
+    }
+   },
+   "verdict": "point 12: in-subspace donor reaches R = 0.23, probe 6.0 deg, MLP 25.2 deg (spline R = 0.19, MLP 30.7 deg; chord R = 0.19, MLP 33.1 deg; same carriers and leave-donor-out reference; run_part2's own spline/chord R = 0.20/0.20); spline/line at R ~ 0.20 is therefore a ceiling of PCA-64 editing (donor ~ spline); full-activation donor R = 0.23 (probe 3.3 deg, MLP 22.5 deg) shows how much lives outside PCA-64: almost nothing for R (full - in-subspace = +0.004), while the MLP error drops 2.7 deg when the residual is swapped too. A whole real clip at theta* only reaches R = 0.23 against the other real clips at theta*: R ~ 0.2 is the real-clip ceiling of this readout (clip-specific variance dominates the distance), and the spline reaches 82% of it."
+  },
+  "22": {
+   "layer_role": "peak",
+   "held_out_values": [
+    303.75,
+    309.375,
+    315.0,
+    320.625,
+    326.25,
+    331.875,
+    337.5,
+    343.125
+   ],
+   "n_carriers": 384,
+   "summary": {
+    "donor_in_subspace": {
+     "probe_err": 4.933798944848127,
+     "probe_err_se": 0.09743588056119531,
+     "mlp_err": 18.52789486428943,
+     "mlp_err_se": 0.4688859969221556,
+     "nearest_real_R": 0.20007255530672896,
+     "nearest_real_R_se": 0.007665597450661266,
+     "norm_ratio": 0.9979354427289763,
+     "norm_ratio_se": 0.0004464074703344554,
+     "n_pairs": 1584
+    },
+    "donor_full": {
+     "probe_err": 3.1597901024801427,
+     "probe_err_se": 0.06972487865469514,
+     "mlp_err": 12.404143422495878,
+     "mlp_err_se": 0.231635972213237,
+     "nearest_real_R": 0.2007623795782252,
+     "nearest_real_R_se": 0.007797979510428327,
+     "norm_ratio": 0.9983371207116432,
+     "norm_ratio_se": 0.0004395901705651447,
+     "n_pairs": 1584
+    },
+    "spline": {
+     "probe_err": 10.646986400080834,
+     "probe_err_se": 0.17709545668631915,
+     "mlp_err": 21.24768305445783,
+     "mlp_err_se": 0.4523125043947698,
+     "nearest_real_R": 0.16884954086590567,
+     "nearest_real_R_se": 0.003707555619313394,
+     "norm_ratio": 0.9947847854964263,
+     "norm_ratio_se": 0.0001050916311685657,
+     "n_pairs": 1584
+    },
+    "chord": {
+     "probe_err": 6.879051710108584,
+     "probe_err_se": 0.13548831673675005,
+     "mlp_err": 19.942360247210587,
+     "mlp_err_se": 0.4417345295341048,
+     "nearest_real_R": 0.17323252640015252,
+     "nearest_real_R_se": 0.0036201322187052886,
+     "norm_ratio": 0.9956249587329699,
+     "norm_ratio_se": 0.00010138618177890171,
+     "n_pairs": 1584
+    }
+   },
+   "per_target": {
+    "303.75": {
+     "n_donors": 5,
+     "n_carriers": 48,
+     "donor_in_subspace": {
+      "probe_err": 7.591310793176574,
+      "mlp_err": 16.39685474868275,
+      "nearest_real_R": 0.19700465198123332,
+      "norm_ratio": 1.006590262694149
+     },
+     "donor_full": {
+      "probe_err": 5.097939194005084,
+      "mlp_err": 17.054293826319963,
+      "nearest_real_R": 0.1964772633304839,
+      "norm_ratio": 1.0065130831280087
+     },
+     "spline": {
+      "probe_err": 9.280701124293067,
+      "mlp_err": 20.430635955234248,
+      "nearest_real_R": 0.16219404668251539,
+      "norm_ratio": 0.99223339682563
+     },
+     "chord": {
+      "probe_err": 6.541958997728378,
+      "mlp_err": 20.121860605240958,
+      "nearest_real_R": 0.16918314780654356,
+      "norm_ratio": 0.9928203343322799
+     }
+    },
+    "309.375": {
+     "n_donors": 4,
+     "n_carriers": 48,
+     "donor_in_subspace": {
+      "probe_err": 4.014836187648942,
+      "mlp_err": 16.89344956786282,
+      "nearest_real_R": 0.28829332245251216,
+      "norm_ratio": 0.9876431742914814
+     },
+     "donor_full": {
+      "probe_err": 2.4474989901038953,
+      "mlp_err": 14.545255149420825,
+      "nearest_real_R": 0.29194793401032876,
+      "norm_ratio": 0.988086555007873
+     },
+     "spline": {
+      "probe_err": 11.731960416152162,
+      "mlp_err": 20.307739408211535,
+      "nearest_real_R": 0.19267280797436637,
+      "norm_ratio": 0.9931984890898846
+     },
+     "chord": {
+      "probe_err": 7.341633287406119,
+      "mlp_err": 19.638903093782627,
+      "nearest_real_R": 0.1930675525737906,
+      "norm_ratio": 0.9941346225701887
+     }
+    },
+    "315.0": {
+     "n_donors": 4,
+     "n_carriers": 48,
+     "donor_in_subspace": {
+      "probe_err": 2.841231844843439,
+      "mlp_err": 22.556335572088056,
+      "nearest_real_R": 0.1828394187475645,
+      "norm_ratio": 0.9972220842569254
+     },
+     "donor_full": {
+      "probe_err": 2.448737039635958,
+      "mlp_err": 9.82024726692731,
+      "nearest_real_R": 0.18425834511535133,
+      "norm_ratio": 0.9973768380070673
+     },
+     "spline": {
+      "probe_err": 13.636395112345035,
+      "mlp_err": 21.565815366470318,
+      "nearest_real_R": 0.2106691388402889,
+      "norm_ratio": 0.9945152486127938
+     },
+     "chord": {
+      "probe_err": 7.406409862212587,
+      "mlp_err": 20.994962466975906,
+      "nearest_real_R": 0.21170979106150842,
+      "norm_ratio": 0.9956388281607135
+     }
+    },
+    "320.625": {
+     "n_donors": 4,
+     "n_carriers": 48,
+     "donor_in_subspace": {
+      "probe_err": 5.588820088958816,
+      "mlp_err": 21.258980466273297,
+      "nearest_real_R": 0.01675165288533245,
+      "norm_ratio": 1.0012492081078286
+     },
+     "donor_full": {
+      "probe_err": 4.153947195253124,
+      "mlp_err": 20.088631743904273,
+      "nearest_real_R": 0.011367974423446814,
+      "norm_ratio": 1.0015302015082899
+     },
+     "spline": {
+      "probe_err": 13.265759914673145,
+      "mlp_err": 22.656362613367975,
+      "nearest_real_R": 0.141662659071397,
+      "norm_ratio": 0.9945521957431084
+     },
+     "chord": {
+      "probe_err": 7.509015330772967,
+      "mlp_err": 19.75328889710914,
+      "nearest_real_R": 0.15156144840049665,
+      "norm_ratio": 0.9957493740336117
+     }
+    },
+    "326.25": {
+     "n_donors": 4,
+     "n_carriers": 48,
+     "donor_in_subspace": {
+      "probe_err": 4.210759676449128,
+      "mlp_err": 30.01751819088101,
+      "nearest_real_R": 0.36817222245252773,
+      "norm_ratio": 0.9942819901405026
+     },
+     "donor_full": {
+      "probe_err": 2.9815008518596073,
+      "mlp_err": 14.093233952780125,
+      "nearest_real_R": 0.3734152342573966,
+      "norm_ratio": 0.9950410115020815
+     },
+     "spline": {
+      "probe_err": 10.153149998688784,
+      "mlp_err": 21.61841288337678,
+      "nearest_real_R": 0.14612362687485558,
+      "norm_ratio": 0.9948130054684089
+     },
+     "chord": {
+      "probe_err": 5.858635817227928,
+      "mlp_err": 21.049813950873627,
+      "nearest_real_R": 0.15312375746351456,
+      "norm_ratio": 0.9959140558304137
+     }
+    },
+    "331.875": {
+     "n_donors": 4,
+     "n_carriers": 48,
+     "donor_in_subspace": {
+      "probe_err": 4.937313157556268,
+      "mlp_err": 14.975611884615093,
+      "nearest_real_R": 0.17691072177835535,
+      "norm_ratio": 0.999765026435401
+     },
+     "donor_full": {
+      "probe_err": 3.010536184132093,
+      "mlp_err": 5.167645632492068,
+      "nearest_real_R": 0.1777345365309151,
+      "norm_ratio": 1.000373177604812
+     },
+     "spline": {
+      "probe_err": 11.563682472287304,
+      "mlp_err": 23.034018131119876,
+      "nearest_real_R": 0.15139490348579251,
+      "norm_ratio": 0.9962769617855605
+     },
+     "chord": {
+      "probe_err": 7.3156035286037016,
+      "mlp_err": 19.152605929319225,
+      "nearest_real_R": 0.15929021777990418,
+      "norm_ratio": 0.997184080543888
+     }
+    },
+    "337.5": {
+     "n_donors": 4,
+     "n_carriers": 48,
+     "donor_in_subspace": {
+      "probe_err": 5.840670599201218,
+      "mlp_err": 13.07434473994069,
+      "nearest_real_R": 0.3193101209492292,
+      "norm_ratio": 0.9947612993595553
+     },
+     "donor_full": {
+      "probe_err": 2.5875460230833482,
+      "mlp_err": 7.550389262894342,
+      "nearest_real_R": 0.322196094919119,
+      "norm_ratio": 0.9955068940452595
+     },
+     "spline": {
+      "probe_err": 9.063847013105315,
+      "mlp_err": 22.099284418175074,
+      "nearest_real_R": 0.17219812098604007,
+      "norm_ratio": 0.9962192014440218
+     },
+     "chord": {
+      "probe_err": 7.03179434238309,
+      "mlp_err": 20.159965249771613,
+      "nearest_real_R": 0.17207934267122973,
+      "norm_ratio": 0.9968730715258398
+     }
+    },
+    "343.125": {
+     "n_donors": 4,
+     "n_carriers": 48,
+     "donor_in_subspace": {
+      "probe_err": 3.781071248868517,
+      "mlp_err": 13.582823772873361,
+      "nearest_real_R": 0.05206530703845085,
+      "norm_ratio": 0.9998067915546728
+     },
+     "donor_full": {
+      "probe_err": 2.066078068886796,
+      "mlp_err": 9.750912944272102,
+      "nearest_real_R": 0.049772933100695325,
+      "norm_ratio": 1.0002252142856625
+     },
+     "spline": {
+      "probe_err": 6.821966468048806,
+      "mlp_err": 18.473457434512714,
+      "nearest_real_R": 0.1755448965578373,
+      "norm_ratio": 0.9971076321697009
+     },
+     "chord": {
+      "probe_err": 6.111635692628955,
+      "mlp_err": 18.62260669510401,
+      "nearest_real_R": 0.17685729809263442,
+      "norm_ratio": 0.9973864589669962
+     }
+    }
+   },
+   "run_part2_reference": {
+    "source": "results/p2_steer_direction_direction_L22_contiguous.json",
+    "commit": "8d3cac8a15fbfdbb85444757c24a5ad5d294af50",
+    "spline": {
+     "probe_err_to_target": 10.689682814949174,
+     "nearest_real_R": 0.17534200328785796,
+     "norm_ratio": 0.9948645163923887,
+     "n_rows": 384
+    },
+    "angle_source": "labels_angle",
+    "chord": {
+     "probe_err_to_target": 6.889585857370478,
+     "nearest_real_R": 0.17986813128375323,
+     "norm_ratio": 0.9957126032454915,
+     "n_rows": 384
+    },
+    "bakeoff_mlp_err_unmatched": {
+     "spline": 21.273215776308565,
+     "chord": 19.936750861022137
+    }
+   },
+   "verdict": "point 22: in-subspace donor reaches R = 0.20, probe 4.9 deg, MLP 18.5 deg (spline R = 0.17, MLP 21.2 deg; chord R = 0.17, MLP 19.9 deg; same carriers and leave-donor-out reference; run_part2's own spline/chord R = 0.18/0.18); spline/line at R ~ 0.20 is therefore a ceiling of PCA-64 editing (donor ~ spline); full-activation donor R = 0.20 (probe 3.2 deg, MLP 12.4 deg) shows how much lives outside PCA-64: almost nothing for R (full - in-subspace = +0.001), while the MLP error drops 6.1 deg when the residual is swapped too. A whole real clip at theta* only reaches R = 0.20 against the other real clips at theta*: R ~ 0.2 is the real-clip ceiling of this readout (clip-specific variance dominates the distance), and the spline reaches 84% of it."
+  }
+ },
+ "verdict": "point 12: in-subspace donor reaches R = 0.23, probe 6.0 deg, MLP 25.2 deg (spline R = 0.19, MLP 30.7 deg; chord R = 0.19, MLP 33.1 deg; same carriers and leave-donor-out reference; run_part2's own spline/chord R = 0.20/0.20); spline/line at R ~ 0.20 is therefore a ceiling of PCA-64 editing (donor ~ spline); full-activation donor R = 0.23 (probe 3.3 deg, MLP 22.5 deg) shows how much lives outside PCA-64: almost nothing for R (full - in-subspace = +0.004), while the MLP error drops 2.7 deg when the residual is swapped too. A whole real clip at theta* only reaches R = 0.23 against the other real clips at theta*: R ~ 0.2 is the real-clip ceiling of this readout (clip-specific variance dominates the distance), and the spline reaches 82% of it. point 22: in-subspace donor reaches R = 0.20, probe 4.9 deg, MLP 18.5 deg (spline R = 0.17, MLP 21.2 deg; chord R = 0.17, MLP 19.9 deg; same carriers and leave-donor-out reference; run_part2's own spline/chord R = 0.18/0.18); spline/line at R ~ 0.20 is therefore a ceiling of PCA-64 editing (donor ~ spline); full-activation donor R = 0.20 (probe 3.2 deg, MLP 12.4 deg) shows how much lives outside PCA-64: almost nothing for R (full - in-subspace = +0.001), while the MLP error drops 6.1 deg when the residual is swapped too. A whole real clip at theta* only reaches R = 0.20 against the other real clips at theta*: R ~ 0.2 is the real-clip ceiling of this readout (clip-specific variance dominates the distance), and the spline reaches 84% of it."
+}
