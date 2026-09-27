@@ -33,7 +33,7 @@ def load(results, pattern, role="peak"):
     hits = sorted(p for p in results.glob("*.json") if re.fullmatch(pattern, p.name))
     data = [json.loads(p.read_text()) for p in hits]
     if role == "paper":   # point check too: files written before the point-9 convention flag point 8
-        return next((d for d in data if d.get("is_paper_layer") and d.get("point") == PAPER_POINT), None)
+        return next((d for d in data if d.get("point") == PAPER_POINT and d.get("is_paper_layer", True)), None)
     if role == "peak_only":
         return next((d for d in data if d.get("is_peak")), None)
     if role == "onset":
@@ -195,13 +195,15 @@ def fig1e(results, out):
 
 
 def load_adam(results, v):
-    """Adam-recipe probe sequences for variable v at the paper's layer (point 9): {tag: run} for tags b64 / full."""
-    out = {}
-    for p in sorted(results.glob(f"p1b_{v}_{v}_meanpool_L*_adam_*.json")):
-        d = json.loads(p.read_text())
-        if d.get("is_paper_layer") and d.get("point") == PAPER_POINT:
-            out[p.stem.rsplit("_", 1)[1]] = d
-    return out
+    """Adam-recipe probe sequences for variable v at the paper's layer (point 9), else at point 8 (the alt paper
+    layer): {tag: run} for tags b64 / full (empty if neither exists)."""
+    runs = [json.loads(p.read_text()) | {"_tag": p.stem.rsplit("_", 1)[1]}
+            for p in sorted(results.glob(f"p1b_{v}_{v}_meanpool_L*_adam_*.json"))]
+    for point in (PAPER_POINT, PAPER_POINT - 1):
+        out = {d["_tag"]: d for d in runs if d.get("point") == point}
+        if out:
+            return out
+    return {}
 
 
 def fig2(results, out, role="paper"):
@@ -285,7 +287,9 @@ def fig2(results, out, role="paper"):
             ax.plot([], [], "o", mfc="none", mec=COLORS["text"], label="isolated dip (sawtooth tooth)")
             ax.set(xlabel="orthogonal probe number", ylim=(0, 102),
                    ylabel="test accuracy within 15° (%)" if key == "test_acc15" else "test R² (%)",
-                   title=f"{v}, Adam recipe (layer {a['frac']:.2f}): K first at chance = " + ", ".join(ks))
+                   title=f"{v}, Adam recipe (point {a['point']}"
+                         + (" = paper's layer 8" if a["point"] == PAPER_POINT else " (alt paper layer)")
+                         + "): K first at chance = " + ", ".join(ks))
             ax.xaxis.set_major_locator(MaxNLocator(integer=True))
             legend_top(ax, 1)
     fig.savefig(out / ("fig2_inlp.png" if role == "paper" else f"fig2_inlp_{role.replace('_only', '')}.png"))
@@ -519,4 +523,6 @@ if __name__ == "__main__":
         make(args.results, args.figures)
     for make in (fig2, fig3, fig3b, fig3c):   # the same figures at the onset layer, when it differs from the peak
         make(args.results, args.figures, "onset")
+    for make in (fig3, fig3b, fig3c):         # steering at the paper's layer (point 9; Fig. 24's comparison)
+        make(args.results, args.figures, "paper")
     print("figures:", sorted(p.name for p in args.figures.glob("*.png")))

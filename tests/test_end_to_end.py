@@ -72,6 +72,7 @@ def test_pipeline_on_fake_activations(tmp_path):
     rows = [r for r in angles["pairs"]["direction_vs_speed"] if "mapped" in r]
     assert rows and all(0 <= r["mapped"]["min_angle_deg"] <= 90 for r in rows)
     for name in ("fig2d_subspace_angles", "fig3_steering_onset", "fig2_inlp_onset", "fig1_layer_curves", "fig1b_direction_circle", "fig2_inlp", "fig2_inlp_peak", "fig2b_dim_vs_layer",
+                 "fig3_steering_paper", "fig3b_shift_heatmap_paper", "fig3c_steering_nulls_paper",
                  "fig3_steering", "fig3b_shift_heatmap", "fig3c_steering_nulls"):
         assert (figs / f"{name}.png").exists(), name
 
@@ -132,4 +133,16 @@ def test_paper_role_ignores_stale_point8_flag(tmp_path):
             json.dumps({"point": point, "is_paper_layer": flag}))
     assert mf["load"](tmp_path, r"p1b_speed_speed_meanpool_L\d+\.json", "paper")["point"] == 9
     (tmp_path / "p1b_speed_speed_meanpool_L8_adam_b64.json").write_text(json.dumps({"point": 8, "is_paper_layer": True}))
-    assert mf["load_adam"](tmp_path, "speed") == {}
+    alt = mf["load_adam"](tmp_path, "speed")    # no point-9 Adam file: the point-8 one is the labelled alt fallback
+    assert set(alt) == {"b64"} and alt["b64"]["point"] == 8
+
+
+def test_adam_row_falls_back_to_point_8(tmp_path):
+    mf = runpy.run_path(str(ROOT / "scripts" / "make_figures.py"), run_name="make_figures")
+    for point, tag in ((8, "b64"), (8, "full")):
+        (tmp_path / f"p1b_direction_direction_meanpool_L{point}_adam_{tag}.json").write_text(json.dumps({"point": point}))
+    runs = mf["load_adam"](tmp_path, "direction")
+    assert set(runs) == {"b64", "full"} and all(r["point"] == 8 for r in runs.values())
+    (tmp_path / "p1b_direction_direction_meanpool_L9_adam_b64.json").write_text(json.dumps({"point": 9}))
+    runs = mf["load_adam"](tmp_path, "direction")
+    assert set(runs) == {"b64"} and runs["b64"]["point"] == 9          # point 9 preferred when present
