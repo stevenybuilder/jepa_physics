@@ -1,0 +1,81 @@
+{
+ "session": "gpu_session1",
+ "instance_id": 53008789,
+ "offer_id": 47783570,
+ "gpu_offered": "RTX 4080S",
+ "dph_total_usd": 0.295,
+ "location": "Quebec, CA",
+ "offer_inet_down_mbps": 940,
+ "offer_inet_up_mbps": 768,
+ "offer_reliability": 0.9961,
+ "image": "pytorch/pytorch:2.2.2-cuda12.1-cudnn8-runtime",
+ "disk_gb": 40,
+ "start_utc": "2026-09-27T18:21:10Z",
+ "note": "offer 35283305 no longer listed; cheapest qualifying offer <= $0.45/hr chosen",
+ "status": "STOPPED_PARITY_FAIL: full extraction NOT run; nothing downloaded except 8-clip smoke chunks",
+ "end_utc": "2026-09-27T18:28:45Z",
+ "gpu": "NVIDIA GeForce RTX 4080 SUPER 16 GB, driver 595.84",
+ "box_versions": {
+  "python": "3.10.14",
+  "torch": "2.2.2",
+  "cuda": "12.1",
+  "cudnn": 8902,
+  "transformers": "4.56.2",
+  "av": "17.1.0",
+  "numpy": "1.26.4",
+  "pandas": "2.3.3",
+  "scikit-learn": "1.7.2",
+  "scipy": "1.15.3",
+  "safetensors": "0.8.0"
+ },
+ "deviations": [
+  "av 18.1.0 requires Python>=3.11; image has 3.10 -> av 17.1.0 (decoded frame sha256 identical to local for the 8 clips)",
+  "pandas 2.3.3 / sklearn 1.7.2 / scipy 1.15.3 (py3.10 resolution)",
+  "RTX 4080S instead of 4090 (offer 35283305 gone; cheapest qualifying)"
+ ],
+ "smoke": {
+  "gpu_8clips_bs8_wall_s": 7.6,
+  "gpu_s_per_clip_bs8": 0.2,
+  "bs16_limit64_wall_s": 16.7,
+  "bs16_s_per_clip": 0.16,
+  "bs32": "CUDA OOM (16 GB)",
+  "chosen_batch_size": 16,
+  "box_cpu_8clips_wall_s": 25.1,
+  "local_cpu_8clips_wall_s": 89.5
+ },
+ "parity_meanpool_fp32_8_speed_clips": {
+  "tolerance_preagreed": 0.001,
+  "pass": false,
+  "local_cpu_vs_box_gpu": {
+   "max_abs": 0.00385,
+   "block18": 0.00134,
+   "block24": 0.00385,
+   "final_ln": 0.00243,
+   "max_rel_l2_per_layer": 0.000237,
+   "emb_to_block16_max_abs": 0.000305
+  },
+  "local_cpu_vs_box_cpu": {
+   "max_abs": 0.00457,
+   "block24": 0.00457
+  },
+  "box_cpu_vs_box_gpu": {
+   "max_abs": 0.00396,
+   "block24": 0.00396
+  },
+  "box_gpu_bs8_vs_bs16": {
+   "max_abs": 0.00597,
+   "block24": 0.00597
+  },
+  "tf32_flags_on_gpu": {
+   "cuda_matmul_allow_tf32": false,
+   "cudnn_allow_tf32": false
+  },
+  "frame_hashes_match": true,
+  "diskmask_match": true,
+  "timepool_diskpool_fp16_max_abs": 0.125
+ },
+ "cost_estimate_usd": {
+  "compute_7.6min_at_0.304": 0.039,
+  "storage_while_stopped_per_hr": 0.011
+ }
+}
