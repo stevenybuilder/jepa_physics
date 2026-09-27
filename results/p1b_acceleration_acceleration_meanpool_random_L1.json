@@ -1,0 +1,511 @@
+{
+ "dataset": "acceleration",
+ "variable": "acceleration",
+ "kind": "scalar",
+ "pool": "meanpool",
+ "model": "random",
+ "point": 1,
+ "frac": 0.041666666666666664,
+ "is_peak": false,
+ "is_onset": true,
+ "is_paper_layer": false,
+ "is_paper_layer_alt": false,
+ "layer_note": "paper layers are 0-23 and each probes a block's output, so the paper's layer L = our point L+1 (point 0 = embedding, point k = output of block k, point 25 = post-LN). paper_layer = point 9 (the paper's layer 8); paper_layer_alt = point 8.",
+ "all_nan_clips_excluded": {
+  "train": 0,
+  "test": 0
+ },
+ "K": 6,
+ "K_probes": 6,
+ "dims": 6,
+ "m": 1,
+ "dims_note": "dims = 2K for 2-output probes (direction's sin, cos), K for 1-output probes; paper Fig. 22's y-axis counts probes (K)",
+ "K_loose": 7,
+ "loose_threshold": "R2 < 0.1 (paper Fig. 22)",
+ "K_r2_01": 7,
+ "hit_round_cap": false,
+ "rounds": [
+  {
+   "round": 1,
+   "dims_removed": 0,
+   "cv_r2": 0.9140378739026485,
+   "cv_r2_sd": 0.00893388559047861,
+   "cv_mae": 0.6634712312875706,
+   "cv_mae_sd": 0.04033664269705854,
+   "base_mae": 2.4702841366557857,
+   "fold_r2": [
+    0.9202691351575427,
+    0.9158388003984018,
+    0.9170893755033415,
+    0.8983360698996076,
+    0.9186559885543488
+   ]
+  },
+  {
+   "round": 2,
+   "dims_removed": 1,
+   "cv_r2": 0.8175594444389157,
+   "cv_r2_sd": 0.0222155770171492,
+   "cv_mae": 0.9465685176093108,
+   "cv_mae_sd": 0.060934934252825416,
+   "base_mae": 2.4702841366557857,
+   "fold_r2": [
+    0.8241157642023376,
+    0.78782475869032,
+    0.8355664032534614,
+    0.8013120881082121,
+    0.8389782079402472
+   ]
+  },
+  {
+   "round": 3,
+   "dims_removed": 2,
+   "cv_r2": 0.6661893274328373,
+   "cv_r2_sd": 0.026203010459309468,
+   "cv_mae": 1.2933424598773295,
+   "cv_mae_sd": 0.04410841845708555,
+   "base_mae": 2.4702841366557857,
+   "fold_r2": [
+    0.665624063358653,
+    0.6259346144962662,
+    0.6962267774570491,
+    0.6624907685026892,
+    0.6806704133495294
+   ]
+  },
+  {
+   "round": 4,
+   "dims_removed": 3,
+   "cv_r2": 0.5169928245214418,
+   "cv_r2_sd": 0.028497028058077436,
+   "cv_mae": 1.5833505681366487,
+   "cv_mae_sd": 0.0417328307400164,
+   "base_mae": 2.4702841366557857,
+   "fold_r2": [
+    0.5177690137538788,
+    0.4687363864530565,
+    0.5356667151494585,
+    0.540211297721749,
+    0.5225807095290664
+   ]
+  },
+  {
+   "round": 5,
+   "dims_removed": 4,
+   "cv_r2": 0.34879251752056406,
+   "cv_r2_sd": 0.0186740089901398,
+   "cv_mae": 1.8640890344421912,
+   "cv_mae_sd": 0.04118516210451725,
+   "base_mae": 2.4702841366557857,
+   "fold_r2": [
+    0.3543879683709271,
+    0.3547815534055818,
+    0.35813016377187123,
+    0.3609327492657457,
+    0.31573015278869465
+   ]
+  },
+  {
+   "round": 6,
+   "dims_removed": 5,
+   "cv_r2": 0.1976314715994443,
+   "cv_r2_sd": 0.04787637488106335,
+   "cv_mae": 2.0702928001912166,
+   "cv_mae_sd": 0.06822621491463904,
+   "base_mae": 2.4702841366557857,
+   "fold_r2": [
+    0.23614737252062523,
+    0.18961632226688507,
+    0.25341979674205417,
+    0.17430652254129475,
+    0.13466734392636226
+   ]
+  },
+  {
+   "round": 7,
+   "dims_removed": 6,
+   "cv_r2": 0.1021610370900939,
+   "cv_r2_sd": 0.04270860653924262,
+   "cv_mae": 2.2287961477096006,
+   "cv_mae_sd": 0.047244744644232346,
+   "base_mae": 2.4702841366557857,
+   "fold_r2": [
+    0.1425864666097637,
+    0.10738599323893983,
+    0.13951635116345906,
+    0.04073091712075816,
+    0.08058545731754874
+   ]
+  },
+  {
+   "round": 8,
+   "dims_removed": 7,
+   "cv_r2": 0.07465765708433063,
+   "cv_r2_sd": 0.06231964946880349,
+   "cv_mae": 2.2628954600738216,
+   "cv_mae_sd": 0.05687017346108059,
+   "base_mae": 2.4702841366557857,
+   "fold_r2": [
+    0.05837182635138827,
+    0.10377341392332662,
+    0.029456196260204237,
+    0.013853590471433308,
+    0.16783325841530072
+   ]
+  }
+ ],
+ "protocol": "nested",
+ "K_source": "pooled: first at-chance round of the fold-mean curve, minus 1",
+ "alpha_folds": [
+  10.0,
+  10.0,
+  10.0,
+  10.0,
+  10.0
+ ],
+ "alpha_folds_source": "CV over each fold's training rows",
+ "K_folds": [
+  7,
+  6,
+  7,
+  6,
+  6
+ ],
+ "K_fold_mean": 6.4,
+ "K_fold_min": 6,
+ "K_fold_max": 7,
+ "fold_hit_round_cap": [
+  false,
+  false,
+  false,
+  false,
+  false
+ ],
+ "alpha": 10.0,
+ "alpha_note": "all-train \u03b1: paper protocol and saved basis",
+ "standardiser_note": "step-1 all-train standardiser (includes held-out folds' activations; label-free)",
+ "paper": {
+  "K": 9,
+  "K_probes": 9,
+  "dims": 9,
+  "m": 1,
+  "dims_note": "dims = 2K for 2-output probes (direction's sin, cos), K for 1-output probes; paper Fig. 22's y-axis counts probes (K)",
+  "K_loose": 9,
+  "loose_threshold": "R2 < 0.1 (paper Fig. 22)",
+  "K_r2_01": 9,
+  "hit_round_cap": false,
+  "rounds": [
+   {
+    "round": 1,
+    "dims_removed": 0,
+    "test_r2": 0.9196764150924317,
+    "test_mae": 0.655336017301559,
+    "base_mae": 2.4998476589332803
+   },
+   {
+    "round": 2,
+    "dims_removed": 1,
+    "test_r2": 0.848889628538122,
+    "test_mae": 0.8938523424995323,
+    "base_mae": 2.4998476589332803
+   },
+   {
+    "round": 3,
+    "dims_removed": 2,
+    "test_r2": 0.6904405887661484,
+    "test_mae": 1.2382149747944786,
+    "base_mae": 2.4998476589332803
+   },
+   {
+    "round": 4,
+    "dims_removed": 3,
+    "test_r2": 0.5339750205869156,
+    "test_mae": 1.5955976896581483,
+    "base_mae": 2.4998476589332803
+   },
+   {
+    "round": 5,
+    "dims_removed": 4,
+    "test_r2": 0.44632598479011765,
+    "test_mae": 1.7704332600595931,
+    "base_mae": 2.4998476589332803
+   },
+   {
+    "round": 6,
+    "dims_removed": 5,
+    "test_r2": 0.3288415411030917,
+    "test_mae": 1.9140892741601037,
+    "base_mae": 2.4998476589332803
+   },
+   {
+    "round": 7,
+    "dims_removed": 6,
+    "test_r2": 0.22952942162203438,
+    "test_mae": 2.0475551626883837,
+    "base_mae": 2.4998476589332803
+   },
+   {
+    "round": 8,
+    "dims_removed": 7,
+    "test_r2": 0.177827387832728,
+    "test_mae": 2.153212393697097,
+    "base_mae": 2.4998476589332803
+   },
+   {
+    "round": 9,
+    "dims_removed": 8,
+    "test_r2": 0.14269578114491488,
+    "test_mae": 2.203474842722331,
+    "base_mae": 2.4998476589332803
+   },
+   {
+    "round": 10,
+    "dims_removed": 9,
+    "test_r2": 0.03278632123935643,
+    "test_mae": 2.3645839402532336,
+    "base_mae": 2.4998476589332803
+   }
+  ],
+  "protocol": "paper",
+  "test_read": "paper protocol: the test split is scored at every round of the all-train probe sequence; this is step 2's one read of test (spec \u00a73). The nested K and the saved basis length do not use test.",
+  "sawtooth": {
+   "drops": [
+    0.0707867865543097,
+    0.15844903977197355,
+    0.15646556817923285,
+    0.08764903579679795,
+    0.11748444368702593,
+    0.09931211948105734,
+    0.05170203378930638,
+    0.03513160668781312,
+    0.10990945990555845
+   ],
+   "frac_rises": 0.0,
+   "drop_lag1_autocorr": 0.23080666847090855,
+   "isolated_dips": [],
+   "protocol_prefix": "test",
+   "by_metric": {
+    "test_r2": {
+     "drops": [
+      0.0707867865543097,
+      0.15844903977197355,
+      0.15646556817923285,
+      0.08764903579679795,
+      0.11748444368702593,
+      0.09931211948105734,
+      0.05170203378930638,
+      0.03513160668781312,
+      0.10990945990555845
+     ],
+     "frac_rises": 0.0,
+     "drop_lag1_autocorr": 0.23080666847090855,
+     "isolated_dips": []
+    },
+    "test_mae": {
+     "drops": [
+      0.23851632519797328,
+      0.34436263229494635,
+      0.3573827148636697,
+      0.17483557040144482,
+      0.14365601410051054,
+      0.13346588852828,
+      0.10565723100871338,
+      0.05026244902523391,
+      0.16110909753090263
+     ],
+     "frac_rises": 0.0,
+     "drop_lag1_autocorr": 0.6422157353129538
+    }
+   }
+  }
+ },
+ "basis": "first 6 probes of the all-train sequence (length = nested pooled K)",
+ "sawtooth": {
+  "drops": [
+   0.09647842946373275,
+   0.1513701170060784,
+   0.14919650291139552,
+   0.16820030700087774,
+   0.15116104592111976,
+   0.0954704345093504,
+   0.027503380005763273
+  ],
+  "frac_rises": 0.0,
+  "drop_lag1_autocorr": 0.5095253878319408,
+  "isolated_dips": [],
+  "protocol_prefix": "cv",
+  "by_metric": {
+   "cv_r2": {
+    "drops": [
+     0.09647842946373275,
+     0.1513701170060784,
+     0.14919650291139552,
+     0.16820030700087774,
+     0.15116104592111976,
+     0.0954704345093504,
+     0.027503380005763273
+    ],
+    "frac_rises": 0.0,
+    "drop_lag1_autocorr": 0.5095253878319408,
+    "isolated_dips": []
+   },
+   "cv_mae": {
+    "drops": [
+     0.28309728632174025,
+     0.3467739422680187,
+     0.2900081082593191,
+     0.28073846630554256,
+     0.20620376574902544,
+     0.1585033475183839,
+     0.034099312364221035
+    ],
+    "frac_rises": 0.0,
+    "drop_lag1_autocorr": 0.8661062999404855
+   }
+  }
+ },
+ "random": {
+  "seeds": 10,
+  "protocols": {
+   "cv_*": "nested",
+   "test_*": "paper"
+  },
+  "alpha_folds": [
+   10.0,
+   10.0,
+   10.0,
+   10.0,
+   10.0
+  ],
+  "alpha": 10.0,
+  "rows": [
+   {
+    "dims_removed": 0,
+    "cv_r2": 0.9140378739026485,
+    "cv_r2_seed_sd": 0.0,
+    "cv_mae": 0.6634712312875706,
+    "cv_mae_seed_sd": 0.0,
+    "test_r2": 0.9196764150924318,
+    "test_r2_seed_sd": 1.1702778228589004e-16,
+    "test_mae": 0.6553360173015591,
+    "test_mae_seed_sd": 1.1702778228589004e-16
+   },
+   {
+    "dims_removed": 1,
+    "cv_r2": 0.9140354816957952,
+    "cv_r2_seed_sd": 0.0001089312327110461,
+    "cv_mae": 0.6636136764217673,
+    "cv_mae_seed_sd": 0.0007402494490428368,
+    "test_r2": 0.9196358002198302,
+    "test_r2_seed_sd": 0.00019012332230619283,
+    "test_mae": 0.6554846294697932,
+    "test_mae_seed_sd": 0.0006588726182150473
+   },
+   {
+    "dims_removed": 2,
+    "cv_r2": 0.9139694983028332,
+    "cv_r2_seed_sd": 0.00014495243532808177,
+    "cv_mae": 0.663872810805331,
+    "cv_mae_seed_sd": 0.0007504934101949464,
+    "test_r2": 0.919588521372674,
+    "test_r2_seed_sd": 0.00018771536979637432,
+    "test_mae": 0.6553162038847467,
+    "test_mae_seed_sd": 0.0009028628947104766
+   },
+   {
+    "dims_removed": 3,
+    "cv_r2": 0.9139205458862294,
+    "cv_r2_seed_sd": 0.00019743627949946768,
+    "cv_mae": 0.6640165419664479,
+    "cv_mae_seed_sd": 0.0010614479923321501,
+    "test_r2": 0.9195526944070178,
+    "test_r2_seed_sd": 0.0003501510500742455,
+    "test_mae": 0.6554144504882645,
+    "test_mae_seed_sd": 0.0014966995359734453
+   },
+   {
+    "dims_removed": 4,
+    "cv_r2": 0.9138935021598782,
+    "cv_r2_seed_sd": 0.00025477532766136847,
+    "cv_mae": 0.6639021755382684,
+    "cv_mae_seed_sd": 0.0014313853636800135,
+    "test_r2": 0.9194715778583907,
+    "test_r2_seed_sd": 0.00046140181284132816,
+    "test_mae": 0.6557988884318565,
+    "test_mae_seed_sd": 0.001957652524619305
+   },
+   {
+    "dims_removed": 5,
+    "cv_r2": 0.9138125272071711,
+    "cv_r2_seed_sd": 0.0002685634671202878,
+    "cv_mae": 0.6642925329675925,
+    "cv_mae_seed_sd": 0.0016469978661595008,
+    "test_r2": 0.9193978319990761,
+    "test_r2_seed_sd": 0.00043698060258518483,
+    "test_mae": 0.6560179744853215,
+    "test_mae_seed_sd": 0.001935242865425815
+   },
+   {
+    "dims_removed": 6,
+    "cv_r2": 0.9138234953339003,
+    "cv_r2_seed_sd": 0.0002569782229837146,
+    "cv_mae": 0.6641289974881583,
+    "cv_mae_seed_sd": 0.0014723679760914364,
+    "test_r2": 0.9193982321800039,
+    "test_r2_seed_sd": 0.00047882675876907374,
+    "test_mae": 0.6560709758224174,
+    "test_mae_seed_sd": 0.0021676661302269273
+   },
+   {
+    "dims_removed": 7,
+    "cv_r2": 0.913786131187235,
+    "cv_r2_seed_sd": 0.00032438251155234385,
+    "cv_mae": 0.6642669305371707,
+    "cv_mae_seed_sd": 0.0014296962293656997,
+    "test_r2": 0.9193475116968381,
+    "test_r2_seed_sd": 0.0005283178149219361,
+    "test_mae": 0.6561147881687349,
+    "test_mae_seed_sd": 0.0022715123792393078
+   },
+   {
+    "dims_removed": 8,
+    "cv_r2": 0.913816358000125,
+    "cv_r2_seed_sd": 0.00031247831136535075,
+    "cv_mae": 0.6641909633875108,
+    "cv_mae_seed_sd": 0.0014589922327697406,
+    "test_r2": 0.9193879424048468,
+    "test_r2_seed_sd": 0.0005676939983585872,
+    "test_mae": 0.6559837254606721,
+    "test_mae_seed_sd": 0.002463774273254101
+   },
+   {
+    "dims_removed": 9,
+    "cv_r2": 0.9137547602987877,
+    "cv_r2_seed_sd": 0.0004158119927978125,
+    "cv_mae": 0.6644470418022641,
+    "cv_mae_seed_sd": 0.0018041043804090707,
+    "test_r2": 0.9194255190121213,
+    "test_r2_seed_sd": 0.0005709054113471467,
+    "test_mae": 0.655711773171699,
+    "test_mae_seed_sd": 0.0025458349315951256
+   }
+  ]
+ },
+ "provenance": {
+  "split_file": "splits/split_v1.json",
+  "split_sha256": "98e6310c40bf29e81bd8b6bf4b1ac603b89e4104d40ac1047b15dd5dc2be2df2",
+  "seeds": {
+   "split": 0,
+   "other": "all other RNG seeds are 0 (bootstrap, folds, null draws, shuffles); random-removal controls use seeds 0..n-1"
+  },
+  "commit": "e860129a410e7edc73521df7995fab8786b428dd",
+  "dirty": true,
+  "git_commit": "e860129a410e7edc73521df7995fab8786b428dd",
+  "git_dirty_src_or_scripts": false,
+  "timestamp_utc": "2026-09-27T21:14:46+00:00",
+  "pool": "meanpool",
+  "model": "random",
+  "layer": 1,
+  "test_read": "paper protocol: the test split is scored at every round of the all-train probe sequence; this is step 2's one read of test (spec \u00a73). The nested K and the saved basis length do not use test."
+ }
+}

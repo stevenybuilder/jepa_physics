@@ -1,0 +1,140 @@
+{
+ "dataset": "speed",
+ "variable": "speed",
+ "kind": "scalar",
+ "pool": "meanpool",
+ "model": "vjepa2",
+ "point": 8,
+ "frac": 0.3333333333333333,
+ "is_peak": false,
+ "is_onset": false,
+ "is_paper_layer": false,
+ "is_paper_layer_alt": true,
+ "layer_note": "paper layers are 0-23 and each probes a block's output, so the paper's layer L = our point L+1 (point 0 = embedding, point k = output of block k, point 25 = post-LN). paper_layer = point 9 (the paper's layer 8); paper_layer_alt = point 8.",
+ "all_nan_clips_excluded": {
+  "train": 0,
+  "test": 0
+ },
+ "recipe": {
+  "lr": 0.001,
+  "weight_decay": 0.0001,
+  "epochs": {
+   "circular": 100,
+   "scalar": 50,
+   "vector": 50
+  },
+  "source": "App. C.11: Adam, lr 1e-3, weight decay 1e-4, 100 epochs (direction) / 50 (speed, IntPhys), MSE loss, 80/20 split; batch size not given",
+  "epochs_used": 50,
+  "batch": 64,
+  "full_batch": false,
+  "weight_decay_type": "coupled L2 (Adam)",
+  "init_seed": "0 + round - 1"
+ },
+ "protocol": "paper (fit on all train, score on test)",
+ "m": 1,
+ "K_first": 0,
+ "K_patience": 0,
+ "patience": 3,
+ "hit_round_cap": false,
+ "failed_rule": "|W - W_init| < 0.25 x round 1's (movement only)",
+ "at_chance_on_train_rule": "train R2 < 0.05",
+ "rounds": [
+  {
+   "round": 1,
+   "dims_removed": 0,
+   "test_r2": -0.31147456128602435,
+   "test_mae": 1.2435183164644146,
+   "base_mae": 0.9614798688204924,
+   "train_mse": 1.5925637246599953,
+   "train_r2": -0.32002041193955755,
+   "W_norm": 0.5350240075862744,
+   "W_move_from_init": 0.27423990193165226,
+   "failed_to_train": false,
+   "at_chance_on_train": true
+  },
+  {
+   "round": 2,
+   "dims_removed": 1,
+   "test_r2": -0.2733703363542064,
+   "test_mae": 1.2284319996167548,
+   "base_mae": 0.9614798688204924,
+   "train_mse": 1.533432171113301,
+   "train_r2": -0.2710083338275826,
+   "W_norm": 0.5394561038775648,
+   "W_move_from_init": 0.30744682128833256,
+   "failed_to_train": false,
+   "at_chance_on_train": true
+  },
+  {
+   "round": 3,
+   "dims_removed": 2,
+   "test_r2": -0.3358637229116608,
+   "test_mae": 1.2614117270136698,
+   "base_mae": 0.9614798688204924,
+   "train_mse": 1.5755291454016138,
+   "train_r2": -0.3059010445436523,
+   "W_norm": 0.5408896529558754,
+   "W_move_from_init": 0.32411872684117976,
+   "failed_to_train": false,
+   "at_chance_on_train": true
+  }
+ ],
+ "dims_first": 0,
+ "sawtooth": {
+  "drops": [
+   -0.038104224931817976,
+   0.0624933865574544
+  ],
+  "frac_rises": 0.5,
+  "drop_lag1_autocorr": null,
+  "isolated_dips": [],
+  "protocol_prefix": "test",
+  "by_metric": {
+   "test_r2": {
+    "drops": [
+     -0.038104224931817976,
+     0.0624933865574544
+    ],
+    "frac_rises": 0.5,
+    "drop_lag1_autocorr": null,
+    "isolated_dips": []
+   },
+   "test_mae": {
+    "drops": [
+     -0.01508631684765982,
+     0.032979727396915015
+    ],
+    "frac_rises": 0.5,
+    "drop_lag1_autocorr": null
+   }
+  },
+  "dips_vs_failed": {
+   "metric": "test_r2",
+   "rounds_counted": "1..0 (before the final at-chance run)",
+   "isolated_dips": [],
+   "failed_rounds": [],
+   "dips_that_failed": [],
+   "dips_at_chance_on_train": [],
+   "p_dip_given_failed": null,
+   "p_dip_given_trained": null,
+   "hypothesis": "sawtooth teeth are rounds whose Adam probe barely trained (removes ~nothing, next round recovers); supported if dips are mostly failed rounds and failed rounds are mostly dips"
+  }
+ },
+ "provenance": {
+  "split_file": "splits/split_v1.json",
+  "split_sha256": "98e6310c40bf29e81bd8b6bf4b1ac603b89e4104d40ac1047b15dd5dc2be2df2",
+  "seeds": {
+   "split": 0,
+   "other": "all other RNG seeds are 0 (bootstrap, folds, null draws, shuffles); random-removal controls use seeds 0..n-1"
+  },
+  "commit": "b00818be7dab4daecee4002044b559ddcf585bd0",
+  "dirty": true,
+  "git_commit": "b00818be7dab4daecee4002044b559ddcf585bd0",
+  "git_dirty_src_or_scripts": false,
+  "timestamp_utc": "2026-09-27T21:10:02+00:00",
+  "pool": "meanpool",
+  "model": "vjepa2",
+  "layer": 8,
+  "test_read": "paper protocol: the test split is scored at every round of the all-train probe sequence; this is step 2's one read of test (spec \u00a73). The nested K and the saved basis length do not use test."
+ }
+}
