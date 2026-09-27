@@ -84,8 +84,8 @@ def summarise(cos, ids):
 def part1_basis(dataset, variable, point, inlp_dir=None):
     """The Part 1 steering basis and its standardiser: stored all-train INLP .npz if present, else rebuilt exactly as
     wm.inlp.run_inlp does (step-1 all-train standardiser, step-1 alpha, nested K; no test read)."""
-    from wm.inlp import basis_path, inlp, load_basis
-    from wm.probes import Standardizer, layer_data, layer_matrix, load_sweep
+    from wm.inlp import basis_path, inlp, layer_data, load_basis
+    from wm.probes import Standardizer, layer_matrix, load_sweep
     Y, kind, score_fn, tr, te, folds, acts, _ = layer_data(dataset, variable, "meanpool", "vjepa2", None)
     X = layer_matrix(acts, point)
     st = Standardizer().fit(X[tr])
