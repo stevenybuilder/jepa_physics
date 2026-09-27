@@ -272,21 +272,26 @@ def fisher_lee(a, b):
     return float(4 * (A * B - C * D) / den) if den > 0 else float("nan")
 
 
-def choose_angle_source(C, values_deg, min_corr=0.9, max_dev_deg=30.0):
+def choose_angle_source(C, values_deg, min_corr=0.9, max_dev_deg=None):
     """Pick the intrinsic angle for a ring: atan2(PC2, PC1) in the activation-PCA plane, else in the centroid plane,
-    else the labels (flagged). A plane is accepted when |circular corr| > min_corr in EITHER orientation (a ring has
-    no handedness; the sign is recorded), the aligned max deviation < max_dev_deg, and the knots run round the loop
-    in order up to reversal at the 45-degree block scale (order_coarse_preserved). Swaps of neighbouring knots 5.6
-    degrees apart are noise with 10-20 clips per value; their fraction is reported (order_frac), not required. The
-    spline is fit through the knots in the order of their unsupervised angle, i.e. their geometric order round the
-    loop; the value -> coordinate map is interpolated in value order.
-    Returns dict(angle="unsupervised"|"labels", plane, orientation, checks={plane: compare_angles(...)})."""
+    else the labels (flagged). A plane is accepted when |circular corr| (Fisher-Lee) >= min_corr in EITHER
+    orientation (a ring has no handedness; the sign is recorded) and the knots run round the loop in order up to
+    reversal at the 45-degree block scale (order_coarse_preserved). The aligned max deviation is always reported in
+    the checks; it is a criterion only when max_dev_deg is given (a noisy ring can have one knot 30+ degrees off and
+    still be the loop). Swaps of neighbouring knots 5.6 degrees apart are noise with 10-20 clips per value; their
+    fraction is reported (order_frac), not required. The spline is fit through the knots in the order of their
+    unsupervised angle, i.e. their geometric order round the loop; the value -> coordinate map is interpolated in
+    value order.
+    Returns dict(angle="unsupervised"|"labels", plane, orientation, max_dev_deg, circular_corr, checks)."""
     checks = {pl: compare_angles(unsupervised_angle(C, pl), values_deg) for pl in ("activation", "centroid")}
     for pl in ("activation", "centroid"):
         c = checks[pl]
-        if abs(c["circular_corr"]) > min_corr and c["max_dev_deg"] < max_dev_deg and c["order_coarse_preserved"]:
-            return {"angle": "unsupervised", "plane": pl, "orientation": c["orientation"], "checks": checks}
-    return {"angle": "labels", "plane": "activation", "orientation": None, "checks": checks}
+        if (abs(c["circular_corr"]) >= min_corr and c["order_coarse_preserved"]
+                and (max_dev_deg is None or c["max_dev_deg"] < max_dev_deg)):
+            return {"angle": "unsupervised", "plane": pl, "orientation": c["orientation"],
+                    "max_dev_deg": c["max_dev_deg"], "circular_corr": c["circular_corr"], "checks": checks}
+    return {"angle": "labels", "plane": "activation", "orientation": None, "max_dev_deg": None, "circular_corr": None,
+            "checks": checks}
 
 
 def periodic_cubic(C, values_deg, angle=None, plane="activation", smooth=None):

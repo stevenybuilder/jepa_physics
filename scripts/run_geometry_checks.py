@@ -60,11 +60,13 @@ def analyse(X, y, periodic, df, args, basis=None, full=True):
            "n_values": len(cent["values"]), "min_count": int(cent["count"].min())}
     angle, plane = "unsupervised", "activation"
     if periodic:
-        choice = mf.choose_angle_source(cent["C"], cent["values"])
+        choice = mf.choose_angle_source(cent["C"], cent["values"], max_dev_deg=args.angle_max_dev)
         angle, plane = choice["angle"], choice["plane"]
         out["angle"] = {"source": "labels_angle (fallback, flagged)" if angle == "labels" else f"unsupervised, {plane} plane",
                         "plane_used": plane if angle == "unsupervised" else None,
-                        "orientation": choice["orientation"], **choice["checks"]}
+                        "orientation": choice["orientation"], "max_dev_deg": choice["max_dev_deg"],
+                        "circular_corr": choice["circular_corr"], "max_dev_cap_deg": args.angle_max_dev,
+                        **choice["checks"]}
     curve = mf.fit_curve(cent, periodic, angle=angle, plane=plane)
     spread = gc.align(cent["spread"], cent["values"], curve.values)
     count = gc.align(cent["count"], cent["values"], curve.values)
@@ -235,6 +237,8 @@ def parse(argv=None):
     p.add_argument("--basis", default=None, help=".npy [D, r] or INLP .npz basis: principal angles; --plane inlp")
     p.add_argument("--plane", default="pca", choices=("pca", "chart", "inlp"),
                    help="subspace for centroids and splines: top-k PCA, the circular-chart plane, or the INLP basis")
+    p.add_argument("--angle-max-dev", type=float, default=None,
+                   help="optional cap (degrees) on the unsupervised angle's max deviation; default: reported only")
     p.add_argument("--nuisance-regress", action="store_true",
                    help="also report the core checks after regressing nuisance covariates out (labelled variant)")
     p.add_argument("--planted-ring", action="store_true", help="planted-ring positive control (r vs recovery)")

@@ -64,7 +64,7 @@ def shift_of(source, target, periodic):
 
 
 def build(d, k, angle, design="scattered", seed=0, n_controls=20, spline="interp", behaviour_mode="spline",
-          subspace="pca", basis=None):
+          subspace="pca", basis=None, angle_max_dev=None):
     """PCA, centroids and all curves from the knot clips at kept values (the held-out design decides which).
     angle: "unsupervised" (choose plane automatically, fall back to labels if the ring is not found) or "labels"."""
     knot_all = d["role"] == "knot"
@@ -77,7 +77,7 @@ def build(d, k, angle, design="scattered", seed=0, n_controls=20, spline="interp
     choice = None
     plane = "activation"
     if d["periodic"] and angle == "unsupervised":
-        choice = mf.choose_angle_source(cent["C"], cent["values"])
+        choice = mf.choose_angle_source(cent["C"], cent["values"], max_dev_deg=angle_max_dev)
         angle, plane = choice["angle"], choice["plane"]
     curve = mf.fit_curve(cent, d["periodic"], angle=angle, plane=plane, spline=spline)
     # full-space centroids (in the curve's knot order): only Goodfire's whole-activation linear baseline uses them
@@ -194,7 +194,7 @@ def bf16_steering_energy(d, d_steer, args, angle, picks):
     db = {**d, "X": gc.bf16_round(d["X"])}
     Xs = gc.bf16_round(d_steer["X"])
     mb = build(db, args.k, angle, args.holdout, args.seed, n_controls=0, spline=args.spline, behaviour_mode=args.behaviour,
-               subspace=args.plane, basis=args.basis_matrix)
+               subspace=args.plane, basis=args.basis_matrix, angle_max_dev=args.angle_max_dev)
     acc = {a: {"excess_to_curve": [], "excess_to_nearest_real": []} for a in ("manifold", "linear")}
     for tgt, pick in picks.items():
         x, src = Xs[pick].astype(float), d_steer["y"][pick]
@@ -245,7 +245,7 @@ def run(args):
                               "probe folds and the held-out values; favours the inlp subspace)"}
     args.basis_matrix = basis
     m = build(d, args.k, angle, args.holdout, args.seed, args.n_controls, args.spline, args.behaviour, args.plane,
-              basis)
+              basis, args.angle_max_dev)
     probe_rows = d["role"] == "probe"
     probe = mf.ProbeReadout(d["X"][probe_rows], d["y"][probe_rows], periodic)
     test = np.flatnonzero(d["role"] == "test")
@@ -399,7 +399,11 @@ def run(args):
             "fp32": fp, "bf16": bf,
             "winner_same": {q: win(fp, q) == win(bf, q) for q in ("excess_to_curve", "excess_to_nearest_real")}}
     if m["angle_choice"]:
-        out["angle_check"] = {"plane_used": m["plane"], **m["angle_choice"]["checks"]}
+        ch = m["angle_choice"]
+        out["angle_check"] = {"plane_used": m["plane"] if ch["angle"] == "unsupervised" else None,
+                              "orientation": ch["orientation"], "max_dev_deg": ch["max_dev_deg"],
+                              "circular_corr": ch["circular_corr"], "max_dev_cap_deg": args.angle_max_dev,
+                              **ch["checks"]}
 
     tag = f"{args.dataset}_{args.variable or args.dataset}_L{args.layer}_{args.holdout}"
     if args.context_dataset:
@@ -606,6 +610,8 @@ def parse(argv=None):
                    help="Eq. 9 behaviour: literal (unsquared, tau=0.5, 128 spline bins) or squared/spread-normalised")
     p.add_argument("--n-control-clips", type=int, default=16, help="steered clips per target used by control draws")
     p.add_argument("--no-bf16", action="store_true", help="skip the BF16 repeat of the steering-energy comparison")
+    p.add_argument("--angle-max-dev", type=float, default=None,
+                   help="optional cap (degrees) on the unsupervised angle's max deviation; default: reported only")
     p.add_argument("--plane", default="pca", choices=("pca", "chart", "inlp"),
                    help="steering subspace: top-k PCA (Goodfire), circular-chart plane, or INLP basis (--basis)")
     p.add_argument("--basis", default=None,

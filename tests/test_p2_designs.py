@@ -360,3 +360,15 @@ def test_paired_bootstrap_clusters_by_clip():
     assert clips["n_clips"] == 30 and rows["n_clips"] == 300
     width = lambda b: b["ci95"][1] - b["ci95"][0]
     assert width(clips) > 2 * width(rows)
+
+
+def test_angle_max_dev_is_reported_not_required():
+    """One knot 40 degrees off: accepted by corr + coarse order (max deviation recorded); a cap rejects it."""
+    rng = np.random.default_rng(3)
+    t = np.radians(GRID) + np.radians(2.0) * rng.standard_normal(64)
+    t[10] += np.radians(40.0)
+    C = np.zeros((64, 4))
+    C[:, 0], C[:, 1] = np.cos(t), np.sin(t)
+    ch = mf.choose_angle_source(C, GRID)
+    assert ch["angle"] == "unsupervised" and ch["max_dev_deg"] > 30 and abs(ch["circular_corr"]) >= 0.9
+    assert mf.choose_angle_source(C, GRID, max_dev_deg=30.0)["angle"] == "labels"
