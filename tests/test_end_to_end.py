@@ -122,3 +122,14 @@ def test_shuffled_label_control_is_at_chance(tmp_path):
     assert out["shuffled"] and max(r["cv_mean"] for r in out["layers"]) < 0.05
     assert max(r["test_r2"] for r in out["layers"]) < 0.05 and min(r["test_mae"] for r in out["layers"]) > 70
     assert "selectivity_onset" not in out["availability"]
+
+
+def test_paper_role_ignores_stale_point8_flag(tmp_path):
+    """A p1b file from before the point-9 convention says is_paper_layer at point 8; fig2 must take point 9."""
+    mf = runpy.run_path(str(ROOT / "scripts" / "make_figures.py"))
+    for point, flag in ((8, True), (9, True)):
+        (tmp_path / f"p1b_speed_speed_meanpool_L{point}.json").write_text(
+            json.dumps({"point": point, "is_paper_layer": flag}))
+    assert mf["load"](tmp_path, r"p1b_speed_speed_meanpool_L\d+\.json", "paper")["point"] == 9
+    (tmp_path / "p1b_speed_speed_meanpool_L8_adam_b64.json").write_text(json.dumps({"point": 8, "is_paper_layer": True}))
+    assert mf["load_adam"](tmp_path, "speed") == {}

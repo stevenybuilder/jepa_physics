@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
+PAPER_POINT = 9   # wm.provenance.PAPER_LAYER: the paper's layer 8 = our point 9
 COLORS = {"direction": "#2a78d6", "speed": "#eb6834", "acceleration": "#1baf7a",
           "velocity": "#4a3aa7", "random": "#9a9893", "text": "#52514e"}
 plt.rcParams.update({
@@ -31,8 +32,8 @@ def load(results, pattern, role="peak"):
     paper's layer (point 9) and role='peak_only' only the peak."""
     hits = sorted(p for p in results.glob("*.json") if re.fullmatch(pattern, p.name))
     data = [json.loads(p.read_text()) for p in hits]
-    if role == "paper":
-        return next((d for d in data if d.get("is_paper_layer")), None)
+    if role == "paper":   # point check too: files written before the point-9 convention flag point 8
+        return next((d for d in data if d.get("is_paper_layer") and d.get("point") == PAPER_POINT), None)
     if role == "peak_only":
         return next((d for d in data if d.get("is_peak")), None)
     if role == "onset":
@@ -198,7 +199,7 @@ def load_adam(results, v):
     out = {}
     for p in sorted(results.glob(f"p1b_{v}_{v}_meanpool_L*_adam_*.json")):
         d = json.loads(p.read_text())
-        if d.get("is_paper_layer"):
+        if d.get("is_paper_layer") and d.get("point") == PAPER_POINT:
             out[p.stem.rsplit("_", 1)[1]] = d
     return out
 
