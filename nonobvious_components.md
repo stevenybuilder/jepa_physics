@@ -82,6 +82,13 @@ Faithful to the paper's method (App. B, C.11, C.12). Not blind: each step has a 
 The high-level reasoning (why steering is the test of "used" rather than "readable", what spline steering does,
 why direction's circular structure is the case that separates spline from line, and what jepa_steering's
 nonlinearity results do and do not transfer) is in `PART2_RATIONALE.md`. Items §4–10 below are the checklist.
+The lit review (`lit_review.md`, 27 Sep) adds three facts that shape Part 2: Sonia's group has already published spline
+steering on V-JEPA 2-L for within-clip camera motion (arXiv 2609.01551), evaluated in-sample with no held-out values,
+no downstream readout and no controls, so the differentiators here are held-out values, the predictor readout, and
+controls; her "tens of dimensions" count has been criticised in print as metric-dependent (arXiv 2608.10566), so the
+four-estimand dimensionality figure (spec §6 item 8) is a direct contribution; and her own open questions are "fewer
+probes" and a "harmonic basis" (spec §6 items 8–9). Goodfire §5 Eq. 9 / B.1 already defines a behaviour manifold for
+a visual world model with no outputs (softmax over distances to per-value centroids, τ = 0.5); §8 below uses it.
 
 ### 4. The circular structure of direction
 
@@ -187,7 +194,11 @@ waypoints, not just the endpoint), and **off-target effect** (steer speed, read 
 
 ### 8. Behaviour manifold: V-JEPA has no output distribution
 
-Goodfire fits the behaviour manifold on output probabilities. V-JEPA has none. The stand-ins, in order of strength:
+Goodfire fits the behaviour manifold on output probabilities. V-JEPA has none, but Goodfire's own Mountain Car
+section (§5 Eq. 9, B.1) handles a visual world model the same way: M_y is a softmax over negative distances to
+per-value centroids (τ = 0.5) built from real, unintervened activations at the read layer. That makes the
+Bhattacharyya energy and the isometry test literal here, and it extends to later layers once propagation exists.
+Beside it, the stand-ins in order of strength:
 evaluation-probe readouts on real clips (weakest, a probe again); nearest real-clip agreement across later layers
 (the readout in §5.3); the predictor's forecast of the future tokens compared with real future tokens of clips at
 the target value (strongest, and the only one that is "behaviour"). Choose and state which one plays M_y; do not call

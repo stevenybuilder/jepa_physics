@@ -192,13 +192,26 @@ items are in `nonobvious_components.md` §4–10.
    - **Held-out context:** steer speed-set clips (unseen speeds and start range) with a direction spline built on
      the direction set.
 2. **Controls on the layer curves:** shuffled-label probe, pixel baseline (32² frames + frame differences, PCA-256),
-   random-init ViT-L. Trigger: any variable whose curve is high from the embedding layer onward (a disk on black is
+   random-init ViT-L, last-frame-only, and **time-reversed clips** (same occupancy, opposite direction; GPU session 2,
+   trivial to extract). In a clean fixed-camera scene raw pixels can match V-JEPA 2 (CALIPER, arXiv 2609.08250), so
+   selectivity must be shown, not assumed. Trigger: any variable whose curve is high from the embedding layer onward (a disk on black is
    nearly pixel-decodable). The random-init extraction is cheap, so it is done in GPU session 1 regardless.
 3. **Random-removal band on the INLP curve** (random subspaces of matched rank, 10 seeds). Trigger: before claiming
    "tens of dimensions" on a slide.
 4. **Matched random steering control, per-clip norm drift, off-target readout** (§5.3 readouts). Trigger: same.
-5. **Propagation test** (GPU session 2): add Δ to every token at the steering layer, run the remaining blocks, read
-   direction at later layers. Trigger: if time; it is the readout Part 2's predictor comparison needs anyway.
+5. **Propagation, closure depth, and the predictor as behavioural readout** (GPU session 2, one batched session).
+   (a) Broadcast the pooled Δ to every token at layer L, run the remaining blocks, read direction at every later layer
+   with probes refit per read layer: heatmap steer-layer × read-layer (Othello washout / closure-depth precedent,
+   arXiv 2609.15980). (b) **The simulator dial**: render counterfactual twin clips (same start and speed, direction
+   θ\*; validate the renderer against 20 supplied clips first), encode the *context frames only* (HF `VJEPA2Model`
+   applies `context_mask` after encoding, so encoding all 16 frames lets the context see the future), apply the edit,
+   run the predictor, and score the predicted future tokens with a probe-free recovery
+   R = ⟨ẑ_edit − ẑ_src, ẑ_tgt − ẑ_src⟩ / ‖ẑ_tgt − ẑ_src‖² against the twin's real future, plus future-direction error.
+   Controls: unsteered predictor preserves direction; random matched rank and norm; shuffled target; ‖Δ‖ relative to
+   the median natural change. This is the readout Sonia's own essay asks for ("steer that velocity representation and
+   observe corresponding counterfactual changes in future predictions"); nobody has judged an edit to any JEPA by its
+   predictor (lit_review.md §2). ~200 carriers × 6 arms × 4 layers, under an hour on a 4090. Trigger: after Part 1
+   picks the layer and Part 2's cheap checks pass.
 6. **Attentive probe** (GPU session 2, tokens kept on the box only). Trigger: the mean-pool direction curve shows no
    clear rise, or disk-pool beats mean-pool by more than the CI. The paper's Fig. 18a says the mean-pool curve rises
    gradually, so a gradual curve is the expected reproduction.
@@ -208,7 +221,25 @@ items are in `nonobvious_components.md` §4–10.
    This decides whether steering direction can leave speed untouched (the off-target readout). Trigger: before any
    off-target claim; minutes on stored bases.
 
-Not doing: LEACE, regularisation sweeps of K, MLP layer curves, per-patch heatmaps, attention ablations, neuron
+8. **"How many dimensions is direction?" as four estimands, one figure** (stored activations, minutes). The
+   iterative-erasure count is not affine-invariant: Jin et al., arXiv 2608.10566, cite the paper's C.11 by name and
+   show that on a synthetic ring a feature shear turns K = 1 into K ≈ 6 while a whitened metric returns rank 2 every
+   time. Per layer, direction vs speed: (a) the literal K vs the random-removal band (the reproduction); (b) whitened,
+   residualised K (Jin Alg. 1, rank(I − T)); (c) fresh ridge and MLP R² after a rank-2 LEACE erasure (arXiv
+   2306.03819); (d) split-half DFT spectrum of the 64 direction centroids (harmonics k = 0…8) plus participation ratio.
+   Readings: whitened K ≈ 1 with LEACE-2 at chance means the literal K is conditioning; mass at k ≥ 2 means a curved
+   ring with harmonics (her "harmonic basis" remark); LEACE-2 failing means redundant copies. Control: a planted ring
+   of known harmonic content and copy count pushed through all four estimators. Labelled as an extra; does not replace
+   the paper's count. (LEACE was on the not-doing list; it is reinstated only in this role.)
+9. **"Fewer probes": low-rank steering bake-off at matched edit norm** (stored activations). Her blog asks "whether
+   more efficient steering methods can recover the same control with fewer probes". Arms: probe-QR least squares
+   (N = 1…K, the reproduction); centroid transport x + μ(θ\*) − μ(θ); rotation of the k = 1 ring plane by Δθ (rank 2,
+   norm-preserving); periodic spline in PCA-k (Part 2); nearest-centroid snap (floor). Figure: held-out-probe angle
+   error vs edit rank at matched ‖Δ‖. Claim under test: rank 2–4 matches the ~40-dim edit. Controls: random subspace
+   of equal rank with its own solve; learned coefficients on a random basis; sham edit; an MLP evaluator on disjoint
+   clips (a linear evaluator shares filter geometry with probe-QR; precedent Marks & Tegmark 2310.06824, AxBench
+   2501.17148 where probe AUROC 0.94 gave steering 0.10 vs mean-difference 0.24).
+Not doing: regularisation sweeps of K, MLP layer curves, per-patch heatmaps, attention ablations, neuron
 tuning. Backup slide only.
 
 ## 7. Pre-registered expectations (MJ: written before any run)
@@ -218,6 +249,19 @@ tuning. Backup slide only.
 | 1 | speed/accel high early; direction rises at ~1/3 depth; peaks mid, falls late | direction already high at the embedding, or nothing beats the pixel baseline | curves with controls |
 | 2 | direction 2K in the tens, sawtooth; speed K smaller, no sawtooth | INLP K inside the random band | INLP vs random band |
 | 3 | MAE-to-target falls with N, single probe fails, MAE-to-true rises | flat in N, or single probe already reaches target | Fig. 24 on our data |
+
+## 7b. Deviations from the paper, in one table (Part 1)
+
+| Item | Paper | Here | Why | Effect |
+|---|---|---|---|---|
+| Probe fit | Adam + weight decay, grid in App. B | closed-form ridge, α by 5-fold CV over 13 values | same model class, deterministic | checked once per variable at one layer (`scripts/check_probe_recipe.py`) |
+| Split | 70/30, C.11 stopping on an 80/20 test split | one 80/20 clip split, stratified by value; stopping on fold-mean CV, test read once | ~1,500 clips vs 343; one split | none expected |
+| Input | 224², 14 × 14 patches, 1,568 tokens | 256² no crop, 16 × 16, 2,048 tokens | supplied clips are 256² | layer fractions comparable, patch counts not |
+| Hidden states | 24 residual points | 26 points: embedding, blocks 1–24 raw, final LN | hook on block 24 | post-LN point plotted separately |
+| Data | 8 directions, separate speed/accel sets | 64 directions; direction set mixes constant and accelerating clips | supplied data | direction reported per motion type |
+| INLP layer | layer 8 (emergence) | onset layer from the availability rule AND CV-peak layer | Fig. 22 shows the count roughly doubling late | both reported |
+| Steering basis | V from raw stacked W_1..W_N (C.12 Eq. 8) | V from residualised probe weights | probes stored orthogonal to earlier directions, so identical up to float error | tested for equality |
+| Extras | none | radius readout, radius-matched target, two random nulls, out-of-fold eval-probe R², §6 items | labelled extras in JSON and figures | never in the core figure |
 
 ## 8. Code and execution
 
