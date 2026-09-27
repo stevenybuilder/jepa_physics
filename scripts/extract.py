@@ -22,6 +22,7 @@ parser.add_argument("--out", type=Path, default=None)
 parser.add_argument("--limit", type=int, default=None, help="first N clips in manifest order")
 parser.add_argument("--ids", type=int, nargs="+", default=None)
 parser.add_argument("--batch-size", type=int, default=8)
+parser.add_argument("--store-timepool", action="store_true", help="random model: also store timepool (vjepa2/videomae always do)")
 args = parser.parse_args()
 
 out_dir = args.out or PROJECT_ROOT / "artifacts" / "activations" / args.dataset / args.model
@@ -33,6 +34,6 @@ if args.command == "run":
         df = df[df["id"].isin(args.ids)]
     if args.limit is not None:
         df = df.head(args.limit)
-    run_extraction(df, args.model, out_dir, batch_size=args.batch_size)
+    run_extraction(df, args.model, out_dir, batch_size=args.batch_size, store_timepool=args.store_timepool)
 else:
     merge(out_dir, df["id"].tolist())

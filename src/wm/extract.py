@@ -226,9 +226,12 @@ def pool(points, masks, grid=GRID):
 # Chunked, resumable extraction
 
 
-def chunk_arrays(kind):
-    """Names and per-clip shapes/dtypes stored for each model kind."""
+def chunk_arrays(kind, store_timepool=False):
+    """Names and per-clip shapes/dtypes stored for each model kind. store_timepool adds timepool for the random model
+    (which otherwise stores meanpool only)."""
     arrays = {"meanpool": ((N_POINTS, WIDTH), np.float32)}
+    if kind == "random" and store_timepool:
+        arrays["timepool"] = ((N_POINTS, N_STEPS, WIDTH), np.float16)
     if kind in ("vjepa2", "videomae"):
         g = grid_of(kind)
         arrays.update({
@@ -239,7 +242,7 @@ def chunk_arrays(kind):
     return arrays
 
 
-def chunk_ok(out_dir, c, ids, kind):
+def chunk_ok(out_dir, c, ids, kind, store_timepool=False):
     """True if chunk c exists with the expected ids and array shapes."""
     meta_path = out_dir / f"chunk_{c:04d}.json"
     if not meta_path.exists():
@@ -247,7 +250,7 @@ def chunk_ok(out_dir, c, ids, kind):
     meta = json.loads(meta_path.read_text())
     if meta["ids"] != [int(i) for i in ids]:
         return False
-    for name, (shape, dtype) in chunk_arrays(kind).items():
+    for name, (shape, dtype) in chunk_arrays(kind, store_timepool).items():
         path = out_dir / f"chunk_{c:04d}_{name}.npy"
         if not path.exists():
             return False
@@ -263,7 +266,7 @@ def save_npy(path, array):
     tmp.rename(path)
 
 
-def run_extraction(df, kind, out_dir, batch_size=8, device=None):
+def run_extraction(df, kind, out_dir, batch_size=8, device=None, store_timepool=False):
     """Extract every row of df (manifest order) into chunk files under out_dir."""
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -276,12 +279,12 @@ def run_extraction(df, kind, out_dir, batch_size=8, device=None):
     t_run = time.time()
 
     for c, chunk_ids in enumerate(chunks):
-        if chunk_ok(out_dir, c, chunk_ids, kind):
+        if chunk_ok(out_dir, c, chunk_ids, kind, store_timepool):
             print(f"chunk {c}: exists, skipping")
             continue
         if model is None:
             model = load_model(kind, device)
-        store = {name: [] for name in chunk_arrays(kind)}
+        store = {name: [] for name in chunk_arrays(kind, store_timepool)}
         hashes, seconds = {}, {}
         for s in range(0, len(chunk_ids), batch_size):
             batch_ids = chunk_ids[s:s + batch_size]
@@ -301,12 +304,14 @@ def run_extraction(df, kind, out_dir, batch_size=8, device=None):
                 store["timepool"].append(tpool.astype(np.float16))
                 store["diskpool"].append(dpool.astype(np.float16))
                 store["diskmask"].append(np.stack(masks))
+            elif "timepool" in store:
+                store["timepool"].append(tpool.astype(np.float16))
             per_clip = (time.time() - t0) / len(batch_ids)
             for i in batch_ids:
                 seconds[i] = per_clip
                 print(f"chunk {c} clip {i}: {per_clip:.2f} s")
 
-        for name, (shape, dtype) in chunk_arrays(kind).items():
+        for name, (shape, dtype) in chunk_arrays(kind, store_timepool).items():
             a = np.concatenate(store[name])
             assert a.shape == (len(chunk_ids),) + shape and a.dtype == dtype, (name, a.shape, a.dtype)
             save_npy(out_dir / f"chunk_{c:04d}_{name}.npy", a)
@@ -314,10 +319,10 @@ def run_extraction(df, kind, out_dir, batch_size=8, device=None):
                 "seconds_per_clip": {str(i): seconds[i] for i in chunk_ids}}
         (out_dir / f"chunk_{c:04d}.json").write_text(json.dumps(meta))
 
-    write_index(out_dir, ids, len(chunks), kind, device, time.time() - t_run)
+    write_index(out_dir, ids, len(chunks), kind, device, time.time() - t_run, store_timepool)
 
 
-def write_index(out_dir, ids, n_chunks, kind, device, run_seconds):
+def write_index(out_dir, ids, n_chunks, kind, device, run_seconds, store_timepool=False):
     hashes, seconds = {}, {}
     for c in range(n_chunks):
         meta = json.loads((out_dir / f"chunk_{c:04d}.json").read_text())
@@ -325,7 +330,8 @@ def write_index(out_dir, ids, n_chunks, kind, device, run_seconds):
         seconds.update(meta["seconds_per_clip"])
     index = {
         "model_id": MODEL_IDS[kind], "model": kind, "ids": ids, "n_chunks": n_chunks, "chunk_size": CHUNK,
-        "points": VM_POINT_NAMES if kind == "videomae" else POINT_NAMES, "arrays": {k: [list(s), np.dtype(d).name] for k, (s, d) in chunk_arrays(kind).items()},
+        "points": VM_POINT_NAMES if kind == "videomae" else POINT_NAMES, "arrays": {k: [list(s), np.dtype(d).name] for k, (s, d) in chunk_arrays(kind, store_timepool).items()},
+        "store_timepool": bool(store_timepool),
         "frame_hash": hashes, "seconds_per_clip": seconds, "last_run_seconds": run_seconds,
         "torch": torch.__version__, "transformers": transformers.__version__,
         "python": platform.python_version(), "device": str(device),
@@ -349,10 +355,11 @@ def merge(out_dir, manifest_ids):
     out_dir = Path(out_dir)
     index = json.loads((out_dir / "index.json").read_text())
     kind, ids = index["model"], index["ids"]
+    st = index.get("store_timepool", False)
     assert ids == [int(i) for i in manifest_ids], "chunks do not cover the manifest in id order"
     for c in range(index["n_chunks"]):
-        assert chunk_ok(out_dir, c, ids[c * CHUNK:(c + 1) * CHUNK], kind), f"chunk {c} missing or bad"
-    for name, (shape, dtype) in chunk_arrays(kind).items():
+        assert chunk_ok(out_dir, c, ids[c * CHUNK:(c + 1) * CHUNK], kind, st), f"chunk {c} missing or bad"
+    for name, (shape, dtype) in chunk_arrays(kind, st).items():
         a = np.concatenate([np.load(out_dir / f"chunk_{c:04d}_{name}.npy") for c in range(index["n_chunks"])])
         assert a.shape == (len(ids),) + shape and a.dtype == dtype, (name, a.shape)
         save_npy(out_dir / f"{name}.npy", a)
