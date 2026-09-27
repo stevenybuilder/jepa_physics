@@ -30,13 +30,16 @@ DISK_CHANNEL = 0   # red
 DISK_THRESH = 128
 
 
-def load_table(dataset):
+def load_table(dataset, root=None):
     """One row per manifest id, with labels from metadata.json.
 
     label     = primary target: theta_degrees for direction, magnitude for speed/acceleration.
     label_idx = rank (0..63) of the label value among the dataset's distinct values.
+    root: a directory holding manifest.jsonl + videos/ in the same schema (e.g. artifacts/stimuli/hard) to read
+    instead of DATA_ROOT / dataset; `dataset` then only picks the label column, and the 64-value check is skipped.
     """
-    root = DATA_ROOT / dataset
+    override = root is not None
+    root = Path(root) if override else DATA_ROOT / dataset
     rows = []
     with open(root / "manifest.jsonl") as f:
         for line in f:
@@ -59,7 +62,7 @@ def load_table(dataset):
     df["label"] = df["theta_degrees"] if dataset == "direction" else df["magnitude"]
     assert df["label"].notna().all(), dataset
     values, df["label_idx"] = np.unique(df["label"].to_numpy(), return_inverse=True)
-    assert len(values) == 64, (dataset, len(values))
+    assert override or len(values) == 64, (dataset, len(values))
     return df
 
 
