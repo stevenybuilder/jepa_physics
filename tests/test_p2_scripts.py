@@ -368,3 +368,15 @@ def test_part2_inlp_plane_refit(tmp_path):
     expect = sum(1 for i, v in enumerate(y) if 0 <= fold[str(i)] <= 2 and v not in held)
     assert b["n_rows"] == expect                                      # knot rows at the 56 kept values only
     assert res["k"] == 2 * b["n_probes"]
+
+
+def test_speed_cells_edges_from_fit_rows_only():
+    spec = importlib.util.spec_from_file_location("vp", ROOT / "scripts" / "run_velocity_plane.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    speed = np.r_[np.linspace(1, 2, 80), np.full(20, 100.0)]          # extreme speeds only in the non-fit rows
+    fit = np.r_[np.ones(80, bool), np.zeros(20, bool)]
+    cell, cs = module.speed_direction_cells(speed, np.zeros(100), fit)
+    sb = cell.astype(int) // 16
+    assert np.bincount(sb[fit], minlength=8).tolist() == [10] * 8       # octiles of the fit rows
+    assert max(cs.values()) < 3                                         # bin speeds from fit rows only

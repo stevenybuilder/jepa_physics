@@ -65,7 +65,7 @@ def chord_speed_readout(s, k, n_clips, seed):
     cent = mf.centroids(pca.project(s["X"][tr]), s["y"][tr])            # direction centroids, averaged over speed
     curve = mf.fit_curve(cent, True, angle="labels")
     mlp = MLPReadout(s["X"][probe], speed[probe], periodic=False, seed=seed)
-    cell, cell_speed = speed_direction_cells(speed, s["y"])
+    cell, cell_speed = speed_direction_cells(speed, s["y"], tr)
     eq9 = mf.BehaviourManifold(s["X"][probe], cell[probe], False, mode="centroid_sq")
     eq9_speed = np.array([cell_speed[int(c)] for c in eq9.values])
     rng = np.random.default_rng(seed)
@@ -112,13 +112,16 @@ def chord_speed_readout(s, k, n_clips, seed):
     return out
 
 
-def speed_direction_cells(speed, theta, n_speed=8, n_dir=16):
-    """Cell id per clip (speed octile x 22.5-degree direction bin) and each cell's speed-bin mean speed."""
-    sb = np.clip(np.searchsorted(np.quantile(speed, np.linspace(0, 1, n_speed + 1)[1:-1]), speed, side="right"),
-                 0, n_speed - 1)
+def speed_direction_cells(speed, theta, fit_rows, n_speed=8, n_dir=16):
+    """Cell id per clip (speed octile x 22.5-degree direction bin) and each cell's speed-bin mean speed. Octile
+    edges and bin mean speeds come from `fit_rows` only (knot folds), never from test clips."""
+    edges = np.quantile(speed[fit_rows], np.linspace(0, 1, n_speed + 1)[1:-1])
+    sb = np.clip(np.searchsorted(edges, speed, side="right"), 0, n_speed - 1)
     db = np.floor(np.asarray(theta) / (360.0 / n_dir)).astype(int) % n_dir
     cell = (sb * n_dir + db).astype(float)
-    return cell, {int(c): float(speed[sb == int(c) // n_dir].mean()) for c in np.unique(cell)}
+    fit_mean = {b: float(speed[fit_rows & (sb == b)].mean()) if (fit_rows & (sb == b)).any() else float(speed[sb == b].mean())
+                for b in np.unique(sb)}
+    return cell, {int(c): fit_mean[int(c) // n_dir] for c in np.unique(cell)}
 
 
 def chord_verdict(rows):
