@@ -31,7 +31,8 @@ def test_straight_manifold_all_ones():
     mod = load("run_cosine_tangent")
     rng = np.random.default_rng(1)
     a, b = rng.standard_normal((4, 12)), rng.standard_normal((4, 12))
-    s = np.linspace(0.0, 1.0, 50)[None, :, None] ** 2              # uneven spacing along the line
+    u = np.linspace(0.0, 1.0, 50)
+    s = (0.5 * (u + u ** 2))[None, :, None]                         # uneven spacing along the line
     W = a[:, None] + s * (b - a)[:, None]
     c = mod.path_cosines(W, 3.0 * (b - a), b - a)
     for q in c:
