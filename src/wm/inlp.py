@@ -198,6 +198,7 @@ def run_inlp(dataset, variable, point=None, pool="meanpool", seeds=10, with_rand
     save_basis(basis_path(dataset, variable, point, pool, inlp_dir), Q, W, b, alpha, point, kind)
     out = {"dataset": dataset, "variable": variable, "kind": kind, "pool": pool, "point": point,
            "frac": layer_fraction(point), "is_peak": point == sweep["availability"]["peak"],
+           "is_onset": point == sweep["availability"]["onset"],
            **summary, "sawtooth": sawtooth(summary, W)}
     if with_random:
         out["random"] = random_removal_curve(Xtr, Y[tr], Xte, Y[te], folds, alpha, score_fn,

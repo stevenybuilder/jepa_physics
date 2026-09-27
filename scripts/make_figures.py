@@ -25,12 +25,19 @@ plt.rcParams.update({
     "lines.linewidth": 2, "savefig.dpi": 200, "savefig.bbox": "tight", "figure.facecolor": "white"})
 
 
-def load(results, pattern):
-    """The results file whose name fully matches `pattern` (peak layer first if several), or None."""
+def load(results, pattern, role="peak"):
+    """The results file whose name fully matches `pattern` (peak layer first if several), or None.
+    role='onset' returns only a file at the onset layer that is not also the peak (else None)."""
     hits = sorted(p for p in results.glob("*.json") if re.fullmatch(pattern, p.name))
     data = [json.loads(p.read_text()) for p in hits]
+    if role == "onset":
+        data = [d for d in data if d.get("is_onset") and not d.get("is_peak")]
     data.sort(key=lambda d: not d.get("is_peak", True))
     return data[0] if data else None
+
+
+def suffix(role):
+    return "" if role == "peak" else f"_{role}"
 
 
 def legend_top(ax, ncol=3):
@@ -181,8 +188,8 @@ def fig1e(results, out):
     plt.close(fig)
 
 
-def fig2(results, out):
-    runs = {v: load(results, rf"p1b_{v}_{v}_meanpool_L\d+\.json") for v in ("direction", "speed")}
+def fig2(results, out, role="peak"):
+    runs = {v: load(results, rf"p1b_{v}_{v}_meanpool_L\d+\.json", role) for v in ("direction", "speed")}
     runs = {v: r for v, r in runs.items() if r}
     if not runs:
         return
@@ -205,7 +212,7 @@ def fig2(results, out):
         ax.xaxis.set_major_locator(MaxNLocator(integer=True))
         legend_top(ax, 1)
     axes[0][0].set_ylabel("probe R² (5-fold mean)")
-    fig.savefig(out / "fig2_inlp.png")
+    fig.savefig(out / f"fig2_inlp{suffix(role)}.png")
     plt.close(fig)
 
 
@@ -282,8 +289,8 @@ def radius_band(ax, rows, color, label, ls="-"):
                     color=color, alpha=0.15, lw=0)
 
 
-def fig3(results, out):
-    r = load(results, r"p1c_direction_L\d+\.json")
+def fig3(results, out, role="peak"):
+    r = load(results, r"p1c_direction_L\d+\.json", role)
     if not r:
         return
     has_radius = "radius" in r["single"][0]
@@ -301,12 +308,12 @@ def fig3(results, out):
                title="Readout radius during steering (θ* = 90°)", ylim=(0, None))
         ax.xaxis.set_major_locator(MaxNLocator(integer=True))
         legend_top(ax, 1)
-    fig.savefig(out / "fig3_steering.png")
+    fig.savefig(out / f"fig3_steering{suffix(role)}.png")
     plt.close(fig)
 
 
-def fig3b(results, out):
-    r = load(results, r"p1c_direction_L\d+\.json")
+def fig3b(results, out, role="peak"):
+    r = load(results, r"p1c_direction_L\d+\.json", role)
     if not r:
         return
     arms = [("paper: unit target", r)] + ([("extra: radius-matched target", r["radius_matched"])]
@@ -322,13 +329,13 @@ def fig3b(results, out):
                title=f"Error to target by shift and N ({name})")
         ax.xaxis.set_major_locator(MaxNLocator(integer=True))
         fig.colorbar(im, ax=ax, label="MAE to target (deg)")
-    fig.savefig(out / "fig3b_shift_heatmap.png")
+    fig.savefig(out / f"fig3b_shift_heatmap{suffix(role)}.png")
     plt.close(fig)
 
 
-def fig3c(results, out):
+def fig3c(results, out, role="peak"):
     """Extras: learned steer vs the two random nulls, and the radius-matched arm (spec 5.3)."""
-    r = load(results, r"p1c_direction_L\d+\.json")
+    r = load(results, r"p1c_direction_L\d+\.json", role)
     if not r or "random_nulls" not in r:
         return
     nulls = r["random_nulls"]
@@ -355,7 +362,7 @@ def fig3c(results, out):
     for ax in (a, b):
         ax.xaxis.set_major_locator(MaxNLocator(integer=True))
         legend_top(ax, 1)
-    fig.savefig(out / "fig3c_steering_nulls.png")
+    fig.savefig(out / f"fig3c_steering_nulls{suffix(role)}.png")
     plt.close(fig)
 
 
@@ -367,4 +374,6 @@ if __name__ == "__main__":
     args.figures.mkdir(parents=True, exist_ok=True)
     for make in (fig1, fig1b, fig1c, fig1d, fig1e, fig2, fig2b, fig2d, fig3, fig3b, fig3c):
         make(args.results, args.figures)
+    for make in (fig2, fig3, fig3b, fig3c):   # the same figures at the onset layer, when it differs from the peak
+        make(args.results, args.figures, "onset")
     print("figures:", sorted(p.name for p in args.figures.glob("*.png")))

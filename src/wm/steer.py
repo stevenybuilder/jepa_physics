@@ -277,7 +277,7 @@ def eval_probe_cv(Xte, Yte, kind, seed=0):
 
 
 def run_steering(dataset, variable=None, point=None, pool="meanpool", act_root=None, results_dir=None,
-                 inlp_dir=None, n_draws=20):
+                 inlp_dir=None, n_draws=20, layer_role=None):
     """Paper protocol: steering basis from the train probe sequence (step 2), evaluation probe fit on
     test activations (α by CV inside test), test clips steered to θ* = 90° (for scalars, the upper
     median label value) and to every label value, with the paper's unit target. Extras, labelled in
@@ -315,7 +315,8 @@ def run_steering(dataset, variable=None, point=None, pool="meanpool", act_root=N
                             "the unit/true value")
     out = {"dataset": dataset, "variable": variable, "kind": kind, "pool": pool, "point": point,
            "frac": layer_fraction(point), "alpha": probes["alpha"], "n_test": len(te),
-           "eval_probe": eval_report, "eval_probe_in_sample": eval_report["in_sample"],
+           "layer_role": layer_role, "is_peak": point == sweep["availability"]["peak"],
+           "is_onset": point == sweep["availability"]["onset"], "eval_probe": eval_report, "eval_probe_in_sample": eval_report["in_sample"],
            "space": "train-standardised activations",
            "arm": "paper: unit target (sin θ*, cos θ*) / true value required of every probe", **res,
            "random_nulls": nulls, "radius_matched": res_m}

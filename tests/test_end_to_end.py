@@ -40,6 +40,10 @@ def test_pipeline_on_fake_activations(tmp_path):
     peak = av["peak"]
     assert (results / f"p1b_direction_direction_meanpool_L{peak}.json").exists()
     assert (inlp_dir / f"direction_direction_L{peak}.npz").exists()
+    onset = av["onset"]
+    assert onset != peak and (results / f"p1b_direction_direction_meanpool_L{onset}.json").exists()
+    steer_onset = json.loads((results / f"p1c_direction_L{onset}.json").read_text())
+    assert steer_onset["layer_role"] == "onset" and steer_onset["is_onset"] and not steer_onset["is_peak"]
     steer = json.loads((results / f"p1c_direction_L{peak}.json").read_text())
     assert steer["single"][-1]["mae_to_target"] < steer["single"][0]["mae_to_target"]
     assert "test_radius" in sweep["layers"][peak] and str(peak) in sweep["test_radius"]
@@ -49,6 +53,6 @@ def test_pipeline_on_fake_activations(tmp_path):
     angles = json.loads((results / "step2_subspace_angles.json").read_text())
     rows = [r for r in angles["pairs"]["direction_vs_speed"] if "mapped" in r]
     assert rows and all(0 <= r["mapped"]["min_angle_deg"] <= 90 for r in rows)
-    for name in ("fig2d_subspace_angles", "fig1_layer_curves", "fig1b_direction_circle", "fig2_inlp", "fig2b_dim_vs_layer",
+    for name in ("fig2d_subspace_angles", "fig3_steering_onset", "fig2_inlp_onset", "fig1_layer_curves", "fig1b_direction_circle", "fig2_inlp", "fig2b_dim_vs_layer",
                  "fig3_steering", "fig3b_shift_heatmap", "fig3c_steering_nulls"):
         assert (figs / f"{name}.png").exists(), name

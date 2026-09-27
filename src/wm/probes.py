@@ -315,6 +315,19 @@ def layer_sweep(dataset, variable, pool="meanpool", model="vjepa2", shuffled=Fal
     return out
 
 
+def chosen_layers(sweep, role="both"):
+    """Layer points for steps 2-3 from the step-1 availability rule: {point: role}. role 'peak' (best CV
+    score), 'onset' (first point at 90% of max; the paper steers at its emergence layer, layer 8) or
+    'both'. If onset and peak coincide the point is run once, labelled 'peak+onset'."""
+    av = sweep["availability"]
+    picks = {"peak": [av["peak"]], "onset": [av["onset"]], "both": [av["peak"], av["onset"]]}[role]
+    out = {}
+    for name, point in zip(["peak", "onset"] if role == "both" else [role], picks):
+        if point is not None:
+            out[point] = f"{out[point]}+{name}" if point in out else name
+    return out
+
+
 def load_sweep(dataset, variable, pool="meanpool", results_dir=None):
     """The step-1 results file; steps 2 and 3 take α and the chosen layer (CV peak) from it."""
     path = Path(results_dir or RESULTS) / (result_name("p1a", dataset, variable, pool) + ".json")
