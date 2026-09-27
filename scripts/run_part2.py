@@ -153,9 +153,9 @@ def goodfire_arms(x, src, tgt, m, K):
 
 
 def traversed_arc(curve, src, tgt):
-    """+1 if the arm moves to increasing label angle, -1 if decreasing: the sign of the intrinsic-coordinate step
-    curve.step (what the spline walk actually does, the short way round in the intrinsic angle), mapped to label
-    orientation (the unsupervised angle can run opposite to the labels). All arms share these endpoints."""
+    """The spline's traversed arc, applied to every arm: +1 if the spline walk moves to increasing label angle, -1 if
+    decreasing (the sign of curve.step, the short way round in the intrinsic angle, mapped to label orientation; the
+    unsupervised angle can run opposite to the labels). It depends only on the curve, source and target."""
     ta, tb = curve.coord_of_value(src), curve.coord_of_value(np.full(len(src), tgt))
     step = np.sign(curve.step(ta, tb))
     step = np.where(step == 0, 1.0, step)
@@ -441,8 +441,9 @@ def run(args):
                          "bootstrap over clips, each clip's targets resampled together (1000 draws); mean +/- SE over "
                          "(source value, target) pairs as Goodfire A.7 reports; mean +/- SE over targets also kept; "
                          "overall and by shift bin"),
-           "arc_note": ("direction: intermediate_mass, ordering_spearman and argmax_on_arc use the arc the arm "
-                        "traverses (sign of the spline's intrinsic-coordinate step, mapped to label orientation; "
+           "arc_note": ("direction: intermediate_mass, ordering_spearman and argmax_on_arc use the spline's traversed "
+                        "arc, applied to every arm (sign of the spline's intrinsic-coordinate step from source to "
+                        "target, mapped to label orientation; all arms share these endpoints; "
                         "arc_sign per row: +1 increasing label angle); ordering_spearman = Spearman correlation of "
                         "waypoint index with the Eq. 9 argmax value's offset along that arc; argmax_on_arc = fraction "
                         "of waypoints whose argmax lies on the arc, endpoints included"),

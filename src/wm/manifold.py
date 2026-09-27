@@ -860,8 +860,9 @@ def path_value_stats(Pv, src, tgt, values, periodic, arc_sign=None):
     """Where the Eq. 9 value-mass sits along a steering path (Goodfire Fig. 4 analogue: "smooth and ordered").
 
     Pv [n, K, V]: probability over the V label values at each waypoint. Values are re-expressed as offsets from each
-    clip's source along the arc the arm TRAVERSES (direction: arc_sign [n] = +1 if the arm moves to increasing label
-    angle, -1 if decreasing; default the short way round by label, + at exactly 180), so the target sits at +span;
+    clip's source along a given arc (direction: arc_sign [n] = +1 for increasing label angle, -1 for decreasing;
+    run_part2 passes the spline's traversed arc for every arm; default the short way round by label, + at exactly
+    180), so the target sits at +span;
     scalars in value-index steps towards the target.
     Returns dict:
       intermediate [n, K]  mass on values strictly between source and target on the traversed arc
