@@ -21,7 +21,7 @@ from pathlib import Path
 
 import numpy as np
 
-from wm.adam_probe import fit_adam, init_linear
+from wm.adam_probe import fit_adam, init_linear, target_scaler
 from wm.probes import (ALPHAS, N_POINTS, PROJECT_ROOT, RESULTS, cv_select_alpha, drop_nan_clips, fit_ridge, layer_fraction, load_activations,
                        load_sweep, load_table, predict, result_name, split_rows, standardized_layer,
                        targets)
@@ -83,12 +83,15 @@ def protocol_summary(rows, K, prefix, kind, m):
     K = len(rows) if hit_cap else K
     loose = 0.3 if kind == "circular" else 0.1
     K_loose = next((r["round"] - 1 for r in rows if r[f"{prefix}_r2"] < loose), None)
-    if K_loose is None and not hit_cap:   # stopped by the MAE rule before the loose R² threshold
+    censored = K_loose is None      # never crossed the loose threshold before the sequence stopped
+    if censored and not hit_cap:    # stopped by the MAE rule first: K is a floor on K_loose, not a count
         K_loose = K
     out = {"K": K, "K_probes": K, "dims": K * m, "m": m,
            "dims_note": "dims = 2K for 2-output probes (direction's sin, cos), K for 1-output probes; paper Fig. 22's "
                         "y-axis counts probes (K)",
-           "K_loose": K_loose, "loose_threshold": f"R2 < {loose} (paper Fig. 22)",
+           "K_loose": K_loose, "K_loose_censored": censored, "loose_threshold": f"R2 < {loose} (paper Fig. 22)",
+           "K_loose_note": "K_loose_censored = true: the sequence stopped (MAE rule or cap) while R2 was still above "
+                           "the loose threshold, so K_loose is a floor, not a count",
            ("K_r2_03" if kind == "circular" else "K_r2_01"): K_loose, "hit_round_cap": hit_cap, "rounds": rows}
     if m == 2:
         out["dims_2K"] = 2 * K
@@ -378,11 +381,12 @@ def run_dims_vs_layer(dataset, variable, pool="meanpool", act_root=None, results
         summary, Q, W, b = inlp(Xtr, Y[tr], Xte, Y[te], folds, alpha, score_fn, kind, protocols=protocols)
         save_basis(basis_path(dataset, variable, point, pool, inlp_dir, model), Q, W, b, alpha, point, kind)
         row = {"point": point, "frac": layer_fraction(point), "post_ln": point == N_POINTS - 1, "alpha": alpha,
-               **{k: summary[k] for k in ("K", "K_probes", "dims", "K_loose", "hit_round_cap", "K_fold_mean",
+               **{k: summary[k] for k in ("K", "K_probes", "dims", "K_loose", "K_loose_censored", "hit_round_cap",
+                                          "K_fold_mean",
                                           "K_fold_min", "K_fold_max")}, "dims_2K": summary.get("dims_2K")}
         if summary["paper"]:
             row["paper"] = {k: summary["paper"].get(k) for k in ("K", "K_probes", "dims", "dims_2K", "K_loose",
-                                                                  "hit_round_cap")}
+                                                                  "K_loose_censored", "hit_round_cap")}
         rows.append(row)
         print(f"{dataset}/{variable} point {point:2d}: nested K={summary['K']} dims={summary['dims']}"
               + (f"; paper K={summary['paper']['K']}" if summary["paper"] else ""))
@@ -407,7 +411,9 @@ def adam_sequence(Xtr, Ytr, Xte, Yte, score_fn, kind, max_rounds=None, batch=Non
                   fail_move=0.25, decoupled=False):
     """The probe sequence with the paper's C.11 Adam probe at every round, paper protocol (fit on all train, score
     on test). Adam is coupled L2 (torch.optim.Adam weight_decay) unless decoupled; batch=None is full batch; round k
-    uses init seed seed + k − 1 (torch.nn.Linear init).
+    uses init seed seed + k − 1 (torch.nn.Linear init). Targets are standardised on the train rows for training
+    (adam_probe.fit_adam, standardize_y) and the probe is returned and scored in physical units; ‖W_k‖ and the
+    movement from init are measured in the standardised units the optimiser works in.
 
     Per round: test R², MAE (and acc15 for direction); train MSE, R² (and acc15) at the end of training; ‖W_k‖ and
     ‖W_k − W_init‖ (how far the probe moved from its random init; an untrained probe keeps its random init, and QR
@@ -422,6 +428,7 @@ def adam_sequence(Xtr, Ytr, Xte, Yte, score_fn, kind, max_rounds=None, batch=Non
     max_rounds = max_rounds or d // m
     lr, wd, epochs = ADAM_C11["lr"], ADAM_C11["weight_decay"], ADAM_C11["epochs"][kind]
     batch = batch or n
+    y_sd = target_scaler(Ytr)[1]
     state = {"k": 0}
 
     def fit(X, Y):
@@ -435,11 +442,12 @@ def adam_sequence(Xtr, Ytr, Xte, Yte, score_fn, kind, max_rounds=None, batch=Non
         s, W, b, dims, Xk = next(seq)
         P = predict(Xk, W, b)
         tr_s = score_fn(Ytr, P)
-        move = float(np.linalg.norm(W - init_linear(d, m, seed + k - 1)[0]))
+        W_std = W / y_sd                                  # the optimiser's (standardised-target) units
+        move = float(np.linalg.norm(W_std - init_linear(d, m, seed + k - 1)[0]))
         move1 = move if move1 is None else move1
         row = {"round": k, "dims_removed": dims, "test_r2": s["r2"], "test_mae": s["mae"], "base_mae": s["base_mae"],
                "train_mse": float(np.mean((P - Ytr) ** 2)), "train_r2": tr_s["r2"],
-               "W_norm": float(np.linalg.norm(W)), "W_move_from_init": move}
+               "W_norm": float(np.linalg.norm(W_std)), "W_move_from_init": move}
         if "acc15" in s:
             row.update({"test_acc15": s["acc15"], "train_acc15": tr_s["acc15"]})
         row["failed_to_train"] = bool(move < fail_move * move1)
@@ -456,7 +464,9 @@ def adam_sequence(Xtr, Ytr, Xte, Yte, score_fn, kind, max_rounds=None, batch=Non
     W_arr = np.stack(Ws)
     summary = {"recipe": {**ADAM_C11, "epochs_used": epochs, "batch": batch, "full_batch": batch >= n,
                           "weight_decay_type": "decoupled (AdamW)" if decoupled else "coupled L2 (Adam)",
-                          "init_seed": f"{seed} + round - 1"},
+                          "init_seed": f"{seed} + round - 1",
+                          "targets": "standardised on train rows for training (mean, SD per column); probe and "
+                                     "scores in physical units"},
                "protocol": "paper (fit on all train, score on test)", "m": m,
                "K_first": len(rows) if K_first is None else K_first,
                "K_patience": len(rows) if hit_cap else run_start - 1, "patience": patience, "hit_round_cap": hit_cap,

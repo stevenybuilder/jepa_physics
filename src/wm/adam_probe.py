@@ -21,14 +21,26 @@ def init_linear(d, m, seed=0):
     return rng.uniform(-bound, bound, (d, m)), rng.uniform(-bound, bound, m), rng
 
 
-def fit_adam_grid(X, Y, configs, epochs, batch=64, seed=0, decoupled=False):
+def target_scaler(Y):
+    """(mean, sd) of the fitting rows' targets, per column (sd floored at 1e-8)."""
+    Y = np.asarray(Y, float).reshape(len(Y), -1)
+    return Y.mean(axis=0), np.maximum(Y.std(axis=0), 1e-8)
+
+
+def fit_adam_grid(X, Y, configs, epochs, batch=64, seed=0, decoupled=False, standardize_y=True):
     """Train one linear probe per (lr, wd) in `configs` at once, each with its own Adam state, on the same
     minibatch sequence. Adam as in torch.optim.Adam with weight_decay (coupled L2: g += wd·W), applied
     to W only; loss = MSE averaged over batch and outputs; init as torch.nn.Linear (U(±1/√d)).
     decoupled=True is AdamW instead (W ← W(1 − lr·wd) before the Adam step, no L2 in the gradient).
+    standardize_y (default): train on targets standardised with the fitting rows' mean and SD and return the probe
+    in physical units (W·sd, b·sd + mean), so predictions and scores are physical. Without it a speed target far
+    from 0 needs the bias to travel ~its mean at ≤ lr per step, which 50 epochs at lr 1e-3 cannot do (round-1 train
+    R² < 0). Weight decay then acts on the standardised-unit weights.
     Returns W [G, d, m] and b [G, m]."""
     X = np.asarray(X, float)
     Y = np.asarray(Y, float).reshape(len(Y), -1)
+    y_mean, y_sd = target_scaler(Y) if standardize_y else (np.zeros(Y.shape[1]), np.ones(Y.shape[1]))
+    Y = (Y - y_mean) / y_sd
     (n, d), m, G = X.shape, Y.shape[1], len(configs)
     lr = np.array([c[0] for c in configs])[:, None, None]
     wd = np.array([c[1] for c in configs])[:, None, None]
@@ -52,16 +64,16 @@ def fit_adam_grid(X, Y, configs, epochs, batch=64, seed=0, decoupled=False):
             c1, c2 = 1 - b1 ** t, 1 - b2 ** t
             W = W - lr * (mW / c1) / (np.sqrt(vW / c2) + EPS)
             b = b - lr[:, :, 0] * (mb / c1) / (np.sqrt(vb / c2) + EPS)
-    return W, b
+    return W * y_sd, b * y_sd + y_mean
 
 
-def fit_adam(X, Y, lr, wd, epochs, batch=64, seed=0, decoupled=False):
-    """One configuration: W [d, m], b [m]."""
-    W, b = fit_adam_grid(X, Y, [(lr, wd)], epochs, batch, seed, decoupled)
+def fit_adam(X, Y, lr, wd, epochs, batch=64, seed=0, decoupled=False, standardize_y=True):
+    """One configuration: W [d, m], b [m] (physical units)."""
+    W, b = fit_adam_grid(X, Y, [(lr, wd)], epochs, batch, seed, decoupled, standardize_y)
     return W[0], b[0]
 
 
-def cv_adam(X, Y, folds, score_fn, epochs, lrs=LRS, wds=WDS, batch=64, seed=0, decoupled=False):
+def cv_adam(X, Y, folds, score_fn, epochs, lrs=LRS, wds=WDS, batch=64, seed=0, decoupled=False, standardize_y=True):
     """Grid over (lr, wd), each scored by the fold-mean R² (fit fold-out, score fold-in). Returns the best
     configuration with its fold mean ± SD (R² and MAE), its out-of-fold predictions ('oof', for the
     bootstrap) and the whole grid."""
@@ -71,7 +83,7 @@ def cv_adam(X, Y, folds, score_fn, epochs, lrs=LRS, wds=WDS, batch=64, seed=0, d
     oof = np.zeros((len(configs),) + Y.shape)
     for k in np.unique(folds):
         val = folds == k
-        W, b = fit_adam_grid(X[~val], Y[~val], configs, epochs, batch, seed, decoupled)
+        W, b = fit_adam_grid(X[~val], Y[~val], configs, epochs, batch, seed, decoupled, standardize_y)
         for g in range(len(configs)):
             oof[g][val] = X[val] @ W[g] + b[g]
             fold_scores[g].append(score_fn(Y[val], oof[g][val]))
@@ -85,6 +97,8 @@ def cv_adam(X, Y, folds, score_fn, epochs, lrs=LRS, wds=WDS, batch=64, seed=0, d
             best, best_g = row, g
     return {**best, "epochs": epochs, "batch": batch,
             "weight_decay_type": "decoupled (AdamW)" if decoupled else "coupled L2 (Adam)",
+            "targets": ("standardised on each fit's rows (mean, SD), scored in physical units" if standardize_y
+                        else "raw"),
             "grid": grid, "oof": oof[best_g]}
 
 

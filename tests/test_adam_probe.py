@@ -43,7 +43,7 @@ def test_adamw_matches_torch():
     import torch
     rng = np.random.default_rng(0)
     X, Y = rng.standard_normal((200, 8)), rng.standard_normal((200, 2))
-    W, b = fit_adam_grid(X, Y, [(3e-3, 0.4)], epochs=20, batch=200, decoupled=True)
+    W, b = fit_adam_grid(X, Y, [(3e-3, 0.4)], epochs=20, batch=200, decoupled=True, standardize_y=False)
     r = np.random.default_rng(0)
     bound = 1 / np.sqrt(8)
     W0, b0 = r.uniform(-bound, bound, (1, 8, 2))[0], r.uniform(-bound, bound, (1, 2))[0]
@@ -56,3 +56,17 @@ def test_adamw_matches_torch():
         torch.nn.functional.mse_loss(lin(torch.tensor(X)), torch.tensor(Y)).backward()
         opt.step()
     assert np.allclose(lin.weight.detach().numpy().T, W[0], atol=1e-12) and np.allclose(lin.bias.detach().numpy(), b[0])
+
+
+def test_adam_standardises_targets_and_returns_physical_units():
+    """A scalar target far from 0 (like speed): 50 epochs at lr 1e-3 cannot move the bias to the mean unless the
+    target is standardised; with it, round-1 R² is high and predictions are in physical units."""
+    from wm.adam_probe import fit_adam
+    rng = np.random.default_rng(0)
+    X = rng.standard_normal((600, 30))
+    y = 3.0 + 0.4 * X[:, :1] @ np.ones((1, 1)) + 0.05 * rng.standard_normal((600, 1))
+    r2 = lambda W, b: 1 - np.mean((X @ W + b - y) ** 2) / np.var(y)
+    W, b = fit_adam(X, y, 1e-3, 1e-4, 50, batch=64)
+    Wr, br = fit_adam(X, y, 1e-3, 1e-4, 50, batch=64, standardize_y=False)
+    assert r2(W, b) > 0.6 and abs(b[0] - 3.0) < 0.2
+    assert r2(Wr, br) < r2(W, b) - 0.3

@@ -167,7 +167,11 @@ def test_adam_sequence_logs_and_flags_untrained_rounds(monkeypatch):
 
     def flaky(X, Yf, lr, wd, epochs, batch, seed, decoupled):
         calls["n"] += 1
-        return init_linear(X.shape[1], Yf.shape[1], seed)[:2] if calls["n"] == 2 else real(X, Yf, lr, wd, epochs, batch, seed, decoupled)
+        if calls["n"] != 2:
+            return real(X, Yf, lr, wd, epochs, batch, seed, decoupled)
+        W0, b0, _ = init_linear(X.shape[1], Yf.shape[1], seed)     # the untrained probe, in physical units
+        mu, sd = Yf.mean(0), Yf.std(0)
+        return W0 * sd, b0 * sd + mu
     monkeypatch.setattr(inlp_mod, "fit_adam", flaky)
     s2, _ = adam_sequence(X[tr], Y[tr], X[te], Y[te], partial(score, kind="circular"), "circular", max_rounds=8,
                           batch=64, patience=2)
@@ -207,3 +211,12 @@ def test_random_band_uses_the_nested_curves_per_fold_alpha(monkeypatch):
     assert [a for n, a in used if n < n_tr] == summary["alpha_folds"]     # nested band: fold-part fits
     assert [a for n, a in used if n == n_tr] == [7.0]                     # paper band: all-train fit
     assert rand["alpha_folds"] == summary["alpha_folds"] and rand["alpha"] == 7.0 and 7.0 not in summary["alpha_folds"]
+
+
+def test_K_loose_censored_when_mae_rule_stops_first():
+    from wm.inlp import protocol_summary
+    rows = [{"round": 1, "cv_r2": 0.6}, {"round": 2, "cv_r2": 0.2}]      # stop at round 2 by the MAE rule, R² 0.2
+    s = protocol_summary(rows, 1, "cv", "scalar", 1)
+    assert s["K_loose"] == 1 and s["K_loose_censored"]
+    s = protocol_summary([{"round": 1, "cv_r2": 0.6}, {"round": 2, "cv_r2": 0.04}], 1, "cv", "scalar", 1)
+    assert s["K_loose"] == 1 and not s["K_loose_censored"]
