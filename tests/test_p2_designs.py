@@ -472,5 +472,11 @@ def test_curvature_verdict_rules():
     gaps["manifold_minus_linear"]["probe_err_to_target"] = mk(6.0)
     v = P2.curvature_verdict(gaps, sag_ok, floors, False)
     assert v["call"] == "negative" and v["text"].startswith("negative: spline worse at held-out endpoint")
-    gaps["manifold_minus_linear"]["probe_err_to_target"] = mk(1.0)       # worse, but within the margin: mixed
+    gaps["manifold_minus_linear"]["probe_err_to_target"] = mk(1.0)       # worse within the margin: not counted
+    v = P2.curvature_verdict(gaps, sag_ok, floors, False)
+    assert v["call"] == "positive" and v["worse_statistical_only_on"] == ["probe_err_to_target"]
+    assert "statistical-only losses" in v["text"]
+    v = P2.curvature_verdict(gaps, sag, floors, False)                   # same, unresolvable sagitta
+    assert v["call"] == "below_noise_scale"
+    gaps["manifold_minus_linear"]["excess_to_nearest_real"] = mk(0.5)    # a beyond-margin non-endpoint loss: mixed
     assert P2.curvature_verdict(gaps, sag_ok, floors, False)["call"] == "mixed"

@@ -760,7 +760,10 @@ def curvature_verdict(gaps, sagitta, floors, periodic, metrics=("excess_to_curve
     real-clip floor (behaviour_energy: of floor x K, since E_BC sums K waypoints); probe_err_path >= the evaluation
     probe's own out-of-sample error. below_noise_scale: statistically better but not by a practical margin, or the
     sagitta is below the resolvable scale ("detectable but below the noise scale: no practical curvature benefit").
-    mixed: otherwise. floors: dict(to_curve, to_nearest_real, behaviour_mean, K, probe_oof).
+    mixed: better on something and worse by a practical margin on something. Symmetric: a loss counts against the
+    spline only beyond the same practical margin used for gains; statistical-only losses are reported
+    (worse_statistical_only_on) and noted in the text but do not change the call.
+    floors: dict(to_curve, to_nearest_real, behaviour_mean, K, probe_oof).
     Two overrides: a spline worse than the chord at the held-out ENDPOINT (probe_err_to_target) by more than the
     probe's out-of-sample error is "negative: spline worse at held-out endpoint" whatever the path metrics say; and
     Eq. 9 gains (behaviour_energy, circular at the steered layer) are reported but never enough for "positive": that
@@ -794,6 +797,8 @@ def curvature_verdict(gaps, sagitta, floors, periodic, metrics=("excess_to_curve
     sag_ratio = float(np.median(ratio)) if len(sag) else float("nan")
     geo = (f"sagitta median {float(np.median(sag)):.3g} vs centroid noise {noise:.3g} (PCA units)" if len(sag)
            else "no held-out targets")
+    stat_only = [q for q in worse if q not in worse_practical]
+    note = f" (statistical-only losses, not counted: {stat_only})" if stat_only else ""
     if "probe_err_to_target" in worse_practical:
         r = g("linear", "probe_err_to_target")
         text = (f"negative: spline worse at held-out endpoint (probe error +{r['mean_over_pairs']:.3g} vs chord, "
@@ -805,25 +810,27 @@ def curvature_verdict(gaps, sagitta, floors, periodic, metrics=("excess_to_curve
         text = (f"negative: no curvature benefit, the chord is as good or better (spline worse on {worse}: the "
                 f"spline bends where the data do not); {geo}")
         call = "negative"
-    elif not worse and practical_non_eq9 and sag_ratio >= min_sagitta_ratio:
-        text = f"positive: spline better than chord on {practical_non_eq9} by a practical margin; {geo}"
+    elif not worse_practical and practical_non_eq9 and sag_ratio >= min_sagitta_ratio:
+        text = f"positive: spline better than chord on {practical_non_eq9} by a practical margin{note}; {geo}"
         call = "positive"
-    elif not worse:
+    elif not worse_practical:
         text = (f"detectable but below the noise scale: no practical curvature benefit (spline better on {better} "
-                f"without a practical non-Eq. 9 gain, or sagitta/noise {sag_ratio:.2g} < {min_sagitta_ratio:g}); "
-                f"{geo}")
+                f"without a practical non-Eq. 9 gain, or sagitta/noise {sag_ratio:.2g} < {min_sagitta_ratio:g})"
+                f"{note}; {geo}")
         call = "below_noise_scale"
     else:
-        text = (f"mixed: spline better on {better}, worse on {worse}; {geo}")
+        text = f"mixed: spline better on {better}, worse by a practical margin on {worse_practical}{note}; {geo}"
         call = "mixed"
     return {"call": call, "text": text, "spline_better_than_chord_on": better, "practical_on": practical,
             "practical_non_eq9_on": practical_non_eq9, "worse_by_practical_margin_on": worse_practical,
-            "spline_worse_than_chord_on": worse, "spline_equals_projected_reflected": bool(same),
+            "spline_worse_than_chord_on": worse, "worse_statistical_only_on": stat_only,
+            "spline_equals_projected_reflected": bool(same),
             "sagitta_over_noise_median": sag_ratio, "practical_margins": margin,
             "rule": (f"{z:g} SE over (source, target) pairs; practical: energies >= {min_frac_floor:g} x real-clip "
                      f"floor, path/endpoint error >= probe out-of-sample error, sagitta/noise >= "
-                     f"{min_sagitta_ratio:g}; positive needs a non-Eq. 9 practical gain; endpoint worse by its "
-                     f"margin overrides to negative"),
+                     f"{min_sagitta_ratio:g}; positive needs a non-Eq. 9 practical gain; a loss counts only beyond "
+                     f"the same practical margin (statistical-only losses reported); endpoint worse by its margin "
+                     f"overrides to negative"),
             "metrics": list(metrics)}
 
 
