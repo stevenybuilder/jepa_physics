@@ -108,6 +108,79 @@ def fig1b(results, out):
     plt.close(fig)
 
 
+def fig1c(results, out):
+    """Extra (spec 5.1 b): direction probe from the direction set, read on the speed and acceleration sets."""
+    runs = {pool: load(results, rf"p1a_support_transfer_{pool}\.json") for pool in ("meanpool", "diskpool")}
+    runs = {k: v for k, v in runs.items() if v}
+    if not runs:
+        return
+    fig, axes = plt.subplots(1, len(runs), figsize=(5.5 * len(runs), 3.8), sharey=True, squeeze=False)
+    for ax, (pool, r) in zip(axes[0], runs.items()):
+        body = [row for row in r["layers"] if not row["post_ln"]]
+        x = [row["frac"] for row in body]
+        ax.plot(x, [row["source_cv_mae"] for row in body], color=COLORS["direction"],
+                label="direction set (5-fold CV)")
+        for name in r["targets"]:
+            ax.plot(x, [row["targets"][name]["mae"] for row in body], color=COLORS[name],
+                    label=f"{name} set (all clips)")
+        ax.axhline(90, color=COLORS["random"], lw=0.8, ls=":", label="chance (90°)")
+        ax.set(xlabel="layer fraction", ylim=(0, 120), title=f"Direction probe transfer ({pool})")
+        legend_top(ax, 2)
+    axes[0][0].set_ylabel("circular MAE (deg)")
+    fig.savefig(out / "fig1c_direction_transfer.png")
+    plt.close(fig)
+
+
+def fig1d(results, out):
+    """Extra (spec 5.1 a): Cartesian (vx, vy) vs polar (sin, cos) onset on constant-speed clips."""
+    runs = [(d, load(results, rf"p1a_support_onset_{d}_meanpool\.json")) for d in ("direction", "speed")]
+    runs = [(d, r) for d, r in runs if r]
+    if not runs:
+        return
+    fig, axes = plt.subplots(1, len(runs), figsize=(5.5 * len(runs), 3.8), sharey=True, squeeze=False)
+    for ax, (d, r) in zip(axes[0], runs):
+        for name, color, label in (("vxvy", COLORS["velocity"], "(vx, vy)"), ("sincos", COLORS["direction"], "(sin θ, cos θ)")):
+            t = r["targets"][name]
+            x, m = curve(ax, t, "cv_mean", "cv_sd", color, label)
+            av = t["availability"]
+            if av["onset"] is not None:
+                ci = av.get("onset_ci") or [av["onset"]] * 2
+                ax.plot(x[av["onset"]], m[av["onset"]], "v", color=color, ms=9, mec="white", mew=1.5)
+                ax.errorbar(x[av["onset"]], -0.03, xerr=[[x[av["onset"]] - ci[0] / 24], [ci[1] / 24 - x[av["onset"]]]],
+                            fmt="none", color=color, capsize=3)
+        diff = r.get("onset_difference", {})
+        ax.set(xlabel="layer fraction", ylim=(-0.08, 1.02),
+               title=f"{d} set, constant speed: Δonset {diff.get('point_estimate')} (95% CI {diff.get('ci95')})")
+        legend_top(ax, 2)
+    axes[0][0].set_ylabel("probe R² (5-fold mean ± SD)")
+    fig.savefig(out / "fig1d_cartesian_vs_polar.png")
+    plt.close(fig)
+
+
+def fig1e(results, out):
+    """Extra (spec 5.1 c): direction probe fit on start x < 0, read on x > 0 and the reverse."""
+    runs = {pool: load(results, rf"p1a_support_spatial_{pool}\.json") for pool in ("meanpool", "diskpool")}
+    runs = {k: v for k, v in runs.items() if v}
+    if not runs:
+        return
+    fig, ax = plt.subplots(figsize=(6, 3.8))
+    for pool, ls in (("meanpool", "-"), ("diskpool", "--")):
+        if pool not in runs:
+            continue
+        body = [row for row in runs[pool]["layers"] if not row["post_ln"]]
+        x = [row["frac"] for row in body]
+        within = [np.mean([row[k]["within_cv_mae"] for k in ("neg_to_pos", "pos_to_neg")]) for row in body]
+        cross = [np.mean([row[k]["cross_mae"] for k in ("neg_to_pos", "pos_to_neg")]) for row in body]
+        ax.plot(x, within, ls, color=COLORS["direction"], label=f"{pool}: same side (CV)")
+        ax.plot(x, cross, ls, color=COLORS["speed"], label=f"{pool}: other side")
+    ax.axhline(90, color=COLORS["random"], lw=0.8, ls=":")
+    ax.set(xlabel="layer fraction", ylabel="circular MAE (deg), mean of both directions", ylim=(0, 120),
+           title="Spatial generalisation: start x < 0 vs x > 0")
+    legend_top(ax, 2)
+    fig.savefig(out / "fig1e_spatial_generalisation.png")
+    plt.close(fig)
+
+
 def fig2(results, out):
     runs = {v: load(results, rf"p1b_{v}_{v}_meanpool_L\d+\.json") for v in ("direction", "speed")}
     runs = {v: r for v, r in runs.items() if r}
@@ -260,6 +333,6 @@ if __name__ == "__main__":
     parser.add_argument("--figures", type=Path, default=ROOT / "figures")
     args = parser.parse_args()
     args.figures.mkdir(parents=True, exist_ok=True)
-    for make in (fig1, fig1b, fig2, fig2b, fig3, fig3b, fig3c):
+    for make in (fig1, fig1b, fig1c, fig1d, fig1e, fig2, fig2b, fig3, fig3b, fig3c):
         make(args.results, args.figures)
     print("figures:", sorted(p.name for p in args.figures.glob("*.png")))
