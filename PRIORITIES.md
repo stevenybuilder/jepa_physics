@@ -1,9 +1,7 @@
 # Priorities: what Sonia expects at minimum, and what makes it stand out
 
 Two tiers. Tier 1 is not negotiable: every item ships, with a figure and a results file, before any Tier 2 item is
-shown. Tier 2 is ranked; the cut line moves with time. Status as of 27 Sep 2026, 16:30 ET: activations extracted and verified; step 1 and its controls, step 2 (direction) and
-the Part 2 pre-checks have run on real data (outcomes in spec.md §7); step 3 running; engineers landing fixes from the
-fidelity and QA passes.
+shown. Tier 2 is ranked; the cut line moves with time. Status as of 27 Sep 2026, 19:00 ET: Part 1 core and extras done at the final code (leak fixed, N grid, paper layer 9, Adam sequences with centred targets); Part 2 core done at all layers/designs with verdicts; remaining: GPU session 2 (propagation, predictor, time-reversed, hard stimuli, VideoMAE), then the report refresh.
 
 Sources: README (what is asked), the physics paper's own conventions (what she takes for granted), the Goodfire
 paper's A.3–A.7 and §5, the fidelity check against both PDFs, `lit_review.md` §1 and its "table stakes" item,
@@ -48,14 +46,14 @@ gives us ground truth that language often does not"; "inherently interpretable a
 |---|---|---|---|
 | 1.1 | Layer-wise linear probes on mean-pooled tokens at every layer for direction (sin/cos), speed, acceleration, plus the Cartesian pairs; x-axis layer fraction; fold mean ± SD | Fig. 2, App. B; the README's first bullet | DONE (results/p1a_*, fig1) |
 | 1.2 | A stated rule for "where each variable becomes available", with onset, peak and decline reported per variable (90 % of max, bootstrap CI on the onset layer) | README says "identify where each variable becomes available"; the paper's three-part finding | done |
-| 1.3 | Direction treated as circular everywhere: sin/cos targets, atan2 decode, circular MAE, a (ŝ, ĉ) scatter coloured by θ at three layers, radius reported | Paper §3.2, C.7; README Part 2 hint | done (radius: in progress) |
+| 1.3 | Direction treated as circular everywhere: sin/cos targets, atan2 decode, circular MAE, a (ŝ, ĉ) scatter coloured by θ at three layers, radius reported | Paper §3.2, C.7; README Part 2 hint | done |
 | 1.4 | Selectivity controls on the layer curves: shuffled labels, random-init ViT-L, pixel baseline | Any reviewer; in a fixed-camera scene raw pixels can match V-JEPA 2 (lit_review §1.8) | DONE (random-init, pixels, trajectory, random-feature floor, shuffled, disk-pool, paper-scale) |
 | 1.5 | Iterative nullspace probing exactly as C.11: QR, project out, refit, the paper's stopping thresholds, 2K vs K, at the emergence layer and per layer (dimension vs depth) | App. C.11, Figs. 4c, 22, 23 | DONE at onset/8/9/peak, nested + paper protocols, leak fixed (p1b_*, fig2/fig2b) |
-| 1.6 | INLP read for dimensionality **and** redundancy: sawtooth vs smooth decay (direction vs speed), the paper's within-15° accuracy per round, and a random-removal band behind the curve | README asks for "dimensionality and redundancy"; Fig. 23; the band is what makes "tens" a claim | DONE (within-15° per round, random band under the same protocol; no sawtooth) |
+| 1.6 | INLP read for dimensionality **and** redundancy: sawtooth vs smooth decay (direction vs speed), the paper's within-15° accuracy per round, and a random-removal band behind the curve | README asks for "dimensionality and redundancy"; Fig. 23; the band is what makes "tens" a claim | DONE (within-15° per round, random band under the same protocol; no sawtooth under ridge, jagged 2× K under the literal Adam recipe for both variables) |
 | 1.7 | Multi-probe subspace steering exactly as C.12: V from the probes, least-squares c\*, held-out evaluation probe, MAE-to-target and MAE-to-true vs N, single probe fails, ~20 reach target | App. C.12, Fig. 24; README's third bullet | DONE at onset/9/peak on the N grid (p1c_*, fig3/fig3b/fig3c incl. _paper); strict-eval extra on the box |
 | 1.8 | Held-out cuts both ways: subspace from train, evaluation probe on clips it never saw, steered clips never in the subspace | README: "held-out data not used to construct the subspace" | DONE (wm.provenance block in every results JSON) |
 | 1.9 | The acceleration confound (all clips start at rest; the paper's too) stated on the slide, not fixed silently; direction reported per motion type | Honesty; App. A.1.2 | in spec; per-motion-type panel done |
-| 1.10 | One deviations table (ridge vs Adam with a parity check, split, input size, hidden-state points, 64 directions) | She will ask | spec §7b; Adam check in progress |
+| 1.10 | One deviations table (ridge vs Adam with a parity check, split, input size, hidden-state points, 64 directions) | She will ask | done (spec §7b; recipe check dba3dc4: ridge ≥ Adam on all three variables) |
 | 1.11 | Reproducibility: committed split file, seeds, frame hashes, versions, TF32 off, every slide number from a results JSON | Her own repo standards | done |
 
 ### Part 2 (Goodfire method applied honestly)
@@ -76,11 +74,11 @@ gives us ground truth that language often does not"; "inherently interpretable a
 
 | Rank | Item | Precedent / gap | Cost | Status |
 |---|---|---|---|---|
-| S1 | **Held-out circular steering done properly**: contiguous 45° arc held out, error vs \|Δθ\| in 15° bins, 0°→180° via 90° vs via 270° (only a manifold expresses both), readout radius collapsing along the chord | No manifold-steering paper (Goodfire, her group's 2609.01551, GAGA) evaluates on held-out values | pooled, minutes | in progress |
+| S1 | **Held-out circular steering done properly**: contiguous 45° arc held out, error vs \|Δθ\| in 15° bins, 0°→180° via 90° vs via 270° (only a manifold expresses both), readout radius collapsing along the chord | No manifold-steering paper (Goodfire, her group's 2609.01551, GAGA) evaluates on held-out values | pooled, minutes | DONE (contiguous arc, all designs, verdicts) |
 | S2 | **The predictor as behavioural readout**: render counterfactual twin clips, encode context frames only, edit, run the predictor, score recovery R on predicted future tokens; propagation heatmap steer-layer × read-layer alongside | Her essay asks for exactly this; nobody has judged an edit to any JEPA by its predictor | GPU session 2, < 1 h | spec §6.5; code after layer choice |
 | S3 | **"How many dimensions is direction?" as four estimands** with a planted ring: literal K, whitened K, post-LEACE-2 decodability, harmonic spectrum of the 64 centroids | Jin et al. 2608.10566 criticise her count by name; her blog names a "harmonic basis" | pooled, minutes | in progress |
-| S4 | **Fewer-probes bake-off at matched edit norm**: probe-QR vs centroid transport vs rank-2 ring rotation vs spline vs snap, linear and MLP evaluators on disjoint clips | Her blog's open question | pooled, minutes | in progress |
-| S5 | **Ring, cone or velocity plane**: radius vs speed, Procrustes to (cos θ, sin θ) vs (v cos θ, v sin θ), speed readout along a chord, Cartesian-vs-polar onset (her Table 1 claim, never plotted) | Paper asserts polar dominates without the comparison | pooled | in progress |
+| S4 | **Fewer-probes bake-off at matched edit norm**: probe-QR vs centroid transport vs rank-2 ring rotation vs spline vs snap, linear and MLP evaluators on disjoint clips | Her blog's open question | pooled, minutes | DONE (bake-off at matched norm, linear + MLP evaluators) |
+| S5 | **Ring, cone or velocity plane**: radius vs speed, Procrustes to (cos θ, sin θ) vs (v cos θ, v sin θ), speed readout along a chord, Cartesian-vs-polar onset (her Table 1 claim, never plotted) | Paper asserts polar dominates without the comparison | pooled | DONE (velocity plane: ring, radius saturates in speed; Cartesian onset first) |
 | S6 | **Direction-vs-speed subspace angles** (C.4 method) and the off-target readout | Her Table 3 never measures this pair | pooled | in progress |
 | S7 | **Controls Goodfire lacks**: matched support (its linear arm erases the residual), reflected and projected curvature arms, matched delivered dose, BF16 repeat, shared-vs-specific Δ | jepa_steering's registered protocol; Oozeer 2605.24942 | pooled | in progress |
 | S8 | **Time-reversed clips** as a direction-specific control (same occupancy, opposite direction) | Lit review table stakes; cheap and sharp | GPU session 2 | spec §6.2 |
