@@ -318,3 +318,10 @@ def test_planted_ring_reports_real_ring():
     pr = gc.planted_ring_control(X, th, radii=(1.0,), k=16, seed=7, periodic=True)
     assert pr["real_ring"]["radius"] == pytest.approx(R, rel=0.05)
     assert pr["rows"][0]["radius_over_real_ring"] == pytest.approx(pr["rows"][0]["ring_radius"] / pr["real_ring"]["radius"])
+
+
+def test_single_provenance_module():
+    from wm import common, provenance as pv
+    assert common.provenance is pv.result_provenance and common.git_commit is pv.git_commit
+    for block in (pv.result_provenance({"pool": "meanpool", "point": 3}), pv.provenance(seeds={"seed": 0}, layer=3)):
+        assert {"commit", "dirty", "git_commit", "git_dirty_src_or_scripts", "split_sha256"} <= set(block)
