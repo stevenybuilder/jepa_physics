@@ -188,3 +188,22 @@ def test_step_layers_paper_layer_is_point_9_with_alt_8():
     assert step_layers(sweep, "all") == {20: "peak", 9: "onset+paper_layer", 8: "paper_layer_alt"}
     assert step_layers(sweep, "all", alt=False) == {20: "peak", 9: "onset+paper_layer"}
     assert step_layers(sweep, "paper", alt=False) == {9: "paper_layer"} and step_layers(sweep, "peak") == {20: "peak"}
+
+
+def test_random_band_uses_the_nested_curves_per_fold_alpha(monkeypatch):
+    """The nested random band fits each fold with the nested curve's α for that fold; the paper band the all-train α."""
+    import wm.inlp as inlp_mod
+    theta = np.radians(np.random.default_rng(1).uniform(0, 360, 1200))
+    Y = np.stack([np.sin(theta), np.cos(theta)], 1)
+    X = copies_code(Y, 3, d=40, seed=0)
+    tr, te, folds = split(len(Y))
+    sf = partial(score, kind="circular")
+    summary, *_ = inlp(X[tr], Y[tr], X[te], Y[te], folds, 7.0, sf, "circular")
+    used, real = [], inlp_mod.fit_ridge
+    monkeypatch.setattr(inlp_mod, "fit_ridge", lambda Xf, Yf, a: (used.append((len(Xf), a)), real(Xf, Yf, a))[1])
+    rand = random_removal_curve(X[tr], Y[tr], X[te], Y[te], folds, 7.0, sf, [2], seeds=1,
+                                alpha_folds=summary["alpha_folds"])
+    n_tr = int(tr.sum())
+    assert [a for n, a in used if n < n_tr] == summary["alpha_folds"]     # nested band: fold-part fits
+    assert [a for n, a in used if n == n_tr] == [7.0]                     # paper band: all-train fit
+    assert rand["alpha_folds"] == summary["alpha_folds"] and rand["alpha"] == 7.0 and 7.0 not in summary["alpha_folds"]

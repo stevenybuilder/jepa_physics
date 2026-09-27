@@ -187,15 +187,18 @@ def inlp(Xtr, Ytr, Xte, Yte, folds, alpha, score_fn, kind, max_rounds=None, prot
     return summary, Q, W_arr, b_arr
 
 
-def random_score(Xtr, Ytr, Xte, Yte, folds, alpha, score_fn, Q):
+def random_score(Xtr, Ytr, Xte, Yte, folds, alpha, score_fn, Q, alpha_folds=None):
     """Score the probe after removing a fixed (label-free) subspace span(Q). cv_*: nested protocol (fit on the other
-    folds, score the held-out fold; Q does not depend on labels, so one Q serves every fold). test_*: paper protocol
-    (fit on all train, score test), only when Xte is given."""
+    folds with that fold's α from alpha_folds, as the nested curve; score the held-out fold; Q does not depend on
+    labels, so one Q serves every fold). test_*: paper protocol (all-train α, fit on all train, score test), only
+    when Xte is given. alpha_folds None = alpha for every fold."""
     Xk = project_out(Xtr, Q)
     sc, base = [], []
-    for k in np.unique(folds):
+    ks = np.unique(folds)
+    alpha_folds = [alpha] * len(ks) if alpha_folds is None else alpha_folds
+    for k, a in zip(ks, alpha_folds):
         val = folds == k
-        W, b = fit_ridge(Xk[~val], Ytr[~val], alpha)
+        W, b = fit_ridge(Xk[~val], Ytr[~val], a)
         sc.append(score_fn(Ytr[val], predict(Xk[val], W, b)))
         base.append(float(np.mean(np.abs(Ytr[val] - Ytr[~val].mean(axis=0)))))
     row = {"dims_removed": Q.shape[1], "base_mae": float(np.mean(base))}
@@ -209,10 +212,11 @@ def random_score(Xtr, Ytr, Xte, Yte, folds, alpha, score_fn, Q):
     return row
 
 
-def random_removal_curve(Xtr, Ytr, Xte, Yte, folds, alpha, score_fn, rank_schedule, seeds=10):
+def random_removal_curve(Xtr, Ytr, Xte, Yte, folds, alpha, score_fn, rank_schedule, seeds=10, alpha_folds=None):
     """Control: remove a random orthonormal subspace of each rank in rank_schedule and score the same probe, under
     both protocols (cv_* keys = nested, behind the nested curve; test_* keys = paper, behind the paper curve; test_*
-    only when Xte is given). Rows carry means over seeds plus *_seed_sd. Per seed the subspaces are nested (first r
+    only when Xte is given). The nested band uses alpha_folds (pass the nested curve's, so control and treatment
+    share the α rule); the paper band uses alpha. Rows carry means over seeds plus *_seed_sd. Per seed the subspaces are nested (first r
     columns of one random orthonormal basis)."""
     Ytr = np.asarray(Ytr, float).reshape(len(Ytr), -1)
     d = Xtr.shape[1]
@@ -221,7 +225,7 @@ def random_removal_curve(Xtr, Ytr, Xte, Yte, folds, alpha, score_fn, rank_schedu
              for s in range(seeds)]
     rows = []
     for r in rank_schedule:
-        per_seed = [random_score(Xtr, Ytr, Xte, Yte, folds, alpha, score_fn, B[:, :r]) for B in bases]
+        per_seed = [random_score(Xtr, Ytr, Xte, Yte, folds, alpha, score_fn, B[:, :r], alpha_folds) for B in bases]
         row = {"dims_removed": int(r)}
         for key in ("cv_r2", "cv_mae", "test_r2", "test_mae", "cv_acc15", "test_acc15"):
             if key not in per_seed[0]:
@@ -230,7 +234,9 @@ def random_removal_curve(Xtr, Ytr, Xte, Yte, folds, alpha, score_fn, rank_schedu
             row[key] = float(np.mean(vals))
             row[key + "_seed_sd"] = float(np.std(vals, ddof=1))
         rows.append(row)
-    return {"seeds": seeds, "protocols": {"cv_*": "nested", "test_*": "paper"}, "rows": rows}
+    return {"seeds": seeds, "protocols": {"cv_*": "nested", "test_*": "paper"},
+            "alpha_folds": None if alpha_folds is None else [float(a) for a in alpha_folds], "alpha": float(alpha),
+            "rows": rows}
 
 
 def isolated_dips(values, drop=0.05):
@@ -351,7 +357,7 @@ def run_inlp(dataset, variable, point=None, pool="meanpool", seeds=10, with_rand
         paper["sawtooth"] = sawtooth(paper, W, "test")
     if with_random:
         out["random"] = random_removal_curve(Xtr, Y[tr], Xte if paper else None, Y[te], folds, alpha, score_fn,
-                                             rank_schedule(summary), seeds)
+                                             rank_schedule(summary), seeds, summary["alpha_folds"])
     msg = (f"{dataset}/{variable} point {point}: nested K={summary['K']} (folds {summary['K_fold_min']}-"
            f"{summary['K_fold_max']}) dims={summary['dims']} K({summary['loose_threshold']})={summary['K_loose']}")
     print(msg + (f"; paper K={paper['K']} dims={paper['dims']}" if paper else ""))
