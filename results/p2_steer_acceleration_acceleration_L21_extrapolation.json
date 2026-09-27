@@ -14,11 +14,11 @@
    "seed": 0,
    "controls": 0
   },
-  "commit": "125c6e01b6bb919cccce786bdb0c7a53f93765f7",
+  "commit": "4d646137d9437c75904526aba0255ae607db420a",
   "dirty": false,
-  "git_commit": "125c6e01b6bb919cccce786bdb0c7a53f93765f7",
+  "git_commit": "4d646137d9437c75904526aba0255ae607db420a",
   "git_dirty_src_or_scripts": false,
-  "timestamp_utc": "2026-09-27T22:11:26+00:00",
+  "timestamp_utc": "2026-09-27T22:39:35+00:00",
   "layer": 21,
   "pool": "meanpool",
   "holdout": "extrapolation",
@@ -3756,7 +3756,7 @@
      4.270297756209541,
      4.270783838879555,
      4.271261231587529,
-     4.2717302735591876,
+     4.271730273559188,
      4.272191314918899,
      4.272644715759704,
      4.273090845604513,
@@ -3796,7 +3796,7 @@
      4.287087244877641,
      4.287558394512163,
      4.288037917802479,
-     4.288526184139927,
+     4.2885261841399265,
      4.2890235634723455
     ]
    },
@@ -3989,7 +3989,7 @@
      4.448656997606192,
      4.448884084671169,
      4.449071339630077,
-     4.449224503822139,
+     4.449224503822137,
      4.449348700088562,
      4.449447468036132,
      4.44952160290761,
@@ -4179,7 +4179,7 @@
      4.340416810133807,
      4.34580350878197,
      4.351072173507822,
-     4.356173450286553,
+     4.356173450286554,
      4.361119295930649,
      4.365806677782067,
      4.3701518644416515,
@@ -4188,7 +4188,7 @@
      4.383027131608077,
      4.387079809970596,
      4.390833210414521,
-     4.3943827739436765,
+     4.394382773943676,
      4.397609172272439,
      4.400592606072093,
      4.403400290761229,
@@ -4223,7 +4223,7 @@
      4.462349728712577,
      4.443434538873968,
      4.412861508702741,
-     4.368664284581318
+     4.368664284581317
     ]
    },
    {
@@ -5954,7 +5954,7 @@
      "probe_err_path": 0.6455250085019405,
      "probe_radius_min": NaN,
      "behaviour_energy_rel_floor": 0.21445469742923579,
-     "behaviour_entropy_mean": 4.258807858857106,
+     "behaviour_entropy_mean": 4.258807858857105,
      "intermediate_mass": 0.09557125428534517,
      "ordering_spearman": 0.08909542958226391,
      "argmax_on_arc": 0.2777777777777778,
@@ -6238,7 +6238,7 @@
   }
  },
  "summary_notes": [
-  "verdict: detectable but below the noise scale: no practical curvature benefit (spline better on ['excess_to_curve', 'excess_to_nearest_real', 'probe_err_path', 'behaviour_energy'] by < practical margin or sagitta/noise 0.39 < 0.5); sagitta median 1.04 vs centroid noise 2.67 (PCA units)",
+  "verdict: detectable but below the noise scale: no practical curvature benefit (spline better on ['excess_to_curve', 'excess_to_nearest_real', 'probe_err_path', 'behaviour_energy'] without a practical non-Eq. 9 gain, or sagitta/noise 0.39 < 0.5) (statistical-only losses, not counted: ['probe_err_to_target']); sagitta median 1.04 vs centroid noise 2.67 (PCA units)",
   "behaviour manifold (Eq. 9) caveat: at the steered layer the behaviour function F is itself a distance-to-centroid function of the edited activation, so behaviour_energy and isometry_behaviour are partly circular there; they become informative only at later layers (propagation) or through the predictor",
   "replace arms (goodfire_manifold, goodfire_linear): behaviour energy and entropy not comparable: on-curve by construction (residual replaced, so Eq. 9 gives a sharp distribution that no real clip has); compare replace arms on probe readouts and nearest-real only",
   "behaviour_energy_rel_floor = mean Bhattacharyya distance per waypoint / the unsteered real-clip floor (test clips at their own value); 1 = as natural as a real clip"
@@ -41908,26 +41908,26 @@
     ]
    },
    "behaviour_entropy_mean": {
-    "mean": 0.006203212765764986,
+    "mean": 0.006203212765764995,
     "ci95": [
-     -0.015566663119465128,
-     0.03027299332042517
+     -0.015566663119465116,
+     0.030272993320425184
     ],
     "n": 384,
     "n_clips": 215,
-    "mean_over_targets": 0.006203212765764991,
+    "mean_over_targets": 0.006203212765764998,
     "se_over_targets": 0.017782566403002305,
-    "mean_over_pairs": 0.0037611208837148285,
+    "mean_over_pairs": 0.003761120883714832,
     "n_pairs": 284,
     "se_over_pairs": 0.010188548765818622,
     "by_shift": [
      {
       "shift_lo": 0.15476190476190332,
       "shift_hi": 1.3309523809523824,
-      "mean": -0.0037532454645505865,
+      "mean": -0.003753245464550575,
       "ci95": [
-       -0.0052849875697863575,
-       -0.0023150178349948722
+       -0.005284987569786334,
+       -0.0023150178349948605
       ],
       "n": 77,
       "n_clips": 50
@@ -41935,10 +41935,10 @@
      {
       "shift_lo": 1.3309523809523824,
       "shift_hi": 3.095238095238096,
-      "mean": -0.055564606548307305,
+      "mean": -0.055564606548307284,
       "ci95": [
-       -0.0753938184815052,
-       -0.038517135209423466
+       -0.07539381848150516,
+       -0.03851713520942345
       ],
       "n": 76,
       "n_clips": 44
@@ -41957,9 +41957,9 @@
      {
       "shift_lo": 5.076190476190482,
       "shift_hi": 7.335714285714292,
-      "mean": -0.009811202476961382,
+      "mean": -0.00981120247696137,
       "ci95": [
-       -0.05266129630092946,
+       -0.05266129630092945,
        0.03162721950641162
       ],
       "n": 77,
@@ -41970,7 +41970,7 @@
       "shift_hi": 9.750000001,
       "mean": 0.1614202978578704,
       "ci95": [
-       0.07193984739887378,
+       0.07193984739887377,
        0.252827823455819
       ],
       "n": 77,
@@ -79317,7 +79317,7 @@
    "probe_err_path": 4.186670446468359,
    "probe_radius_min": NaN,
    "behaviour_energy_rel_floor": 7.403178894351395,
-   "behaviour_entropy_mean": 3.846623289796652,
+   "behaviour_entropy_mean": 3.846623289796653,
    "intermediate_mass": 0.7046798018034309,
    "ordering_spearman": 0.9375199077518153,
    "argmax_on_arc": 0.44,
@@ -79587,7 +79587,7 @@
    "probe_err_path": 2.1995872546621156,
    "probe_radius_min": NaN,
    "behaviour_energy_rel_floor": 0.5394995026503083,
-   "behaviour_entropy_mean": 4.530970157108164,
+   "behaviour_entropy_mean": 4.530970157108163,
    "intermediate_mass": 0.46375108694915856,
    "ordering_spearman": 0.19709163223352466,
    "argmax_on_arc": 1.0,
@@ -79749,7 +79749,7 @@
    "probe_err_path": 2.499979945087059,
    "probe_radius_min": NaN,
    "behaviour_energy_rel_floor": 0.1979505882764621,
-   "behaviour_entropy_mean": 4.4938436171935985,
+   "behaviour_entropy_mean": 4.493843617193598,
    "intermediate_mass": 0.3396098407379087,
    "ordering_spearman": -0.046754370039005386,
    "argmax_on_arc": 0.0,
@@ -80046,7 +80046,7 @@
    "probe_err_path": 1.0331773914748859,
    "probe_radius_min": NaN,
    "behaviour_energy_rel_floor": 0.12084696678359536,
-   "behaviour_entropy_mean": 4.11951659104148,
+   "behaviour_entropy_mean": 4.119516591041479,
    "intermediate_mass": 0.23054277611900295,
    "ordering_spearman": 0.8748589322059324,
    "argmax_on_arc": 0.92,
@@ -80100,7 +80100,7 @@
    "probe_err_path": 4.199721710889152,
    "probe_radius_min": NaN,
    "behaviour_energy_rel_floor": 0.3665874517220475,
-   "behaviour_entropy_mean": 4.349038398176973,
+   "behaviour_entropy_mean": 4.3490383981769725,
    "intermediate_mass": 0.7894564617963157,
    "ordering_spearman": 0.7007956174872908,
    "argmax_on_arc": 1.0,
@@ -104841,7 +104841,7 @@
  ],
  "verdict": {
   "call": "below_noise_scale",
-  "text": "detectable but below the noise scale: no practical curvature benefit (spline better on ['excess_to_curve', 'excess_to_nearest_real', 'probe_err_path', 'behaviour_energy'] by < practical margin or sagitta/noise 0.39 < 0.5); sagitta median 1.04 vs centroid noise 2.67 (PCA units)",
+  "text": "detectable but below the noise scale: no practical curvature benefit (spline better on ['excess_to_curve', 'excess_to_nearest_real', 'probe_err_path', 'behaviour_energy'] without a practical non-Eq. 9 gain, or sagitta/noise 0.39 < 0.5) (statistical-only losses, not counted: ['probe_err_to_target']); sagitta median 1.04 vs centroid noise 2.67 (PCA units)",
   "spline_better_than_chord_on": [
    "excess_to_curve",
    "excess_to_nearest_real",
@@ -104851,20 +104851,29 @@
   "practical_on": [
    "behaviour_energy"
   ],
-  "spline_worse_than_chord_on": [],
+  "practical_non_eq9_on": [],
+  "worse_by_practical_margin_on": [],
+  "spline_worse_than_chord_on": [
+   "probe_err_to_target"
+  ],
+  "worse_statistical_only_on": [
+   "probe_err_to_target"
+  ],
   "spline_equals_projected_reflected": false,
   "sagitta_over_noise_median": 0.3894832018289196,
   "practical_margins": {
    "excess_to_curve": 0.9309089669755611,
    "excess_to_nearest_real": 0.6976343156670706,
    "behaviour_energy": 0.034711948792652485,
-   "probe_err_path": 0.23954472194576087
+   "probe_err_path": 0.23954472194576087,
+   "probe_err_to_target": 0.23954472194576087
   },
-  "rule": "2 SE over (source, target) pairs; practical: energies >= 0.1 x real-clip floor, path error >= probe out-of-sample error, sagitta/noise >= 0.5",
+  "rule": "2 SE over (source, target) pairs; practical: energies >= 0.1 x real-clip floor, path/endpoint error >= probe out-of-sample error, sagitta/noise >= 0.5; positive needs a non-Eq. 9 practical gain; a loss counts only beyond the same practical margin (statistical-only losses reported); endpoint worse by its margin overrides to negative",
   "metrics": [
    "excess_to_curve",
    "excess_to_nearest_real",
    "probe_err_path",
+   "probe_err_to_target",
    "behaviour_energy"
   ]
  },

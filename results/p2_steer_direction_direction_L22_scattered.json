@@ -14,11 +14,11 @@
    "seed": 0,
    "controls": 0
   },
-  "commit": "125c6e01b6bb919cccce786bdb0c7a53f93765f7",
+  "commit": "4d646137d9437c75904526aba0255ae607db420a",
   "dirty": false,
-  "git_commit": "125c6e01b6bb919cccce786bdb0c7a53f93765f7",
+  "git_commit": "4d646137d9437c75904526aba0255ae607db420a",
   "git_dirty_src_or_scripts": false,
-  "timestamp_utc": "2026-09-27T22:13:09+00:00",
+  "timestamp_utc": "2026-09-27T22:41:16+00:00",
   "layer": 22,
   "pool": "meanpool",
   "holdout": "scattered",
@@ -9564,7 +9564,7 @@
   }
  },
  "summary_notes": [
-  "verdict: mixed: spline better on ['probe_err_path'], worse on ['excess_to_curve', 'excess_to_nearest_real']; sagitta median 0.148 vs centroid noise 3.63 (PCA units)",
+  "verdict: detectable but below the noise scale: no practical curvature benefit (spline better on ['probe_err_path'] without a practical non-Eq. 9 gain, or sagitta/noise 0.041 < 0.5) (statistical-only losses, not counted: ['excess_to_curve', 'excess_to_nearest_real']); sagitta median 0.148 vs centroid noise 3.63 (PCA units)",
   "behaviour manifold (Eq. 9) caveat: at the steered layer the behaviour function F is itself a distance-to-centroid function of the edited activation, so behaviour_energy and isometry_behaviour are partly circular there; they become informative only at later layers (propagation) or through the predictor",
   "replace arms (goodfire_manifold, goodfire_linear): behaviour energy and entropy not comparable: on-curve by construction (residual replaced, so Eq. 9 gives a sharp distribution that no real clip has); compare replace arms on probe readouts and nearest-real only",
   "behaviour_energy_rel_floor = mean Bhattacharyya distance per waypoint / the unsteered real-clip floor (test clips at their own value); 1 = as natural as a real clip"
@@ -201997,13 +201997,19 @@
   }
  ],
  "verdict": {
-  "call": "mixed",
-  "text": "mixed: spline better on ['probe_err_path'], worse on ['excess_to_curve', 'excess_to_nearest_real']; sagitta median 0.148 vs centroid noise 3.63 (PCA units)",
+  "call": "below_noise_scale",
+  "text": "detectable but below the noise scale: no practical curvature benefit (spline better on ['probe_err_path'] without a practical non-Eq. 9 gain, or sagitta/noise 0.041 < 0.5) (statistical-only losses, not counted: ['excess_to_curve', 'excess_to_nearest_real']); sagitta median 0.148 vs centroid noise 3.63 (PCA units)",
   "spline_better_than_chord_on": [
    "probe_err_path"
   ],
   "practical_on": [],
+  "practical_non_eq9_on": [],
+  "worse_by_practical_margin_on": [],
   "spline_worse_than_chord_on": [
+   "excess_to_curve",
+   "excess_to_nearest_real"
+  ],
+  "worse_statistical_only_on": [
    "excess_to_curve",
    "excess_to_nearest_real"
   ],
@@ -202013,13 +202019,15 @@
    "excess_to_curve": 1.2416441656909813,
    "excess_to_nearest_real": 1.0180952746057812,
    "behaviour_energy": 0.3871617029894944,
-   "probe_err_path": 3.1229984945058824
+   "probe_err_path": 3.1229984945058824,
+   "probe_err_to_target": 3.1229984945058824
   },
-  "rule": "2 SE over (source, target) pairs; practical: energies >= 0.1 x real-clip floor, path error >= probe out-of-sample error, sagitta/noise >= 0.5",
+  "rule": "2 SE over (source, target) pairs; practical: energies >= 0.1 x real-clip floor, path/endpoint error >= probe out-of-sample error, sagitta/noise >= 0.5; positive needs a non-Eq. 9 practical gain; a loss counts only beyond the same practical margin (statistical-only losses reported); endpoint worse by its margin overrides to negative",
   "metrics": [
    "excess_to_curve",
    "excess_to_nearest_real",
    "probe_err_path",
+   "probe_err_to_target",
    "behaviour_energy"
   ]
  },
