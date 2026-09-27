@@ -82,8 +82,7 @@ def refit_inlp_basis(d, rows, variable, max_rounds=None, rows_note="knot folds a
     Xs = (X - mu) / sd
     folds = d["fold"][rows]
     alpha = cv_select_alpha(Xs[rows], Y[rows], folds, score_fn=score_fn)["alpha"]
-    test = d["role"] == "test"
-    summary, Q, W, b = inlp(Xs[rows], Y[rows], Xs[test], Y[test], folds, alpha, score_fn, kind, max_rounds)
+    summary, Q, W, b = inlp(Xs[rows], Y[rows], None, None, folds, alpha, score_fn, kind, max_rounds)   # nested only: no test read
     note = {"rows": rows_note, "n_rows": int(rows.sum()), "alpha": alpha,
             "n_probes": int(len(W)), "folds": sorted(int(f) for f in np.unique(folds))}
     return {"Q": Q, "W": W, "b": b}, (mu, sd), note

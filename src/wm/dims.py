@@ -27,38 +27,76 @@ def whitener(X, eps=1e-2):
     return mu, (U / np.sqrt(lam)) @ U.T, (U * np.sqrt(lam)) @ U.T
 
 
-def whitened_count(Xtr, Ytr, folds, kind, eps=1e-2, max_rounds=None):
-    """Estimand (b), after Jin et al. Alg. 1: the probe sequence in the whitened metric with the target
-    residualised on the directions already removed. Round k: Z_k = Z − Z Q Qᵀ; Y_k = Y minus its
-    least-squares fit on the removed coordinates Z Q; a ridge probe Z_k → Y_k is scored on the 5 folds
-    (residualisation and probe both fit on the fold's training part); its weights' QR extends Q.
-    Stops when the fold-mean R² of the residualised target falls below the paper's threshold (0.1
-    direction, 0.05 scalars). α by CV at round 1, then fixed. Reports the whitened K (and K·m)."""
-    Ytr = np.asarray(Ytr, float).reshape(len(Ytr), -1)
-    mu, S_mhalf, _ = whitener(Xtr, eps)
-    Z = (Xtr - mu) @ S_mhalf
-    d, m = Z.shape[1], Ytr.shape[1]
-    thresh = 0.1 if kind == "circular" else 0.05
-    alpha = cv_select_alpha(Z, Ytr, folds, ALPHAS, partial(score, kind="scalar"))["alpha"]
-    Q = np.zeros((d, 0))
-    r2_by_round = []
-    for _ in range(max_rounds or d // m):
-        Zk = Z - (Z @ Q) @ Q.T
-        r2s = []
-        for k in np.unique(folds):
-            val = folds == k
-            Yk = _residualise(Z[~val] @ Q, Ytr[~val], Z[val] @ Q, Ytr[val])
-            W, b = fit_ridge(Zk[~val], Yk[0], alpha)
-            r2s.append(score(Yk[1], predict(Zk[val], W, b), "scalar")["r2"])
-        r2_by_round.append(float(np.mean(r2s)))
-        if r2_by_round[-1] < thresh:
-            break
-        W, _ = fit_ridge(Zk, _residualise(Z @ Q, Ytr, Z[:1] @ Q, Ytr[:1])[0], alpha)
+def _whitened_sequence(Xfit, Yfit, Xeval, Yeval, eps, alpha=None, fit_folds=None):
+    """Rounds of the whitened, residualised probe sequence fit on (Xfit, Yfit) only: whitener, α (CV over fit_folds
+    at round 1 when alpha is None), each round's residualisation and probe. Yields (alpha, R² of the residualised
+    target on (Xeval, Yeval)) per round, then extends Q with the round's probe."""
+    mu, S_mhalf, _ = whitener(Xfit, eps)
+    Z, Ze = (Xfit - mu) @ S_mhalf, (Xeval - mu) @ S_mhalf
+    if alpha is None:
+        alpha = cv_select_alpha(Z, Yfit, fit_folds, ALPHAS, partial(score, kind="scalar"))["alpha"]
+    Q = np.zeros((Z.shape[1], 0))
+    while True:
+        Yk, Yek = _residualise(Z @ Q, Yfit, Ze @ Q, Yeval)
+        W, b = fit_ridge(Z - (Z @ Q) @ Q.T, Yk, alpha)
+        yield float(alpha), score(Yek, predict(Ze - (Ze @ Q) @ Q.T, W, b), "scalar")["r2"]
         W = W - Q @ (Q.T @ W)
         Q = np.hstack([Q, np.linalg.qr(W)[0]])
-    K = Q.shape[1] // m
-    return {"K": K, "dims": K * m, "alpha": float(alpha), "eps": eps, "stop_r2": thresh,
-            "cv_r2_by_round": r2_by_round, "hit_round_cap": r2_by_round[-1] >= thresh}
+
+
+def whitened_count(Xtr, Ytr, folds, kind, eps=1e-2, max_rounds=None, Xte=None, Yte=None, Yfit=None):
+    """Estimand (b), after Jin et al. Alg. 1: the probe sequence in the whitened metric with the target
+    residualised on the directions already removed. Round k: Z_k = Z − Z Q Qᵀ; Y_k = Y minus its
+    least-squares fit on the removed coordinates Z Q; a ridge probe Z_k → Y_k; its weights' QR extends Q.
+    Nested protocol (as inlp.nested_curve): for each of the 5 folds the whitener, α (CV over the fold's training
+    part, at round 1, then fixed), residualisations and the whole sequence are fit on the fold's training part and
+    every round is scored on the held-out fold. Stops when the fold-mean R² of the residualised target falls below
+    the paper's threshold (0.1 direction, 0.05 scalars) and every fold has; K = pooled (fold-mean curve), with the
+    fold-wise K. If Xte is given, also the paper-style variant: fit on all train (α by CV over the 5 folds), each
+    round scored on test ('paper'). Reports the whitened K (and K·m). Yfit (default Ytr): the labels the nested fits
+    use (scoring always uses Ytr); differs only in the leakage test."""
+    Ytr = np.asarray(Ytr, float).reshape(len(Ytr), -1)
+    Yfit = Ytr if Yfit is None else np.asarray(Yfit, float).reshape(len(Yfit), -1)
+    m = Ytr.shape[1]
+    max_rounds = max_rounds or Xtr.shape[1] // m
+    thresh = 0.1 if kind == "circular" else 0.05
+    ks = np.unique(folds)
+    seqs = [_whitened_sequence(Xtr[folds != k], Yfit[folds != k], Xtr[folds == k], Ytr[folds == k], eps,
+                               fit_folds=folds[folds != k]) for k in ks]
+    r2_by_round, sd_by_round, folds_by_round, fold_K, K, alphas = [], [], [], [None] * len(ks), None, None
+    for k in range(1, max_rounds + 1):
+        steps = [next(g) for g in seqs]
+        alphas = [a for a, _ in steps]
+        r2s = [r for _, r in steps]
+        for f, r in enumerate(r2s):
+            if fold_K[f] is None and r < thresh:
+                fold_K[f] = k - 1
+        r2_by_round.append(float(np.mean(r2s)))
+        sd_by_round.append(float(np.std(r2s, ddof=1)))
+        folds_by_round.append([float(r) for r in r2s])
+        if K is None and r2_by_round[-1] < thresh:
+            K = k - 1
+        if K is not None and None not in fold_K:
+            break
+    hit_cap = K is None
+    K = len(r2_by_round) if hit_cap else K
+    fk = [len(r2_by_round) if x is None else x for x in fold_K]
+    out = {"K": K, "dims": K * m, "protocol": "nested", "alpha_folds": alphas, "eps": eps, "stop_r2": thresh,
+           "cv_r2_by_round": r2_by_round, "cv_r2_sd_by_round": sd_by_round,
+           "cv_r2_folds_by_round": folds_by_round, "hit_round_cap": hit_cap,
+           "K_folds": fk, "K_fold_mean": float(np.mean(fk)), "K_fold_min": int(min(fk)), "K_fold_max": int(max(fk))}
+    if Xte is not None:
+        seq = _whitened_sequence(Xtr, Ytr, Xte, np.asarray(Yte, float).reshape(len(Yte), -1), eps, fit_folds=folds)
+        test_r2, Kp = [], None
+        while Kp is None and len(test_r2) < max_rounds:
+            alpha, r = next(seq)
+            test_r2.append(r)
+            if r < thresh:
+                Kp = len(test_r2) - 1
+        Kp = len(test_r2) if Kp is None else Kp
+        out["paper"] = {"K": Kp, "dims": Kp * m, "alpha": alpha, "test_r2_by_round": test_r2,
+                        "hit_round_cap": test_r2[-1] >= thresh, "protocol": "fit on all train, scored on test"}
+    return out
 
 
 def _residualise(A_fit, Y_fit, A_apply, Y_apply):

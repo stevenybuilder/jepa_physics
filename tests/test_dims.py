@@ -81,3 +81,39 @@ def test_mlp_recovers_nonlinear_target():
     X = rng.standard_normal((400, 4))
     y = np.cos(2 * X[:, 0]) + 0.05 * rng.standard_normal(400)     # no linear information
     assert mlp_cv_r2(X, y, np.arange(400) % 5, n_folds=1, max_iter=1000) > 0.5
+
+
+def test_whitened_count_nested_folds_paper_variant_and_no_fold_leak(rings):
+    X, th = rings["sheared"]
+    Y = sincos(th)
+    tr = np.arange(1200) < 1000
+    out = whitened_count(X[tr], Y[tr], FOLDS[tr], "circular", Xte=X[~tr], Yte=Y[~tr])
+    assert out["K"] == 1 and out["protocol"] == "nested" and out["K_folds"] == [1] * 5 and out["paper"]["K"] == 1
+    assert len(out["cv_r2_folds_by_round"][0]) == 5 and len(out["alpha_folds"]) == 5
+    # permuting the held-out fold's labels in the fit labels leaves that fold's curve unchanged
+    val = FOLDS[tr] == 0
+    Yp = Y[tr].copy()
+    Yp[val] = Yp[val][np.random.default_rng(3).permutation(val.sum())]
+    perm = whitened_count(X[tr], Y[tr], FOLDS[tr], "circular", Yfit=Yp)
+    n = min(len(out["cv_r2_folds_by_round"]), len(perm["cv_r2_folds_by_round"]))
+    assert np.allclose([r[0] for r in out["cv_r2_folds_by_round"][:n]],
+                       [r[0] for r in perm["cv_r2_folds_by_round"][:n]], atol=1e-10)
+
+
+def test_bakeoff_refit_inlp_basis_reads_no_test_rows(monkeypatch):
+    import wm.inlp as inlp_mod
+    from wm.bakeoff import refit_inlp_basis
+    import pandas as pd
+    X, th = planted_ring(seed=2)
+    n = len(X)
+    d = {"X": X, "df": pd.DataFrame({"theta_degrees": th}), "fold": np.arange(n) % 5,
+         "role": np.where(np.arange(n) < n - 200, "train", "test")}
+    seen = {}
+    real = inlp_mod.inlp
+
+    def spy(Xtr, Ytr, Xte, Yte, *a, **k):
+        seen["Xte"] = Xte
+        return real(Xtr, Ytr, Xte, Yte, *a, **k)
+    monkeypatch.setattr(inlp_mod, "inlp", spy)
+    basis, _, note = refit_inlp_basis(d, d["role"] == "train", "direction")
+    assert seen["Xte"] is None and note["n_probes"] >= 1 and basis["Q"].shape[1] == 2 * note["n_probes"]
