@@ -139,3 +139,27 @@ def test_load_pair_checks_alignment(tmp_path):
     (tmp / "act" / "ids.json").write_text(json.dumps(list(range(1, 513))))
     with pytest.raises(AssertionError):
         load_pair("direction", "speed", 1, "direction", **kw)
+
+
+def test_bakeoff_end_to_end(tmp_path):
+    from sklearn.linear_model import Ridge
+    from wm.inlp import save_basis
+    tmp = fake_dataset(tmp_path, "direction")
+    X = np.load(tmp / "act" / "meanpool.npy")[:, 1].astype(float)
+    y = pd.read_csv(tmp / "table.csv")["theta_degrees"].to_numpy()
+    fold = json.loads((tmp / "split.json").read_text())["fold"]
+    tr = np.array([fold[str(i)] >= 0 for i in range(len(y))])
+    Xs = (X - X[tr].mean(0)) / (X[tr].std(0) + 1e-8)
+    Y = np.stack([np.sin(np.radians(y)), np.cos(np.radians(y))], 1)
+    r = Ridge(alpha=1.0).fit(Xs[tr], Y[tr])
+    W = r.coef_.T[None]                                            # one probe: [1, D, 2]
+    save_basis(tmp / "basis.npz", np.linalg.qr(W[0])[0], W, r.intercept_[None], 1.0, 1, "circular")
+    run_script("run_bakeoff.py", tmp, "direction", "--n-clips", "8", "--probe-basis", str(tmp / "basis.npz"))
+    res = json.loads((tmp / "results" / "p2_bakeoff_direction_direction_L1_contiguous.json").read_text())
+    arms = res["arms"]
+    assert set(arms) == {"spline", "chord", "centroid_transport", "snap", "ring_rotation", "probe_qr"}
+    assert arms["ring_rotation"]["nominal_rank"] == 2 and arms["ring_rotation"]["effective_rank"] < 2.5
+    assert arms["probe_qr"]["nominal_rank"] == 2
+    for e in ("probe", "mlp"):
+        assert arms["spline"][f"err_{e}_matched"] < 0.5 * res["unsteered_err"][e]
+    assert (tmp / "figures" / "fig4_bakeoff_rank_direction_direction_L1_contiguous.png").exists()
