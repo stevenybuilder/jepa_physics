@@ -13,10 +13,11 @@ WDS = (0.01, 0.1, 0.4, 0.8)
 BETAS, EPS = (0.9, 0.999), 1e-8   # torch.optim.Adam defaults
 
 
-def fit_adam_grid(X, Y, configs, epochs, batch=64, seed=0):
+def fit_adam_grid(X, Y, configs, epochs, batch=64, seed=0, decoupled=False):
     """Train one linear probe per (lr, wd) in `configs` at once, each with its own Adam state, on the same
     minibatch sequence. Adam as in torch.optim.Adam with weight_decay (coupled L2: g += wd·W), applied
     to W only; loss = MSE averaged over batch and outputs; init as torch.nn.Linear (U(±1/√d)).
+    decoupled=True is AdamW instead (W ← W(1 − lr·wd) before the Adam step, no L2 in the gradient).
     Returns W [G, d, m] and b [G, m]."""
     X = np.asarray(X, float)
     Y = np.asarray(Y, float).reshape(len(Y), -1)
@@ -34,7 +35,9 @@ def fit_adam_grid(X, Y, configs, epochs, batch=64, seed=0):
             Xb, Yb = X[idx], Y[idx]
             R = np.einsum("bd,gdm->gbm", Xb, W) + b[:, None, :] - Yb          # residuals [G, B, m]
             scale = 2.0 / (len(idx) * m)
-            gW = scale * np.einsum("bd,gbm->gdm", Xb, R) + wd * W
+            gW = scale * np.einsum("bd,gbm->gdm", Xb, R) + (0.0 if decoupled else wd * W)
+            if decoupled:
+                W = W * (1 - lr * wd)
             gb = scale * R.sum(axis=1)
             t += 1
             mW, vW = b1 * mW + (1 - b1) * gW, b2 * vW + (1 - b2) * gW ** 2
@@ -45,36 +48,52 @@ def fit_adam_grid(X, Y, configs, epochs, batch=64, seed=0):
     return W, b
 
 
-def fit_adam(X, Y, lr, wd, epochs, batch=64, seed=0):
+def fit_adam(X, Y, lr, wd, epochs, batch=64, seed=0, decoupled=False):
     """One configuration: W [d, m], b [m]."""
-    W, b = fit_adam_grid(X, Y, [(lr, wd)], epochs, batch, seed)
+    W, b = fit_adam_grid(X, Y, [(lr, wd)], epochs, batch, seed, decoupled)
     return W[0], b[0]
 
 
-def cv_adam(X, Y, folds, score_fn, epochs, lrs=LRS, wds=WDS, batch=64, seed=0):
+def cv_adam(X, Y, folds, score_fn, epochs, lrs=LRS, wds=WDS, batch=64, seed=0, decoupled=False):
     """Grid over (lr, wd), each scored by the fold-mean R² (fit fold-out, score fold-in). Returns the best
-    configuration with its fold mean ± SD (R² and MAE) and the whole grid."""
+    configuration with its fold mean ± SD (R² and MAE), its out-of-fold predictions ('oof', for the
+    bootstrap) and the whole grid."""
     Y = np.asarray(Y, float).reshape(len(Y), -1)
     configs = [(lr, wd) for lr in lrs for wd in wds]
     fold_scores = [[] for _ in configs]
+    oof = np.zeros((len(configs),) + Y.shape)
     for k in np.unique(folds):
         val = folds == k
-        W, b = fit_adam_grid(X[~val], Y[~val], configs, epochs, batch, seed)
+        W, b = fit_adam_grid(X[~val], Y[~val], configs, epochs, batch, seed, decoupled)
         for g in range(len(configs)):
-            fold_scores[g].append(score_fn(Y[val], X[val] @ W[g] + b[g]))
+            oof[g][val] = X[val] @ W[g] + b[g]
+            fold_scores[g].append(score_fn(Y[val], oof[g][val]))
     grid, best = [], None
-    for (lr, wd), fs in zip(configs, fold_scores):
+    for g, ((lr, wd), fs) in enumerate(zip(configs, fold_scores)):
         r2s, maes = [f["r2"] for f in fs], [f["mae"] for f in fs]
         row = {"lr": lr, "wd": wd, "cv_mean": float(np.mean(r2s)), "cv_sd": float(np.std(r2s, ddof=1)),
                "cv_mae_mean": float(np.mean(maes)), "cv_mae_sd": float(np.std(maes, ddof=1))}
         grid.append(row)
         if best is None or row["cv_mean"] > best["cv_mean"]:
-            best = row
-    return {**best, "epochs": epochs, "batch": batch, "grid": grid}
+            best, best_g = row, g
+    return {**best, "epochs": epochs, "batch": batch,
+            "weight_decay_type": "decoupled (AdamW)" if decoupled else "coupled L2 (Adam)",
+            "grid": grid, "oof": oof[best_g]}
 
 
-def parity(ridge, adam):
-    """Parity rule: |CV R² difference| within the larger of the two fold SDs."""
-    diff = adam["cv_mean"] - ridge["cv_mean"]
-    tol = max(ridge["cv_sd"], adam["cv_sd"])
-    return {"adam_minus_ridge_r2": float(diff), "tolerance_fold_sd": float(tol), "within": bool(abs(diff) <= tol)}
+def pooled_r2_ci(Y, oof, score_fn, n_boot=200, seed=0):
+    """Pooled out-of-fold R² and its 95% clip-bootstrap CI (predictions fixed, clips resampled)."""
+    Y = np.asarray(Y, float).reshape(len(Y), -1)
+    rng = np.random.default_rng(seed)
+    draws = [score_fn(Y[idx], oof[idx])["r2"] for idx in (rng.integers(0, len(Y), len(Y)) for _ in range(n_boot))]
+    return score_fn(Y, oof)["r2"], [float(np.percentile(draws, 2.5)), float(np.percentile(draws, 97.5))]
+
+
+def parity(Y, ridge_oof, adam_oof, score_fn, n_boot=200, seed=0):
+    """Parity rule (spec §5.1): the ridge probe's pooled out-of-fold R² lies inside the 95% bootstrap CI of
+    the Adam probe's pooled out-of-fold R² (same folds, same clips)."""
+    r_ridge = score_fn(np.asarray(Y, float).reshape(len(Y), -1), ridge_oof)["r2"]
+    r_adam, ci = pooled_r2_ci(Y, adam_oof, score_fn, n_boot, seed)
+    return {"ridge_pooled_oof_r2": float(r_ridge), "adam_pooled_oof_r2": float(r_adam), "adam_ci95": ci,
+            "within": bool(ci[0] <= r_ridge <= ci[1]),
+            "rule": "ridge pooled OOF R2 inside the 95% clip-bootstrap CI of the Adam probe's pooled OOF R2"}

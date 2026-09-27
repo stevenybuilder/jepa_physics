@@ -21,8 +21,12 @@ parser.add_argument("--act-root", type=Path, default=None)
 parser.add_argument("--results", type=Path, default=None)
 args = parser.parse_args()
 
-out = {"rule": "parity if |Adam CV R2 - ridge CV R2| <= max(fold SD); both on the same 5 train folds and "
-               "train-standardised features", "grid": {"lr": list(LRS), "weight_decay": list(WDS)}, "variables": {}}
+out = {"rule": "parity if the ridge pooled out-of-fold R2 lies inside the 95% clip-bootstrap CI of the Adam "
+               "probe's pooled out-of-fold R2; same 5 train folds, train-standardised features",
+       "grid": {"lr": list(LRS), "weight_decay": list(WDS)},
+       "c11_recipe": "Adam lr 1e-3, weight decay 1e-4, 100 epochs (direction) / 50 (scalars), paper C.11 p32; "
+                     "scored as the first round of the probe sequence (nothing removed yet)",
+       "variables": {}}
 for variable in args.variables:
     df = load_table(variable)
     point = args.layer if args.layer is not None else load_sweep(variable, variable, "meanpool", args.results)[
@@ -31,12 +35,17 @@ for variable in args.variables:
     tr, te, folds = split_rows(variable, df)
     Xtr, _ = standardized_layer(load_activations(variable, act_root=args.act_root), point, tr, te)
     ridge = cv_select_alpha(Xtr, Y[tr], folds, ALPHAS, score_fn)
+    ridge_oof = ridge["oof"]
     ridge = {k: ridge[k] for k in ("alpha", "cv_mean", "cv_sd", "cv_mae_mean", "cv_mae_sd")}
     epochs = args.epochs or (100 if kind == "circular" else 50)
-    adam = cv_adam(Xtr, Y[tr], folds, score_fn, epochs)
-    out["variables"][variable] = {"point": point, "frac": layer_fraction(point), "ridge": ridge, "adam": adam,
-                                  "parity": parity(ridge, adam)}
-    print(f"{variable} point {point}: ridge R2 {ridge['cv_mean']:.3f}±{ridge['cv_sd']:.3f} "
-          f"adam R2 {adam['cv_mean']:.3f}±{adam['cv_sd']:.3f} (lr={adam['lr']}, wd={adam['wd']}) "
-          f"within={out['variables'][variable]['parity']['within']}")
+    res = {"point": point, "frac": layer_fraction(point), "ridge": ridge}
+    for name, kw in (("adam_coupled_l2", {}), ("adamw_decoupled", {"decoupled": True}),
+                     ("c11_recipe", {"lrs": (1e-3,), "wds": (1e-4,)})):
+        fit = cv_adam(Xtr, Y[tr], folds, score_fn, epochs, **kw)
+        res[name] = {k: v for k, v in fit.items() if k != "oof"}
+        res[name]["parity"] = parity(Y[tr], ridge_oof, fit["oof"], score_fn)
+        print(f"{variable} point {point} {name}: ridge R2 {ridge['cv_mean']:.3f}±{ridge['cv_sd']:.3f} "
+              f"adam R2 {fit['cv_mean']:.3f}±{fit['cv_sd']:.3f} (lr={fit['lr']}, wd={fit['wd']}) "
+              f"within CI={res[name]['parity']['within']}")
+    out["variables"][variable] = res
 write_json(Path(args.results or RESULTS) / "p1a_probe_recipe_check.json", out)
