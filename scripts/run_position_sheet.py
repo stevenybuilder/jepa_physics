@@ -111,11 +111,14 @@ def selection_blocks(G, eval_seed, n=4, max_seed=500):
     return seeds, blocks
 
 
-def choose_smoothing(X, cell, centres, G, k, seeds):
+def choose_smoothing(X, cell, centres, G, k, seeds, exclude=()):
     """Held-out 2 x 2 block reconstruction on train rows: TPS at each smoothing in SMOOTHING_GRID and the Delaunay
     chord rebuild the block's centroids from the other cells; mean error over the `seeds` blocks (selection_blocks:
-    never the evaluation block, never overlapping it). A development decision made on train only.
+    never the evaluation block, never overlapping it). A development decision made on train only. Rows of the
+    `exclude` cells (the evaluation block) are dropped before anything is fitted, so they are never anchors either.
     Returns (best smoothing, table)."""
+    keep_ex = ~np.isin(cell, list(exclude))
+    X, cell = X[keep_ex], cell[keep_ex]
     table = {str(sm): [] for sm in SMOOTHING_GRID}
     table["linear_interp"] = []
     for seed in seeds:
@@ -174,7 +177,8 @@ def run(args):
     smooth_note = None
     if args.tps_smoothing == "auto":
         sel_seeds, _ = selection_blocks(args.grid, args.seed)
-        smoothing, smooth_note = choose_smoothing(d["X"][tr], cell[tr], centres, args.grid, args.k, sel_seeds)
+        smoothing, smooth_note = choose_smoothing(d["X"][tr], cell[tr], centres, args.grid, args.k, sel_seeds,
+                                                  exclude=held_block(args.grid, args.seed))
         smooth_note["evaluation_block_excluded"] = held_block(args.grid, args.seed)
     else:
         smoothing = float(args.tps_smoothing)

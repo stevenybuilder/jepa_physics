@@ -463,3 +463,20 @@ def test_sheet_smoothing_never_sees_the_evaluation_block():
         evb = set(module.held_block(G, ev))
         assert ev not in seeds and len(blocks) >= 2
         assert all(not (set(b) & evb) for b in blocks) and len({tuple(b) for b in blocks}) == len(blocks)
+
+
+def test_sheet_smoothing_choice_drops_evaluation_block_rows():
+    """The evaluation block's rows must not enter the smoothing choice even as TPS anchors: NaN activations there
+    would poison every reconstruction error if they did."""
+    spec = importlib.util.spec_from_file_location("sheet", ROOT / "scripts" / "run_position_sheet.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    G, rng = 6, np.random.default_rng(0)
+    centres = np.array([[i, j] for j in range(G) for i in range(G)], float)
+    cell = np.repeat(np.arange(G * G), 5)
+    X = centres[cell] @ rng.standard_normal((2, 8)) + 0.01 * rng.standard_normal((len(cell), 8))
+    ev = module.held_block(G, 0)
+    X[np.isin(cell, ev)] = np.nan
+    seeds, _ = module.selection_blocks(G, 0)
+    _, table = module.choose_smoothing(X, cell, centres, G, 3, seeds, exclude=ev)
+    assert all(np.isfinite(v) for v in table["mean_error"].values())
