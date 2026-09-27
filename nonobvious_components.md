@@ -212,6 +212,11 @@ answered, six-plus analyses with no story. One sharp comparison with controls be
 
 ### 10. Framing for the talk
 
+Her own words set the bar (PRIORITIES.md, "What the reviewer says she values"): detection is not the result, use
+is; the named test is steering velocity and reading counterfactual changes in future predictions; her open question
+is whether these models build internal world models or succeed by stimulus-response, which the random-init control
+answers for this stimulus class.
+
 One question: are V-JEPA's physical variables straight directions or curved manifolds, and does steering along the
 curve do anything a straight edit does not, as judged by the model's own later layers? Three rungs of evidence
 (decodable → steerable at the layer → propagated). One clean negative. Backup slides for: why mean-pool, why that

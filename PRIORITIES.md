@@ -9,6 +9,37 @@ Sources: README (what is asked), the physics paper's own conventions (what she t
 paper's A.3–A.7 and §5, the fidelity check against both PDFs, `lit_review.md` §1 and its "table stakes" item,
 `nonobvious_components.md`, `PART2_RATIONALE.md`.
 
+## What the reviewer says she values (her essay and the World Mechanics post, read 27 Sep)
+
+Sources: soniajoseph.ai, "World models and interpretability are two sides of the same coin"; her LinkedIn post for
+World Mechanics ("founding research team … interpretability, training dynamics, and physical AI"; "the physical world
+gives us ground truth that language often does not"; "inherently interpretable and controllable foundation models").
+
+- **Detection is not the bar; use is.** "Traditional interpretability might tell us those representations exist. Yet
+  the pilot can still crash the plane if those representations fail to combine correctly." Locating a variable with a
+  linear probe is the starting point, not the result. → Every Part 1 probe result is paired with a control that asks
+  whether the variable is *used* (steering, off-target, propagation), and the talk leads with rungs 3–5, not rung 1.
+- **The test she names is ours to run.** "If we can steer that velocity representation and observe corresponding
+  counterfactual changes in future predictions, then the model starts looking less like a statistical predictor and
+  more like a simulator." → Tier 2 S2 (predictor readout against rendered counterfactual twins) is the single item
+  most aligned with what she wrote. It goes in the GPU session regardless of the cut line.
+- **Her open question is exactly what the random-init control answers.** "Do foundation models actually develop
+  cognitive maps / Internal World Models, or can they succeed through more stimulus-response strategies?" → The
+  finding that a random ViT-L linearly decodes direction, speed and acceleration from block 1 on this data, and that
+  training buys precision and a compact ~46-dim code rather than availability, is a direct, honest answer for this
+  stimulus class. Frame it as her question, not as a failed reproduction.
+- **She is comfortable with negatives against her own strong claims.** "Some of our findings in JEPA point against
+  the strongest versions of this hypothesis." "The jury is still out." → Report the non-reproduction of the emergence
+  zone and the missing sawtooth plainly, with the sample-size and data-regime analysis, and do not soften them.
+- **Ground truth from physics, and controllability.** The variables here have exact ground truth (metadata), and the
+  ask is control. → Held-out-value steering, both directions, off-target readouts, and the predictor test are the
+  controllability evidence; a probe R² is not.
+- **Training dynamics** is in the job description. → We have only two points on that axis (random init, final
+  checkpoint), but the contrast is the training-dynamics story available without intermediate checkpoints: state it
+  that way, and name the intermediate-checkpoint version as the follow-up.
+- **Tone.** Enthusiastic about mechanism, allergic to overclaiming, expects the question "what does the model *do*
+  with it" after every "the model *has* it".
+
 ## Tier 1: the minimum a reviewer who wrote the paper expects
 
 ### Part 1 (reproduction of methodology and qualitative findings)
