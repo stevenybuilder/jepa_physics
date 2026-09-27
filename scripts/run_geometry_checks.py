@@ -1,9 +1,15 @@
 """Cheap geometry checks on one layer, before any steering (nonobvious_components.md §7).
 
 Uses train clips only. Writes results/p2_geometry_{dataset}_L{layer}.json and figures/fig4_centroid_plane_*.png,
-figures/fig4_loo_stride_*.png.
+figures/fig4_loo_stride_*.png. For direction it also fits the supervised circular chart X ~ mu + A[cos, sin] and
+compares it with Goodfire's unsupervised atan2(PC2, PC1) ("circular_chart").
+
+--planted-ring adds a synthetic ring of radius r (in within-value SDs, r in --planted-radii) along two random
+orthogonal directions to the real train activations and checks that the pipeline recovers the angle and the
+knot-subsampling cubic gain; writes results/p2_planted_ring_{dataset}_L{layer}.json (r vs recovery table).
 
   python scripts/run_geometry_checks.py --dataset direction --layer 12
+  python scripts/run_geometry_checks.py --dataset direction --layer 12 --planted-ring
 """
 import argparse
 import json
@@ -78,6 +84,7 @@ def run(args):
         out["knot_spacing"] = gc.knot_spacing(curve)
     else:
         out["ring_radius_by_group"] = gc.ring_radius_by_group(Z, y, direction_groups(d["df"][tr]))
+        out["circular_chart"] = gc.chart_check(X, y, pca, plane)
     if args.basis:
         V = np.load(args.basis)                       # [D, r], train-standardised space (Part 1 convention)
         mu, sd = X.mean(0), X.std(0) + 1e-8
@@ -90,6 +97,16 @@ def run(args):
     (Path(args.results_dir) / f"p2_geometry_{tag}.json").write_text(json.dumps(out, indent=1))
     plot_plane(curve, cent, plane, Path(args.figures_dir) / f"fig4_centroid_plane_{tag}.png", tag)
     plot_loo(out["loo"], Path(args.figures_dir) / f"fig4_loo_stride_{tag}.png", tag, periodic, len(cent["values"]))
+    if args.planted_ring:
+        pr = gc.planted_ring_control(X, y, radii=args.planted_radii, k=args.k, seed=args.seed)
+        pr.update({"dataset": args.dataset, "layer": args.layer, "n_train": int(tr.sum()),
+                   "labels_used_for_sd_and_stratification": args.variable or args.dataset})
+        (Path(args.results_dir) / f"p2_planted_ring_{tag}.json").write_text(json.dumps(pr, indent=1))
+        print("planted ring (r in within-value SD):")
+        print("   r  |corr|  cubic_gain  recovered")
+        for r in pr["rows"]:
+            print(f"{r['r_within_sd']:5.2f}  {r['circular_corr']:.3f}  {r['cubic_gain']:10.3f}  {r['recovered']}")
+        out["planted_ring"] = pr
     return out
 
 
@@ -133,6 +150,9 @@ def parse(argv=None):
     p.add_argument("--variable", default=None)
     p.add_argument("--k", type=int, default=64)
     p.add_argument("--basis", default=None, help="optional .npy [D, r] basis (e.g. INLP) for principal angles")
+    p.add_argument("--planted-ring", action="store_true", help="planted-ring positive control (r vs recovery)")
+    p.add_argument("--planted-radii", type=float, nargs="+", default=[0.5, 1.0, 2.0, 4.0])
+    p.add_argument("--seed", type=int, default=0)
     p.add_argument("--act-dir", default=None)
     p.add_argument("--table", default=None, help="CSV overriding the manifest table (tests)")
     p.add_argument("--split", default=None, help="JSON overriding this dataset's split (tests)")

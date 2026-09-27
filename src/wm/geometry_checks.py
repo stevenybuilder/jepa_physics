@@ -242,3 +242,124 @@ def random_smooth_curve(curve, rng, n_freq=3):
 
     P = (P - P.mean(axis=0)) * (total_length(ref) / total_length(rnd)) + curve.points.mean(axis=0)
     return _curve_like(curve, P)
+
+
+# ---------------------------------------------------------------- circular chart (supervised check) ---------------
+
+def fit_circular_chart(X, theta_deg):
+    """Least-squares chart X ~ mu + A [cos theta, sin theta] (jepa_steering's 2 Sep chart). Returns dict(mu [D],
+    A [D, 2]). Fit on training rows only."""
+    r = np.radians(np.asarray(theta_deg, dtype=float))
+    M = np.stack([np.ones_like(r), np.cos(r), np.sin(r)], axis=1)       # [n, 3]
+    coef = np.linalg.lstsq(M, np.asarray(X, dtype=float), rcond=None)[0]  # [3, D]
+    return {"mu": coef[0], "A": coef[1:].T}
+
+
+def chart_decode(chart, X):
+    """Angle (degrees, [0, 360)) of each row on the fitted chart plane: least-squares coordinates c of (x - mu) in
+    span(A), then atan2(c_sin, c_cos)."""
+    c = (np.asarray(X, dtype=float) - chart["mu"]) @ np.linalg.pinv(chart["A"]).T
+    return np.degrees(np.arctan2(c[:, 1], c[:, 0])) % 360.0
+
+
+def chart_check(X, theta_deg, pca, plane_used="activation"):
+    """Supervised circular chart vs Goodfire's unsupervised atan2(PC2, PC1) on the same training rows.
+
+    Reports, for the per-value centroids and for the individual clips: circular correlation and aligned mean
+    absolute deviation between the chart angle and the unsupervised angle (orientation and zero of atan2 are free),
+    the chart's error against the true angle, and the principal angles between span(A) and the top-2 PC plane.
+    plane_used: the plane the pipeline chose for its own unsupervised angle, reported alongside.
+    """
+    from wm.manifold import compare_angles, unsupervised_angle, value_error
+    X, theta = np.asarray(X, dtype=float), np.asarray(theta_deg, dtype=float)
+    chart = fit_circular_chart(X, theta)
+    values = np.unique(theta)
+    C_full = np.array([X[theta == v].mean(0) for v in values])
+    chart_c = chart_decode(chart, C_full)
+    unsup_c = unsupervised_angle(pca.project(C_full), "activation")
+    chart_x = chart_decode(chart, X)
+    Zx = pca.project(X)[:, :2]
+    unsup_x = np.arctan2(Zx[:, 1] - Zx[:, 1].mean(), Zx[:, 0] - Zx[:, 0].mean()) % TWO_PI
+
+    def agree(unsup, chart_deg):
+        c = compare_angles(unsup, chart_deg)
+        return {"circular_corr": abs(c["circular_corr"]), "mae_deg": c["mean_dev_deg"], "max_dev_deg": c["max_dev_deg"],
+                "orientation": c["orientation"]}
+
+    ang = np.degrees(subspace_angles(chart["A"], pca.components[:2].T))
+    out = {"centroids_chart_vs_pc12": agree(unsup_c, chart_c),
+           "clips_chart_vs_pc12": agree(unsup_x, chart_x),
+           "chart_vs_true_mae_deg": {"centroids": float(np.mean(value_error(chart_c, values, True))),
+                                     "clips_in_sample": float(np.mean(value_error(chart_x, theta, True)))},
+           "principal_angles_chart_vs_pc12_deg": np.sort(ang).tolist(),
+           "chart_radius": float(np.linalg.svd(chart["A"], compute_uv=False).mean()),
+           "pipeline_plane": plane_used}
+    if plane_used == "centroid":
+        out["centroids_chart_vs_centroid_plane"] = agree(unsupervised_angle(pca.project(C_full), "centroid"), chart_c)
+    return out
+
+
+# ---------------------------------------------------------------- planted-ring positive control -------------------
+
+def within_value_sd(X, labels, U):
+    """Pooled within-value SD of X projected on each column of U [D, q], averaged over the columns (RMS)."""
+    P = np.asarray(X, dtype=float) @ U
+    labels = np.asarray(labels)
+    resid = P.copy()
+    for v in np.unique(labels):
+        rows = labels == v
+        resid[rows] -= P[rows].mean(0)
+    return float(np.sqrt((resid ** 2).mean()))
+
+
+def planted_ring_control(X, labels, radii=(0.5, 1, 2, 4), k=64, n_values=64, seed=0, stride=16, min_corr=0.95):
+    """Plant a ring of known radius into real activations and check that the Part 2 pipeline recovers it.
+
+    Ring: two random orthonormal directions Q [D, 2]; synthetic labels theta on a 64-value grid; X' = X + r * sd *
+    [cos theta, sin theta] Q^T, with sd the pooled within-value SD of X along Q (grouped by the real `labels`), so r
+    is in units of within-value SD. theta is assigned stratified by the real label: rows sorted by the real label
+    are cut into blocks of 64 and each block gets a random permutation of the 64 theta values. Each planted value
+    then averages clips spread evenly over the real label's range, so the real variable (whose sampling noise in a
+    randomly assigned centroid is larger than a small ring) cancels in the planted centroids. Other real variance
+    is left as it is; that is the noise the control is meant to face.
+    Pipeline: PCA-k -> centroids by theta -> choose_angle_source (atan2 in the activation or centroid plane) ->
+    periodic spline -> knot-subsampling LOO at `stride` (cubic gain = line error / cubic error).
+    Recovered = |circular corr| (Fisher-Lee, unsupervised atan2 angle vs planted theta, best of the activation and
+    centroid planes) > min_corr, and the cubic beats the line at the stride. `pipeline_angle_source` says whether
+    choose_angle_source would also have accepted the unsupervised angle (it additionally demands strict knot order,
+    which noisy dense knots can fail while the angle is still recovered).
+    Returns dict(sd, rows=[one per r]).
+    """
+    from wm.manifold import centroids as _centroids, choose_angle_source, fit_curve
+    X = np.asarray(X, dtype=np.float64)
+    rng = np.random.default_rng(seed)
+    Q = np.linalg.qr(rng.standard_normal((X.shape[1], 2)))[0]
+    grid = np.arange(n_values) * 360.0 / n_values
+    order = np.argsort(np.asarray(labels, dtype=float), kind="stable")
+    theta = np.empty(len(X))
+    for i in range(0, len(X), n_values):
+        blk = order[i:i + n_values]
+        theta[blk] = rng.permutation(grid)[:len(blk)]
+    sd = within_value_sd(X, labels, Q)
+    ring = np.stack([np.cos(np.radians(theta)), np.sin(np.radians(theta))], 1) @ Q.T
+    rows = []
+    for r in radii:
+        Xp = X + r * sd * ring
+        pca = fit_pca(Xp, k)
+        cent = _centroids(pca.project(Xp), theta)
+        choice = choose_angle_source(cent["C"], cent["values"])
+        best_plane = max(choice["checks"], key=lambda pl: abs(choice["checks"][pl]["circular_corr"]))
+        used = choice["checks"][best_plane]
+        curve = fit_curve(cent, True, angle=choice["angle"], plane=choice["plane"])
+        noise = align(cent["spread"] / np.sqrt(cent["count"]), cent["values"], curve.values)
+        loo = loo_reconstruction(curve, noise, stride=stride)
+        corr = abs(used["circular_corr"])
+        rows.append({"r_within_sd": float(r), "ring_radius": float(r * sd),
+                     "ring_var_in_pca_frac": float(((pca.components @ Q) ** 2).sum() / 2),
+                     "pipeline_angle_source": choice["angle"], "pipeline_plane": choice["plane"],
+                     "best_plane": best_plane, "circular_corr": corr,
+                     "max_dev_deg": used["max_dev_deg"], "loo_stride": stride,
+                     "loo_err_line": loo["mean_err_line"], "loo_err_cubic": loo["mean_err_cubic"],
+                     "cubic_gain": loo["mean_err_line"] / loo["mean_err_cubic"], "loo_winner": loo["winner"],
+                     "recovered": bool(corr > min_corr and loo["winner"] == "cubic")})
+    return {"sd": sd, "n_values": n_values, "seed": seed, "min_corr": min_corr, "rows": rows}
