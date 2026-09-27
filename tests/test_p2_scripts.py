@@ -427,7 +427,21 @@ def test_position_sheet(tmp_path):
     assert geo["unsupervised_top2_vs_xy_procrustes_r2"] > 0.9
     assert len(out["grid"]["held_out_cells"]) == 4
     s = out["summary"]
+    assert out["tps_smoothing_choice"]["best_tps_smoothing"] == out["tps_smoothing"]
+    assert out["tps_smoothing_choice"]["tps_beats_linear_interp"]                  # the sheet is curved
+    assert s["tps"]["excess_to_ref"] < s["chord_linear_interp"]["excess_to_ref"]
+    np.testing.assert_allclose(s["tps"]["err_end"], s["chord"]["err_end"], rtol=1e-9)   # endpoint-matched chord
     assert s["tps"]["excess_to_ref"] < s["chord"]["excess_to_ref"]
     assert out["controls"]["random_endpoint_matched"]["excess_to_ref"]["spline_rank"] == 1
     assert (tmp_path / "results" / "p2_sheet_speed_L1.json").exists()
     assert (tmp_path / "figures" / "fig4_sheet_speed_L1.png").exists()
+
+
+def test_sheet_linear_interp_nan_fallback():
+    spec = importlib.util.spec_from_file_location("sheet", ROOT / "scripts" / "run_position_sheet.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    pts = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]])
+    f, count = module.linear_interp(pts, np.arange(4.0)[:, None])
+    out = f(np.array([[0.5, 0.5], [3.0, 3.0]]))
+    assert np.isfinite(out).all() and out[1, 0] == 3.0 and count["nan_fallbacks"] == 1

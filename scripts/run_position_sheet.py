@@ -8,8 +8,11 @@ principal axes of the centroids) vs the labels (Procrustes R^2, reflection allow
 Steering (same roles as run_part2: knot folds 0-2 build, probe folds 3-4 read, test is steered): one interior 2 x 2
 block of cells is held out. Arms, all additive in PCA-k with the clip's residual kept:
   tps          thin-plate spline (Goodfire A.3, TPS case) through the kept cell centroids, walked along the straight
-               line in (x, y) from the clip's position to the target cell centre
-  chord        straight line between the piecewise-linear (Delaunay) interpolants at source and target
+               line in (x, y) from the clip's position to the target cell centre. Smoothing: --tps-smoothing auto
+               (default) picks it by held-out-block reconstruction on train rows (like run_part2 --spline smooth)
+  chord        straight line between the TPS values at source and target (endpoint-matched to tps)
+  chord_linear_interp  straight line between piecewise-linear (Delaunay) interpolants at source and target (not
+               endpoint-matched; nearest-neighbour fallback outside the hull, counted)
   chord_dose_matched, projected, reflected   as in run_part2
 Controls: endpoint-matched random bends (>= 20 draws). Readouts: a ridge (x, y) probe on probe folds (endpoint and
 along the path), nearest-real agreement with real test clips in the target cell, off-manifold energy against a
@@ -29,7 +32,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy.interpolate import LinearNDInterpolator, RBFInterpolator
+from scipy.interpolate import LinearNDInterpolator, NearestNDInterpolator, RBFInterpolator
 from sklearn.linear_model import RidgeCV
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
@@ -72,6 +75,50 @@ def geometry(X, cell, centres, k):
             "top2_frac_of_centroid_variance": float((top2 ** 2).sum() / (Cc ** 2).sum())}, pca, C, ids, top2
 
 
+SMOOTHING_GRID = (0.0, 1e-3, 1e-2, 1e-1, 1.0, 10.0, 100.0)
+
+
+def linear_interp(pts, vals):
+    """Delaunay-linear interpolant with a nearest-neighbour fallback where it is NaN (outside the hull). Returns
+    (f, counter) where counter["nan_fallbacks"] counts the rows that fell back."""
+    lin, near = LinearNDInterpolator(pts, vals), NearestNDInterpolator(pts, vals)
+    counter = {"nan_fallbacks": 0}
+
+    def f(P):
+        P = np.atleast_2d(P)
+        out = lin(P)
+        bad = np.isnan(out).any(-1)
+        if bad.any():
+            out[bad] = near(P[bad])
+            counter["nan_fallbacks"] += int(bad.sum())
+        return out
+    return f, counter
+
+
+def choose_smoothing(X, cell, centres, G, k, seeds=(0, 1, 2, 3)):
+    """Held-out 2 x 2 block reconstruction on train rows: TPS at each smoothing in SMOOTHING_GRID and the Delaunay
+    chord rebuild the block's centroids from the other cells; mean error over `seeds` blocks. A development decision
+    made on train only. Returns (best smoothing, table)."""
+    table = {str(sm): [] for sm in SMOOTHING_GRID}
+    table["linear_interp"] = []
+    for seed in seeds:
+        held = held_block(G, seed)
+        keep = ~np.isin(cell, held)
+        pca = mf.fit_pca(X[keep], k)
+        ids = np.unique(cell[keep])
+        C = cell_centroids(pca.project(X[keep]), cell[keep], ids)
+        truth = cell_centroids(pca.project(X), cell, held)
+        for sm in SMOOTHING_GRID:
+            f = RBFInterpolator(centres[ids], C, kernel="thin_plate_spline", smoothing=sm)
+            table[str(sm)].append(float(np.linalg.norm(f(centres[held]) - truth, axis=1).mean()))
+        li, _ = linear_interp(centres[ids], C)
+        table["linear_interp"].append(float(np.linalg.norm(li(centres[held]) - truth, axis=1).mean()))
+    mean = {kk: float(np.mean(v)) for kk, v in table.items()}
+    best = min(SMOOTHING_GRID, key=lambda sm: mean[str(sm)])
+    return best, {"mean_error": mean, "seeds": list(seeds), "best_tps_smoothing": best,
+                  "tps_beats_linear_interp": mean[str(best)] < mean["linear_interp"]}
+
+
 def held_block(G, seed):
     """One interior 2 x 2 block of cells (never touching the grid edge), chosen by seed."""
     rng = np.random.default_rng(seed)
@@ -88,19 +135,24 @@ def run(args):
     tr = d["is_train"]
     geo, *_ = geometry(d["X"][tr], cell[tr], centres, args.k)
 
+    smooth_note = None
+    if args.tps_smoothing == "auto":
+        smoothing, smooth_note = choose_smoothing(d["X"][tr], cell[tr], centres, args.grid, args.k)
+    else:
+        smoothing = float(args.tps_smoothing)
     held = held_block(args.grid, args.seed)
     knot = knot_all & ~np.isin(cell, held)
     pca = mf.fit_pca(d["X"][knot], args.k)
     kept = np.unique(cell[knot])
     Ck = cell_centroids(pca.project(d["X"][knot]), cell[knot], kept)
-    tps = RBFInterpolator(centres[kept], Ck, kernel="thin_plate_spline", smoothing=args.tps_smoothing)
-    lin = LinearNDInterpolator(centres[kept], Ck)
+    tps = RBFInterpolator(centres[kept], Ck, kernel="thin_plate_spline", smoothing=smoothing)
+    lin, lin_count = linear_interp(centres[kept], Ck)
     clo, chi = centres.min(0), centres.max(0)
     lin_at = lambda P: lin(np.clip(P, clo, chi))
     # reference manifold nobody built from: TPS through probe-fold centroids at all cells, on a dense grid
     pids = np.unique(cell[probe])
     ref = RBFInterpolator(centres[pids], cell_centroids(pca.project(d["X"][probe]), cell[probe], pids),
-                          kernel="thin_plate_spline", smoothing=args.tps_smoothing)
+                          kernel="thin_plate_spline", smoothing=smoothing)
     g = np.linspace(clo, chi, 60)
     ref_pts = ref(np.array([[a, b] for a in g[:, 0] for b in g[:, 1]]))
     X_ref = d["X"][probe]
@@ -108,7 +160,7 @@ def run(args):
     rng = np.random.default_rng(args.seed)
     coefs = [rng.standard_normal((3, pca.components.shape[0])) / np.arange(1, 4)[:, None] for _ in range(args.n_controls)]
 
-    arms = ("tps", "chord", "chord_dose_matched", "projected", "reflected")
+    arms = ("tps", "chord", "chord_linear_interp", "chord_dose_matched", "projected", "reflected")
     acc = {a: {q: [] for q in ("err_end", "err_path", "nearest_real_R", "excess_to_ref", "excess_to_nearest_real",
                                "delta_norm", "_id")} for a in arms}
     ctrl = [{q: [] for q in ("err_path", "excess_to_ref")} for _ in coefs]   # endpoints are matched
@@ -124,7 +176,8 @@ def run(args):
         path_xy = src[:, None] + s[None, :, None] * (tgt - src)[:, None]                  # [n, K, 2]
         T = tps(path_xy.reshape(-1, 2)).reshape(len(pick), args.K, -1)
         Zs = Z[:, None] + T - T[:, :1]
-        Zl = mf.linear_coords(Z, lin_at(src), lin_at(tgt[None])[0], args.K)
+        Zl = mf.linear_coords(Z, T[:, 0], T[:, -1], args.K)                    # endpoint-matched to tps
+        Zli = mf.linear_coords(Z, lin_at(src), lin_at(tgt[None])[0], args.K)
         dl, ds = Zl - Z[:, None], Zs - Z[:, None]
         nl, ns = np.linalg.norm(dl, axis=-1, keepdims=True), np.linalg.norm(ds, axis=-1, keepdims=True)
         Zd = Z[:, None] + dl * np.where(nl > 0, ns / np.where(nl > 0, nl, 1.0), 0.0)
@@ -142,7 +195,7 @@ def run(args):
                     "excess_to_ref": dc.mean(1) - dc[:, 0], "excess_to_nearest_real": dn.mean(1) - dn[:, 0],
                     "delta_norm": np.linalg.norm(W[:, -1] - xs, axis=-1)}
 
-        for a, Zk in zip(arms, (Zs, Zl, Zd, proj, refl)):
+        for a, Zk in zip(arms, (Zs, Zl, Zli, Zd, proj, refl)):
             sc = score(Zk)
             for q in acc[a]:
                 acc[a][q].append(d["df"]["id"].to_numpy()[pick] if q == "_id" else sc[q])
@@ -164,8 +217,12 @@ def run(args):
            "grid": {"G": args.grid, "range": [float(lo), float(hi)], "held_out_cells": held,
                     "held_out_centres": centres[held].tolist()},
            "geometry_train": geo,
+           "tps_smoothing": smoothing, "tps_smoothing_choice": smooth_note,
+           "linear_interp_nan_fallbacks": lin_count["nan_fallbacks"],
            "arms": {"tps": "thin-plate spline through kept cell centroids, walked along the straight (x, y) line",
-                    "chord": "straight line between Delaunay-linear interpolants at source and target",
+                    "chord": "straight line between the TPS values at source and target (endpoint-matched)",
+                    "chord_linear_interp": "straight line between Delaunay-linear interpolants at source and target "
+                                           "(not endpoint-matched; nearest-neighbour fallback outside the hull)",
                     "chord_dose_matched": "chord delta rescaled per clip and waypoint to the tps arm's ||delta||",
                     "projected": "tps path's own chord with its arc-length spacing",
                     "reflected": "2 * projected - tps"},
@@ -225,7 +282,8 @@ def parse(argv=None):
     p.add_argument("--n-clips", type=int, default=48)
     p.add_argument("--n-controls", type=int, default=20)
     p.add_argument("--n-control-clips", type=int, default=16)
-    p.add_argument("--tps-smoothing", type=float, default=0.0, help="0 = interpolating TPS (Goodfire A.3)")
+    p.add_argument("--tps-smoothing", default="auto",
+                   help="'auto' (held-out-block reconstruction on train rows) or a number; 0 = interpolating (A.3)")
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--act-dir", default=None)
     p.add_argument("--table", default=None)
