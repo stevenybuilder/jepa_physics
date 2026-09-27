@@ -12,6 +12,9 @@ train rows and scored the train folds through it, so the scored labels shaped th
           performance approaches chance). Reads test once for step 2 (spec §3), recorded in provenance.
 The basis saved for step 3 is the all-train sequence (the paper's, and what steering needs), truncated at the nested
 pooled K so that its length is not chosen on test.
+α: nested chooses α per fold by CV over that fold's training rows only (alpha_folds); the paper protocol and the
+saved basis use the step-1 all-train α, as the paper does. The standardiser (step 1's all-train mean/SD) includes the
+held-out fold's activations; it is label-free, so it cannot carry label information into the removals.
 """
 import json
 from pathlib import Path
@@ -19,7 +22,7 @@ from pathlib import Path
 import numpy as np
 
 from wm.adam_probe import fit_adam, init_linear
-from wm.probes import (N_POINTS, PROJECT_ROOT, RESULTS, drop_nan_clips, fit_ridge, layer_fraction, load_activations,
+from wm.probes import (ALPHAS, N_POINTS, PROJECT_ROOT, RESULTS, cv_select_alpha, drop_nan_clips, fit_ridge, layer_fraction, load_activations,
                        load_sweep, load_table, predict, result_name, split_rows, standardized_layer,
                        targets)
 from wm.provenance import PAPER_LAYER, result_provenance
@@ -92,18 +95,22 @@ def protocol_summary(rows, K, prefix, kind, m):
     return out
 
 
-def nested_curve(Xtr, Ytr, folds, alpha, score_fn, kind, max_rounds=None, Yfit=None):
+def nested_curve(Xtr, Ytr, folds, alpha, score_fn, kind, max_rounds=None, Yfit=None, alpha_per_fold=True):
     """Protocol (a), nested. For each fold the sequence is fit on the other folds only and every round is scored on
     the held-out fold; the folds advance in lockstep until the fold-mean curve and every fold are at chance (or the
     cap). Yfit (default Ytr) holds the labels the removals are fit on and Ytr the labels scored; they differ only in
-    the leakage test (permuting the scored fold's labels in Yfit must not change that fold's curve)."""
+    the leakage test (permuting the scored fold's labels in Yfit must not change that fold's curve).
+    alpha_per_fold (default): each fold's α is chosen by CV over the fold's training rows (their own folds), so the
+    held-out labels do not enter α either; False uses the given α everywhere."""
     Ytr = np.asarray(Ytr, float).reshape(len(Ytr), -1)
     Yfit = Ytr if Yfit is None else np.asarray(Yfit, float).reshape(len(Yfit), -1)
     m = Ytr.shape[1]
     max_rounds = max_rounds or Xtr.shape[1] // m
     ks = np.unique(folds)
-    seqs = [probe_sequence(Xtr[folds != k], Yfit[folds != k], ridge_fit(alpha), score_fn,
-                           Xtr[folds == k], Ytr[folds == k]) for k in ks]
+    alphas = [cv_select_alpha(Xtr[folds != k], Yfit[folds != k], folds[folds != k], ALPHAS, score_fn)["alpha"]
+              if alpha_per_fold else float(alpha) for k in ks]
+    seqs = [probe_sequence(Xtr[folds != k], Yfit[folds != k], ridge_fit(a), score_fn,
+                           Xtr[folds == k], Ytr[folds == k]) for k, a in zip(ks, alphas)]
     rows, fold_K, K = [], [None] * len(ks), None
     for k in range(1, max_rounds + 1):
         sc = [next(g)[0] for g in seqs]
@@ -125,7 +132,8 @@ def nested_curve(Xtr, Ytr, folds, alpha, score_fn, kind, max_rounds=None, Yfit=N
     out = protocol_summary(rows, K, "cv", kind, m)
     fk = [len(rows) if x is None else x for x in fold_K]
     out.update({"protocol": "nested", "K_source": "pooled: first at-chance round of the fold-mean curve, minus 1",
-                "K_folds": fk, "K_fold_mean": float(np.mean(fk)), "K_fold_min": int(min(fk)),
+                "alpha_folds": alphas, "alpha_folds_source": "CV over each fold's training rows" if alpha_per_fold
+                else "fixed (given)", "K_folds": fk, "K_fold_mean": float(np.mean(fk)), "K_fold_min": int(min(fk)),
                 "K_fold_max": int(max(fk)), "fold_hit_round_cap": [x is None for x in fold_K]})
     return out
 
@@ -156,7 +164,8 @@ def paper_curve_and_basis(Xtr, Ytr, Xte, Yte, alpha, score_fn, kind, n_basis, ma
     return {**protocol_summary(rows, K, "test", kind, m), "protocol": "paper", "test_read": TEST_READ}, Ws, bs
 
 
-def inlp(Xtr, Ytr, Xte, Yte, folds, alpha, score_fn, kind, max_rounds=None, protocols=("nested",)):
+def inlp(Xtr, Ytr, Xte, Yte, folds, alpha, score_fn, kind, max_rounds=None, protocols=("nested",),
+         alpha_per_fold=True):
     """The probe sequence under the nested protocol (always) and the paper protocol (if 'paper' in protocols).
 
     The top level is the nested summary (K = pooled nested K, dims = K·m, rounds = fold-mean curve); 'paper' holds
@@ -165,10 +174,12 @@ def inlp(Xtr, Ytr, Xte, Yte, folds, alpha, score_fn, kind, max_rounds=None, prot
     Ytr = np.asarray(Ytr, float).reshape(len(Ytr), -1)
     d, m = Xtr.shape[1], Ytr.shape[1]
     max_rounds = max_rounds or d // m
-    nested = nested_curve(Xtr, Ytr, folds, alpha, score_fn, kind, max_rounds)
+    nested = nested_curve(Xtr, Ytr, folds, alpha, score_fn, kind, max_rounds, alpha_per_fold=alpha_per_fold)
     paper, Ws, bs = paper_curve_and_basis(Xtr, Ytr, Xte, Yte, alpha, score_fn, kind, nested["K"], max_rounds,
                                           "paper" in protocols)
-    summary = {**nested, "alpha": float(alpha), "paper": paper,
+    summary = {**nested, "alpha": float(alpha), "alpha_note": "all-train α: paper protocol and saved basis",
+               "standardiser_note": "step-1 all-train standardiser (includes held-out folds' activations; label-free)",
+               "paper": paper,
                "basis": f"first {len(Ws)} probes of the all-train sequence (length = nested pooled K)"}
     Q = np.hstack([np.linalg.qr(W)[0] for W in Ws]) if Ws else np.zeros((d, 0))
     W_arr = np.stack(Ws) if Ws else np.zeros((0, d, m))
@@ -393,8 +404,9 @@ def adam_sequence(Xtr, Ytr, Xte, Yte, score_fn, kind, max_rounds=None, batch=Non
 
     Per round: test R², MAE (and acc15 for direction); train MSE, R² (and acc15) at the end of training; ‖W_k‖ and
     ‖W_k − W_init‖ (how far the probe moved from its random init; an untrained probe keeps its random init, and QR
-    of a random W removes a random direction, i.e. almost nothing). failed_to_train: train R² below the stop
-    threshold or ‖W_k − W_init‖ < fail_move · ‖W_1 − W_init,1‖. Runs until `patience` consecutive rounds are at chance
+    of a random W removes a random direction, i.e. almost nothing). failed_to_train: movement only,
+    ‖W_k − W_init‖ < fail_move · ‖W_1 − W_init,1‖; at_chance_on_train (train R² below the stop threshold) is reported
+    separately, since a genuine information dip is at chance on train too. Runs until `patience` consecutive rounds are at chance
     on test, or max_rounds. K_first = first at-chance round − 1 (the paper's rule); K_patience = start of the
     at-chance run − 1."""
     Ytr = np.asarray(Ytr, float).reshape(len(Ytr), -1)
@@ -423,7 +435,8 @@ def adam_sequence(Xtr, Ytr, Xte, Yte, score_fn, kind, max_rounds=None, batch=Non
                "W_norm": float(np.linalg.norm(W)), "W_move_from_init": move}
         if "acc15" in s:
             row.update({"test_acc15": s["acc15"], "train_acc15": tr_s["acc15"]})
-        row["failed_to_train"] = bool(tr_s["r2"] < stop_r2 or move < fail_move * move1)
+        row["failed_to_train"] = bool(move < fail_move * move1)
+        row["at_chance_on_train"] = bool(tr_s["r2"] < stop_r2)
         rows.append(row)
         Ws.append(W)
         chance = at_chance(s, kind)
@@ -440,7 +453,8 @@ def adam_sequence(Xtr, Ytr, Xte, Yte, score_fn, kind, max_rounds=None, batch=Non
                "protocol": "paper (fit on all train, score on test)", "m": m,
                "K_first": len(rows) if K_first is None else K_first,
                "K_patience": len(rows) if hit_cap else run_start - 1, "patience": patience, "hit_round_cap": hit_cap,
-               "failed_rule": f"train R2 < {stop_r2} or |W - W_init| < {fail_move} x round 1's",
+               "failed_rule": f"|W - W_init| < {fail_move} x round 1's (movement only)",
+               "at_chance_on_train_rule": f"train R2 < {stop_r2}",
                "rounds": rows}
     summary["dims_first"] = summary["K_first"] * m
     st = sawtooth(summary, W_arr, "test")
@@ -453,6 +467,7 @@ def adam_sequence(Xtr, Ytr, Xte, Yte, score_fn, kind, max_rounds=None, batch=Non
         "metric": metric, "rounds_counted": f"1..{len(body)} (before the final at-chance run)",
         "isolated_dips": dips, "failed_rounds": failed,
         "dips_that_failed": sorted(set(dips) & set(failed)),
+        "dips_at_chance_on_train": sorted(set(dips) & {r["round"] for r in body if r["at_chance_on_train"]}),
         "p_dip_given_failed": len(set(dips) & set(failed)) / len(failed) if failed else None,
         "p_dip_given_trained": len(set(dips) - set(failed)) / ok if ok else None,
         "hypothesis": "sawtooth teeth are rounds whose Adam probe barely trained (removes ~nothing, next round "

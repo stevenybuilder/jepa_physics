@@ -95,6 +95,7 @@ def test_planted_rank_nested_and_paper_K_and_bug2_fields():
     s, Q, W, _ = run(y, 4, "scalar")
     assert s["K"] == 4 and s["protocol"] == "nested" and s["K_probes"] == 4 and "dims_2K" not in s
     assert all(abs(k - 4) <= 1 for k in s["K_folds"]) and s["K_fold_min"] <= 4 <= s["K_fold_max"]
+    assert len(s["alpha_folds"]) == 5 and "fold's training rows" in s["alpha_folds_source"] and s["alpha"] == 1.0
     assert abs(s["paper"]["K"] - 4) <= 1 and s["paper"]["protocol"] == "paper" and "test" in s["paper"]["test_read"]
     assert all("test_r2" in r and "cv_r2" not in r for r in s["paper"]["rounds"])
     theta = np.radians(np.random.default_rng(1).uniform(0, 360, 1200))
@@ -175,4 +176,6 @@ def test_adam_sequence_logs_and_flags_untrained_rounds(monkeypatch):
     assert r2[2]["test_acc15"] > r2[1]["test_acc15"] + 0.3
     dv = s2["sawtooth"]["dips_vs_failed"]
     assert 2 in dv["isolated_dips"] and dv["dips_that_failed"] == [2] and dv["p_dip_given_failed"] == 1.0
+    assert r2[1]["at_chance_on_train"] and not r2[0]["at_chance_on_train"] and "movement only" in s2["failed_rule"]
+    assert r2[-1]["at_chance_on_train"] and not r2[-1]["failed_to_train"]   # info exhausted, but the probe moved
     assert s2["K_first"] == 1 and s2["K_patience"] == 3     # the paper's first-at-chance rule stops at the tooth
