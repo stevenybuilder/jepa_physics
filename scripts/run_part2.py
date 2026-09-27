@@ -452,7 +452,11 @@ def run(args):
                         "waypoint index with the Eq. 9 argmax value's offset along that arc; argmax_on_arc = fraction "
                         "of waypoints whose argmax lies on the arc, endpoints included"),
            "rows": rows}
-    out["verdict"] = curvature_verdict(out["gaps"], m["sagitta"], m["behaviour"], periodic)
+    out["verdict"] = curvature_verdict(out["gaps"], m["sagitta"],
+                                       {"to_curve": energy_floor["to_curve"],
+                                        "to_nearest_real": energy_floor["to_nearest_real"],
+                                        "behaviour_mean": ctx["floor"]["mean"], "K": args.K,
+                                        "probe_oof": out["probe_test_error"]}, periodic)
     out["summary_notes"].insert(0, "verdict: " + out["verdict"]["text"])
     out["controls_note"] = (f"{args.n_controls} draws each, on the first {args.n_control_clips} steered clips per "
                             "target (the spline value in each band is on the same clips); spline_rank = 1 + number "
@@ -740,44 +744,65 @@ def _mean_or_none(v):
     return float(np.mean(v)) if v else None
 
 
-def curvature_verdict(gaps, sagitta, bm, periodic, metrics=("excess_to_curve", "excess_to_nearest_real",
-                                                              "probe_err_path", "behaviour_energy"), z=2.0):
-    """Rule-based verdict over pairs (z SE). negative, "no curvature at knot scale: spline = chord": the spline
-    coincides with the projected and reflected arms and with the chord on every metric. negative, "no curvature
-    benefit": the spline is better than the chord on no metric (worse on some). positive: better on some, worse on
-    none. mixed: otherwise."""
+def curvature_verdict(gaps, sagitta, floors, periodic, metrics=("excess_to_curve", "excess_to_nearest_real",
+                                                                  "probe_err_path", "behaviour_energy"), z=2.0,
+                      min_frac_floor=0.1, min_sagitta_ratio=0.5):
+    """Rule-based verdict over pairs (z SE), with an effect-size condition.
+
+    negative, "no curvature at knot scale: spline = chord": the spline coincides with the projected, reflected and
+    chord arms on every metric. negative, "no curvature benefit": better than the chord on no metric.
+    positive: better on some metric by a PRACTICAL margin, worse on none, and the geometry is resolvable (median
+    sagitta / centroid noise >= min_sagitta_ratio). Practical margin: energies >= min_frac_floor of the unsteered
+    real-clip floor (behaviour_energy: of floor x K, since E_BC sums K waypoints); probe_err_path >= the evaluation
+    probe's own out-of-sample error. below_noise_scale: statistically better but not by a practical margin, or the
+    sagitta is below the resolvable scale ("detectable but below the noise scale: no practical curvature benefit").
+    mixed: otherwise. floors: dict(to_curve, to_nearest_real, behaviour_mean, K, probe_oof)."""
     def g(o, q):
         r = gaps.get(f"manifold_minus_{o}", {}).get(q)
         return r if isinstance(r, dict) and r.get("se_over_pairs") else None
     same = all(abs(r["mean_over_pairs"]) <= z * r["se_over_pairs"]
                for o in ("projected", "reflected") for q in metrics if (r := g(o, q)))
-    better, worse = [], []
+    margin = {"excess_to_curve": min_frac_floor * floors["to_curve"],
+              "excess_to_nearest_real": min_frac_floor * floors["to_nearest_real"],
+              "behaviour_energy": min_frac_floor * floors["behaviour_mean"] * floors["K"],
+              "probe_err_path": floors["probe_oof"]}
+    better, worse, practical = [], [], []
     for q in metrics:
         r = g("linear", q)
         if r is None:
             continue
         if r["mean_over_pairs"] < -z * r["se_over_pairs"]:
             better.append(q)
+            if -r["mean_over_pairs"] >= margin[q]:
+                practical.append(q)
         elif r["mean_over_pairs"] > z * r["se_over_pairs"]:
             worse.append(q)
     sag = np.array([t["sagitta"] for t in sagitta])
     ratio = np.array([t["sagitta_over_centroid_noise"] for t in sagitta])
     noise = float(np.median(sag / ratio)) if len(sag) else float("nan")
+    sag_ratio = float(np.median(ratio)) if len(sag) else float("nan")
     geo = (f"sagitta median {float(np.median(sag)):.3g} vs centroid noise {noise:.3g} (PCA units)" if len(sag)
            else "no held-out targets")
     if same and not better and not worse:
-        text = f"no curvature at knot scale: spline = chord; {geo}"
-        call = "negative"
+        text, call = f"no curvature at knot scale: spline = chord; {geo}", "negative"
     elif not better:
         text = (f"negative: no curvature benefit, the chord is as good or better (spline worse on {worse}: the "
                 f"spline bends where the data do not); {geo}")
         call = "negative"
+    elif not worse and practical and sag_ratio >= min_sagitta_ratio:
+        text, call = f"positive: spline better than chord on {practical} by a practical margin; {geo}", "positive"
+    elif not worse:
+        text = (f"detectable but below the noise scale: no practical curvature benefit (spline better on {better} "
+                f"by < practical margin or sagitta/noise {sag_ratio:.2g} < {min_sagitta_ratio:g}); {geo}")
+        call = "below_noise_scale"
     else:
-        text = (f"spline vs chord: better on {better or 'none'}, worse on {worse or 'none'}; spline "
-                f"{'=' if same else '!='} projected/reflected within {z:g} SE; {geo}")
-        call = "positive" if better and not worse else "mixed"
-    return {"call": call, "text": text, "spline_better_than_chord_on": better, "spline_worse_than_chord_on": worse,
-            "spline_equals_projected_reflected": bool(same), "rule": f"{z:g} SE over (source, target) pairs",
+        text = (f"mixed: spline better on {better}, worse on {worse}; {geo}")
+        call = "mixed"
+    return {"call": call, "text": text, "spline_better_than_chord_on": better, "practical_on": practical,
+            "spline_worse_than_chord_on": worse, "spline_equals_projected_reflected": bool(same),
+            "sagitta_over_noise_median": sag_ratio, "practical_margins": margin,
+            "rule": (f"{z:g} SE over (source, target) pairs; practical: energies >= {min_frac_floor:g} x real-clip "
+                     f"floor, path error >= probe out-of-sample error, sagitta/noise >= {min_sagitta_ratio:g}"),
             "metrics": list(metrics)}
 
 
