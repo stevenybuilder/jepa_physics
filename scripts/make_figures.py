@@ -193,7 +193,25 @@ def fig2(results, out, role="peak"):
     runs = {v: r for v, r in runs.items() if r}
     if not runs:
         return
-    fig, axes = plt.subplots(1, len(runs), figsize=(5 * len(runs), 3.8), sharey=True, squeeze=False)
+    fig, axes = plt.subplots(2, len(runs), figsize=(5 * len(runs), 8.2), squeeze=False,
+                             gridspec_kw={"hspace": 0.75})
+    for ax, (v, r) in zip(axes[1], runs.items()):   # the paper's Fig. 23: accuracy within 15° / R² vs probe number
+        key = "cv_acc15" if r["kind"] == "circular" and "cv_acc15" in r["rounds"][0] else "cv_r2"
+        m_out = r.get("m", 2 if r["kind"] == "circular" else 1)
+        k = np.array([row["round"] for row in r["rounds"]])
+        y = 100 * np.array([row[key] for row in r["rounds"]])
+        if "random" in r and key in r["random"]["rows"][0]:
+            rk = np.array([row["dims_removed"] for row in r["random"]["rows"]]) / m_out + 1
+            rm = 100 * np.array([row[key] for row in r["random"]["rows"]])
+            rs = 100 * np.array([row[key + "_seed_sd"] for row in r["random"]["rows"]])
+            ax.fill_between(rk, rm - rs, rm + rs, color=COLORS["random"], alpha=0.3, lw=0)
+            ax.plot(rk, rm, color=COLORS["random"], label="random subspace of the same rank removed first")
+        ax.plot(k, y, "-", color=COLORS[v], lw=1.5, label="orthogonal probe sequence")
+        ax.set(xlabel="orthogonal probe number", ylim=(0, 102),
+               ylabel="accuracy within 15° (%)" if key == "cv_acc15" else "validation R² (%)",
+               title=f"{v} encoding redundancy (paper Fig. 23 style)")
+        ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+        legend_top(ax, 1)
     for ax, (v, r) in zip(axes[0], runs.items()):
         x = np.array([row["dims_removed"] for row in r["rounds"]])
         m = np.array([row["cv_r2"] for row in r["rounds"]])
@@ -222,12 +240,15 @@ def fig2b(results, out):
     if not runs:
         return
     fig, ax = plt.subplots(figsize=(5.5, 3.8))
-    for v, r in runs.items():
+    for v, r in runs.items():   # the paper's Fig. 22: K at R² < 0.3 (direction) / R² < 0.1 (scalars)
         body = [row for row in r["layers"] if not row["post_ln"]]
-        ax.plot([row["frac"] for row in body], [row["dims"] for row in body], "o-", ms=3.5,
-                color=COLORS[v], label=v)
-    ax.set(xlabel="layer fraction", ylabel="linear subspace dimension (2K or K)",
-           title="Dimensions needed to remove each variable, by depth")
+        x = [row["frac"] for row in body]
+        loose = [row.get("K_loose", row.get("K_r2_03")) for row in body]
+        ax.plot(x, [np.nan if k is None else k for k in loose], "o-", ms=3.5, color=COLORS[v],
+                label=f"{v} (R² < {0.3 if r['kind'] == 'circular' else 0.1})")
+        ax.plot(x, [row["K"] for row in body], ":", color=COLORS[v], lw=1.2, label=f"{v}, strict stop")
+    ax.set(xlabel="layer fraction", ylabel="number of orthogonal probes K",
+           title="Probes trainable before chance, by depth (paper Fig. 22)")
     ax.yaxis.set_major_locator(MaxNLocator(integer=True))
     legend_top(ax)
     fig.savefig(out / "fig2b_dim_vs_layer.png")
