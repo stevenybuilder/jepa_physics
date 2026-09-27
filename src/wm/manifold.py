@@ -209,6 +209,17 @@ def compare_angles(t_intrinsic, theta_deg):
     return {"circular_corr": rho, **best, "order_preserved": order_preserved}
 
 
+def choose_angle_source(C, values_deg, max_dev_deg=30.0):
+    """Pick the intrinsic angle for a ring: atan2(PC2, PC1) in the activation-PCA plane if it tracks the true angle
+    (aligned max deviation < max_dev_deg and knot order kept), else in the centroid plane, else the labels (flag).
+    Returns dict(angle="unsupervised"|"labels", plane, checks={plane: compare_angles(...)})."""
+    checks = {pl: compare_angles(unsupervised_angle(C, pl), values_deg) for pl in ("activation", "centroid")}
+    for pl in ("activation", "centroid"):
+        if checks[pl]["max_dev_deg"] < max_dev_deg and checks[pl]["order_preserved"]:
+            return {"angle": "unsupervised", "plane": pl, "checks": checks}
+    return {"angle": "labels", "plane": "activation", "checks": checks}
+
+
 def periodic_cubic(C, values_deg, angle=None, plane="activation"):
     """Closed (periodic) cubic spline through centroids C [m, k] of a circular variable.
 
