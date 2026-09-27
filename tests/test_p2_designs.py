@@ -437,3 +437,17 @@ def test_behaviour_floor_and_replace_masking():
     out = P2.mask_replace(summ)["goodfire_manifold"]
     assert out["overall"]["behaviour_energy"] is None and out["overall"]["nearest_real_R"] == 0.5
     assert out["behaviour_note"].startswith("not comparable")
+
+
+def test_curvature_verdict_rules():
+    sag = [{"sagitta": 0.1, "sagitta_over_centroid_noise": 0.2}]
+    mk = lambda m: {"mean_over_pairs": m, "se_over_pairs": 0.1}
+    zero = {q: mk(0.05) for q in ("excess_to_curve", "excess_to_nearest_real", "probe_err_path", "behaviour_energy")}
+    gaps = {f"manifold_minus_{o}": dict(zero) for o in ("projected", "reflected", "linear")}
+    v = P2.curvature_verdict(gaps, sag, None, False)
+    assert v["call"] == "negative" and v["text"].startswith("no curvature at knot scale: spline = chord")
+    assert "0.1 vs centroid noise 0.5" in v["text"]
+    gaps["manifold_minus_linear"]["excess_to_curve"] = mk(0.5)
+    assert P2.curvature_verdict(gaps, sag, None, False)["text"].startswith("negative: no curvature benefit")
+    gaps["manifold_minus_linear"]["excess_to_curve"] = mk(-0.5)
+    assert P2.curvature_verdict(gaps, sag, None, False)["call"] == "positive"

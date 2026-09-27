@@ -119,6 +119,24 @@ def choose_smoothing(X, cell, centres, G, k, seeds=(0, 1, 2, 3)):
                   "tps_beats_linear_interp": mean[str(best)] < mean["linear_interp"]}
 
 
+def sheet_verdict(cat, metrics=("err_path", "excess_to_ref", "excess_to_nearest_real"), seed=0):
+    """negative when the TPS path is not better than the endpoint-matched chord on any path metric (paired bootstrap
+    over clips, 95% CI): "TPS path indistinguishable from chord" if no CI excludes 0, else "chord better"."""
+    better, worse = [], []
+    for q in metrics:
+        b = p2.paired_bootstrap(cat["tps"][q] - cat["chord"][q], cat["tps"]["_id"], seed=seed)
+        if b["ci95"][1] < 0:
+            better.append(q)
+        elif b["ci95"][0] > 0:
+            worse.append(q)
+    if not better:
+        text = ("negative: TPS path indistinguishable from chord" if not worse
+                else f"negative: chord better than the TPS path on {worse}")
+    else:
+        text = f"TPS path better than chord on {better}" + (f", worse on {worse}" if worse else "")
+    return {"text": text, "tps_better_on": better, "tps_worse_on": worse, "rule": "95% CI of tps - chord (clips)"}
+
+
 def held_block(G, seed):
     """One interior 2 x 2 block of cells (never touching the grid edge), chosen by seed."""
     rng = np.random.default_rng(seed)
@@ -233,6 +251,7 @@ def run(args):
            "controls": {"random_endpoint_matched": {
                q: p2.band([np.concatenate(c[q]).mean() for c in ctrl], np.concatenate(ctrl_ref[q]).mean(), False)
                for q in ctrl_ref}},
+           "verdict": sheet_verdict(cat),
            "notes": ["err = distance (m) from the (x, y) probe readout to the target cell centre",
                      "energy reference: TPS through probe-fold cell centroids (all cells), dense 60 x 60 grid",
                      "gaps: paired bootstrap over clips (each clip's targets together)"]}
@@ -268,7 +287,8 @@ def plot(d, cell, centres, tr, args, out, path):
     axes[1].set_xticks(range(len(arms)), arms, rotation=30, fontsize=7)
     axes[1].set(ylabel="probe error to target cell centre (m)", title="Held-out 2 x 2 block, steered test clips")
     axes[1].legend(fontsize=7)
-    fig.tight_layout()
+    fig.text(0.01, 0.005, "verdict: " + out["verdict"]["text"], fontsize=6, color="0.25", va="bottom")
+    fig.tight_layout(rect=(0, 0.03, 1, 1))
     fig.savefig(path, dpi=150)
     plt.close(fig)
 

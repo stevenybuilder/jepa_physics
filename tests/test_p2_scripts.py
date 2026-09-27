@@ -81,6 +81,12 @@ def test_scripts_end_to_end(tmp_path, dataset):
     assert shuf["n_draws"] == 20 and shuf["spline_rank"] == 1
     assert s["manifold"]["overall"]["nearest_real_R"] > shuf["p95"]
     assert res["K"] == 11 and "behaviour_manifold" in res and "deviations_from_goodfire" in res
+    assert res["summary_notes"][0].startswith("verdict: ") and res["energy_floor"]["to_curve"] > 0
+    if dataset == "speed":
+        assert res["verdict"]["call"] == "negative"                    # a straight line: spline = chord
+        assert res["summary_notes"][0].startswith("verdict: n")
+    else:
+        assert "excess_to_curve" in res["verdict"]["spline_better_than_chord_on"]
     if dataset == "direction":
         far_lin = s["linear"]["by_shift"][-1]["excess_to_curve"]
         far_man = s["manifold"]["by_shift"][-1]["excess_to_curve"]
@@ -428,6 +434,7 @@ def test_position_sheet(tmp_path):
     assert len(out["grid"]["held_out_cells"]) == 4
     s = out["summary"]
     assert out["tps_smoothing_choice"]["best_tps_smoothing"] == out["tps_smoothing"]
+    assert out["verdict"]["text"] and "tps_better_on" in out["verdict"]
     assert out["tps_smoothing_choice"]["tps_beats_linear_interp"]                  # the sheet is curved
     assert s["tps"]["excess_to_ref"] < s["chord_linear_interp"]["excess_to_ref"]
     np.testing.assert_allclose(s["tps"]["err_end"], s["chord"]["err_end"], rtol=1e-9)   # endpoint-matched chord

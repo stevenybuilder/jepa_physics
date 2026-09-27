@@ -304,6 +304,10 @@ def run(args):
     picks = pick_clips(d_steer, m["held"], args.n_clips, args.seed)
     stest = np.flatnonzero(d_steer["role"] == "test")
     ctx["floor"] = behaviour_floor(m["behaviour"], d_steer["X"][stest], d_steer["y"][stest])
+    e0 = mf.off_manifold_energy(d_steer["X"][stest][:, None], m["pca"], m["ref_curve"], m["X_ref"], knn=5)
+    energy_floor = {"to_curve": float(e0["to_curve"].mean()), "to_nearest_real": float(e0["to_nearest_real"].mean()),
+                    "note": "unsteered real test clips: mean distance to the reference curve and to the 5 nearest "
+                            "probe-fold clips (the same measures as energy_to_curve / energy_to_nearest_real)"}
     big = 135.0 if periodic else 0.25 * float(np.ptp(m["behaviour"].values))   # "large shift" for the heatmaps
     heat = {a: [0.0, 0] for a in arms}
 
@@ -428,7 +432,7 @@ def run(args):
                "replace arms (goodfire_manifold, goodfire_linear): behaviour energy and entropy " + NOT_COMPARABLE,
                "behaviour_energy_rel_floor = mean Bhattacharyya distance per waypoint / the unsteered real-clip floor "
                "(test clips at their own value); 1 = as natural as a real clip"],
-           "behaviour_floor": ctx["floor"],
+           "behaviour_floor": ctx["floor"], "energy_floor": energy_floor,
            "tau_sensitivity": tau_sensitivity(m, d_steer, picks, args, periodic),
            "value_heatmap": {"large_shift_min": big, "offsets": value_offsets(m["behaviour"].values, periodic),
                              "note": ("Eq. 9 probability over values along the path, mean over large-shift steers; "
@@ -448,6 +452,8 @@ def run(args):
                         "waypoint index with the Eq. 9 argmax value's offset along that arc; argmax_on_arc = fraction "
                         "of waypoints whose argmax lies on the arc, endpoints included"),
            "rows": rows}
+    out["verdict"] = curvature_verdict(out["gaps"], m["sagitta"], m["behaviour"], periodic)
+    out["summary_notes"].insert(0, "verdict: " + out["verdict"]["text"])
     out["controls_note"] = (f"{args.n_controls} draws each, on the first {args.n_control_clips} steered clips per "
                             "target (the spline value in each band is on the same clips); spline_rank = 1 + number "
                             "of draws better than the spline arm (1 = spline best); band = 5-95% of the draws' means")
@@ -479,11 +485,12 @@ def run(args):
     Path(args.figures_dir).mkdir(parents=True, exist_ok=True)
     (Path(args.results_dir) / f"p2_steer_{tag}.json").write_text(json.dumps(out, indent=1))
     main = [a for a in arms if a != "goodfire_linear"]
-    plot_gap(out["summary"], Path(args.figures_dir) / f"fig4_gap_vs_shift_{tag}.png", tag, periodic, main)
+    verdict = "verdict: " + out["verdict"]["text"]
+    plot_gap(out["summary"], Path(args.figures_dir) / f"fig4_gap_vs_shift_{tag}.png", tag, periodic, main, verdict)
     plot_energy({a: cat[a]["_energy"] for a in main}, {a: cat[a]["shift"] for a in main},
-                Path(args.figures_dir) / f"fig4_path_energy_{tag}.png", tag)
+                Path(args.figures_dir) / f"fig4_path_energy_{tag}.png", tag, energy_floor, verdict)
     plot_waypoints(out["waypoint_readout"], Path(args.figures_dir) / f"fig4_waypoint_readout_{tag}.png", tag,
-                   periodic, main)
+                   periodic, main, ctx["floor"]["mean"], verdict)
     plot_value_heatmap(out["value_heatmap"], Path(args.figures_dir) / f"fig4_value_heatmap_{tag}.png", tag, periodic)
     return out
 
@@ -517,7 +524,7 @@ def waypoint_summary(cat, arms, periodic, n_bins=4):
     return out
 
 
-def plot_waypoints(wp, path, tag, periodic, arms):
+def plot_waypoints(wp, path, tag, periodic, arms, floor=None, verdict=None):
     """Largest-shift bin: probe readout radius (direction) or error, and behaviour distance, along the path.
     Replace arms are left out of the behaviour panel (not comparable); the circularity caveat is printed on it."""
     fig, axes = plt.subplots(1, 2, figsize=(9, 3.8))
@@ -534,6 +541,10 @@ def plot_waypoints(wp, path, tag, periodic, arms):
     b = wp[arms[0]][-1]
     axes[0].set(xlabel="fraction of path", ylabel="probe readout radius" if periodic else "probe error to target",
                 title=f"Evaluation probe, shift {b['shift_lo']:.0f}-{b['shift_hi']:.0f}")
+    if floor is not None:
+        axes[1].axhline(floor, color="0.4", lw=0.8, ls="-.", label="unsteered real clips (floor)")
+        axes[1].legend(fontsize=6, loc="lower right")
+    _annotate(fig, verdict)
     axes[1].set(xlabel="fraction of path", ylabel="Bhattacharyya distance to M_y", title="Behaviour manifold (Eq. 9)")
     axes[0].legend(fontsize=7)
     fig.suptitle(f"Every waypoint scored, {tag}")
@@ -729,7 +740,53 @@ def _mean_or_none(v):
     return float(np.mean(v)) if v else None
 
 
-def plot_gap(summary, path, tag, periodic, arms):
+def curvature_verdict(gaps, sagitta, bm, periodic, metrics=("excess_to_curve", "excess_to_nearest_real",
+                                                              "probe_err_path", "behaviour_energy"), z=2.0):
+    """Rule-based verdict over pairs (z SE). negative, "no curvature at knot scale: spline = chord": the spline
+    coincides with the projected and reflected arms and with the chord on every metric. negative, "no curvature
+    benefit": the spline is better than the chord on no metric (worse on some). positive: better on some, worse on
+    none. mixed: otherwise."""
+    def g(o, q):
+        r = gaps.get(f"manifold_minus_{o}", {}).get(q)
+        return r if isinstance(r, dict) and r.get("se_over_pairs") else None
+    same = all(abs(r["mean_over_pairs"]) <= z * r["se_over_pairs"]
+               for o in ("projected", "reflected") for q in metrics if (r := g(o, q)))
+    better, worse = [], []
+    for q in metrics:
+        r = g("linear", q)
+        if r is None:
+            continue
+        if r["mean_over_pairs"] < -z * r["se_over_pairs"]:
+            better.append(q)
+        elif r["mean_over_pairs"] > z * r["se_over_pairs"]:
+            worse.append(q)
+    sag = np.array([t["sagitta"] for t in sagitta])
+    ratio = np.array([t["sagitta_over_centroid_noise"] for t in sagitta])
+    noise = float(np.median(sag / ratio)) if len(sag) else float("nan")
+    geo = (f"sagitta median {float(np.median(sag)):.3g} vs centroid noise {noise:.3g} (PCA units)" if len(sag)
+           else "no held-out targets")
+    if same and not better and not worse:
+        text = f"no curvature at knot scale: spline = chord; {geo}"
+        call = "negative"
+    elif not better:
+        text = (f"negative: no curvature benefit, the chord is as good or better (spline worse on {worse}: the "
+                f"spline bends where the data do not); {geo}")
+        call = "negative"
+    else:
+        text = (f"spline vs chord: better on {better or 'none'}, worse on {worse or 'none'}; spline "
+                f"{'=' if same else '!='} projected/reflected within {z:g} SE; {geo}")
+        call = "positive" if better and not worse else "mixed"
+    return {"call": call, "text": text, "spline_better_than_chord_on": better, "spline_worse_than_chord_on": worse,
+            "spline_equals_projected_reflected": bool(same), "rule": f"{z:g} SE over (source, target) pairs",
+            "metrics": list(metrics)}
+
+
+def _annotate(fig, text):
+    if text:
+        fig.text(0.01, 0.005, text, fontsize=6, color="0.25", va="bottom")
+
+
+def plot_gap(summary, path, tag, periodic, arms, verdict=None):
     fig, axes = plt.subplots(1, 2, figsize=(9, 3.5))
     for arm in arms:
         b = summary[arm]["by_shift"]
@@ -742,6 +799,7 @@ def plot_gap(summary, path, tag, periodic, arms):
                 title="Evaluation probe")
     axes[1].set(xlabel=f"shift ({unit})", ylabel="R = 1 - D(steered)/D(unsteered)", title="Agreement with real clips")
     axes[1].axhline(0, color="0.7", lw=0.8)
+    _annotate(fig, verdict)
     axes[0].legend(fontsize=7)
     fig.suptitle(f"Held-out targets, {tag}")
     fig.tight_layout()
@@ -749,7 +807,7 @@ def plot_gap(summary, path, tag, periodic, arms):
     plt.close(fig)
 
 
-def plot_energy(energy, shifts, path, tag):
+def plot_energy(energy, shifts, path, tag, floor=None, verdict=None):
     """Mean distance along the path (waypoint fraction 0..1) to the curve and to the nearest real activation,
     for all steers and for the largest-shift third."""
     fig, axes = plt.subplots(1, 2, figsize=(9, 3.5))
@@ -762,7 +820,11 @@ def plot_energy(energy, shifts, path, tag):
             line, = axes[i].plot(frac, E[:, :, i].mean(0), label=arm)
             axes[i].plot(frac, E[far, :, i].mean(0), "--", color=line.get_color(), lw=0.8)
             axes[i].set(xlabel="fraction of path", ylabel="distance", title=name)
+    if floor:
+        for i, q in enumerate(("to_curve", "to_nearest_real")):
+            axes[i].axhline(floor[q], color="0.4", lw=0.8, ls="-.", label="unsteered real clips")
     axes[0].legend(fontsize=7, title="dashed: largest-shift third", title_fontsize=7)
+    _annotate(fig, verdict)
     fig.suptitle(f"Off-manifold energy along the path, {tag}")
     fig.tight_layout()
     fig.savefig(path, dpi=150)
