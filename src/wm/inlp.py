@@ -229,7 +229,10 @@ def run_dims_vs_layer(dataset, variable, pool="meanpool", act_root=None, results
                      "alpha": alpha, "K": summary["K"], "dims": summary["dims"], "K_loose": summary["K_loose"],
                      "hit_round_cap": summary["hit_round_cap"]})
         print(f"{dataset}/{variable} point {point:2d}: K={summary['K']} dims={summary['dims']}")
-    out = {"dataset": dataset, "variable": variable, "kind": kind, "pool": pool, "model": model, "layers": rows}
+    out = {"dataset": dataset, "variable": variable, "kind": kind, "pool": pool, "model": model,
+           "caveat": ("K depends on each layer's ridge alpha (fixed at that layer's step-1 CV value; smaller alpha "
+                      "admits more probes), so compare K across layers with the per-layer alpha in view"),
+           "layers": rows}
     write_json(Path(results_dir or RESULTS) / (result_name("p1b", dataset, variable, pool, model) + "_dims.json"), out)
     return out
 

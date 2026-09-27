@@ -34,6 +34,9 @@ def test_pipeline_on_fake_activations(tmp_path):
 
     sweep = json.loads((results / "p1a_direction_direction_meanpool.json").read_text())
     assert len(sweep["layers"]) == 26 and sweep["n_train"] + sweep["n_test"] == 1500
+    prov = sweep["provenance"]
+    assert len(prov["split_sha256"]) == 64 and prov["git_commit"] and prov["pool"] == "meanpool" and prov["timestamp_utc"]
+    assert json.loads((results / f"p1c_direction_L{json.loads((results / 'p1a_direction_direction_meanpool.json').read_text())['availability']['peak']}.json").read_text())["provenance"]["layer"] is not None
     av = sweep["availability"]
     assert 5 <= av["onset"] <= 14 and av["onset_ci"][0] <= av["onset"] <= av["onset_ci"][1]
     assert set(sweep["layers"][0]["by_motion"]) == {"acceleration", "velocity"}
@@ -97,3 +100,13 @@ def test_diskpool_all_nan_clips_are_excluded_not_imputed(tmp_path):
     assert info["n_all_nan_train"] == 7 and info["n_all_nan_test"] == 3 and info["per_layer_test"][12] == 3
     assert out["n_train"] == len(tr) - 7 and out["n_test"] == len(te) - 3
     assert len(out["test_theta"]) == len(te) - 3
+
+
+def test_shuffled_label_control_is_at_chance(tmp_path):
+    acts, results = tmp_path / "acts", tmp_path / "results"
+    write_fake_meanpool(acts, "direction")
+    run("run_step1.py", "--dataset", "direction", "--shuffled", "--act-root", str(acts), "--results", str(results))
+    out = json.loads((results / "p1a_direction_direction_meanpool_shuffled.json").read_text())
+    assert out["shuffled"] and max(r["cv_mean"] for r in out["layers"]) < 0.05
+    assert max(r["test_r2"] for r in out["layers"]) < 0.05 and min(r["test_mae"] for r in out["layers"]) > 70
+    assert "selectivity_onset" not in out["availability"]

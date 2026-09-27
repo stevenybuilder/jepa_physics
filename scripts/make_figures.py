@@ -249,6 +249,15 @@ def fig2b(results, out):
         ax.plot(x, [row["K"] for row in body], ":", color=COLORS[v], lw=1.2, label=f"{v}, strict stop")
     ax.set(xlabel="layer fraction", ylabel="number of orthogonal probes K",
            title="Probes trainable before chance, by depth (paper Fig. 22)")
+    ax2 = ax.twinx()   # K depends on the per-layer ridge α (fixed at the step-1 CV value), so show it
+    for v, r in runs.items():
+        body = [row for row in r["layers"] if not row["post_ln"]]
+        ax2.step([row["frac"] for row in body], [row["alpha"] for row in body], where="mid", color=COLORS[v],
+                 lw=0.8, alpha=0.45)
+    ax2.set_yscale("log")
+    ax2.set_ylabel("ridge α used (thin steps)", color=COLORS["random"])
+    ax2.grid(False)
+    ax2.spines["right"].set_visible(True)
     ax.yaxis.set_major_locator(MaxNLocator(integer=True))
     legend_top(ax)
     fig.savefig(out / "fig2b_dim_vs_layer.png")
