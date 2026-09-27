@@ -60,6 +60,7 @@ def four_ways(Xtr, Ytr, folds, kind, theta=None, alpha=None, literal=None):
 
 
 out = {"label": "extra (spec §6 item 8); does not replace the paper's count", "eps_primary": args.eps[0],
+       "pool": "meanpool", "model": "vjepa2",
        "clips": "train only; 5 train folds", "variables": {}}
 if not args.no_control:
     control = {}

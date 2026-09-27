@@ -23,7 +23,7 @@ args = parser.parse_args()
 
 out = {"rule": "parity if the ridge pooled out-of-fold R2 lies inside the 95% clip-bootstrap CI of the Adam "
                "probe's pooled out-of-fold R2; same 5 train folds, train-standardised features",
-       "grid": {"lr": list(LRS), "weight_decay": list(WDS)},
+       "grid": {"lr": list(LRS), "weight_decay": list(WDS)}, "pool": "meanpool", "model": "vjepa2",
        "c11_recipe": "Adam lr 1e-3, weight decay 1e-4, 100 epochs (direction) / 50 (scalars), paper C.11 p32; "
                      "scored as the first round of the probe sequence (nothing removed yet)",
        "variables": {}}

@@ -310,6 +310,10 @@ def result_name(step, dataset, variable, pool, model="vjepa2", shuffled=False):
 
 
 def write_json(path, obj):
+    """Write a results file; dicts get a 'provenance' block (wm.common.provenance)."""
+    if isinstance(obj, dict):
+        from wm.common import provenance
+        obj = {**obj, "provenance": provenance(obj)}
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     Path(path).write_text(json.dumps(obj, indent=1, default=lambda o: o.item() if hasattr(o, "item") else str(o)))
 
