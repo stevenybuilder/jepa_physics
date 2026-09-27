@@ -29,6 +29,9 @@ parser.add_argument("--model", default="vjepa2", choices=["vjepa2", "random"],
 parser.add_argument("--strict-eval", action="store_true",
                     help="extra: also fit the evaluation probe on one half of test and steer the other half")
 parser.add_argument("--null-draws", type=int, default=20, help="draws per random null (>= 20 per spec 5.3)")
+parser.add_argument("--n-max", type=int, default=None,
+                    help="cap the probe-count sweep at this N (default K); N grid = 1..25, 30, 40, 55, 75, 100, "
+                         "140, 200, top")
 args = parser.parse_args()
 
 for dataset in [args.dataset] if args.dataset else VARIABLES:
@@ -38,4 +41,4 @@ for dataset in [args.dataset] if args.dataset else VARIABLES:
                               alt=False))
     for point, role in roles.items():
         run_steering(dataset, args.variable, point, args.pool, args.act_root, args.results, args.inlp_dir,
-                     args.null_draws, role, args.model, args.strict_eval)
+                     args.null_draws, role, args.model, args.strict_eval, args.n_max)

@@ -466,7 +466,10 @@ def fig3b(results, out, role="peak"):
         ax.grid(False)
         ax.set(xlabel="probes used for steering (N)", ylabel="requested shift |θ − θ*| (deg)",
                title=f"Error to target by shift and N ({name})")
-        ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+        ns = [0] + arm.get("n_grid", list(range(1, H.shape[0])))   # columns are the scored N (grid past 25)
+        step = max(1, int(np.ceil(len(ns) / 12)))
+        ticks = sorted(set(range(0, len(ns), step)) | {len(ns) - 1})
+        ax.set_xticks(ticks, [str(ns[i]) for i in ticks])
         fig.colorbar(im, ax=ax, label="MAE to target (deg)")
     fig.savefig(out / f"fig3b_shift_heatmap{suffix(role)}.png")
     plt.close(fig)

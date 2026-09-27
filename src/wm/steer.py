@@ -18,6 +18,17 @@ from wm.probes import (ALPHAS, RESULTS, cv_select_alpha, drop_nan_clips, fit_rid
                        write_json)
 
 
+N_DENSE = 25                                   # every N up to here (the paper's Fig. 24 sweeps to 20)
+N_TAIL = (30, 40, 55, 75, 100, 140, 200)       # then a geometric tail, capped at K
+
+
+def n_grid(K, n_max=None):
+    """Probe counts N at which steering (learned arm, radius-matched arm, nulls, strict eval) is scored: 1..25, then
+    30, 40, 55, 75, 100, 140, 200 and the top N = min(K, n_max) (n_max None = K)."""
+    top = K if n_max is None else max(1, min(K, int(n_max)))
+    return sorted(set(range(1, min(N_DENSE, top) + 1)) | {t for t in N_TAIL if t < top} | {top})
+
+
 def build_basis(W_list):
     """V [d, K·m]: orthonormal basis of the span of all probe weight columns."""
     V, _ = np.linalg.qr(np.hstack(list(W_list)))
@@ -126,8 +137,9 @@ def distance(a, b, kind):
 
 
 def evaluate(Xte, labels, probes, eval_W, eval_b, kind, single_target, all_targets, n_bins=8,
-             single_full=None, all_full=None, off=None):
-    """Steer every test clip and read it with the held-out evaluation probe, for n = 0..K.
+             single_full=None, all_full=None, off=None, n_max=None):
+    """Steer every test clip and read it with the held-out evaluation probe, for n = 0 and n in n_grid(K, n_max)
+    (every n when K ≤ 25). per_clip_at_K is at the top of the grid (n_top = min(K, n_max)).
 
     single_target: every clip steered to one value (θ* = 90° for direction).
     all_targets: every clip steered to each value in turn (the 64 label values); errors are also
@@ -152,7 +164,8 @@ def evaluate(Xte, labels, probes, eval_W, eval_b, kind, single_target, all_targe
 
     single, sweep, heat = [], [], []
     ratios_at_K = radius_at_K = radius_at_0 = None
-    for n in range(K + 1):
+    grid = n_grid(K, n_max)
+    for n in [0] + grid:
         op = steering_operator(V, probes, n) if n else None
         Xs = steer(Xte, V, probes, y_single, n, op, per_probe)
         P = read(Xs)
@@ -174,7 +187,7 @@ def evaluate(Xte, labels, probes, eval_W, eval_b, kind, single_target, all_targe
             row["off_target"] = {"mae_to_true": float(distance(r_off, off["labels"], off["kind"]).mean()),
                                  "mean_abs_change": float(distance(r_off, off_before, off["kind"]).mean())}
         single.append(row)
-        if n == K:
+        if n == grid[-1]:
             ratios_at_K = ratio
             radius_at_K = readout_radius(P) if kind == "circular" else None
         err_t, err_true, radii = [], [], []
@@ -196,7 +209,8 @@ def evaluate(Xte, labels, probes, eval_W, eval_b, kind, single_target, all_targe
     if kind == "circular":
         per_clip["radius"] = radius_at_K.round(4).tolist()
         per_clip["radius_unsteered"] = radius_at_0.round(4).tolist()
-    return {"K": K, "single_target": float(single_target), "single": single, "all_targets": sweep,
+    return {"K": K, "n_grid": grid, "n_top": grid[-1], "single_target": float(single_target), "single": single,
+            "all_targets": sweep,
             "shift_bins": {"edges": edges.tolist(),
                            "counts": [int((bin_of == j).sum()) for j in range(n_bins)],
                            "mae_to_target": heat},
@@ -218,8 +232,8 @@ def empirical_p(learned, draws):
 
 
 def random_nulls(Xte, labels, probes, eval_W, eval_b, kind, single_target, n_draws=20, seed=0,
-                 target_full=None):
-    """Two random nulls for the single-target steer, n_draws draws each, at every n = 1..K.
+                 target_full=None, n_max=None):
+    """Two random nulls for the single-target steer, n_draws draws each, at every n in n_grid(K, n_max).
 
     random_basis (calibrated random): a random orthonormal R [d, K·m], the rank of V, with its own
       least-squares solve, x* = x + R (W̃ᵀR)⁺ (y* − ŷ(x)). The steering probes still read the target
@@ -252,7 +266,7 @@ def random_nulls(Xte, labels, probes, eval_W, eval_b, kind, single_target, n_dra
         return out
 
     rows = []
-    for n in range(1, K + 1):
+    for n in n_grid(K, n_max):
         dc = steer_delta(Xte, V, probes, y, n, None, per_probe)
         learned = scores(Xte + dc @ V.T)
         row = {"n": n, "learned": learned}
@@ -262,7 +276,7 @@ def random_nulls(Xte, labels, probes, eval_W, eval_b, kind, single_target, n_dra
             row[name]["empirical_p_to_target"] = empirical_p(learned["mae_to_target"],
                                                              [s["mae_to_target"] for s in draws])
         rows.append(row)
-    return {"n_draws": n_draws, "rank": r, "seed": seed,
+    return {"n_draws": n_draws, "rank": r, "seed": seed, "n_grid": n_grid(K, n_max),
             "rank_rule": "empirical_p_to_target = (1 + #{null draws with MAE-to-target <= learned}) / (n_draws + 1); "
                          "resolution 1/(n_draws + 1), small = learned beats the null",
             "rows": rows}
@@ -332,11 +346,12 @@ def off_target_probe(Xtr, Xte, df, tr, te, folds, kind):
 
 
 def run_steering(dataset, variable=None, point=None, pool="meanpool", act_root=None, results_dir=None,
-                 inlp_dir=None, n_draws=20, layer_role=None, model="vjepa2", strict_eval=False):
+                 inlp_dir=None, n_draws=20, layer_role=None, model="vjepa2", strict_eval=False, n_max=None):
     """Paper protocol: steering basis from the train probe sequence (step 2), evaluation probe fit on
     test activations (α by CV inside test), test clips steered to θ* = 90° (for scalars, the upper
     median label value) and to every label value, with the paper's unit target. Extras, labelled in
-    the output: a radius-matched arm (matched_targets) and two random nulls per n (random_nulls).
+    the output: a radius-matched arm (matched_targets) and two random nulls per n (random_nulls). Every arm is
+    scored at n in n_grid(K, n_max): 1..25, then 30, 40, 55, 75, 100, 140, 200 and min(K, n_max).
     Writes results/p1c_{dataset}_L{point}.json."""
     variable = variable or dataset
     sweep = load_sweep(dataset, variable, pool, results_dir, model)
@@ -358,14 +373,14 @@ def run_steering(dataset, variable=None, point=None, pool="meanpool", act_root=N
     hashes = load_split(dataset)["frame_hash"]
     groups = np.array([hashes[str(i)] for i in df["id"].to_numpy()[te]])
     eval_W, eval_b, eval_report = eval_probe_cv(Xte, Y[te], kind, groups=groups)
-    res = evaluate(Xte, labels, probes, eval_W, eval_b, kind, single, all_targets, off=off)
-    nulls = random_nulls(Xte, labels, probes, eval_W, eval_b, kind, single, n_draws)
+    res = evaluate(Xte, labels, probes, eval_W, eval_b, kind, single, all_targets, off=off, n_max=n_max)
+    nulls = random_nulls(Xte, labels, probes, eval_W, eval_b, kind, single, n_draws, n_max=n_max)
     m_all = matched_targets(Xtr, label_all[tr], probes, all_targets)
     m_single = m_all[np.flatnonzero(np.isclose(all_targets, single))[0]]
     res_m = evaluate(Xte, labels, probes, eval_W, eval_b, kind, single, all_targets,
-                     single_full=m_single, all_full=m_all, off=off)
+                     single_full=m_single, all_full=m_all, off=off, n_max=n_max)
     res_m["random_nulls"] = random_nulls(Xte, labels, probes, eval_W, eval_b, kind, single, n_draws,
-                                         target_full=m_single)
+                                         target_full=m_single, n_max=n_max)
     m = probes["W"].shape[2]
     res_m["target_single_per_probe"] = m_single.reshape(-1, m).round(4).tolist()
     if kind == "circular":
@@ -380,7 +395,8 @@ def run_steering(dataset, variable=None, point=None, pool="meanpool", act_root=N
                   "n_A": int(in_a.sum()), "n_B": int((~in_a).sum())}
         for name, fit_rows, steer_rows in (("A_to_B", in_a, ~in_a), ("B_to_A", ~in_a, in_a)):
             W_h, b_h, rep_h = eval_probe_cv(Xte[fit_rows], Y[te][fit_rows], kind, groups=groups[fit_rows])
-            r = evaluate(Xte[steer_rows], labels[steer_rows], probes, W_h, b_h, kind, single, all_targets)
+            r = evaluate(Xte[steer_rows], labels[steer_rows], probes, W_h, b_h, kind, single, all_targets,
+                         n_max=n_max)
             strict[name] = {"eval_probe": rep_h, "single": r["single"], "all_targets": r["all_targets"]}
         res["strict_eval"] = strict
     out = {"dataset": dataset, "variable": variable, "kind": kind, "pool": pool, "model": model, "point": point,

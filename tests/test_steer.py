@@ -209,3 +209,27 @@ def test_grouped_folds_and_stratified_halves_keep_identical_clips_together():
     for g in np.unique(groups):
         assert len(set(in_a[groups == g])) == 1
     assert 0.3 < in_a.mean() < 0.7 and all(in_a[labels == v].any() or (~in_a[labels == v]).any() for v in range(8))
+
+
+def test_n_grid_dense_then_geometric_tail_capped_at_K():
+    from wm.steer import n_grid
+    assert n_grid(7) == list(range(1, 8))
+    assert n_grid(289) == list(range(1, 26)) + [30, 40, 55, 75, 100, 140, 200, 289]
+    assert n_grid(88) == list(range(1, 26)) + [30, 40, 55, 75, 88]
+    assert n_grid(289, n_max=20) == list(range(1, 21)) and n_grid(100) [-2:] == [75, 100]
+
+
+def test_evaluate_and_nulls_score_only_grid_points():
+    from wm.steer import evaluate, random_nulls
+    rng = np.random.default_rng(0)
+    d, K = 80, 30
+    V = np.linalg.qr(rng.standard_normal((d, 2 * K)))[0]
+    probes = {"W": V.T.reshape(K, 2, d).transpose(0, 2, 1), "b": np.zeros((K, 2)), "Q": V}
+    theta = rng.uniform(0, 360, 60)
+    X = rng.standard_normal((60, d))
+    eW, eb = probes["W"][0], np.zeros(2)
+    r = evaluate(X, theta, probes, eW, eb, "circular", 90.0, np.array([0.0, 90.0, 180.0]))
+    assert [row["n"] for row in r["single"]] == [0] + list(range(1, 26)) + [30] and r["n_top"] == 30
+    assert len(r["shift_bins"]["mae_to_target"]) == 27
+    nulls = random_nulls(X, theta, probes, eW, eb, "circular", 90.0, n_draws=3, n_max=10)
+    assert [row["n"] for row in nulls["rows"]] == list(range(1, 11))
