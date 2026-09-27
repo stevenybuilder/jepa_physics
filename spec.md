@@ -260,6 +260,23 @@ not edited into them):
   a norm-like magnitude, trained or not; V-JEPA's training adds precision with depth (direction 10.7° → 3.0°, speed
   MAE 0.11 → 0.07), not availability. Start position predicts direction at chance (R² 0.00), so this is not a data
   confound.
+- Step 1 extras, labelled (`results/p1a_paperscale_*.json`, `figures/fig1f_paperscale.png`, `results/p1a_*_randfeat.json`,
+  `results/p1a_baseline_comparison.json`): **at the paper's scale the direction onset moves from point 2 to point 4–5,
+  and the cause is sample size, not the 8 directions.** V-JEPA 2 direction, block 1 → block 8 CV R²: full data (1,200
+  clips) 0.875 → 0.973, onset 2; paper's 8 directions (188 clips, random folds) 0.649 → 0.946, onset 4 [CI 3–5];
+  same clips with folds that hold out whole directions (one reading of the paper's unspecified "grouped CV", pooled
+  out-of-fold R²) 0.441 → 0.910, onset 5 [5–5]; 188 random clips over all 64 directions (10 seeds) 0.650 ± 0.035 →
+  0.941, onset 4 [3–5]; 240 clips 0.686 → 0.947, onset 4. The random-init ViT-L stays flat with onset 1 in every
+  condition (block 1 → 8: 0.727 → 0.746, grouped 0.634 → 0.667, 240 clips 0.744 → 0.765), so at small n V-JEPA's rise
+  over blocks 1–5 is selective, but it is still nowhere near the paper's ~0.22 at the first layer and onset at
+  layer 8. Speed is unaffected for V-JEPA (block 1 ≥ 0.95, onset 1 everywhere); the random model's speed onset slips
+  to 2–5 at small n. The random-ViT result itself has a floor: 1,024 fixed random ReLU features of the 32-number disk
+  centroid trajectory, same ridge probe, reach CV R² 0.875 ± 0.007 (direction), 0.982 (speed), 0.970 (acceleration)
+  and 1.000 on (vx, vy) / (ax, ay) (3 seeds), where a linear probe on the same 32 numbers gets 0.805 / −0.001 /
+  −0.002 / 1.000; on the 30 frame differences the random features reach ≥ 0.993 for every variable. So block 1 of an
+  untrained ViT-L is at the level of random nonlinear features of a clean low-dimensional input; V-JEPA's block 1
+  (0.875 / 0.983 / 0.977) is no better than this floor either. (One random-feature seed extrapolates badly on the
+  acceleration test clips, test R² 0.17 vs CV 0.97; the other two give 0.97–0.98.)
 - Step 2 (direction): **"tens of dimensions" reproduces at the peak layer** (point 22: K = 23, 46 dims; K = 20 at the
   Fig. 22 threshold; paper §7.2 says 40–50). At the onset layer (point 2) the code is far more redundant (K = 104,
   208 dims). **No sawtooth** at either layer on R², MAE or within-15° accuracy (fraction of rises 0.0, drop
@@ -289,6 +306,7 @@ not edited into them):
 
 ```
 src/wm/{data,extract,splits,probes,inlp,steer,figures}.py   scripts/{extract,run_step1,run_step2,run_step3,make_figures}.py
+extras: src/wm/{paperscale,randfeat}.py   scripts/{run_step1_paperscale,run_random_feature_floor}.py
 splits/split_v1.json   artifacts/ (gitignored)   results/*.json   figures/
 ```
 Environment: the existing `.venv` (Python 3.11, torch 2.2.2, transformers 4.56.2, PyAV) plus scikit-learn, scipy,
