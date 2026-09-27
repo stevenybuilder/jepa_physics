@@ -62,6 +62,7 @@ def onset_compare(get_X, targets, rows, folds, n_boot=200, seed=0):
         ok = [o for o in boots[name] if o is not None]
         res[name]["availability"]["onset_ci"] = ([int(np.percentile(ok, 2.5)), int(np.percentile(ok, 97.5))]
                                                  if ok else None)
+        res[name]["availability"]["onset_boot_draws_without_onset"] = len(boots[name]) - len(ok)
     out = {"targets": res, "n_clips": int(n), "n_boot": n_boot, "rule": ONSET_RULE}
     if len(names) >= 2:
         a, b = names[:2]

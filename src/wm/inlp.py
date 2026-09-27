@@ -22,16 +22,20 @@ def project_out(X, Q):
 
 def fold_scores(X, Y, folds, alpha, score_fn):
     """Fold mean of R² and MAE (fit fold-out, score fold-in), plus the predict-the-fold-out-mean MAE."""
-    r2s, maes, base = [], [], []
+    r2s, maes, base, accs = [], [], [], []
     for k in np.unique(folds):
         val = folds == k
         W, b = fit_ridge(X[~val], Y[~val], alpha)
         s = score_fn(Y[val], predict(X[val], W, b))
         r2s.append(s["r2"])
         maes.append(s["mae"])
+        accs.append(s.get("acc15"))
         base.append(float(np.mean(np.abs(Y[val] - Y[~val].mean(axis=0)))))
-    return {"r2": float(np.mean(r2s)), "r2_sd": float(np.std(r2s, ddof=1)),
-            "mae": float(np.mean(maes)), "base_mae": float(np.mean(base))}
+    out = {"r2": float(np.mean(r2s)), "r2_sd": float(np.std(r2s, ddof=1)),
+           "mae": float(np.mean(maes)), "base_mae": float(np.mean(base))}
+    if accs[0] is not None:   # direction: accuracy within 15° (paper Fig. 4c, Fig. 23)
+        out["acc15"] = float(np.mean(accs))
+    return out
 
 
 def at_chance(s, kind):
@@ -49,6 +53,8 @@ def score_round(Xtr, Ytr, Xte, Yte, folds, alpha, score_fn, Q):
     test = score_fn(Yte, predict(Xk_te, W, b))
     row = {"dims_removed": Q.shape[1], "cv_r2": cv["r2"], "cv_r2_sd": cv["r2_sd"], "cv_mae": cv["mae"],
            "base_mae": cv["base_mae"], "test_r2": test["r2"], "test_mae": test["mae"]}
+    if "acc15" in cv:
+        row.update({"cv_acc15": cv["acc15"], "test_acc15": test["acc15"]})
     return row, cv, W, b
 
 
@@ -56,8 +62,9 @@ def inlp(Xtr, Ytr, Xte, Yte, folds, alpha, score_fn, kind, max_rounds=None):
     """Run the probe sequence until the fold-mean score is at chance.
 
     K counts the probes that were above chance; the first at-chance probe is scored and recorded but
-    not removed. Dimensionality = K·m (m = 2 for direction, 1 for scalars). For direction, K_r2_03
-    is the K at the looser R² < 0.3 threshold of Fig. 22.
+    not removed. Dimensionality = K·m (m = 2 for direction, 1 for scalars). K_loose is the K at the
+    looser thresholds of Fig. 22 (direction R² < 0.3, stored also as K_r2_03; speed and acceleration
+    R² < 0.1, stored also as K_r2_01).
 
     Returns (summary dict, Q [d, K·m], W [K, d, m], b [K, m]). W_k is stored after removing any
     numerical component along earlier directions; in exact arithmetic the ridge solution already lies
@@ -72,7 +79,7 @@ def inlp(Xtr, Ytr, Xte, Yte, folds, alpha, score_fn, kind, max_rounds=None):
     for k in range(1, max_rounds + 1):
         row, cv, W, b = score_round(Xtr, Ytr, Xte, Yte, folds, alpha, score_fn, Q)
         rounds.append({"round": k, **row})
-        if kind == "circular" and K03 is None and cv["r2"] < 0.3:
+        if K03 is None and cv["r2"] < (0.3 if kind == "circular" else 0.1):
             K03 = k - 1
         if at_chance(cv, kind):
             K = k - 1
@@ -84,7 +91,11 @@ def inlp(Xtr, Ytr, Xte, Yte, folds, alpha, score_fn, kind, max_rounds=None):
         bs.append(b)
     hit_cap = K is None
     K = len(Ws)
-    summary = {"K": K, "dims": K * m, "m": m, "K_r2_03": K03, "hit_round_cap": hit_cap,
+    if K03 is None and not hit_cap:   # stopped by the MAE rule before the loose R² threshold
+        K03 = K
+    loose = "R2 < 0.3" if kind == "circular" else "R2 < 0.1"
+    summary = {"K": K, "dims": K * m, "m": m, "K_loose": K03, "loose_threshold": f"{loose} (paper Fig. 22)",
+               ("K_r2_03" if kind == "circular" else "K_r2_01"): K03, "hit_round_cap": hit_cap,
                "alpha": float(alpha), "rounds": rounds}
     W_arr = np.stack(Ws) if Ws else np.zeros((0, d, m))
     b_arr = np.stack(bs) if bs else np.zeros((0, m))
@@ -104,7 +115,9 @@ def random_removal_curve(Xtr, Ytr, Xte, Yte, folds, alpha, score_fn, rank_schedu
     for r in rank_schedule:
         per_seed = [score_round(Xtr, Ytr, Xte, Yte, folds, alpha, score_fn, B[:, :r])[0] for B in bases]
         row = {"dims_removed": int(r)}
-        for key in ("cv_r2", "cv_mae", "test_r2", "test_mae"):
+        for key in ("cv_r2", "cv_mae", "test_r2", "test_mae", "cv_acc15", "test_acc15"):
+            if key not in per_seed[0]:
+                continue
             vals = [p[key] for p in per_seed]
             row[key] = float(np.mean(vals))
             row[key + "_seed_sd"] = float(np.std(vals, ddof=1))
@@ -122,11 +135,17 @@ def sawtooth(summary, W):
     defined modulo 180°; consecutive-angle ≈ 90° means successive probes alternate between orthogonal
     readouts (paired features). anisotropy = s2/s1 (1: reads sin and cos equally, 0: one axis).
     """
-    r2s = np.array([r["cv_r2"] for r in summary["rounds"]])
-    drops = -np.diff(r2s)
-    out = {"drops": drops.tolist(),
-           "frac_rises": float(np.mean(drops < 0)) if len(drops) else None,
-           "drop_lag1_autocorr": float(np.corrcoef(drops[:-1], drops[1:])[0, 1]) if len(drops) > 2 else None}
+    def decay(values, sign):
+        drops = -sign * np.diff(np.asarray(values, float))   # positive = information lost this round
+        return {"drops": drops.tolist(),
+                "frac_rises": float(np.mean(drops < 0)) if len(drops) else None,
+                "drop_lag1_autocorr": float(np.corrcoef(drops[:-1], drops[1:])[0, 1]) if len(drops) > 2 else None}
+
+    out = decay([r["cv_r2"] for r in summary["rounds"]], 1)          # R² (top-level keys, as before)
+    out["by_metric"] = {"cv_r2": decay([r["cv_r2"] for r in summary["rounds"]], 1),
+                        "cv_mae": decay([r["cv_mae"] for r in summary["rounds"]], -1)}
+    if summary["rounds"] and "cv_acc15" in summary["rounds"][0]:      # the paper's Fig. 23 metric
+        out["by_metric"]["cv_acc15"] = decay([r["cv_acc15"] for r in summary["rounds"]], 1)
     if W.shape[0] and W.shape[2] == 2:
         angles, aniso = [], []
         for Wk in W:
@@ -183,7 +202,7 @@ def run_inlp(dataset, variable, point=None, pool="meanpool", seeds=10, with_rand
     if with_random:
         out["random"] = random_removal_curve(Xtr, Y[tr], Xte, Y[te], folds, alpha, score_fn,
                                              rank_schedule(summary), seeds)
-    print(f"{dataset}/{variable} point {point}: K={summary['K']} dims={summary['dims']} K(R2<0.3)={summary['K_r2_03']}")
+    print(f"{dataset}/{variable} point {point}: K={summary['K']} dims={summary['dims']} K({summary['loose_threshold']})={summary['K_loose']}")
     write_json(Path(results_dir or RESULTS) / (result_name("p1b", dataset, variable, pool) + f"_L{point}.json"), out)
     return out
 
@@ -202,7 +221,7 @@ def run_dims_vs_layer(dataset, variable, pool="meanpool", act_root=None, results
         summary, Q, W, b = inlp(Xtr, Y[tr], Xte, Y[te], folds, alpha, score_fn, kind)
         save_basis(basis_path(dataset, variable, point, pool, inlp_dir), Q, W, b, alpha, point, kind)
         rows.append({"point": point, "frac": layer_fraction(point), "post_ln": point == N_POINTS - 1,
-                     "alpha": alpha, "K": summary["K"], "dims": summary["dims"], "K_r2_03": summary["K_r2_03"],
+                     "alpha": alpha, "K": summary["K"], "dims": summary["dims"], "K_loose": summary["K_loose"],
                      "hit_round_cap": summary["hit_round_cap"]})
         print(f"{dataset}/{variable} point {point:2d}: K={summary['K']} dims={summary['dims']}")
     out = {"dataset": dataset, "variable": variable, "kind": kind, "pool": pool, "layers": rows}

@@ -143,3 +143,26 @@ def test_orientation_null_keeps_per_clip_dose(world):
     dc = steer_delta(X, V, probes, encode(90.0, "circular"), len(probes["W"]))
     Q = np.linalg.qr(np.random.default_rng(3).standard_normal(V.shape))[0]
     assert np.allclose(np.linalg.norm(dc @ Q.T, axis=1), np.linalg.norm(dc @ V.T, axis=1))
+
+
+def test_residualised_basis_equals_paper_raw_stacked_basis(world):
+    """C.12 Eq. 8: V_N = QR([W_1ᵀ … W_Nᵀ]) from the raw probe weights. Our probes are stored residualised
+    (W_k − Q_<k Q_<kᵀ W_k); the spans must agree up to float error for every N, and steering with the
+    full-K basis at n = N must equal steering with the paper's V_N."""
+    from wm.inlp import project_out
+    rng = np.random.default_rng(0)
+    theta_all = rng.choice(np.arange(64) * 360 / 64, 1500)
+    Y = encode(theta_all, "circular")
+    X = copies_code(Y, 3, d=40, seed=0)
+    tr, te, folds = split(len(Y))
+    X_te, theta, probes, _, _ = world
+    Q, K = probes["Q"], len(probes["W"])
+    raw = [fit_ridge(project_out(X[tr], Q[:, :2 * k]), Y[tr], 1.0)[0] for k in range(K)]   # W_k as trained
+    for N in range(1, K + 1):
+        V_raw = np.linalg.qr(np.hstack(raw[:N]))[0]
+        V_res = build_basis(probes["W"][:N])
+        assert np.allclose(V_raw @ V_raw.T, V_res @ V_res.T, atol=1e-8)
+        assert np.allclose(V_res @ V_res.T, Q[:, :2 * N] @ Q[:, :2 * N].T, atol=1e-8)
+        full = steer(X_te, build_basis(probes["W"]), probes, encode(90.0, "circular"), N)
+        paper = steer(X_te, V_raw, probes, encode(90.0, "circular"), N)
+        assert np.allclose(full, paper, atol=1e-8)

@@ -64,3 +64,20 @@ def test_principal_angles_planted_orthogonal_identical_and_random():
     w_raw = rng.standard_normal((d, 1))
     mapped = covectors_into(w_raw * sB[:, None], sB, sA)   # w in B coords -> A coords
     assert subspace_overlap(mapped, w_raw * sA[:, None])["min_angle_deg"] < 1e-5
+
+
+def test_acc15_per_round_sawtooth_on_all_metrics_and_loose_K():
+    theta = np.radians(np.random.default_rng(1).uniform(0, 360, 1200))
+    Y = np.stack([np.sin(theta), np.cos(theta)], 1)
+    summary, Q, W, rand = run(Y, 3, "circular")
+    rounds = summary["rounds"]
+    assert all(0 <= r["cv_acc15"] <= 1 and "test_acc15" in r for r in rounds)
+    assert rounds[0]["cv_acc15"] > 0.9 and rounds[-1]["cv_acc15"] < 0.3
+    assert "cv_acc15" in rand["rows"][0]
+    st = sawtooth(summary, W)
+    assert set(st["by_metric"]) == {"cv_r2", "cv_mae", "cv_acc15"}
+    assert all(len(v["drops"]) == len(rounds) - 1 for v in st["by_metric"].values())
+    assert st["by_metric"]["cv_mae"]["drops"][-1] > 0          # MAE rises as information is removed
+    y = np.random.default_rng(0).uniform(-1.7, 1.7, 1200)[:, None]
+    s2, *_ = run(y, 4, "scalar")
+    assert s2["K_r2_01"] == s2["K_loose"] and s2["K_loose"] <= s2["K"] and "R2 < 0.1" in s2["loose_threshold"]

@@ -82,13 +82,16 @@ def score(Y, P, kind):
     """{'r2', 'mae'} for true Y and predictions P, both [n, m].
 
     r2: mean of the per-column R². mae: circular MAE in degrees for 'circular' (Y = [sin, cos]),
-    else mean absolute error over all columns, in physical units.
+    else mean absolute error over all columns, in physical units. acc15 (circular only): fraction of
+    clips decoded within 15° of the truth, the accuracy the paper plots in Fig. 4c and Fig. 23.
     """
     Y, P = np.asarray(Y, float).reshape(len(Y), -1), np.asarray(P, float).reshape(len(P), -1)
     out = {"r2": float(np.mean([r2(Y[:, j], P[:, j]) for j in range(Y.shape[1])]))}
     if kind == "circular":
         theta = np.degrees(np.arctan2(Y[:, 0], Y[:, 1]))
         out["mae"] = circular_mae_deg(theta, P[:, 0], P[:, 1])
+        err = (np.degrees(np.arctan2(P[:, 0], P[:, 1])) - theta + 180.0) % 360.0 - 180.0
+        out["acc15"] = float(np.mean(np.abs(err) <= 15.0))
     else:
         out["mae"] = float(np.mean(np.abs(Y - P)))
     return out
@@ -169,17 +172,20 @@ def availability(curve):
 def bootstrap_onset(Y, oofs, score_fn, n_boot=200, seed=0):
     """95% CI of the onset layer: resample train clips with replacement and recompute each layer's
     score from its fixed out-of-fold predictions (no refitting, so 200 draws are cheap).
-    Note: this uses the pooled out-of-fold R², not the fold mean, for each draw."""
+    Note: this uses the pooled out-of-fold R², not the fold mean, for each draw.
+    Returns (CI or None, number of draws with no onset, i.e. max R² <= 0); those draws are excluded
+    from the CI and the count is reported beside it."""
     rng = np.random.default_rng(seed)
     onsets = []
     for _ in range(n_boot):
         idx = rng.integers(0, len(Y), len(Y))
         curve = [score_fn(Y[idx], oof[idx])["r2"] for oof in oofs]
         onsets.append(availability(curve)["onset"])
+    n_none = sum(o is None for o in onsets)
     onsets = np.array([o for o in onsets if o is not None])
     if len(onsets) == 0:
-        return None
-    return [int(np.percentile(onsets, 2.5)), int(np.percentile(onsets, 97.5))]
+        return None, n_none
+    return [int(np.percentile(onsets, 2.5)), int(np.percentile(onsets, 97.5))], n_none
 
 
 # ---------------------------------------------------------------- data plumbing
@@ -267,8 +273,10 @@ def layer_sweep(dataset, variable, pool="meanpool", model="vjepa2", shuffled=Fal
                "cv_mae_mean": cv["cv_mae_mean"], "cv_mae_sd": cv["cv_mae_sd"],
                "test_r2": test["r2"], "test_mae": test["mae"],
                "n_train": len(tr), "n_test": len(te)}
-        if kind == "circular":   # readout radius ‖(ŝ, ĉ)‖ of the test predictions (spec §4)
+        if kind == "circular":   # readout radius ‖(ŝ, ĉ)‖ of the test predictions (spec §4); accuracy within 15°
             row["test_radius"] = radius_summary(Pte)
+            row["cv_acc15_mean"] = float(np.mean([f["acc15"] for f in cv["fold_scores"]]))
+            row["test_acc15"] = test["acc15"]
         if motions:   # direction set: score the same predictions within each motion type
             row["by_motion"] = {}
             for m in motions:
@@ -290,7 +298,8 @@ def layer_sweep(dataset, variable, pool="meanpool", model="vjepa2", shuffled=Fal
     avail["onset_frac"] = None if avail["onset"] is None else layer_fraction(avail["onset"])
     avail["peak_frac"] = layer_fraction(avail["peak"])
     avail["post_ln_score"] = layers[-1]["cv_mean"]
-    avail["onset_ci"] = bootstrap_onset(Ytr, oofs[:LAST_BLOCK + 1], score_fn, n_boot, seed)
+    avail["onset_ci"], avail["onset_boot_draws_without_onset"] = bootstrap_onset(
+        Ytr, oofs[:LAST_BLOCK + 1], score_fn, n_boot, seed)
     avail["rule"] = "onset = first point with CV R2 >= 90% of max over points 0..24; CI: 200-draw clip bootstrap of out-of-fold predictions"
 
     out = {"dataset": dataset, "variable": variable, "kind": kind, "pool": pool, "model": model,
