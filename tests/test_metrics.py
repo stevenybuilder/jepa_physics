@@ -30,3 +30,11 @@ def test_r2():
     assert abs(r2(y, np.full(4, y.mean()))) < 1e-12
     Y = np.stack([y, -y], axis=1)
     assert r2(Y, Y) == 1.0
+
+
+def test_readout_radius():
+    from wm.metrics import radius_summary, readout_radius
+    P = np.array([[0.6, 0.8], [0.0, 0.5], [3.0, 4.0]])
+    assert np.allclose(readout_radius(P), [1.0, 0.5, 5.0])
+    s = radius_summary(P)
+    assert s["median"] == 1.0 and abs(s["mean"] - 6.5 / 3) < 1e-12

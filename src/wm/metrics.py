@@ -18,3 +18,17 @@ def r2(y_true, y_pred):
     ss_res = np.sum((y_true - y_pred) ** 2)
     ss_tot = np.sum((y_true - y_true.mean(axis=0)) ** 2)
     return float(1.0 - ss_res / ss_tot)
+
+
+def readout_radius(P):
+    """Per-clip radius ‖(ŝ, ĉ)‖ of a direction readout P [n, 2]. Ridge readouts shrink below 1, and
+    atan2 of a near-zero readout is noise, so the radius is reported beside every decoded angle."""
+    P = np.asarray(P, dtype=float)
+    return np.hypot(P[:, 0], P[:, 1])
+
+
+def radius_summary(P):
+    """{'mean', 'median', 'p05', 'p95'} of the per-clip readout radius."""
+    rad = readout_radius(P)
+    return {"mean": float(rad.mean()), "median": float(np.median(rad)),
+            "p05": float(np.percentile(rad, 5)), "p95": float(np.percentile(rad, 95))}

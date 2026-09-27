@@ -11,7 +11,7 @@ from pathlib import Path
 import numpy as np
 
 from wm.data import PROJECT_ROOT, load_table
-from wm.metrics import circular_mae_deg, r2
+from wm.metrics import circular_mae_deg, r2, radius_summary, readout_radius
 from wm.splits import load_split
 
 ALPHAS = np.logspace(-2, 4, 13)
@@ -267,6 +267,8 @@ def layer_sweep(dataset, variable, pool="meanpool", model="vjepa2", shuffled=Fal
                "cv_mae_mean": cv["cv_mae_mean"], "cv_mae_sd": cv["cv_mae_sd"],
                "test_r2": test["r2"], "test_mae": test["mae"],
                "n_train": len(tr), "n_test": len(te)}
+        if kind == "circular":   # readout radius ‖(ŝ, ĉ)‖ of the test predictions (spec §4)
+            row["test_radius"] = radius_summary(Pte)
         if motions:   # direction set: score the same predictions within each motion type
             row["by_motion"] = {}
             for m in motions:
@@ -298,6 +300,7 @@ def layer_sweep(dataset, variable, pool="meanpool", model="vjepa2", shuffled=Fal
         shown = sorted({p for p in (avail["onset"], avail["peak"], LAST_BLOCK) if p is not None})
         out["test_theta"] = df["theta_degrees"].to_numpy()[te].tolist()
         out["test_pred"] = {str(p): test_preds[p].round(4).tolist() for p in shown}
+        out["test_radius"] = {str(p): readout_radius(test_preds[p]).round(4).tolist() for p in shown}
     path = Path(results_dir or RESULTS) / (result_name("p1a", dataset, variable, pool, model, shuffled) + ".json")
     write_json(path, out)
     return out
