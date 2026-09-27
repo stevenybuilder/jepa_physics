@@ -347,3 +347,16 @@ def test_nuisance_fit_on_primary_applied_to_context():
     N = np.column_stack([np.ones(n), *[np.full(n, model["fill"][c]) if c == "start_x" else
                                         gc.nuisance_columns(ctx, "direction")[c] for c in model["names"]]])
     np.testing.assert_allclose(Rc, (Xc - model["mu"]) / model["sd"] - N @ model["B"], atol=1e-10)
+
+
+def test_paired_bootstrap_clusters_by_clip():
+    """Rows that share a clip are correlated: resampling clips gives a wider CI than resampling rows."""
+    rng = np.random.default_rng(1)
+    clip_effect = rng.standard_normal(30)
+    ids = np.repeat(np.arange(30), 10)                       # each clip steered to 10 targets
+    diff = clip_effect[ids] + 0.1 * rng.standard_normal(300)
+    rows = P2.paired_bootstrap(diff)
+    clips = P2.paired_bootstrap(diff, ids)
+    assert clips["n_clips"] == 30 and rows["n_clips"] == 300
+    width = lambda b: b["ci95"][1] - b["ci95"][0]
+    assert width(clips) > 2 * width(rows)

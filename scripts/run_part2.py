@@ -270,7 +270,7 @@ def run(args):
 
     rows, shared = [], {a: [] for a in arms}
     per_arm = {a: {q: [] for q in (*METRICS, "nearest_real_R_context", "_dose", "_energy", *WAYPOINT_SERIES, "shift",
-                                   "_target")} for a in arms}
+                                   "_target", "_id")} for a in arms}
     ctrl = {kind: [{q: [] for q in RANKED} for _ in m["controls"][kind]] for kind in CONTROLS}
     ctrl_ref = {q: [] for q in RANKED}         # the spline arm on the same clip subset as the control draws
     for tgt, pick in picks.items():
@@ -288,6 +288,8 @@ def run(args):
                     per_arm[arm][q].append(shift)
                 elif q == "_target":
                     per_arm[arm][q].append(np.full(len(pick), tgt))
+                elif q == "_id":
+                    per_arm[arm][q].append(d_steer["df"]["id"].to_numpy()[pick])
                 elif q in ev:
                     per_arm[arm][q].append(ev[q])
             for j in range(len(pick)):
@@ -377,7 +379,7 @@ def run(args):
            "summary": summarise(rows, periodic, [a for a in arms if a != "goodfire_linear"]),
            "gaps": paired_gaps(cat, [a for a in arms if a != "manifold"], periodic, args.seed),
            "gaps_note": ("manifold minus each other arm on the same (clip, target) rows: 95% CI from a paired "
-                         "bootstrap over rows (1000 draws), and mean +/- SE across steer targets (Goodfire A.7 "
+                         "bootstrap over clips, each clip's targets resampled together (1000 draws), and mean +/- SE across steer targets (Goodfire A.7 "
                          "reports mean +/- SE over pairs); overall and by shift bin"),
            "rows": rows}
     out["controls_note"] = (f"{args.n_controls} draws each, on the first {args.n_control_clips} steered clips per "
@@ -459,20 +461,26 @@ def plot_waypoints(wp, path, tag, periodic, arms):
     plt.close(fig)
 
 
-def paired_bootstrap(diff, n_boot=1000, seed=0):
-    """Mean of paired differences with a 95% percentile-bootstrap CI over rows."""
+def paired_bootstrap(diff, groups=None, n_boot=1000, seed=0):
+    """Mean of paired differences with a 95% percentile-bootstrap CI. groups (clip ids): resample clips with
+    replacement and keep all of a clip's rows (its targets) together, since one clip is steered to several targets;
+    groups=None resamples rows."""
     diff = np.asarray(diff, dtype=float)
+    groups = np.arange(len(diff)) if groups is None else np.asarray(groups)
+    uniq, inv = np.unique(groups, return_inverse=True)
+    sums, counts = np.bincount(inv, weights=diff), np.bincount(inv).astype(float)
     rng = np.random.default_rng(seed)
-    boots = diff[rng.integers(0, len(diff), (n_boot, len(diff)))].mean(1)
+    idx = rng.integers(0, len(uniq), (n_boot, len(uniq)))
+    boots = sums[idx].sum(1) / counts[idx].sum(1)
     lo, hi = np.percentile(boots, [2.5, 97.5])
-    return {"mean": float(diff.mean()), "ci95": [float(lo), float(hi)], "n": int(len(diff))}
+    return {"mean": float(diff.mean()), "ci95": [float(lo), float(hi)], "n": int(len(diff)), "n_clips": int(len(uniq))}
 
 
 def paired_gaps(cat, others, periodic, seed=0):
     """manifold - other, per metric: paired bootstrap CI over rows and mean +/- SE across targets; by shift bin."""
     metrics = [q for q in (*RANKED, "probe_err_path", "probe_radius_min", "delta_norm")
                if not (q == "probe_radius_min" and not periodic)]
-    s, tgt = cat["manifold"]["shift"], cat["manifold"]["_target"]
+    s, tgt, ids = cat["manifold"]["shift"], cat["manifold"]["_target"], cat["manifold"]["_id"]
     edges = shift_bins(periodic)
     if edges is None:
         edges = np.quantile(s, np.linspace(0, 1, 6))
@@ -483,11 +491,12 @@ def paired_gaps(cat, others, periodic, seed=0):
         for q in metrics:
             diff = cat["manifold"][q] - cat[o][q]
             per_t = np.array([diff[tgt == t].mean() for t in np.unique(tgt)])
-            res[q] = {**paired_bootstrap(diff, seed=seed),
+            res[q] = {**paired_bootstrap(diff, ids, seed=seed),
                       "mean_over_targets": float(per_t.mean()),
                       "se_over_targets": float(per_t.std(ddof=1) / np.sqrt(len(per_t))) if len(per_t) > 1 else None,
                       "by_shift": [{"shift_lo": float(lo), "shift_hi": float(hi),
-                                    **paired_bootstrap(diff[(s >= lo) & (s < hi)], seed=seed)}
+                                    **paired_bootstrap(diff[(s >= lo) & (s < hi)], ids[(s >= lo) & (s < hi)],
+                                                       seed=seed)}
                                    for lo, hi in zip(edges[:-1], edges[1:]) if ((s >= lo) & (s < hi)).any()]}
     return out
 
