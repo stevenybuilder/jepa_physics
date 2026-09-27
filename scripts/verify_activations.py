@@ -9,9 +9,13 @@ for d in N:
         if not p.exists():
             print(f"MISSING {p}"); ok = False; continue
         idx = json.load(open(p / "index.json"))
-        mp = np.load(p / "meanpool.npy", mmap_mode="r"); tp = np.load(p / "timepool.npy", mmap_mode="r"); dp = np.load(p / "diskpool.npy", mmap_mode="r")
+        mp = np.load(p / "meanpool.npy", mmap_mode="r")
+        arrs = [("meanpool", mp)]
+        if m == "vjepa2":  # random-init model stores meanpool only, by design
+            arrs += [("timepool", np.load(p / "timepool.npy", mmap_mode="r")), ("diskpool", np.load(p / "diskpool.npy", mmap_mode="r"))]
+        dp = dict(arrs).get("diskpool")
         exp = {"meanpool": ((N[d], 26, 1024), np.float32), "timepool": ((N[d], 26, 8, 1024), np.float16), "diskpool": ((N[d], 26, 8, 1024), np.float16)}
-        for name, arr in [("meanpool", mp), ("timepool", tp), ("diskpool", dp)]:
+        for name, arr in arrs:
             shp, dt = exp[name]
             good = arr.shape == shp and arr.dtype == dt
             ok &= good
