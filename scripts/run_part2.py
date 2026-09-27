@@ -45,7 +45,7 @@ METRICS = ("probe_err_to_target", "probe_err_to_true", "nearest_real_R", "energy
            "behaviour_entropy_mean", "intermediate_mass")
 REPLACE_ARMS = ("goodfire_manifold", "goodfire_linear")      # on the curve / centroids by construction
 BEHAVIOUR_ENERGY_METRICS = ("behaviour_energy", "behaviour_energy_mean", "behaviour_energy_rel_floor",
-                            "behaviour_entropy_mean")
+                            "behaviour_entropy_mean", "intermediate_mass")   # every Eq. 9-derived number
 NOT_COMPARABLE = ("not comparable: on-curve by construction (residual replaced, so Eq. 9 gives a sharp distribution "
                   "that no real clip has); compare replace arms on probe readouts and nearest-real only")
 TAUS = (0.25, 0.5, 1.0, 2.0)
@@ -302,7 +302,7 @@ def run(args):
             ev = evaluate(Ws[arm], x, src, tgt, m, ctx)
             shared[arm].append(gc.shared_delta_fraction(ev["_delta_end"]))
             large = shift >= big
-            if large.any():
+            if large.any() and arm not in REPLACE_ARMS:
                 heat[arm][0] = heat[arm][0] + ev["_aligned"][large].sum(0)
                 heat[arm][1] += int(large.sum())
             for q in per_arm[arm]:
@@ -317,7 +317,8 @@ def run(args):
             for j in range(len(pick)):
                 rows.append({"arm": arm, "id": int(d_steer["df"]["id"].iloc[pick[j]]), "source": float(src[j]),
                              "target": float(tgt), "shift": float(shift[j]),
-                             **{q: float(ev[q][j]) for q in METRICS},
+                             **{q: (None if arm in REPLACE_ARMS and q in BEHAVIOUR_ENERGY_METRICS
+                                    else float(ev[q][j])) for q in METRICS},
                              **({"nearest_real_R_context": float(ev["nearest_real_R_context"][j])}
                                 if "nearest_real_R_context" in ev else {})})
         sub = slice(0, args.n_control_clips)
@@ -409,7 +410,8 @@ def run(args):
            "value_heatmap": {"large_shift_min": big, "offsets": value_offsets(m["behaviour"].values, periodic),
                              "note": ("Eq. 9 probability over values along the path, mean over large-shift steers; "
                                       "values as offsets from each clip's source, target direction positive"),
-                             "arms": {a: {"n": h[1], "mass": (h[0] / h[1]).tolist() if h[1] else None}
+                             "arms": {a: ({"n": 0, "mass": None, "note": NOT_COMPARABLE} if a in REPLACE_ARMS
+                                          else {"n": h[1], "mass": (h[0] / h[1]).tolist() if h[1] else None})
                                       for a, h in heat.items()}},
            "gaps": paired_gaps(cat, [a for a in arms if a != "manifold"], periodic, args.seed),
            "gaps_note": ("manifold minus each other arm on the same (clip, target) rows: 95% CI from a paired "
@@ -471,11 +473,11 @@ def waypoint_summary(cat, arms, periodic, n_bins=4):
             if not sel.any():
                 continue
             b = {"shift_lo": float(lo), "shift_hi": float(hi), "n": int(sel.sum()),
-                 "err_to_target": cat[a]["_wp_err"][sel].mean(0).tolist(),
-                 "intermediate_mass": cat[a]["_wp_mid"][sel].mean(0).tolist()}
+                 "err_to_target": cat[a]["_wp_err"][sel].mean(0).tolist()}
             if a in REPLACE_ARMS:
-                b["bhattacharyya"] = b["entropy"] = NOT_COMPARABLE
+                b["bhattacharyya"] = b["entropy"] = b["intermediate_mass"] = NOT_COMPARABLE
             else:
+                b["intermediate_mass"] = cat[a]["_wp_mid"][sel].mean(0).tolist()
                 b["bhattacharyya"] = cat[a]["_wp_bc"][sel].mean(0).tolist()
                 b["entropy"] = cat[a]["_wp_entropy"][sel].mean(0).tolist()
             if periodic:
@@ -667,10 +669,16 @@ def summarise(rows, periodic, arms, n_bins=5):
             sel = [r for r, v in zip(R, s) if lo <= v < hi]
             if not sel:
                 continue
-            mean = lambda q: float(np.mean([r[q] for r in sel]))
+            mean = lambda q: _mean_or_none([r[q] for r in sel])
             bins.append({"shift_lo": float(lo), "shift_hi": float(hi), "n": len(sel), **{q: mean(q) for q in metrics}})
-        out[arm] = {"overall": {q: float(np.mean([r[q] for r in R])) for q in metrics}, "by_shift": bins}
+        out[arm] = {"overall": {q: _mean_or_none([r[q] for r in R]) for q in metrics}, "by_shift": bins}
     return out
+
+
+def _mean_or_none(v):
+    """Mean of a row field; None when the field is null (replace arms' Eq. 9 numbers)."""
+    v = [x for x in v if x is not None]
+    return float(np.mean(v)) if v else None
 
 
 def plot_gap(summary, path, tag, periodic, arms):

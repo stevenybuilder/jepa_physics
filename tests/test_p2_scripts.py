@@ -104,6 +104,15 @@ def test_scripts_end_to_end(tmp_path, dataset):
         far = s["manifold"]["by_shift"][-1]["intermediate_mass"], s["linear"]["by_shift"][-1]["intermediate_mass"]
         assert far[0] > far[1]                                        # the spline sweeps, the line jumps
         assert (tmp / "figures" / f"fig4_value_heatmap_{tag}.png").exists()
+        gf_rows = [r for r in res["rows"] if r["arm"] == "goodfire_manifold"]
+        assert gf_rows and all(r[q] is None for r in gf_rows for q in
+                               ("behaviour_energy", "behaviour_energy_rel_floor", "behaviour_entropy_mean",
+                                "intermediate_mass"))
+        assert all(r["nearest_real_R"] is not None for r in gf_rows)
+        assert vh["goodfire_manifold"]["mass"] is None and vh["goodfire_manifold"]["note"].startswith("not comparable")
+        assert res["waypoint_readout"]["goodfire_manifold"][-1]["intermediate_mass"].startswith("not comparable")
+        man_rows = [r for r in res["rows"] if r["arm"] == "manifold"]
+        assert all(isinstance(r["behaviour_energy"], float) for r in man_rows)
 
 
 @pytest.mark.parametrize("dataset,design", [("direction", "contiguous"), ("speed", "contiguous"),
