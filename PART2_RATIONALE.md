@@ -170,7 +170,11 @@ variable has left the manifold even if the on-target readout is perfect.
 
 ## 7. What plays the behaviour manifold for an encoder
 
-Goodfire's M_y is the output-probability manifold. V-JEPA's encoder emits no distribution. Candidates, weakest first:
+Goodfire's M_y is the output-probability manifold. V-JEPA's encoder emits no distribution, but Goodfire's own
+Mountain Car section (§5 Eq. 9, B.1) defines one for a visual world model: a softmax over negative L2 distances
+(τ = 0.5) to 128 points along the fitted spline, in PCA-64. That is what Part 2 uses for behaviour energy and isometry,
+with the caveat that at the steered layer it restates the activation geometry (circular), so it is informative only
+downstream. The other candidates, weakest first:
 
 1. evaluation-probe readouts on real clips (a probe again; only for the isometry plot, never as "behaviour"),
 2. nearest-real-clip agreement across later layers (the propagation readout above),

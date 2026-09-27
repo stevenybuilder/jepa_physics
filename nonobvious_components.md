@@ -195,9 +195,13 @@ waypoints, not just the endpoint), and **off-target effect** (steer speed, read 
 ### 8. Behaviour manifold: V-JEPA has no output distribution
 
 Goodfire fits the behaviour manifold on output probabilities. V-JEPA has none, but Goodfire's own Mountain Car
-section (§5 Eq. 9, B.1) handles a visual world model the same way: M_y is a softmax over negative distances to
-per-value centroids (τ = 0.5) built from real, unintervened activations at the read layer. That makes the
-Bhattacharyya energy and the isometry test literal here, and it extends to later layers once propagation exists.
+section (§5 Eq. 9, B.1) handles a visual world model the same way, and that is what is implemented: M_y is a softmax
+over negative UNsquared L2 distances (τ = 0.5) from the edited activation to B = 128 points sampled along the reference
+spline (fit on probe-fold clips), taken in PCA-64 space. Caveat, printed on every figure that uses it: at the steered
+layer this "behaviour" is itself a function of the edited activation's geometry, so behaviour energy and isometry are
+partly circular there; they become informative at later layers (propagation) or through the predictor. Replace arms
+sit on the curve by construction and are excluded from the energy comparison; energies are reported relative to an
+unsteered real-clip floor.
 Beside it, the stand-ins in order of strength:
 evaluation-probe readouts on real clips (weakest, a probe again); nearest real-clip agreement across later layers
 (the readout in §5.3); the predictor's forecast of the future tokens compared with real future tokens of clips at

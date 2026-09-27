@@ -132,8 +132,13 @@ the 5 folds, as the paper reports; 95% bootstrap CIs on test where a difference 
 
 ### 5.2 Iterative nullspace probing (paper App. C.11)
 - At the chosen layer per variable, and every layer for the dimensionality-vs-depth plot (Fig. 22).
-- Loop, k = 1, 2, …: fit probe P_k on X⁽ᵏ⁾ (train); score on the CV folds with the same accumulated projection; Q_k = QR of
-  W_kᵀ (2 columns for direction, 1 for scalars); X⁽ᵏ⁺¹⁾ = X⁽ᵏ⁾ − X⁽ᵏ⁾Q_kQ_kᵀ. α fixed at the step-1 value. Everything in
+- Loop, k = 1, 2, …: fit probe P_k on X⁽ᵏ⁾; Q_k = QR of
+  W_kᵀ (2 columns for direction, 1 for scalars); X⁽ᵏ⁺¹⁾ = X⁽ᵏ⁾ − X⁽ᵏ⁾Q_kQ_kᵀ. Two protocols, both reported: **nested**
+  (the whole sequence, α included, fit inside each of the 5 folds on its training rows and scored on the held-out fold;
+  the reported dimensionality is the pooled K from the fold-mean curve, with the fold range) and **paper** (C.11 as
+  written: fit on all train, scored on the test split each round, stop at chance; this reads test once per layer it is
+  run at and is recorded in provenance). An earlier version fit the removals on all train and scored the same folds;
+  that leaked the scored fold's labels into the removal and underestimated K (found 27 Sep, fixed). Everything in
   the one standardised coordinate system; nullspaces here are not orthogonal in raw space, so nothing mixes the two.
 - Stop (paper): direction R² < 0.1 or circular MAE > 80°; speed and acceleration R² < 0.05 or MAE > 90% of the
   predict-the-mean baseline. Dimensionality = 2K (direction) or K (scalars). Also report K at the R² < 0.3 threshold
@@ -148,7 +153,8 @@ the 5 folds, as the paper reports; 95% bootstrap CIs on test where a difference 
 ### 5.3 Multi-probe subspace steering (paper App. C.12)
 - Basis V = QR([W_1ᵀ … W_Kᵀ]). Steer: c = Vᵀx, x⊥ = x − Vc; least squares for c\* so the first N probes all read
   the target; x\* = Vc\* + x⊥. Sweep N = 1…K.
-- **Protocol (the paper's, App. C.12):** steering probes from `train` (the orthogonal probe sequence until R² < 0.1);
+- **Protocol (the paper's, App. C.12):** steering probes from `train` (the all-train orthogonal probe sequence, cut at
+  the nested K so its length is never chosen on test; the paper's "25 probes until R² < 0.1" is matched at N ≤ 25);
   evaluation probe fit on `test` activations only; steer `test` clips toward θ\* = 90°, and also toward every one of
   the 64 directions; plot MAE-to-target and MAE-to-true vs N (paper: 82.9° → 11.9° at N = 20, single probe > 50°).
   Report the result as a function of the angular shift |θ − θ\*| as well, which 64 directions make possible.
@@ -302,6 +308,9 @@ not edited into them):
 | Data | 8 directions, separate speed/accel sets | 64 directions; direction set mixes constant and accelerating clips | supplied data | direction reported per motion type |
 | INLP layer | layer 8 (emergence) | onset layer from the availability rule AND CV-peak layer | Fig. 22 shows the count roughly doubling late | both reported |
 | Steering basis | V from raw stacked W_1..W_N (C.12 Eq. 8) | V from residualised probe weights | probes stored orthogonal to earlier directions, so identical up to float error | tested for equality |
+| INLP probe recipe | C.11: Adam lr 1e-3, wd 1e-4, 100/50 epochs per round | closed-form ridge, per-fold α (nested) or step-1 α (paper protocol); the literal Adam sequence is run once at the paper layer as a check, batch 64 and full batch | deterministic; optimiser artefacts testable | sawtooth verdict compared across recipes |
+| Reported K | C.11: probes until test performance at chance | nested pooled K (held-out folds) as the dimensionality; paper-protocol K beside it | no test in the count | both in JSON and Fig. 22 panel |
+| Layer index | paper layers 0–23, probes on each layer's output | "paper layer 8" = our point 9 (output of block 9); point 8 also run and labelled | 0-indexed mapping | Figs. 22–24 comparisons at point 9 |
 | Extras | none | radius readout, radius-matched target, two random nulls, out-of-fold eval-probe R², §6 items | labelled extras in JSON and figures | never in the core figure |
 
 ## 8. Code and execution
