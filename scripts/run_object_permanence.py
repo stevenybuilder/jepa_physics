@@ -51,31 +51,70 @@ out = {"dataset": DATASET, "pool": "timepool", "model": "vjepa2", "points": args
        "caveat": ("the V-JEPA 2 encoder attends over all 8 time steps with no causal mask, so an absent-step token can "
                   "read the same clip's visible steps directly. Above-null decoding at absent steps shows the variable "
                   "is carried into tokens whose frames hold no disk, not that a memory mechanism keeps it. The "
-                  "random-init timepool, which would separate 'any attention mixing' from 'learned carrying', was not "
-                  "stored (random-init extraction kept meanpool only), so that control is skipped."),
+                  "random-init timepool (same architecture, untrained weights, same clips and points), when present, "
+                  "gets the identical analysis under 'random_init' to separate 'any attention mixing' from "
+                  "'learned carrying'."),
        "variables": {}}
 
-random_tp = args.act_root / DATASET / "random" / "timepool.npy"
-out["random_init"] = ("present: not run by this script version" if random_tp.exists()
-                      else f"skipped: {random_tp.relative_to(PROJECT_ROOT) if random_tp.is_relative_to(PROJECT_ROOT) else random_tp} "
-                           "does not exist (only meanpool was stored for the random-init model)")
-print(out["random_init"])
 
-# direction: every clip; speed: the constant-speed (motion == velocity) clips only
-Y_dir, kind_dir, _ = targets(df, "direction")
-print("== direction")
-out["variables"]["direction"] = {"rows": "all 1500 direction-set clips", "target": "[sin theta, cos theta]",
-                                 **run(timepool, diskmask, Y_dir, kind_dir, tr, te, folds, args.points,
-                                       args.n_boot, args.n_perm)}
+def run_variables(tp):
+    """direction: every clip; speed: the constant-speed (motion == velocity) clips only."""
+    res = {}
+    Y_dir, kind_dir, _ = targets(df, "direction")
+    print("== direction")
+    res["direction"] = {"rows": "all 1500 direction-set clips", "target": "[sin theta, cos theta]",
+                        **run(tp, diskmask, Y_dir, kind_dir, tr, te, folds, args.points, args.n_boot, args.n_perm)}
+    vel = df["motion"].to_numpy() == "velocity"
+    keep_tr, keep_te = vel[tr], vel[te]
+    Y_sp, kind_sp, _ = targets(df, "speed")
+    print("== speed (velocity clips)")
+    res["speed"] = {"rows": f"motion == velocity clips only (train {keep_tr.sum()}, test {keep_te.sum()})",
+                    "target": "speed_mps (m/s)",
+                    **run(tp, diskmask, Y_sp, kind_sp, tr[keep_tr], te[keep_te], folds[keep_tr],
+                          args.points, args.n_boot, args.n_perm)}
+    return res
 
-vel = df["motion"].to_numpy() == "velocity"
-keep_tr, keep_te = vel[tr], vel[te]
-Y_sp, kind_sp, _ = targets(df, "speed")
-print("== speed (velocity clips)")
-out["variables"]["speed"] = {"rows": f"motion == velocity clips only (train {keep_tr.sum()}, test {keep_te.sum()})",
-                             "target": "speed_mps (m/s)",
-                             **run(timepool, diskmask, Y_sp, kind_sp, tr[keep_tr], te[keep_te], folds[keep_tr],
-                                   args.points, args.n_boot, args.n_perm)}
+
+out["variables"] = run_variables(timepool)
+
+random_dir = args.act_root / DATASET / "random"
+random_tp = random_dir / "timepool.npy"
+if random_tp.exists():
+    if (random_dir / "ids.json").exists():
+        assert json.loads((random_dir / "ids.json").read_text()) == df["id"].tolist(), "random-init not in manifest order"
+    print("== random-init timepool")
+    rvars = run_variables(np.load(random_tp, mmap_mode="r"))
+    MAE = lambda r, w, k: r[w][k].get("mae")  # noqa: E731
+    side = {}
+    for var in rvars:
+        side[var] = []
+        for a, b in zip(out["variables"][var]["points"], rvars[var]["points"]):
+            row = {"point": a["point"]}
+            for w in ("test", "pooled"):
+                for k in ("visible", "absent"):
+                    va, vb = MAE(a, w, k), MAE(b, w, k)
+                    row[f"{w}_{k}_mae"] = {"vjepa2": va, "random_init": vb,
+                                           "vjepa2_minus_random_init": None if va is None or vb is None else va - vb}
+            row["pooled_absent_shuffled_mae_mean"] = {m: (r["pooled"].get("absent_shuffled") or {}).get("mae_mean")
+                                                      for m, r in (("vjepa2", a), ("random_init", b))}
+            row["pooled_absent_p_mae"] = {m: (r["pooled"].get("absent_shuffled") or {}).get("p_mae")
+                                          for m, r in (("vjepa2", a), ("random_init", b))}
+            side[var].append(row)
+            print(f"{var} point {a['point']:2d}: absent MAE vjepa2 test/pooled "
+                  f"{row['test_absent_mae']['vjepa2']:.3g}/{row['pooled_absent_mae']['vjepa2']:.3g}  random-init "
+                  f"{row['test_absent_mae']['random_init']:.3g}/{row['pooled_absent_mae']['random_init']:.3g}  "
+                  f"vjepa2 minus random-init {row['test_absent_mae']['vjepa2_minus_random_init']:.3g}/"
+                  f"{row['pooled_absent_mae']['vjepa2_minus_random_init']:.3g}")
+    out["random_init"] = {"model": "random-init ViT-L (V-JEPA 2 architecture, untrained weights), time-pooled",
+                          "source": str(random_tp.relative_to(PROJECT_ROOT) if random_tp.is_relative_to(PROJECT_ROOT)
+                                        else random_tp),
+                          "protocol": "identical to the V-JEPA 2 run: same clips, split, folds, points, seed, "
+                                      "n_boot, n_perm",
+                          "side_by_side": side, "variables": rvars}
+else:
+    out["random_init"] = (f"skipped: {random_tp.relative_to(PROJECT_ROOT) if random_tp.is_relative_to(PROJECT_ROOT) else random_tp} "
+                          "does not exist (only meanpool was stored for the random-init model)")
+    print(out["random_init"])
 out["speed_note"] = ("every clip that loses the disk is a velocity clip, and they are the faster ones: the absent "
                      "set's speed range is narrower than the probe's, so R2 on it is taken against a smaller variance; "
                      "compare MAE to the shuffled-label null rather than reading R2 alone.")
@@ -111,13 +150,23 @@ for row, var in enumerate(("direction", "speed")):
         ax.errorbar(x, [v[0] for v in vals], yerr=[[v[1] for v in vals], [v[2] for v in vals]], color=color,
                     marker=marker, ms=4, lw=1.2, capsize=2, label=label)
     null = [r["pooled"].get("absent_shuffled") or {} for r in res["points"]]
+    if isinstance(out["random_init"], dict):
+        rres = out["random_init"]["variables"][var]
+        for j, (where, key, color, marker, label) in enumerate(series):
+            if key == "visible_time_matched":
+                continue
+            vals = [err(r[where][key], "mae") for r in rres["points"]]
+            x = np.array(pts) + (j - 1.5) * 0.18
+            ax.errorbar(x, [v[0] for v in vals], yerr=[[v[1] for v in vals], [v[2] for v in vals]], color=color,
+                        marker=marker, mfc="none", ms=4, lw=1.0, ls="--", capsize=2, alpha=0.8,
+                        label=f"random-init: {label}")
     ax.fill_between(pts, [n.get("mae_95", [np.nan, np.nan])[0] for n in null],
                     [n.get("mae_95", [np.nan, np.nan])[1] for n in null], color="0.7", alpha=0.5,
                     label="pooled absent, shuffled labels (95%)")
     ax.set_xlabel("layer point")
     ax.set_ylabel(units[var])
     ax.set_title(f"{var}: readout of a probe fit on visible steps")
-    ax.legend(fontsize=7, frameon=False)
+    ax.legend(fontsize=6, frameon=False)
     ax = axes[row, 1]
     cmap = plt.get_cmap("viridis")
     for i, r in enumerate(res["points"]):
