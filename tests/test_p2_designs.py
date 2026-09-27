@@ -372,3 +372,39 @@ def test_angle_max_dev_is_reported_not_required():
     ch = mf.choose_angle_source(C, GRID)
     assert ch["angle"] == "unsupervised" and ch["max_dev_deg"] > 30 and abs(ch["circular_corr"]) >= 0.9
     assert mf.choose_angle_source(C, GRID, max_dev_deg=30.0)["angle"] == "labels"
+
+
+def test_path_value_stats_sweep_vs_jump():
+    """A sweep through intermediate values puts mass between source and target; a jump (teleport) does not."""
+    V = 64
+    K = 11
+    src, tgt = np.array([0.0]), 90.0                                  # 16 steps apart
+    sweep = np.zeros((1, K, V))
+    jump = np.zeros((1, K, V))
+    for k in range(K):
+        sweep[0, k, int(round(16 * k / (K - 1)))] = 1.0
+        jump[0, k, 0 if k < K // 2 else 16] = 1.0
+    mid_s, al_s, off = mf.path_value_stats(sweep, src, tgt, GRID, True)
+    mid_j, _, _ = mf.path_value_stats(jump, src, tgt, GRID, True)
+    assert mid_s[0, 1:-1].mean() > 0.7 and mid_j[0].max() == 0.0
+    assert al_s[0, -1, list(off).index(90.0)] == 1.0 and al_s[0, 0, list(off).index(0.0)] == 1.0
+    # the target is always at a positive offset, whichever way round the short arc goes
+    _, al_neg, _ = mf.path_value_stats(sweep, np.array([90.0]), 0.0, GRID, True)    # source 90, target 0
+    assert al_neg[0, 0, list(off).index(90.0)] == 1.0 and al_neg[0, -1, list(off).index(0.0)] == 1.0
+    mid_l, _, _ = mf.path_value_stats(np.eye(V)[None, [10, 20, 30]], np.array([SPEEDS[10]]), SPEEDS[30], SPEEDS, False)
+    assert mid_l[0].tolist() == [0.0, 1.0, 0.0]
+
+
+def test_behaviour_floor_and_replace_masking():
+    X, th, _ = ring_data()
+    pca = mf.fit_pca(X[::2], 16)
+    ref = mf.fit_curve(mf.centroids(pca.project(X[1::2]), th[1::2]), True, angle="labels", spline="smooth")
+    bm = mf.BehaviourManifold(X[1::2], th[1::2], True, curve=ref, pca=pca)
+    fl = P2.behaviour_floor(bm, X[::2], th[::2])
+    assert fl["mean"] > 0 and len(fl["per_value_median"]) == 64 and fl["entropy_mean"] > 0
+    on_curve = pca.lift(ref(ref.coords))
+    assert bm.entropy(on_curve).mean() < fl["entropy_mean"]           # the artefact the floor exposes
+    summ = {"goodfire_manifold": {"overall": {"behaviour_energy": 4.0, "nearest_real_R": 0.5}, "by_shift": []}}
+    out = P2.mask_replace(summ)["goodfire_manifold"]
+    assert out["overall"]["behaviour_energy"] is None and out["overall"]["nearest_real_R"] == 0.5
+    assert out["behaviour_note"].startswith("not comparable")

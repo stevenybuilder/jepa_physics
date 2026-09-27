@@ -95,6 +95,15 @@ def test_scripts_end_to_end(tmp_path, dataset):
         assert g["ci95"][1] < 0 and g["se_over_targets"] > 0 and len(g["by_shift"]) >= 3
         em = res["controls"]["random_endpoint_matched"]["excess_to_curve"]
         assert em["n_draws"] == 20
+        assert [t["tau"] for t in res["tau_sensitivity"]] == [0.25, 0.5, 1.0, 2.0]
+        assert res["behaviour_floor"]["mean"] > 0 and any("caveat" in n for n in res["summary_notes"])
+        assert s["goodfire_manifold"]["overall"]["behaviour_energy"] is None
+        assert res["gaps"]["manifold_minus_goodfire_manifold"]["behaviour_energy"].startswith("not comparable")
+        vh = res["value_heatmap"]["arms"]
+        assert np.asarray(vh["manifold"]["mass"]).shape == (11, 64)
+        far = s["manifold"]["by_shift"][-1]["intermediate_mass"], s["linear"]["by_shift"][-1]["intermediate_mass"]
+        assert far[0] > far[1]                                        # the spline sweeps, the line jumps
+        assert (tmp / "figures" / f"fig4_value_heatmap_{tag}.png").exists()
 
 
 @pytest.mark.parametrize("dataset,design", [("direction", "contiguous"), ("speed", "contiguous"),

@@ -688,12 +688,19 @@ class BehaviourManifold:
         self.periodic, self.tau, self.mode, self.pca = periodic, tau, mode, pca
         if mode == "spline":
             lo, hi = curve.t_range()
-            self.mu = curve(np.linspace(lo, hi, n_bins, endpoint=not curve.periodic))       # [B, k]
+            bin_t = np.linspace(lo, hi, n_bins, endpoint=not curve.periodic)
+            self.mu = curve(bin_t)                                                          # [B, k]
             self.s2 = 1.0
+            # value of each bin: the reference curve's coordinate is the value (radians for direction)
+            bv = np.degrees(bin_t) % 360.0 if periodic else bin_t
+            dist = (np.abs((bv[:, None] - self.values[None] + 180.0) % 360.0 - 180.0) if periodic
+                    else np.abs(bv[:, None] - self.values[None]))
+            self.bin_to_value = np.eye(len(self.values))[dist.argmin(1)]                    # [B, values]
         elif mode == "centroid_sq":
             self.mu = np.array([X[v == u].mean(0) for u in self.values])                   # [B, D]
             idx = np.searchsorted(self.values, v)
             self.s2 = float(((X - self.mu[idx]) ** 2).sum(1).mean())
+            self.bin_to_value = np.eye(len(self.values))
         else:
             raise ValueError(mode)
         self.scale = "none (literal)" if mode == "spline" else "within-value mean squared distance"
@@ -738,9 +745,20 @@ class BehaviourManifold:
         n = np.linalg.norm(tv, axis=-1, keepdims=True)
         return np.cos(n) * self.base + np.sin(n) * tv / np.where(n > 1e-12, n, 1.0)
 
-    def bhattacharyya(self, Z):
-        """Per-row Bhattacharyya distance of p(z) to the nearest grid point of M_y: -log max_q sum sqrt(p q)."""
-        sp = np.sqrt(self.F(Z))
+    def value_distribution(self, Z, P=None):
+        """Eq. 9 probability aggregated over label VALUES (each bin assigned to its nearest value): [.., n_values]."""
+        return (self.F(Z) if P is None else P) @ self.bin_to_value
+
+    def entropy(self, Z, P=None):
+        """Entropy (nats) of the Eq. 9 distribution over bins, per row. Real clips far from the curve give broad
+        distributions; points on the curve give sharp ones."""
+        P = self.F(Z) if P is None else P
+        return -(P * np.log(np.clip(P, 1e-300, 1.0))).sum(-1)
+
+    def bhattacharyya(self, Z, P=None):
+        """Per-row Bhattacharyya distance of p(z) to the nearest grid point of M_y: -log max_q sum sqrt(p q).
+        P: precomputed F(Z) (saves recomputing it)."""
+        sp = np.sqrt(self.F(Z) if P is None else P)
         flat = sp.reshape(-1, sp.shape[-1])
         bc = np.empty(len(flat))
         for i in range(0, len(flat), 4096):
@@ -836,3 +854,38 @@ def nearest_real_agreement(X_steered, X_orig, real_target_mean):
     d_after = np.linalg.norm(np.asarray(X_steered) - real_target_mean, axis=-1)
     d_before = np.linalg.norm(np.asarray(X_orig) - real_target_mean, axis=-1)
     return 1.0 - d_after / np.maximum(d_before, 1e-12)
+
+
+def path_value_stats(Pv, src, tgt, values, periodic):
+    """Where the Eq. 9 value-mass sits along a steering path (Goodfire Fig. 4 analogue).
+
+    Pv [n, K, V]: probability over the V label values at each waypoint. Values are re-expressed as offsets from each
+    clip's source, signed so that the target is positive: direction in degrees on (-180, 180] (the short way round
+    is positive), scalars in value-index steps. Returns (intermediate [n, K]: mass on values strictly between source
+    and target (arc-wise for direction), aligned [n, K, n_offsets], offsets [n_offsets])."""
+    values = np.asarray(values, dtype=float)
+    src, n = np.asarray(src, dtype=float), len(Pv)
+    tgt = np.broadcast_to(np.asarray(tgt, dtype=float), (n,))
+    V = len(values)
+    if periodic:
+        step = 360.0 / V
+        sign = np.where(wrap_pi(np.radians(tgt - src)) < 0, -1.0, 1.0)
+        off = np.degrees(wrap_pi(np.radians(values[None] - src[:, None]))) * sign[:, None]    # [n, V]
+        off = np.where(off <= -180.0 + 1e-9, 180.0, off)
+        span = np.abs(np.degrees(wrap_pi(np.radians(tgt - src))))
+        offsets = np.arange(-V // 2 + 1, V // 2 + 1) * step
+        idx = np.clip(np.rint(off / step).astype(int) + V // 2 - 1, 0, V - 1)
+    else:
+        si = np.abs(values[None] - src[:, None]).argmin(1)
+        ti = np.abs(values[None] - tgt[:, None]).argmin(1)
+        sign = np.where(ti < si, -1.0, 1.0)
+        off = (np.arange(V)[None] - si[:, None]) * sign[:, None]
+        span = np.abs(ti - si).astype(float)
+        offsets = np.arange(-(V - 1), V).astype(float)
+        idx = (off + V - 1).astype(int)
+    between = (off > 1e-9) & (off < span[:, None] - 1e-9)                                   # [n, V]
+    intermediate = (Pv * between[:, None, :]).sum(-1)
+    aligned = np.zeros((n, Pv.shape[1], len(offsets)))
+    for i in range(n):
+        np.add.at(aligned[i], (slice(None), idx[i]), Pv[i])
+    return intermediate, aligned, offsets

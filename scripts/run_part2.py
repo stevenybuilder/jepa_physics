@@ -41,10 +41,17 @@ GOODFIRE_ARMS = ("goodfire_linear", "goodfire_manifold")
 CONTROLS = ("random_endpoint_matched", "random_unmatched", "shuffled_unmatched")
 METRICS = ("probe_err_to_target", "probe_err_to_true", "nearest_real_R", "energy_to_curve", "energy_to_nearest_real",
            "excess_to_curve", "excess_to_nearest_real", "behaviour_energy", "behaviour_energy_mean", "norm_ratio",
-           "delta_norm", "delta_norm_path", "probe_err_path", "probe_radius_min")
+           "delta_norm", "delta_norm_path", "probe_err_path", "probe_radius_min", "behaviour_energy_rel_floor",
+           "behaviour_entropy_mean", "intermediate_mass")
+REPLACE_ARMS = ("goodfire_manifold", "goodfire_linear")      # on the curve / centroids by construction
+BEHAVIOUR_ENERGY_METRICS = ("behaviour_energy", "behaviour_energy_mean", "behaviour_energy_rel_floor",
+                            "behaviour_entropy_mean")
+NOT_COMPARABLE = ("not comparable: on-curve by construction (residual replaced, so Eq. 9 gives a sharp distribution "
+                  "that no real clip has); compare replace arms on probe readouts and nearest-real only")
+TAUS = (0.25, 0.5, 1.0, 2.0)
 RANKED = {"nearest_real_R": True, "probe_err_to_target": False, "excess_to_curve": False,
           "excess_to_nearest_real": False, "behaviour_energy": False}   # metric -> higher is better
-WAYPOINT_SERIES = ("_wp_err", "_wp_radius", "_wp_bc")
+WAYPOINT_SERIES = ("_wp_err", "_wp_radius", "_wp_bc", "_wp_entropy", "_wp_mid")
 ARM_NOTES = {
     "manifold": "spline walk in the PCA-k subspace, additive (x + curve(t_k) - curve(t_src)), residual kept",
     "linear": "straight line between the polyline (chord) points at source and target, same subspace, residual kept",
@@ -103,7 +110,8 @@ def build(d, k, angle, design="scattered", seed=0, n_controls=20, spline="interp
                 "shuffled_unmatched": [gc.shuffled_curve(curve, rng) for _ in range(n_controls)]}
     return {"pca": pca, "cent": cent, "curve": curve, "angle_choice": choice, "plane": plane,
             "full_curve": full_curve, "held": held, "knot": knot, "design": design_info, "sagitta": sag,
-            "controls": controls, "ref_curve": ref_curve, "X_ref": d["X"][ref], "behaviour": behaviour}
+            "controls": controls, "ref_curve": ref_curve, "X_ref": d["X"][ref], "ref_y": d["y"][ref],
+            "behaviour": behaviour}
 
 
 def curve_coords(curve, Z, src, tgt, K, mode="shift"):
@@ -156,7 +164,10 @@ def evaluate(W, x, src, tgt, m, ctx):
         wp_pred, wp_radius = raw[..., 0], np.full((n, K), np.nan)
     wp_err = mf.value_error(wp_pred, tgt, periodic)
     pred = wp_pred[:, -1]
-    bc = m["behaviour"].bhattacharyya(W)                                   # [n, K]
+    bm = m["behaviour"]
+    P = bm.F(W)                                                            # [n, K, bins] Eq. 9
+    bc, ent = bm.bhattacharyya(W, P), bm.entropy(W, P)                     # [n, K]
+    mid, aligned, _ = mf.path_value_stats(bm.value_distribution(W, P), src, tgt, bm.values, periodic)
     dn = np.linalg.norm(W - x[:, None], axis=-1)                           # [n, K] delivered dose per waypoint
     out = {"probe_err_to_target": mf.value_error(pred, tgt, periodic),
            "probe_err_to_true": mf.value_error(pred, src, periodic),
@@ -166,11 +177,14 @@ def evaluate(W, x, src, tgt, m, ctx):
            "excess_to_curve": e["to_curve"].mean(1) - e["to_curve"][:, 0],
            "excess_to_nearest_real": e["to_nearest_real"].mean(1) - e["to_nearest_real"][:, 0],
            "behaviour_energy": bc.sum(1), "behaviour_energy_mean": bc.mean(1),
+           "behaviour_energy_rel_floor": bc.mean(1) / ctx["floor"]["mean"],
+           "behaviour_entropy_mean": ent.mean(1), "intermediate_mass": mid[:, 1:-1].mean(1),
            "norm_ratio": np.linalg.norm(xs, axis=1) / np.linalg.norm(x, axis=1),
            "delta_norm": dn[:, -1], "delta_norm_path": dn.mean(1),
            "probe_err_path": wp_err.mean(1),
            "probe_radius_min": wp_radius.min(1) if periodic else np.full(n, np.nan),
-           "_wp_err": wp_err, "_wp_radius": wp_radius, "_wp_bc": bc,
+           "_wp_err": wp_err, "_wp_radius": wp_radius, "_wp_bc": bc, "_wp_entropy": ent, "_wp_mid": mid,
+           "_aligned": aligned,
            "_dose": dn, "_energy": np.stack([e["to_curve"], e["to_nearest_real"]], -1), "_delta_end": xs - x}
     if ctx.get("near_ctx") is not None:
         out["nearest_real_R_context"] = ctx["near_ctx"].score(xs, x, tgt)
@@ -267,6 +281,10 @@ def run(args):
     arms = (MAIN_ARMS + (("manifold_transport",) if periodic else ()) + ("goodfire_manifold",)
             + (("goodfire_linear",) if args.goodfire_baseline else ()))
     picks = pick_clips(d_steer, m["held"], args.n_clips, args.seed)
+    stest = np.flatnonzero(d_steer["role"] == "test")
+    ctx["floor"] = behaviour_floor(m["behaviour"], d_steer["X"][stest], d_steer["y"][stest])
+    big = 135.0 if periodic else 0.25 * float(np.ptp(m["behaviour"].values))   # "large shift" for the heatmaps
+    heat = {a: [0.0, 0] for a in arms}
 
     rows, shared = [], {a: [] for a in arms}
     per_arm = {a: {q: [] for q in (*METRICS, "nearest_real_R_context", "_dose", "_energy", *WAYPOINT_SERIES, "shift",
@@ -283,6 +301,10 @@ def run(args):
         for arm in arms:
             ev = evaluate(Ws[arm], x, src, tgt, m, ctx)
             shared[arm].append(gc.shared_delta_fraction(ev["_delta_end"]))
+            large = shift >= big
+            if large.any():
+                heat[arm][0] = heat[arm][0] + ev["_aligned"][large].sum(0)
+                heat[arm][1] += int(large.sum())
             for q in per_arm[arm]:
                 if q == "shift":
                     per_arm[arm][q].append(shift)
@@ -376,7 +398,19 @@ def run(args):
            "controls": {kind: {q: band([np.concatenate(dr[q]).mean() for dr in ctrl[kind]],
                                        np.concatenate(ctrl_ref[q]).mean(), hb) for q, hb in RANKED.items()}
                         for kind in CONTROLS if m["controls"][kind]},
-           "summary": summarise(rows, periodic, [a for a in arms if a != "goodfire_linear"]),
+           "summary": mask_replace(summarise(rows, periodic, [a for a in arms if a != "goodfire_linear"])),
+           "summary_notes": [
+               "behaviour manifold (Eq. 9) caveat: " + mf.BehaviourManifold.caveat,
+               "replace arms (goodfire_manifold, goodfire_linear): behaviour energy and entropy " + NOT_COMPARABLE,
+               "behaviour_energy_rel_floor = mean Bhattacharyya distance per waypoint / the unsteered real-clip floor "
+               "(test clips at their own value); 1 = as natural as a real clip"],
+           "behaviour_floor": ctx["floor"],
+           "tau_sensitivity": tau_sensitivity(m, d_steer, picks, args, periodic),
+           "value_heatmap": {"large_shift_min": big, "offsets": value_offsets(m["behaviour"].values, periodic),
+                             "note": ("Eq. 9 probability over values along the path, mean over large-shift steers; "
+                                      "values as offsets from each clip's source, target direction positive"),
+                             "arms": {a: {"n": h[1], "mass": (h[0] / h[1]).tolist() if h[1] else None}
+                                      for a, h in heat.items()}},
            "gaps": paired_gaps(cat, [a for a in arms if a != "manifold"], periodic, args.seed),
            "gaps_note": ("manifold minus each other arm on the same (clip, target) rows: 95% CI from a paired "
                          "bootstrap over clips, each clip's targets resampled together (1000 draws), and mean +/- SE across steer targets (Goodfire A.7 "
@@ -418,6 +452,7 @@ def run(args):
                 Path(args.figures_dir) / f"fig4_path_energy_{tag}.png", tag)
     plot_waypoints(out["waypoint_readout"], Path(args.figures_dir) / f"fig4_waypoint_readout_{tag}.png", tag,
                    periodic, main)
+    plot_value_heatmap(out["value_heatmap"], Path(args.figures_dir) / f"fig4_value_heatmap_{tag}.png", tag, periodic)
     return out
 
 
@@ -437,7 +472,12 @@ def waypoint_summary(cat, arms, periodic, n_bins=4):
                 continue
             b = {"shift_lo": float(lo), "shift_hi": float(hi), "n": int(sel.sum()),
                  "err_to_target": cat[a]["_wp_err"][sel].mean(0).tolist(),
-                 "bhattacharyya": cat[a]["_wp_bc"][sel].mean(0).tolist()}
+                 "intermediate_mass": cat[a]["_wp_mid"][sel].mean(0).tolist()}
+            if a in REPLACE_ARMS:
+                b["bhattacharyya"] = b["entropy"] = NOT_COMPARABLE
+            else:
+                b["bhattacharyya"] = cat[a]["_wp_bc"][sel].mean(0).tolist()
+                b["entropy"] = cat[a]["_wp_entropy"][sel].mean(0).tolist()
             if periodic:
                 b["radius"] = cat[a]["_wp_radius"][sel].mean(0).tolist()
             bins.append(b)
@@ -446,20 +486,100 @@ def waypoint_summary(cat, arms, periodic, n_bins=4):
 
 
 def plot_waypoints(wp, path, tag, periodic, arms):
-    """Largest-shift bin: probe readout radius (direction) or error, and behaviour distance, along the path."""
-    fig, axes = plt.subplots(1, 2, figsize=(9, 3.5))
+    """Largest-shift bin: probe readout radius (direction) or error, and behaviour distance, along the path.
+    Replace arms are left out of the behaviour panel (not comparable); the circularity caveat is printed on it."""
+    fig, axes = plt.subplots(1, 2, figsize=(9, 3.8))
     for a in arms:
         b = wp[a][-1]
         frac = np.linspace(0, 1, len(b["err_to_target"]))
         style = "-" if a in ("manifold", "linear") else ":"
         axes[0].plot(frac, b["radius"] if periodic else b["err_to_target"], style, label=a)
-        axes[1].plot(frac, b["bhattacharyya"], style, label=a)
+        if a not in REPLACE_ARMS:
+            axes[1].plot(frac, b["bhattacharyya"], style, label=a)
+    axes[1].text(0.02, 0.98, "caveat: at the steered layer Eq. 9 is a distance-to-centroid\nfunction of the edited "
+                 "activation (partly circular);\ninformative after propagation. Replace arms omitted.",
+                 transform=axes[1].transAxes, va="top", fontsize=6, color="0.35")
     b = wp[arms[0]][-1]
     axes[0].set(xlabel="fraction of path", ylabel="probe readout radius" if periodic else "probe error to target",
                 title=f"Evaluation probe, shift {b['shift_lo']:.0f}-{b['shift_hi']:.0f}")
     axes[1].set(xlabel="fraction of path", ylabel="Bhattacharyya distance to M_y", title="Behaviour manifold (Eq. 9)")
     axes[0].legend(fontsize=7)
     fig.suptitle(f"Every waypoint scored, {tag}")
+    fig.tight_layout()
+    fig.savefig(path, dpi=150)
+    plt.close(fig)
+
+
+def behaviour_floor(bm, X_real, values_real):
+    """Unsteered real-clip energy floor: Bhattacharyya distance to M_y (and Eq. 9 entropy) of real test clips at
+    their own value. Arms' energies are expressed relative to its mean."""
+    bc, ent = bm.bhattacharyya(X_real), bm.entropy(X_real)
+    v = np.asarray(values_real, dtype=float)
+    per = {str(float(u)): float(np.median(bc[v == u])) for u in np.unique(v)}
+    return {"mean": float(bc.mean()), "median": float(np.median(bc)), "p05": float(np.percentile(bc, 5)),
+            "p95": float(np.percentile(bc, 95)), "entropy_mean": float(ent.mean()), "n": int(len(bc)),
+            "per_value_median": per}
+
+
+def tau_sensitivity(m, d_steer, picks, args, periodic):
+    """Spline-vs-line behaviour energy (mean per waypoint, and relative to the real-clip floor) for tau in TAUS."""
+    out = []
+    stest = np.flatnonzero(d_steer["role"] == "test")
+    for tau in TAUS:
+        bm = mf.BehaviourManifold(m["X_ref"], m["ref_y"], periodic, tau=tau, mode=m["behaviour"].mode,
+                                  curve=m["ref_curve"], pca=m["pca"])
+        floor = bm.bhattacharyya(d_steer["X"][stest]).mean()
+        e = {"manifold": [], "linear": []}
+        for tgt, pick in picks.items():
+            x, src = d_steer["X"][pick].astype(float), d_steer["y"][pick]
+            Z, resid = m["pca"].project(x), m["pca"].complement(x)
+            arms = subspace_arms(Z, src, tgt, m, args.K)
+            for a in e:
+                e[a].append(bm.bhattacharyya(compose(m["pca"], arms[a], resid)).mean(1))
+        man, lin = np.concatenate(e["manifold"]).mean(), np.concatenate(e["linear"]).mean()
+        out.append({"tau": tau, "floor": float(floor), "manifold": float(man), "linear": float(lin),
+                    "gap_linear_minus_manifold": float(lin - man), "manifold_rel_floor": float(man / floor),
+                    "linear_rel_floor": float(lin / floor)})
+    return out
+
+
+def value_offsets(values, periodic):
+    V = len(values)
+    return ((np.arange(-V // 2 + 1, V // 2 + 1) * 360.0 / V) if periodic else np.arange(-(V - 1), V)).tolist()
+
+
+def mask_replace(summary):
+    """Replace arms: drop behaviour energy/entropy numbers (on-curve by construction) and say why."""
+    for a in REPLACE_ARMS:
+        if a not in summary:
+            continue
+        for block in [summary[a]["overall"], *summary[a]["by_shift"]]:
+            for q in BEHAVIOUR_ENERGY_METRICS:
+                if q in block:
+                    block[q] = None
+        summary[a]["behaviour_note"] = NOT_COMPARABLE
+    return summary
+
+
+def plot_value_heatmap(vh, path, tag, periodic):
+    """Goodfire Fig. 4 analogue: Eq. 9 probability over values (x, offset from source; target positive) along the
+    path (y, waypoint), one panel per arm, mean over large-shift steers."""
+    arms = [a for a, h in vh["arms"].items() if h["mass"] is not None]
+    if not arms:
+        return
+    fig, axes = plt.subplots(1, len(arms), figsize=(2.2 * len(arms), 3.2), sharey=True, squeeze=False)
+    off = np.asarray(vh["offsets"])
+    for ax, a in zip(axes[0], arms):
+        M = np.asarray(vh["arms"][a]["mass"])
+        ax.imshow(M, aspect="auto", origin="lower", cmap="magma",
+                  extent=[off[0], off[-1], 0, 1])
+        ax.axvline(0, color="w", lw=0.5, ls=":")
+        ax.set_title(a, fontsize=7)
+        ax.set_xlabel("offset from source (deg)" if periodic else "offset (value steps)", fontsize=6)
+        ax.tick_params(labelsize=6)
+    axes[0][0].set_ylabel("fraction of path")
+    fig.suptitle(f"Eq. 9 mass over values along the path (shift >= {vh['large_shift_min']:.3g}), {tag}\n"
+                 "caveat: partly circular at the steered layer", fontsize=8)
     fig.tight_layout()
     fig.savefig(path, dpi=150)
     plt.close(fig)
@@ -482,7 +602,8 @@ def paired_bootstrap(diff, groups=None, n_boot=1000, seed=0):
 
 def paired_gaps(cat, others, periodic, seed=0):
     """manifold - other, per metric: paired bootstrap CI over rows and mean +/- SE across targets; by shift bin."""
-    metrics = [q for q in (*RANKED, "probe_err_path", "probe_radius_min", "delta_norm")
+    metrics = [q for q in (*RANKED, "probe_err_path", "probe_radius_min", "delta_norm", "behaviour_energy_rel_floor",
+                           "behaviour_entropy_mean", "intermediate_mass")
                if not (q == "probe_radius_min" and not periodic)]
     s, tgt, ids = cat["manifold"]["shift"], cat["manifold"]["_target"], cat["manifold"]["_id"]
     edges = shift_bins(periodic)
@@ -493,6 +614,9 @@ def paired_gaps(cat, others, periodic, seed=0):
     for o in others:
         out[f"manifold_minus_{o}"] = res = {}
         for q in metrics:
+            if o in REPLACE_ARMS and q in BEHAVIOUR_ENERGY_METRICS:
+                res[q] = NOT_COMPARABLE
+                continue
             diff = cat["manifold"][q] - cat[o][q]
             per_t = np.array([diff[tgt == t].mean() for t in np.unique(tgt)])
             res[q] = {**paired_bootstrap(diff, ids, seed=seed),
