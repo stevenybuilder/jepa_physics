@@ -111,6 +111,13 @@ def test_scripts_end_to_end(tmp_path, dataset):
         assert all(r["nearest_real_R"] is not None for r in gf_rows)
         assert vh["goodfire_manifold"]["mass"] is None and vh["goodfire_manifold"]["note"].startswith("not comparable")
         assert res["waypoint_readout"]["goodfire_manifold"][-1]["intermediate_mass"].startswith("not comparable")
+        op = s["manifold"]["over_pairs"]["behaviour_energy"]
+        assert op["n_pairs"] > 16 and op["se"] > 0
+        g = res["gaps"]["manifold_minus_linear"]["behaviour_energy"]
+        assert g["n_pairs"] == op["n_pairs"] and g["se_over_pairs"] > 0
+        far_o = s["manifold"]["by_shift"][-1]["ordering_spearman"], s["linear"]["by_shift"][-1]["ordering_spearman"]
+        assert far_o[0] > 0.5 and far_o[0] > far_o[1]                 # the spline is ordered; the chord is not
+        assert all(r["arc_sign"] in (1.0, -1.0) for r in res["rows"] if r["arm"] == "manifold")
         man_rows = [r for r in res["rows"] if r["arm"] == "manifold"]
         assert all(isinstance(r["behaviour_energy"], float) for r in man_rows)
 

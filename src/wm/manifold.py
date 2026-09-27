@@ -856,36 +856,59 @@ def nearest_real_agreement(X_steered, X_orig, real_target_mean):
     return 1.0 - d_after / np.maximum(d_before, 1e-12)
 
 
-def path_value_stats(Pv, src, tgt, values, periodic):
-    """Where the Eq. 9 value-mass sits along a steering path (Goodfire Fig. 4 analogue).
+def path_value_stats(Pv, src, tgt, values, periodic, arc_sign=None):
+    """Where the Eq. 9 value-mass sits along a steering path (Goodfire Fig. 4 analogue: "smooth and ordered").
 
     Pv [n, K, V]: probability over the V label values at each waypoint. Values are re-expressed as offsets from each
-    clip's source, signed so that the target is positive: direction in degrees on (-180, 180] (the short way round
-    is positive), scalars in value-index steps. Returns (intermediate [n, K]: mass on values strictly between source
-    and target (arc-wise for direction), aligned [n, K, n_offsets], offsets [n_offsets])."""
+    clip's source along the arc the arm TRAVERSES (direction: arc_sign [n] = +1 if the arm moves to increasing label
+    angle, -1 if decreasing; default the short way round by label, + at exactly 180), so the target sits at +span;
+    scalars in value-index steps towards the target.
+    Returns dict:
+      intermediate [n, K]  mass on values strictly between source and target on the traversed arc
+      ordering [n]         Spearman correlation between waypoint index and the argmax value's offset (0 if constant)
+      argmax_on_arc [n]    fraction of waypoints whose argmax lies on the traversed arc, endpoints included
+      aligned [n, K, n_off], offsets [n_off]   mass by offset in (-180, 180] (direction) / -(V-1)..V-1 (scalars)
+      arc_sign [n]"""
+    from scipy.stats import rankdata
     values = np.asarray(values, dtype=float)
     src, n = np.asarray(src, dtype=float), len(Pv)
     tgt = np.broadcast_to(np.asarray(tgt, dtype=float), (n,))
     V = len(values)
     if periodic:
         step = 360.0 / V
-        sign = np.where(wrap_pi(np.radians(tgt - src)) < 0, -1.0, 1.0)
-        off = np.degrees(wrap_pi(np.radians(values[None] - src[:, None]))) * sign[:, None]    # [n, V]
-        off = np.where(off <= -180.0 + 1e-9, 180.0, off)
-        span = np.abs(np.degrees(wrap_pi(np.radians(tgt - src))))
+        if arc_sign is None:
+            arc_sign = np.where(wrap_pi(np.radians(tgt - src)) < 0, -1.0, 1.0)
+        sign = np.broadcast_to(np.asarray(arc_sign, dtype=float), (n,))
+        fwd = ((values[None] - src[:, None]) * sign[:, None]) % 360.0                      # [n, V] in [0, 360)
+        span = ((tgt - src) * sign) % 360.0
+        # offsets for the argmax / aligned view: behind the source (the rest of the circle past the midpoint of the
+        # untraversed arc) counts as negative
+        off = np.where(fwd > span[:, None] + (360.0 - span[:, None]) / 2, fwd - 360.0, fwd)
+        al = np.where(fwd > 180.0 + 1e-9, fwd - 360.0, fwd)
         offsets = np.arange(-V // 2 + 1, V // 2 + 1) * step
-        idx = np.clip(np.rint(off / step).astype(int) + V // 2 - 1, 0, V - 1)
+        idx = np.clip(np.rint(al / step).astype(int) + V // 2 - 1, 0, V - 1)
     else:
         si = np.abs(values[None] - src[:, None]).argmin(1)
         ti = np.abs(values[None] - tgt[:, None]).argmin(1)
         sign = np.where(ti < si, -1.0, 1.0)
-        off = (np.arange(V)[None] - si[:, None]) * sign[:, None]
+        fwd = off = (np.arange(V)[None] - si[:, None]) * sign[:, None]
         span = np.abs(ti - si).astype(float)
         offsets = np.arange(-(V - 1), V).astype(float)
         idx = (off + V - 1).astype(int)
-    between = (off > 1e-9) & (off < span[:, None] - 1e-9)                                   # [n, V]
+    between = (fwd > 1e-9) & (fwd < span[:, None] - 1e-9)                                  # [n, V]
+    on_arc = (fwd > -1e-9) & (fwd < span[:, None] + 1e-9)
     intermediate = (Pv * between[:, None, :]).sum(-1)
+    am = Pv.argmax(-1)                                                                     # [n, K]
+    am_off = np.take_along_axis(off, am, axis=1)
+    am_on = np.take_along_axis(on_arc, am, axis=1)
+    k = rankdata(np.arange(Pv.shape[1]))
+    ordering = np.zeros(n)
+    for i in range(n):
+        r = rankdata(am_off[i])
+        if r.std() > 0:
+            ordering[i] = np.corrcoef(k, r)[0, 1]
     aligned = np.zeros((n, Pv.shape[1], len(offsets)))
     for i in range(n):
         np.add.at(aligned[i], (slice(None), idx[i]), Pv[i])
-    return intermediate, aligned, offsets
+    return {"intermediate": intermediate, "ordering": ordering, "argmax_on_arc": am_on.mean(1), "aligned": aligned,
+            "offsets": offsets, "arc_sign": np.asarray(sign, dtype=float)}

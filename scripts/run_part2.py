@@ -42,10 +42,12 @@ CONTROLS = ("random_endpoint_matched", "random_unmatched", "shuffled_unmatched")
 METRICS = ("probe_err_to_target", "probe_err_to_true", "nearest_real_R", "energy_to_curve", "energy_to_nearest_real",
            "excess_to_curve", "excess_to_nearest_real", "behaviour_energy", "behaviour_energy_mean", "norm_ratio",
            "delta_norm", "delta_norm_path", "probe_err_path", "probe_radius_min", "behaviour_energy_rel_floor",
-           "behaviour_entropy_mean", "intermediate_mass")
+           "behaviour_entropy_mean", "intermediate_mass", "ordering_spearman", "argmax_on_arc", "arc_sign")
 REPLACE_ARMS = ("goodfire_manifold", "goodfire_linear")      # on the curve / centroids by construction
 BEHAVIOUR_ENERGY_METRICS = ("behaviour_energy", "behaviour_energy_mean", "behaviour_energy_rel_floor",
-                            "behaviour_entropy_mean", "intermediate_mass")   # every Eq. 9-derived number
+                            "behaviour_entropy_mean", "intermediate_mass", "ordering_spearman",
+                            "argmax_on_arc")   # every Eq. 9-derived number
+PAIR_SE_METRICS = ("behaviour_energy", "behaviour_energy_rel_floor", "behaviour_entropy_mean")
 NOT_COMPARABLE = ("not comparable: on-curve by construction (residual replaced, so Eq. 9 gives a sharp distribution "
                   "that no real clip has); compare replace arms on probe readouts and nearest-real only")
 TAUS = (0.25, 0.5, 1.0, 2.0)
@@ -150,6 +152,22 @@ def goodfire_arms(x, src, tgt, m, K):
     return {"goodfire_linear": (1 - s) * pa[:, None] + s * pb[:, None], "goodfire_manifold": man}
 
 
+def traversed_arc(curve, src, tgt):
+    """+1 if the arm moves to increasing label angle, -1 if decreasing: the sign of the intrinsic-coordinate step
+    curve.step (what the spline walk actually does, the short way round in the intrinsic angle), mapped to label
+    orientation (the unsupervised angle can run opposite to the labels). All arms share these endpoints."""
+    ta, tb = curve.coord_of_value(src), curve.coord_of_value(np.full(len(src), tgt))
+    step = np.sign(curve.step(ta, tb))
+    step = np.where(step == 0, 1.0, step)
+    v = np.sort(curve.values.astype(float))
+    orient = np.sign(np.median(wrap_steps(curve.coord_of_value(v))))
+    return step * (orient if orient != 0 else 1.0)
+
+
+def wrap_steps(c):
+    return mf.wrap_pi(np.diff(np.append(c, c[0])))
+
+
 def evaluate(W, x, src, tgt, m, ctx):
     """Per-clip metrics of waypoints W [n, K, D] steering clips x [n, D] from src to tgt."""
     periodic = ctx["periodic"]
@@ -167,7 +185,9 @@ def evaluate(W, x, src, tgt, m, ctx):
     bm = m["behaviour"]
     P = bm.F(W)                                                            # [n, K, bins] Eq. 9
     bc, ent = bm.bhattacharyya(W, P), bm.entropy(W, P)                     # [n, K]
-    mid, aligned, _ = mf.path_value_stats(bm.value_distribution(W, P), src, tgt, bm.values, periodic)
+    arc = traversed_arc(m["curve"], src, tgt) if periodic else None
+    pv = mf.path_value_stats(bm.value_distribution(W, P), src, tgt, bm.values, periodic, arc)
+    mid, aligned = pv["intermediate"], pv["aligned"]
     dn = np.linalg.norm(W - x[:, None], axis=-1)                           # [n, K] delivered dose per waypoint
     out = {"probe_err_to_target": mf.value_error(pred, tgt, periodic),
            "probe_err_to_true": mf.value_error(pred, src, periodic),
@@ -179,6 +199,7 @@ def evaluate(W, x, src, tgt, m, ctx):
            "behaviour_energy": bc.sum(1), "behaviour_energy_mean": bc.mean(1),
            "behaviour_energy_rel_floor": bc.mean(1) / ctx["floor"]["mean"],
            "behaviour_entropy_mean": ent.mean(1), "intermediate_mass": mid[:, 1:-1].mean(1),
+           "ordering_spearman": pv["ordering"], "argmax_on_arc": pv["argmax_on_arc"], "arc_sign": pv["arc_sign"],
            "norm_ratio": np.linalg.norm(xs, axis=1) / np.linalg.norm(x, axis=1),
            "delta_norm": dn[:, -1], "delta_norm_path": dn.mean(1),
            "probe_err_path": wp_err.mean(1),
@@ -288,7 +309,7 @@ def run(args):
 
     rows, shared = [], {a: [] for a in arms}
     per_arm = {a: {q: [] for q in (*METRICS, "nearest_real_R_context", "_dose", "_energy", *WAYPOINT_SERIES, "shift",
-                                   "_target", "_id")} for a in arms}
+                                   "_target", "_id", "_src")} for a in arms}
     ctrl = {kind: [{q: [] for q in RANKED} for _ in m["controls"][kind]] for kind in CONTROLS}
     ctrl_ref = {q: [] for q in RANKED}         # the spline arm on the same clip subset as the control draws
     for tgt, pick in picks.items():
@@ -310,6 +331,8 @@ def run(args):
                     per_arm[arm][q].append(shift)
                 elif q == "_target":
                     per_arm[arm][q].append(np.full(len(pick), tgt))
+                elif q == "_src":
+                    per_arm[arm][q].append(np.asarray(src, dtype=float))
                 elif q == "_id":
                     per_arm[arm][q].append(d_steer["df"]["id"].to_numpy()[pick])
                 elif q in ev:
@@ -415,8 +438,14 @@ def run(args):
                                       for a, h in heat.items()}},
            "gaps": paired_gaps(cat, [a for a in arms if a != "manifold"], periodic, args.seed),
            "gaps_note": ("manifold minus each other arm on the same (clip, target) rows: 95% CI from a paired "
-                         "bootstrap over clips, each clip's targets resampled together (1000 draws), and mean +/- SE across steer targets (Goodfire A.7 "
-                         "reports mean +/- SE over pairs); overall and by shift bin"),
+                         "bootstrap over clips, each clip's targets resampled together (1000 draws); mean +/- SE over "
+                         "(source value, target) pairs as Goodfire A.7 reports; mean +/- SE over targets also kept; "
+                         "overall and by shift bin"),
+           "arc_note": ("direction: intermediate_mass, ordering_spearman and argmax_on_arc use the arc the arm "
+                        "traverses (sign of the spline's intrinsic-coordinate step, mapped to label orientation; "
+                        "arc_sign per row: +1 increasing label angle); ordering_spearman = Spearman correlation of "
+                        "waypoint index with the Eq. 9 argmax value's offset along that arc; argmax_on_arc = fraction "
+                        "of waypoints whose argmax lies on the arc, endpoints included"),
            "rows": rows}
     out["controls_note"] = (f"{args.n_controls} draws each, on the first {args.n_control_clips} steered clips per "
                             "target (the spline value in each band is on the same clips); spline_rank = 1 + number "
@@ -605,9 +634,10 @@ def paired_bootstrap(diff, groups=None, n_boot=1000, seed=0):
 def paired_gaps(cat, others, periodic, seed=0):
     """manifold - other, per metric: paired bootstrap CI over rows and mean +/- SE across targets; by shift bin."""
     metrics = [q for q in (*RANKED, "probe_err_path", "probe_radius_min", "delta_norm", "behaviour_energy_rel_floor",
-                           "behaviour_entropy_mean", "intermediate_mass")
+                           "behaviour_entropy_mean", "intermediate_mass", "ordering_spearman", "argmax_on_arc")
                if not (q == "probe_radius_min" and not periodic)]
-    s, tgt, ids = cat["manifold"]["shift"], cat["manifold"]["_target"], cat["manifold"]["_id"]
+    s, tgt, ids, srcv = (cat["manifold"][q] for q in ("shift", "_target", "_id", "_src"))
+    pair_keys = np.unique(np.stack([srcv, tgt], 1), axis=0, return_inverse=True)[1].ravel()
     edges = shift_bins(periodic)
     if edges is None:
         edges = np.quantile(s, np.linspace(0, 1, 6))
@@ -621,9 +651,12 @@ def paired_gaps(cat, others, periodic, seed=0):
                 continue
             diff = cat["manifold"][q] - cat[o][q]
             per_t = np.array([diff[tgt == t].mean() for t in np.unique(tgt)])
+            per_p = np.bincount(pair_keys, weights=diff) / np.bincount(pair_keys)
             res[q] = {**paired_bootstrap(diff, ids, seed=seed),
                       "mean_over_targets": float(per_t.mean()),
                       "se_over_targets": float(per_t.std(ddof=1) / np.sqrt(len(per_t))) if len(per_t) > 1 else None,
+                      "mean_over_pairs": float(per_p.mean()), "n_pairs": int(len(per_p)),
+                      "se_over_pairs": float(per_p.std(ddof=1) / np.sqrt(len(per_p))) if len(per_p) > 1 else None,
                       "by_shift": [{"shift_lo": float(lo), "shift_hi": float(hi),
                                     **paired_bootstrap(diff[(s >= lo) & (s < hi)], ids[(s >= lo) & (s < hi)],
                                                        seed=seed)}
@@ -671,8 +704,22 @@ def summarise(rows, periodic, arms, n_bins=5):
                 continue
             mean = lambda q: _mean_or_none([r[q] for r in sel])
             bins.append({"shift_lo": float(lo), "shift_hi": float(hi), "n": len(sel), **{q: mean(q) for q in metrics}})
-        out[arm] = {"overall": {q: _mean_or_none([r[q] for r in R]) for q in metrics}, "by_shift": bins}
+        out[arm] = {"overall": {q: _mean_or_none([r[q] for r in R]) for q in metrics}, "by_shift": bins,
+                    "over_pairs": {q: pair_mean_se(R, q) for q in PAIR_SE_METRICS}}
     return out
+
+
+def pair_mean_se(R, q):
+    """Goodfire A.7: one scalar per (source value, target) pair (mean over its clips), then mean +/- SE over pairs."""
+    pairs = {}
+    for r in R:
+        if r[q] is not None:
+            pairs.setdefault((r["source"], r["target"]), []).append(r[q])
+    if not pairs:
+        return None
+    v = np.array([np.mean(x) for x in pairs.values()])
+    return {"mean": float(v.mean()), "se": float(v.std(ddof=1) / np.sqrt(len(v))) if len(v) > 1 else None,
+            "n_pairs": int(len(v))}
 
 
 def _mean_or_none(v):

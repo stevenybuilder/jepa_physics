@@ -375,24 +375,53 @@ def test_angle_max_dev_is_reported_not_required():
 
 
 def test_path_value_stats_sweep_vs_jump():
-    """A sweep through intermediate values puts mass between source and target; a jump (teleport) does not."""
-    V = 64
-    K = 11
+    """A sweep through intermediate values puts ordered mass between source and target; a jump (teleport) does not."""
+    V, K = 64, 11
     src, tgt = np.array([0.0]), 90.0                                  # 16 steps apart
-    sweep = np.zeros((1, K, V))
-    jump = np.zeros((1, K, V))
+    sweep, jump = np.zeros((1, K, V)), np.zeros((1, K, V))
     for k in range(K):
         sweep[0, k, int(round(16 * k / (K - 1)))] = 1.0
         jump[0, k, 0 if k < K // 2 else 16] = 1.0
-    mid_s, al_s, off = mf.path_value_stats(sweep, src, tgt, GRID, True)
-    mid_j, _, _ = mf.path_value_stats(jump, src, tgt, GRID, True)
-    assert mid_s[0, 1:-1].mean() > 0.7 and mid_j[0].max() == 0.0
-    assert al_s[0, -1, list(off).index(90.0)] == 1.0 and al_s[0, 0, list(off).index(0.0)] == 1.0
-    # the target is always at a positive offset, whichever way round the short arc goes
-    _, al_neg, _ = mf.path_value_stats(sweep, np.array([90.0]), 0.0, GRID, True)    # source 90, target 0
-    assert al_neg[0, 0, list(off).index(90.0)] == 1.0 and al_neg[0, -1, list(off).index(0.0)] == 1.0
-    mid_l, _, _ = mf.path_value_stats(np.eye(V)[None, [10, 20, 30]], np.array([SPEEDS[10]]), SPEEDS[30], SPEEDS, False)
-    assert mid_l[0].tolist() == [0.0, 1.0, 0.0]
+    s_ = mf.path_value_stats(sweep, src, tgt, GRID, True)
+    j_ = mf.path_value_stats(jump, src, tgt, GRID, True)
+    assert s_["intermediate"][0, 1:-1].mean() > 0.7 and j_["intermediate"][0].max() == 0.0
+    assert s_["ordering"][0] > 0.99 and s_["argmax_on_arc"][0] == 1.0
+    off = list(s_["offsets"])
+    assert s_["aligned"][0, -1, off.index(90.0)] == 1.0 and s_["aligned"][0, 0, off.index(0.0)] == 1.0
+    # source 90, target 0: the short way is decreasing, so the target sits at +90 on the traversed arc
+    n_ = mf.path_value_stats(sweep, np.array([90.0]), 0.0, GRID, True)
+    assert n_["aligned"][0, 0, off.index(90.0)] == 1.0 and n_["aligned"][0, -1, off.index(0.0)] == 1.0
+    lin = mf.path_value_stats(np.eye(V)[None, [10, 20, 30]], np.array([SPEEDS[10]]), SPEEDS[30], SPEEDS, False)
+    assert lin["intermediate"][0].tolist() == [0.0, 1.0, 0.0] and lin["ordering"][0] > 0.99
+
+
+def test_path_value_stats_follows_the_traversed_arc_at_180():
+    """At exactly 180 degrees the arc is the one the arm travels, not the label sign's default."""
+    V, K = 64, 9
+    down = np.zeros((1, K, V))                                        # sweeps 0 -> 180 through 354, 348, ... (decreasing)
+    for k in range(K):
+        down[0, k, (-int(round(32 * k / (K - 1)))) % V] = 1.0
+    plus = mf.path_value_stats(down, np.array([0.0]), 180.0, GRID, True, arc_sign=np.array([1.0]))
+    minus = mf.path_value_stats(down, np.array([0.0]), 180.0, GRID, True, arc_sign=np.array([-1.0]))
+    assert minus["intermediate"][0, 1:-1].min() == 1.0 and minus["ordering"][0] > 0.99
+    assert plus["intermediate"][0, 1:-1].max() == 0.0 and minus["arc_sign"][0] == -1.0
+
+
+def test_centre_chord_is_not_ordered():
+    """A broad distribution (chord through the centre) scores intermediate mass but no ordering."""
+    rng = np.random.default_rng(0)
+    V, K = 64, 21
+    broad = rng.dirichlet(np.ones(V) * 5, size=(1, K))
+    b = mf.path_value_stats(broad, np.array([0.0]), 180.0, GRID, True)
+    assert b["intermediate"][0, 1:-1].mean() > 0.3
+    assert abs(b["ordering"][0]) < 0.5 and b["argmax_on_arc"][0] < 0.8
+
+
+def test_pair_mean_se():
+    R = [{"source": 0.0, "target": 90.0, "e": 1.0}, {"source": 0.0, "target": 90.0, "e": 3.0},
+         {"source": 45.0, "target": 90.0, "e": 4.0}, {"source": 0.0, "target": 180.0, "e": None}]
+    out = P2.pair_mean_se(R, "e")
+    assert out["n_pairs"] == 2 and out["mean"] == pytest.approx(3.0) and out["se"] == pytest.approx(1.0)
 
 
 def test_behaviour_floor_and_replace_masking():
