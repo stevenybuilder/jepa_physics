@@ -63,13 +63,13 @@ gives us ground truth that language often does not"; "inherently interpretable a
 | # | Item | Why it is expected | Status |
 |---|---|---|---|
 | 2.1 | Activation manifold per A.3: PCA-64 on train, one centroid per value, natural cubic spline for speed/acceleration, **periodic** spline for direction, intrinsic angle from atan2(PC2, PC1) unsupervised and checked against θ | A.3; README: "circular structure of direction" | done |
-| 2.2 | The ring shown: centroids in PC1–PC2 coloured by θ, closed loop or not, per layer | The first thing she will look for | pre-checks run at 8/12/22 (ring found by the chart; unsupervised angle check being fixed for mirrored rings) |
-| 2.3 | Manifold vs linear steering at matched endpoints with K waypoints, orthogonal complement preserved, both arms editing the same subspace (matched support) | A.6; the fidelity check found the linear arm edited the complement, being fixed | in progress |
-| 2.4 | The linear path through the ring's centre shown for large shifts; readout angle and radius at every waypoint, not the endpoint | Goodfire Fig. 4; endpoints coincide by construction | in progress |
-| 2.5 | Off-manifold energy and isometry with a stated M_y, using Goodfire's own no-output recipe (§5 Eq. 9, B.1: softmax over unsquared L2 distances to 128 spline points in PCA-64, τ = 0.5; circular at the steered layer, stated on the figure), geodesic vs geodesic | A.5, A.7, §5 | in progress |
-| 2.6 | Held-out label values never used as knots or in the subspace; evaluation probe on disjoint clips; results vs angular shift | README: "meaningful held-out steering evaluation" | scattered done; contiguous arc in progress |
-| 2.7 | A random-curve / shuffled-centroid control with ≥ 20 draws and the spline's empirical rank | Without it spline-vs-line is a demo | in progress |
-| 2.8 | Cheap geometry pre-checks before any spline (knot-subsampling curvature, spread vs bend, participation ratio, cone check, BF16 repeat) and a planted-ring positive control | Lets a null be a null | run at 8/12/22 and speed 12; planted ring pending |
+| 2.2 | The ring shown: centroids in PC1–PC2 coloured by θ, closed loop or not, per layer | The first thing she will look for | DONE (fig4_centroid_plane_*; unsupervised angle recovered at 12/22, flagged at 8) |
+| 2.3 | Manifold vs linear steering at matched endpoints with K waypoints, orthogonal complement preserved, both arms editing the same subspace (matched support) | A.6; the fidelity check found the linear arm edited the complement, being fixed | DONE (p2_steer_*, matched support, all arms) |
+| 2.4 | The linear path through the ring's centre shown for large shifts; readout angle and radius at every waypoint, not the endpoint | Goodfire Fig. 4; endpoints coincide by construction | DONE (waypoint angle+radius, K=50; fig4_waypoint_readout_*) |
+| 2.5 | Off-manifold energy and isometry with a stated M_y, using Goodfire's own no-output recipe (§5 Eq. 9, B.1: softmax over unsquared L2 distances to 128 spline points in PCA-64, τ = 0.5; circular at the steered layer, stated on the figure), geodesic vs geodesic | A.5, A.7, §5 | DONE (Eq. 9 with floor, entropy, τ sweep, caveat on figures) |
+| 2.6 | Held-out label values never used as knots or in the subspace; evaluation probe on disjoint clips; results vs angular shift | README: "meaningful held-out steering evaluation" | DONE (scattered, contiguous, extrapolation; held-out context) |
+| 2.7 | A random-curve / shuffled-centroid control with ≥ 20 draws and the spline's empirical rank | Without it spline-vs-line is a demo | DONE (≥20 draws, endpoint-matched, reflected/projected, rank) |
+| 2.8 | Cheap geometry pre-checks before any spline (knot-subsampling curvature, spread vs bend, participation ratio, cone check, BF16 repeat) and a planted-ring positive control | Lets a null be a null | DONE incl. planted ring (p2_planted_ring_direction_L12) |
 | 2.9 | Negatives kept and reported; nothing from the skip list | Her paper reports its own negatives (speed has no sawtooth) | policy |
 
 ## Tier 2: what would make it stand out, ranked (impact × feasibility, from lit_review.md)
