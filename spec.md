@@ -111,7 +111,9 @@ the 5 folds, as the paper reports; 95% bootstrap CIs on test where a difference 
 ### 5.1 Layer-wise probing (paper §3.2, App. B, Fig. 2)
 - Probe: `f(h) = Wh + b` on train-standardised `meanpool`. Fit as closed-form ridge with α chosen by 5-fold CV
   inside `train` over 13 log-spaced values, as the paper selects on validation performance (App. B). Same model class as the paper's Adam + weight-decay probe, deterministic and fast.
-  Check once per variable at one layer that the paper's Adam recipe (App. B grid) matches ridge within the CI.
+  Check once per variable at one layer that the paper's Adam recipe (App. B grid) matches ridge within the CI
+  (`scripts/check_probe_recipe.py`; the first run showed the Adam recipe failing on the scalar targets because they
+  were not centred, which is a fault of the check, fixed by standardising targets, not evidence about the model).
 - Grid: 5 targets × 26 layers on V-JEPA. Controls (shuffled labels, pixel baseline, random-init ViT-L) are §6 item 2.
 - Also run the same grid on `diskpool` (mean over the 8 time steps). Mean-pool vs disk-pool is the pooling check.
 - Output: `fig1_layer_curves` (fold mean ± SD vs layer fraction, per variable, direction split by motion type in a
@@ -141,8 +143,9 @@ the 5 folds, as the paper reports; 95% bootstrap CIs on test where a difference 
   that leaked the scored fold's labels into the removal and underestimated K (found 27 Sep, fixed). Everything in
   the one standardised coordinate system; nullspaces here are not orthogonal in raw space, so nothing mixes the two.
 - Stop (paper): direction R² < 0.1 or circular MAE > 80°; speed and acceleration R² < 0.05 or MAE > 90% of the
-  predict-the-mean baseline. Dimensionality = 2K (direction) or K (scalars). Also report K at the R² < 0.3 threshold
-  Fig. 22 uses. The paper itself gives three figures for direction's dimension (40–50 in §7.2, 14–136 in C.11,
+  predict-the-mean baseline. Dimensionality = 2K (direction) or K (scalars). Also report K at the thresholds
+  Fig. 22 uses (R² < 0.3 for direction, R² < 0.1 for speed); when the MAE rule stops the sequence first, that count
+  is a floor and is flagged as censored. The paper itself gives three figures for direction's dimension (40–50 in §7.2, 14–136 in C.11,
   66–136 in Table 3 with a flat 400 at layers 20–23 that looks like a cap); we report our K against the random band
   and do not aim for any of them.
 - One control (MJ): random orthonormal subspaces of matched rank projected out, 10 seeds. "Tens of dimensions" means
@@ -152,7 +155,8 @@ the 5 folds, as the paper reports; 95% bootstrap CIs on test where a difference 
 
 ### 5.3 Multi-probe subspace steering (paper App. C.12)
 - Basis V = QR([W_1ᵀ … W_Kᵀ]). Steer: c = Vᵀx, x⊥ = x − Vc; least squares for c\* so the first N probes all read
-  the target; x\* = Vc\* + x⊥. Sweep N = 1…K.
+  the target; x\* = Vc\* + x⊥. Sweep N on a grid: every N ≤ 25 (the paper sweeps 1–20 from 25 probes) plus a
+  geometric tail to K; the two random nulls are drawn at the same grid points.
 - **Protocol (the paper's, App. C.12):** steering probes from `train` (the all-train orthogonal probe sequence, cut at
   the nested K so its length is never chosen on test; the paper's "25 probes until R² < 0.1" is matched at N ≤ 25);
   evaluation probe fit on `test` activations only; steer `test` clips toward θ\* = 90°, and also toward every one of
@@ -309,6 +313,17 @@ not edited into them):
   curvature is below centroid noise at knot spacings ≤ 45° (sagitta 0.04–0.4 vs noise ≈ 1.5) and detectable at 90°.
   Speed at point 12 is a straight, evenly spaced line (knot-spacing R² 0.999 linear, participation ratio 1.65): the
   pre-registered negative.
+- Part 2 steering, direction (points 12 and 22, contiguous 45° arc held out, smoothing spline, all controls, clip
+  bootstrap): endpoints tie (spline 9.7° vs line 9.6° at point 12). Along the path the spline wins on every Eq. 9
+  metric (readout radius 0.86 vs 0.61, energy relative to the real-clip floor 0.84 vs 1.42, intermediate mass 0.68 vs
+  0.48, ordering 0.90 vs 0.79; the reflected arm is worst) **and on nothing else**: nearest-real agreement is
+  identical (0.196 both; at point 22 the spline is slightly worse), off-curve excess is within CI, and the endpoint
+  probe error is 0.1° worse for the spline. The Eq. 9 metrics are circular at the steered layer (they restate the
+  activation geometry), so at the encoder layer the honest statement is "the spline stays on the ring, the line cuts
+  through it, and the model's own activations do not care at that layer"; whether later layers or the predictor care
+  is what session 2 decides. Speed and acceleration: spline, projected and reflected arms coincide with the chord
+  (the pre-registered straight-line negative); the 2-D start-position sheet likewise shows no path advantage once
+  endpoints match, only a better endpoint from the smoothed surface.
 
 ## 7b. Deviations from the paper, in one table (Part 1)
 
@@ -319,7 +334,9 @@ not edited into them):
 | Input | 224², 14 × 14 patches, 1,568 tokens | 256² no crop, 16 × 16, 2,048 tokens | supplied clips are 256² | layer fractions comparable, patch counts not |
 | Hidden states | 24 residual points | 26 points: embedding, blocks 1–24 raw, final LN | hook on block 24 | post-LN point plotted separately |
 | Data | 8 directions, separate speed/accel sets | 64 directions; direction set mixes constant and accelerating clips | supplied data | direction reported per motion type |
-| INLP layer | layer 8 (emergence) | onset layer from the availability rule AND CV-peak layer | Fig. 22 shows the count roughly doubling late | both reported |
+| INLP / steering layers | layer 8 (emergence) | onset layer, the paper's layer (our point 9), point 8, and the CV-peak layer | 0-indexed mapping; Fig. 22 shows the count roughly doubling late | all reported, paper layer primary for Figs. 22–24 |
+| Steering N sweep | N = 1–20 from 25 probes (Fig. 24) | every N ≤ 25 plus a geometric tail to K; nulls at the grid points | K is larger here | compare at N ≤ 25 |
+| Steering basis length | train sequence until R² < 0.1 | all-train sequence cut at the nested K (chosen on held-out folds) | length never chosen on test | N sweep runs past 25 |
 | Steering basis | V from raw stacked W_1..W_N (C.12 Eq. 8) | V from residualised probe weights | probes stored orthogonal to earlier directions, so identical up to float error | tested for equality |
 | INLP probe recipe | C.11: Adam lr 1e-3, wd 1e-4, 100/50 epochs per round | closed-form ridge, per-fold α (nested) or step-1 α (paper protocol); the literal Adam sequence is run once at the paper layer as a check, batch 64 and full batch | deterministic; optimiser artefacts testable | sawtooth verdict compared across recipes |
 | Reported K | C.11: probes until test performance at chance | nested pooled K (held-out folds) as the dimensionality; paper-protocol K beside it | no test in the count | both in JSON and Fig. 22 panel |
