@@ -57,7 +57,7 @@ def shift_of(source, target, periodic):
     return mf.value_error(source, target, periodic)
 
 
-def build(d, k, angle, design="scattered", seed=0, n_controls=20):
+def build(d, k, angle, design="scattered", seed=0, n_controls=20, spline="interp"):
     """PCA, centroids and all curves from the knot clips at kept values (the held-out design decides which).
     angle: "unsupervised" (choose plane automatically, fall back to labels if the ring is not found) or "labels"."""
     knot_all = d["role"] == "knot"
@@ -72,7 +72,7 @@ def build(d, k, angle, design="scattered", seed=0, n_controls=20):
     if d["periodic"] and angle == "unsupervised":
         choice = mf.choose_angle_source(cent["C"], cent["values"])
         angle, plane = choice["angle"], choice["plane"]
-    curve = mf.fit_curve(cent, d["periodic"], angle=angle, plane=plane)
+    curve = mf.fit_curve(cent, d["periodic"], angle=angle, plane=plane, spline=spline)
     # full-space centroids (in the curve's knot order): only Goodfire's whole-activation linear baseline uses them
     full_C = np.array([d["X"][knot & (d["y"] == v)].mean(0) for v in curve.values])
     full_curve = mf.Curve(spline=None, values=curve.values, coords=curve.coords, points=full_C,
@@ -162,7 +162,7 @@ def bf16_steering_energy(d, d_steer, args, angle, picks):
     steered clips, and the steered waypoints, as a BF16 pipeline would store them)."""
     db = {**d, "X": gc.bf16_round(d["X"])}
     Xs = gc.bf16_round(d_steer["X"])
-    mb = build(db, args.k, angle, args.holdout, args.seed, n_controls=0)
+    mb = build(db, args.k, angle, args.holdout, args.seed, n_controls=0, spline=args.spline)
     X_knot = db["X"][mb["knot"]]
     acc = {a: {"excess_to_curve": [], "excess_to_nearest_real": []} for a in ("manifold", "linear")}
     for tgt, pick in picks.items():
@@ -189,7 +189,7 @@ def run(args):
     d = load_inputs(args.dataset, args.layer, args.variable, args.act_dir, args.table, args.split)
     periodic = d["periodic"]
     angle = "labels" if args.labels_angle else "unsupervised"
-    m = build(d, args.k, angle, args.holdout, args.seed, args.n_controls)
+    m = build(d, args.k, angle, args.holdout, args.seed, args.n_controls, args.spline)
     probe_rows = d["role"] == "probe"
     probe = mf.ProbeReadout(d["X"][probe_rows], d["y"][probe_rows], periodic)
     test = np.flatnonzero(d["role"] == "test")
@@ -239,6 +239,7 @@ def run(args):
 
     out = {"dataset": args.dataset, "variable": args.variable or args.dataset, "layer": args.layer,
            "k": int(m["pca"].components.shape[0]), "K": args.K, "angle_source": m["curve"].coord_source,
+           "spline": m["curve"].kind,
            "holdout": m["design"], "held_out_values": m["held"].tolist(),
            "sagitta_per_target": m["sagitta"],
            "sagitta_note": ("at a held-out target the linear arm aims at the chord point between the neighbouring kept "
@@ -397,6 +398,9 @@ def parse(argv=None):
                    help="held-out label values: every 4th / one 8-value block (arc for direction) / top 8")
     p.add_argument("--goodfire-baseline", action="store_true",
                    help="also run Goodfire's comparison (linear replaces the whole activation), labelled")
+    p.add_argument("--spline", default="interp", choices=("interp", "smooth"),
+                   help="interpolating (Goodfire A.3) or count-weighted smoothing spline (B.1); choose from the "
+                        "geometry check's heldout_reconstruction")
     p.add_argument("--n-controls", type=int, default=20, help="draws per random-curve / shuffled-centroid control")
     p.add_argument("--no-bf16", action="store_true", help="skip the BF16 repeat of the steering-energy comparison")
     p.add_argument("--context-dataset", default=None, choices=("direction", "speed", "acceleration"),

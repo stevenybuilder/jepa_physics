@@ -79,6 +79,10 @@ def run(args):
     out["loo_shuffled_control"] = {str(s): {q: gc.loo_reconstruction(gc.shuffled_curve(curve, rng), stride=s)[q]
                                             for q in ("mean_err_cubic", "mean_err_line", "winner")} for s in (1, 16)}
     out["spread_vs_curvature"] = gc.spread_vs_curvature(curve, spread, count)
+    out["heldout_reconstruction"] = gc.heldout_reconstruction(X, y, periodic, args.k, angle, plane)
+    out["heldout_reconstruction_note"] = ("held-out centroids rebuilt by the interpolating spline (Goodfire A.3), the "
+                                          "count-weighted smoothing spline (B.1) and the chord; pick run_part2 "
+                                          "--spline from this train-only check")
     out["participation"] = gc.participation_check(Z, y)
     if not periodic:
         out["knot_spacing"] = gc.knot_spacing(curve)

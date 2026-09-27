@@ -198,3 +198,22 @@ def test_planted_ring_recovered_when_large(fixture):
     assert big["recovered"] and big["circular_corr"] > 0.95 and big["loo_winner"] == "cubic"
     assert not small["recovered"] and small["circular_corr"] < big["circular_corr"]
     assert big["ring_radius"] == pytest.approx(4.0 * pr["sd"])
+
+
+def test_smoothing_spline_crosses_a_held_out_block():
+    """With ~20 noisy clips per value an interpolating spline overshoots across a held-out block; the count-weighted
+    smoothing spline (Goodfire B.1) does not, and on a ring it beats the chord."""
+    X, th, _ = ring_data()
+    rec = gc.heldout_reconstruction(X, th, True, k=16, seeds=(0, 1))
+    c = rec["contiguous"]
+    assert c["best"] == "smooth" and c["smooth"] < 0.8 * c["chord"] and c["interp"] > c["chord"]
+    Xl, v = line_data()
+    cl = gc.heldout_reconstruction(Xl, v, False, k=16, seeds=(0, 1))["contiguous"]
+    assert cl["smooth"] < 1.2 * cl["chord"] and cl["interp"] > 1.5 * cl["smooth"]
+    pca = mf.fit_pca(X, 16)
+    curve = mf.fit_curve(mf.centroids(pca.project(X), th), True, spline="smooth")
+    assert curve.kind == "smoothing"
+    t0 = curve.coords[0]
+    np.testing.assert_allclose(curve(t0), curve(t0 + 2 * np.pi), atol=1e-9)
+    np.testing.assert_allclose(curve.spline(t0, 1), curve.spline(t0 + 2 * np.pi - 1e-12, 1), atol=1e-6)
+    np.testing.assert_allclose(curve(curve.coords), curve.points, atol=1e-9)

@@ -363,3 +363,36 @@ def planted_ring_control(X, labels, radii=(0.5, 1, 2, 4), k=64, n_values=64, see
                      "cubic_gain": loo["mean_err_line"] / loo["mean_err_cubic"], "loo_winner": loo["winner"],
                      "recovered": bool(corr > min_corr and loo["winner"] == "cubic")})
     return {"sd": sd, "n_values": n_values, "seed": seed, "min_corr": min_corr, "rows": rows}
+
+
+# ---------------------------------------------------------------- held-out block reconstruction ------------------
+
+def heldout_reconstruction(X, labels, periodic, k=64, angle="unsupervised", plane="activation", seeds=(0, 1, 2, 3)):
+    """Which curve should steering use? For each held-out design (train rows only): fit PCA + centroids on the kept
+    values, then rebuild the held-out centroids (computed from the same rows, never used by the fit) with the
+    interpolating spline, the count-weighted smoothing spline, and the chord between kept neighbours.
+    Contiguous blocks are averaged over `seeds`. Errors in PCA units; the lowest wins. A development decision:
+    make it here, on train, before any test read."""
+    from wm.manifold import centroids as _centroids, heldout_design, piecewise_linear_point
+    X, labels = np.asarray(X, dtype=float), np.asarray(labels)
+    values = np.unique(labels)
+    designs = [("scattered", 0), *[("contiguous", s) for s in seeds]] + ([] if periodic else [("extrapolation", 0)])
+    acc = {}
+    for design, seed in designs:
+        mask, _ = heldout_design(values, design, periodic, seed=seed)
+        rows = ~np.isin(labels, values[mask])
+        pca = fit_pca(X[rows], k)
+        cent = _centroids(pca.project(X[rows]), labels[rows])
+        truth = np.array([pca.project(X[labels == v]).mean(0) for v in values[mask]])
+        errs = {}
+        for sp in ("interp", "smooth"):
+            curve = fit_curve(cent, periodic, angle=angle, plane=plane, spline=sp)
+            errs[sp] = float(np.linalg.norm(curve(curve.coord_of_value(values[mask])) - truth, axis=1).mean())
+            if sp == "interp":
+                errs["chord"] = float(np.linalg.norm(piecewise_linear_point(curve, values[mask]) - truth, axis=1).mean())
+        acc.setdefault(design, []).append(errs)
+    out = {}
+    for design, runs in acc.items():
+        mean = {q: float(np.mean([r[q] for r in runs])) for q in ("interp", "smooth", "chord")}
+        out[design] = {**mean, "n_seeds": len(runs), "best": min(mean, key=mean.get)}
+    return out

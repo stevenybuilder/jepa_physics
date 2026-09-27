@@ -24,7 +24,7 @@ from dataclasses import dataclass
 from typing import Protocol
 
 import numpy as np
-from scipy.interpolate import CubicSpline
+from scipy.interpolate import CubicSpline, splev, splrep
 from scipy.spatial import cKDTree
 from sklearn.linear_model import RidgeCV
 from sklearn.pipeline import make_pipeline
@@ -77,18 +77,22 @@ def fit_pca(X_train, k=64):
 def centroids(Z, labels):
     """Per label value: centroid, clip count, and spread (mean distance of the clips to their centroid).
 
-    Returns dict(values [m], C [m, k], count [m], spread [m]), values sorted.
+    Returns dict(values [m], C [m, k], count [m], spread [m], sd_coord [k]), values sorted. sd_coord is the pooled
+    within-value SD of each coordinate (what the smoothing spline weights by).
     """
     Z, labels = np.asarray(Z), np.asarray(labels)
     values = np.unique(labels)
-    C, count, spread = [], [], []
+    C, count, spread, ss = [], [], [], 0.0
     for v in values:
         rows = Z[labels == v]
         c = rows.mean(axis=0)
         C.append(c)
         count.append(len(rows))
         spread.append(np.linalg.norm(rows - c, axis=1).mean())
-    return {"values": values, "C": np.array(C), "count": np.array(count), "spread": np.array(spread)}
+        ss = ss + ((rows - c) ** 2).sum(axis=0)
+    dof = max(len(Z) - len(values), 1)
+    return {"values": values, "C": np.array(C), "count": np.array(count), "spread": np.array(spread),
+            "sd_coord": np.sqrt(ss / dof)}
 
 
 # ---------------------------------------------------------------- 3. curves ---------------------------------------
@@ -106,6 +110,7 @@ class Curve:
     points: np.ndarray
     periodic: bool
     coord_source: str       # "value", "unsupervised_angle" or "labels_angle"
+    kind: str = "interpolating"   # or "smoothing" (count-weighted, Goodfire B.1); points are then the smoothed knots
 
     def __call__(self, t):
         return self.spline(np.asarray(t, dtype=float))
@@ -165,11 +170,39 @@ def interp_extrap(x, xp, fp):
     return np.where(hi, fp[-1] + (x - xp[-1]) * (fp[-1] - fp[-2]) / (xp[-1] - xp[-2]), y)
 
 
-def natural_cubic(C, coord, values=None):
-    """Natural cubic spline (zero second derivative at the ends) through centroids C [m, k] at coord [m]."""
+class SmoothSpline:
+    """Count-weighted cubic smoothing spline, one univariate spline per coordinate (Goodfire B.1: "weighted by the
+    square root of bin counts"). Weight of knot j in coordinate c = sqrt(count_j) / sd_c, i.e. 1 / (the centroid's
+    standard error), and smoothing s = number of knots (the expected chi-square), so no free parameter.
+    Callable like a CubicSpline: spline(t, nu=0) -> [..., k]. Periodic: period 2*pi from the first coordinate."""
+
+    def __init__(self, coord, P, count, sd, periodic):
+        coord, P = np.asarray(coord, float), np.asarray(P, float)
+        w = np.sqrt(np.asarray(count, float))
+        self.periodic, self.t0 = periodic, float(coord[0])
+        if periodic:
+            coord, P, w = np.append(coord, coord[0] + TWO_PI), np.vstack([P, P[:1]]), np.append(w, w[0])
+        m = len(coord) - (1 if periodic else 0)
+        self.tck = [splrep(coord, P[:, c], w=w / max(sd[c], 1e-12), k=3, s=float(m), per=int(periodic))
+                    for c in range(P.shape[1])]
+
+    def __call__(self, t, nu=0):
+        t = np.asarray(t, dtype=float)
+        tt = (t - self.t0) % TWO_PI + self.t0 if self.periodic else t
+        out = np.stack([splev(tt.ravel(), tck, der=nu) for tck in self.tck], axis=-1)
+        return out.reshape(t.shape + (len(self.tck),))
+
+
+def natural_cubic(C, coord, values=None, smooth=None):
+    """Natural cubic spline (zero second derivative at the ends) through centroids C [m, k] at coord [m].
+    smooth=dict(count [m], sd [k]): count-weighted smoothing spline instead (SmoothSpline)."""
     coord = np.asarray(coord, dtype=float)
     order = np.argsort(coord)
     values = coord if values is None else np.asarray(values)
+    if smooth is not None:
+        sp = SmoothSpline(coord[order], C[order], np.asarray(smooth["count"])[order], smooth["sd"], False)
+        return Curve(spline=sp, values=values[order], coords=coord[order], points=sp(coord[order]), periodic=False,
+                     coord_source="value", kind="smoothing")
     return Curve(spline=CubicSpline(coord[order], C[order], bc_type="natural"), values=values[order],
                  coords=coord[order], points=C[order], periodic=False, coord_source="value")
 
@@ -244,7 +277,7 @@ def choose_angle_source(C, values_deg, max_dev_deg=30.0):
     return {"angle": "labels", "plane": "activation", "checks": checks}
 
 
-def periodic_cubic(C, values_deg, angle=None, plane="activation"):
+def periodic_cubic(C, values_deg, angle=None, plane="activation", smooth=None):
     """Closed (periodic) cubic spline through centroids C [m, k] of a circular variable.
 
     angle=None: intrinsic angle derived without labels (unsupervised_angle). Otherwise pass angles in radians;
@@ -257,6 +290,10 @@ def periodic_cubic(C, values_deg, angle=None, plane="activation"):
     t, P, v = t[order], np.asarray(C)[order], values_deg[order]
     if np.any(np.diff(t) <= 0):
         raise ValueError("two centroids share an intrinsic angle; the loop cannot be parameterised")
+    if smooth is not None:
+        sp = SmoothSpline(t, P, np.asarray(smooth["count"])[order], smooth["sd"], True)
+        return Curve(spline=sp, values=v, coords=t, points=sp(t), periodic=True, coord_source=source,
+                     kind="smoothing")
     spline = CubicSpline(np.append(t, t[0] + TWO_PI), np.vstack([P, P[:1]]), bc_type="periodic")
     return Curve(spline=spline, values=v, coords=t, points=P, periodic=True, coord_source=source)
 
@@ -361,16 +398,21 @@ def sagitta(curve, values):
     return out
 
 
-def fit_curve(cent, periodic, keep=None, angle="unsupervised", plane="activation"):
+def fit_curve(cent, periodic, keep=None, angle="unsupervised", plane="activation", spline="interp"):
     """Fit the right spline to a centroids() dict, optionally on a subset of values (keep mask).
 
     angle: "unsupervised" or "labels" (periodic only).
+    spline: "interp" (Goodfire A.3: passes through every centroid) or "smooth" (Goodfire B.1: count-weighted
+            smoothing spline; with ~10-20 clips per value an interpolating spline chases centroid noise and
+            overshoots across a held-out block).
     """
     keep = np.ones(len(cent["values"]), bool) if keep is None else np.asarray(keep)
     C, v = cent["C"][keep], cent["values"][keep]
+    smooth = {"count": cent["count"][keep], "sd": cent["sd_coord"]} if spline == "smooth" else None
     if not periodic:
-        return natural_cubic(C, v)
-    return periodic_cubic(C, v, angle=None if angle == "unsupervised" else labels_angle(v), plane=plane)
+        return natural_cubic(C, v, smooth=smooth)
+    return periodic_cubic(C, v, angle=None if angle == "unsupervised" else labels_angle(v), plane=plane,
+                          smooth=smooth)
 
 
 # ---------------------------------------------------------------- 4. steering paths -------------------------------
