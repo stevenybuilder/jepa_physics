@@ -95,10 +95,27 @@ def linear_interp(pts, vals):
     return f, counter
 
 
-def choose_smoothing(X, cell, centres, G, k, seeds=(0, 1, 2, 3)):
+def selection_blocks(G, eval_seed, n=4, max_seed=500):
+    """Blocks for choosing the smoothing: distinct 2 x 2 blocks that do not overlap the evaluation block (so no
+    train-row centroid of an evaluated cell ever enters the choice). Returns (seeds, blocks)."""
+    ev = set(held_block(G, eval_seed))
+    seeds, blocks = [], []
+    for sd in range(max_seed):
+        b = held_block(G, sd)
+        if sd == eval_seed or ev & set(b) or b in blocks:
+            continue
+        seeds.append(sd)
+        blocks.append(b)
+        if len(seeds) == n:
+            break
+    return seeds, blocks
+
+
+def choose_smoothing(X, cell, centres, G, k, seeds):
     """Held-out 2 x 2 block reconstruction on train rows: TPS at each smoothing in SMOOTHING_GRID and the Delaunay
-    chord rebuild the block's centroids from the other cells; mean error over `seeds` blocks. A development decision
-    made on train only. Returns (best smoothing, table)."""
+    chord rebuild the block's centroids from the other cells; mean error over the `seeds` blocks (selection_blocks:
+    never the evaluation block, never overlapping it). A development decision made on train only.
+    Returns (best smoothing, table)."""
     table = {str(sm): [] for sm in SMOOTHING_GRID}
     table["linear_interp"] = []
     for seed in seeds:
@@ -115,7 +132,8 @@ def choose_smoothing(X, cell, centres, G, k, seeds=(0, 1, 2, 3)):
         table["linear_interp"].append(float(np.linalg.norm(li(centres[held]) - truth, axis=1).mean()))
     mean = {kk: float(np.mean(v)) for kk, v in table.items()}
     best = min(SMOOTHING_GRID, key=lambda sm: mean[str(sm)])
-    return best, {"mean_error": mean, "seeds": list(seeds), "best_tps_smoothing": best,
+    return best, {"mean_error": mean, "seeds": list(seeds), "blocks": [held_block(G, sd) for sd in seeds],
+                  "best_tps_smoothing": best,
                   "tps_beats_linear_interp": mean[str(best)] < mean["linear_interp"]}
 
 
@@ -155,7 +173,9 @@ def run(args):
 
     smooth_note = None
     if args.tps_smoothing == "auto":
-        smoothing, smooth_note = choose_smoothing(d["X"][tr], cell[tr], centres, args.grid, args.k)
+        sel_seeds, _ = selection_blocks(args.grid, args.seed)
+        smoothing, smooth_note = choose_smoothing(d["X"][tr], cell[tr], centres, args.grid, args.k, sel_seeds)
+        smooth_note["evaluation_block_excluded"] = held_block(args.grid, args.seed)
     else:
         smoothing = float(args.tps_smoothing)
     held = held_block(args.grid, args.seed)

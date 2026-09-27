@@ -452,3 +452,14 @@ def test_sheet_linear_interp_nan_fallback():
     f, count = module.linear_interp(pts, np.arange(4.0)[:, None])
     out = f(np.array([[0.5, 0.5], [3.0, 3.0]]))
     assert np.isfinite(out).all() and out[1, 0] == 3.0 and count["nan_fallbacks"] == 1
+
+
+def test_sheet_smoothing_never_sees_the_evaluation_block():
+    spec = importlib.util.spec_from_file_location("sheet", ROOT / "scripts" / "run_position_sheet.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    for G, ev in ((6, 0), (6, 3), (8, 1)):
+        seeds, blocks = module.selection_blocks(G, ev)
+        evb = set(module.held_block(G, ev))
+        assert ev not in seeds and len(blocks) >= 2
+        assert all(not (set(b) & evb) for b in blocks) and len({tuple(b) for b in blocks}) == len(blocks)
