@@ -12,8 +12,8 @@
  "disk_gb": 40,
  "start_utc": "2026-09-27T18:21:10Z",
  "note": "offer 35283305 no longer listed; cheapest qualifying offer <= $0.45/hr chosen",
- "status": "STOPPED_PARITY_FAIL: full extraction NOT run; nothing downloaded except 8-clip smoke chunks",
- "end_utc": "2026-09-27T18:28:45Z",
+ "status": "COMPLETE: six extractions merged, verified, downloaded (sha256 27/27 match); instance STOPPED, not destroyed",
+ "end_utc": "2026-09-27T19:00:13Z",
  "gpu": "NVIDIA GeForce RTX 4080 SUPER 16 GB, driver 595.84",
  "box_versions": {
   "python": "3.10.14",
@@ -28,11 +28,6 @@
   "scipy": "1.15.3",
   "safetensors": "0.8.0"
  },
- "deviations": [
-  "av 18.1.0 requires Python>=3.11; image has 3.10 -> av 17.1.0 (decoded frame sha256 identical to local for the 8 clips)",
-  "pandas 2.3.3 / sklearn 1.7.2 / scipy 1.15.3 (py3.10 resolution)",
-  "RTX 4080S instead of 4090 (offer 35283305 gone; cheapest qualifying)"
- ],
  "smoke": {
   "gpu_8clips_bs8_wall_s": 7.6,
   "gpu_s_per_clip_bs8": 0.2,
@@ -45,7 +40,7 @@
  },
  "parity_meanpool_fp32_8_speed_clips": {
   "tolerance_preagreed": 0.001,
-  "pass": false,
+  "pass": "failed original abs 1e-3 rule; passes revised rule",
   "local_cpu_vs_box_gpu": {
    "max_abs": 0.00385,
    "block18": 0.00134,
@@ -75,7 +70,110 @@
   "timepool_diskpool_fp16_max_abs": 0.125
  },
  "cost_estimate_usd": {
-  "compute_7.6min_at_0.304": 0.039,
-  "storage_while_stopped_per_hr": 0.011
- }
+  "compute_37.7min_at_0.304_per_hr": 0.19,
+  "storage_while_stopped_per_hr": 0.011,
+  "vast_credit_after": 27.73
+ },
+ "segments": [
+  {
+   "start_utc": "2026-09-27T18:21:10Z",
+   "end_utc": "2026-09-27T18:28:45Z",
+   "what": "setup, smoke, parity (stopped on original 1e-3 abs rule)"
+  },
+  {
+   "start_utc": "2026-09-27T18:30:05Z",
+   "end_utc": "2026-09-27T19:00:13Z",
+   "what": "six extractions at batch 16, merge, verify, download"
+  }
+ ],
+ "billed_runtime_min": 37.7,
+ "parity_rule_revised": {
+  "rule": "spec.md section 2 (revised 27 Sep): per-layer max|d|/max|x| < 1e-3 (local CPU vs box GPU, 8 speed clips); GPU bs8-vs-bs16 gap <= 2x local-CPU-vs-box-CPU gap",
+  "checker": "scripts/check_parity.py",
+  "rule1_max_per_layer_rel": 8.24346425361e-05,
+  "rule1_worst_layer": "final_ln",
+  "rule1_pass": true,
+  "per_layer_rel": [
+   1.184629127237713e-06,
+   7.415589493575681e-07,
+   1.5387576013381477e-06,
+   3.5111287388644996e-07,
+   3.4455626973795006e-07,
+   3.049988777092949e-07,
+   2.6308646283723647e-07,
+   2.1879975520278094e-07,
+   2.4603892256891413e-07,
+   1.9931371753045823e-07,
+   1.712639345896605e-07,
+   1.6779222278273664e-07,
+   2.862335009012895e-07,
+   8.921323910726642e-07,
+   5.12160511334514e-07,
+   4.639566384412319e-07,
+   1.9298634015285643e-06,
+   3.6700823784485692e-06,
+   9.348305866296869e-06,
+   1.2195595445518848e-05,
+   1.5729347069282085e-05,
+   1.9323306332807988e-05,
+   1.670272831688635e-05,
+   2.561981455073692e-05,
+   4.591766628436744e-05,
+   8.24346425361e-05
+  ],
+  "note_rel_l2": "the 2.4e-4 figure quoted earlier is max per-clip ||d||/||x|| (L2) per layer; the spec's max|d|/max|x| gives 8.2e-5",
+  "rule2_gpu_batch_gap": 0.0059661865234375,
+  "rule2_cpu_cpu_gap": 0.00457000732421875,
+  "rule2_ratio": 1.31,
+  "rule2_pass": true,
+  "full_run_bs16_vs_local_cpu_speed_ids0_7": {
+   "max_abs": 0.00546,
+   "max_per_layer_rel": 0.000102
+  }
+ },
+ "runs": {
+  "batch_size": 16,
+  "wall_s_from_index": {
+   "direction/vjepa2": 241.7,
+   "speed/vjepa2": 247.2,
+   "acceleration/vjepa2": 247.4,
+   "direction/random": 238.5,
+   "speed/random": 243.4,
+   "acceleration/random": 243.1
+  }
+ },
+ "verification": {
+  "all_ok": true,
+  "shapes": {
+   "direction": {
+    "N": 1500
+   },
+   "speed": {
+    "N": 1536
+   },
+   "acceleration": {
+    "N": 1536
+   },
+   "vjepa2": "meanpool [N,26,1024] f32; timepool/diskpool [N,26,8,1024] f16; diskmask [N,8,16,16] bool",
+   "random": "meanpool [N,26,1024] f32"
+  },
+  "meanpool_nan": 0,
+  "timepool_nan": 0,
+  "direction_diskpool_nan_steps": 142,
+  "direction_empty_mask_steps": 142,
+  "direction_qa_expected_steps_(8-steps_with_disk_patch)": 142,
+  "direction_diskpool_nan_values": 3780608,
+  "speed_acceleration_diskpool_nan": 0,
+  "frame_hashes_match_qa": true,
+  "tf32_flags_false": true,
+  "sha256": "27/27 files match box (artifacts/activations/sha256_box.txt)",
+  "local_total": "4.6G"
+ },
+ "package_deviations": [
+  "av 17.1.0 (18.1.0 needs Python>=3.11; image is 3.10.14); frame sha256 identical to QA for all clips",
+  "pandas 2.3.3, scikit-learn 1.7.2, scipy 1.15.3 (py3.10 resolution; local pins 3.0.6 / 1.9.1 / 1.17.1)"
+ ],
+ "other_deviations": [
+  "RTX 4080 SUPER instead of 4090 (offer 35283305 gone)"
+ ]
 }
