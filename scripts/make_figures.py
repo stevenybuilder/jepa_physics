@@ -217,7 +217,7 @@ def fig2(results, out, role="paper"):
         return
     adam = {v: load_adam(results, v) if role == "paper" else {} for v in runs}
     n_rows = 3 if any(adam.values()) else 2
-    fig, axes = plt.subplots(n_rows, len(runs), figsize=(5 * len(runs), 4.1 * n_rows), squeeze=False,
+    fig, axes = plt.subplots(n_rows, len(runs), figsize=(6.2 * len(runs), 4.1 * n_rows), squeeze=False,
                              gridspec_kw={"hspace": 0.75})
     for ax, (v, r) in zip(axes[1], runs.items()):   # the paper's Fig. 23: accuracy within 15° / R² vs probe number
         paper = r.get("paper")
@@ -260,8 +260,9 @@ def fig2(results, out, role="paper"):
         folds = f", folds {r['K_fold_min']}–{r['K_fold_max']}" if "K_fold_min" in r else ""
         kp = f"; paper K = {paper['K']}" if paper else ""
         ax.set(xlabel="dimensions removed", ylim=(-0.1, 1.02),
-               title=f"{v}: K = {r['K']} probes nested{folds}{kp}\n{r['dims']} dims (point {r['point']}"
-                     + (" = paper's layer 8" if r.get("is_paper_layer") else f", layer {r['frac']:.2f}") + ")")
+               title=f"{v}, point {r['point']}" + (" (paper's layer 8)" if r.get("is_paper_layer") else "")
+                     + f"\nK = {r['K']} probes nested{folds}{kp}")
+        ax.title.set_fontsize(10)
         ax.xaxis.set_major_locator(MaxNLocator(integer=True))
         ax.legend(loc="upper right", fontsize=8, handlelength=1.5)
     axes[0][0].set_ylabel("probe R²")
@@ -287,11 +288,12 @@ def fig2(results, out, role="paper"):
             ax.plot([], [], "o", mfc="none", mec=COLORS["text"], label="isolated dip (sawtooth tooth)")
             ax.set(xlabel="orthogonal probe number", ylim=(0, 102),
                    ylabel="test accuracy within 15° (%)" if key == "test_acc15" else "test R² (%)",
-                   title=f"{v}, Adam recipe (point {a['point']}"
-                         + (" = paper's layer 8" if a["point"] == PAPER_POINT else " (alt paper layer)")
-                         + "): K first at chance = " + ", ".join(ks))
+                   title=f"{v}, Adam recipe, point {a['point']}"
+                         + (" (paper's layer 8)" if a["point"] == PAPER_POINT else " (alt paper layer)")
+                         + "\nK first at chance: " + ", ".join(ks))
+            ax.title.set_fontsize(10)
             ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-            legend_top(ax, 1)
+            ax.legend(loc="upper right", fontsize=8, handlelength=1.5)
     fig.savefig(out / ("fig2_inlp.png" if role == "paper" else f"fig2_inlp_{role.replace('_only', '')}.png"))
     plt.close(fig)
 
@@ -306,9 +308,13 @@ def fig2b(results, out):
         body = [row for row in r["layers"] if not row["post_ln"]]
         x = [row["frac"] for row in body]
         loose = [row.get("K_loose", row.get("K_r2_03")) for row in body]
-        dims = "dims = 2K" if r["kind"] == "circular" else "dims = K"
+        dims = "1 probe = 2 dims" if r["kind"] == "circular" else "1 probe = 1 dim"
         ax.plot(x, [np.nan if k is None else k for k in loose], "o-", ms=3.5, color=COLORS[v],
                 label=f"{v}, nested (R² < {0.3 if r['kind'] == 'circular' else 0.1}; {dims})")
+        cens = [row.get("K_loose_censored") and k is not None for row, k in zip(body, loose)]
+        if any(cens):   # the sequence stopped before R² fell below the loose threshold: a floor, not a count
+            ax.plot([xi for xi, c in zip(x, cens) if c], [k for k, c in zip(loose, cens) if c], "^", ms=7,
+                    mfc="white", mec=COLORS[v], label=f"{v}: censored (floor; stopped before R² fell below it)")
         ax.plot(x, [row["K"] for row in body], ":", color=COLORS[v], lw=1.2, label=f"{v}, nested, strict stop")
         if "paper" in body[0]:
             ax.plot(x, [np.nan if row["paper"]["K_loose"] is None else row["paper"]["K_loose"] for row in body], "--",
