@@ -39,7 +39,7 @@ def load_inputs(dataset, layer, variable=None, act_dir=None, table=None, split=N
     f = np.array([fold[int(i)] for i in df["id"]])
     role = np.where(f < 0, "test", np.where(np.isin(f, KNOT_FOLDS), "knot", "probe"))
     return {"X": X, "df": df, "y": df[LABEL_COLUMN[variable]].to_numpy(dtype=float),
-            "periodic": variable == "direction", "role": role, "is_train": f >= 0}
+            "periodic": variable == "direction", "role": role, "is_train": f >= 0, "fold": f}
 
 
 def load_pair(primary, context, layer, variable, act_dirs=(None, None), tables=(None, None), splits=(None, None)):

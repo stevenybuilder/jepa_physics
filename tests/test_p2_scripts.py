@@ -160,10 +160,15 @@ def test_bakeoff_end_to_end(tmp_path):
     save_basis(tmp / "basis.npz", np.linalg.qr(W[0])[0], W, r.intercept_[None], 1.0, 1, "circular")
     run_script("run_bakeoff.py", tmp, "direction", "--n-clips", "8", "--probe-basis", str(tmp / "basis.npz"))
     res = json.loads((tmp / "results" / "p2_bakeoff_direction_direction_L1_contiguous.json").read_text())
+    assert "favours probe_qr" in res["probe_basis"]["rows"]
+    run_script("run_bakeoff.py", tmp, "direction", "--n-clips", "8", "--max-probe-rounds", "3")
+    res = json.loads((tmp / "results" / "p2_bakeoff_direction_direction_L1_contiguous.json").read_text())
+    assert res["probe_basis"]["rows"] == "knot folds at kept values only" and res["probe_basis"]["folds"] == [0, 1, 2]
+    assert res["provenance"]["holdout"] == "contiguous"
     arms = res["arms"]
     assert set(arms) == {"spline", "chord", "centroid_transport", "snap", "ring_rotation", "probe_qr"}
     assert arms["ring_rotation"]["nominal_rank"] == 2 and arms["ring_rotation"]["effective_rank"] < 2.5
-    assert arms["probe_qr"]["nominal_rank"] == 2
+    assert arms["probe_qr"]["nominal_rank"] % 2 == 0
     for e in ("probe", "mlp"):
         assert arms["spline"][f"err_{e}_matched"] < 0.5 * res["unsteered_err"][e]
     assert (tmp / "figures" / "fig4_bakeoff_rank_direction_direction_L1_contiguous.png").exists()
@@ -252,3 +257,14 @@ def test_geometry_speed_negative_summary(tmp_path):
     run_script("run_geometry_checks.py", tmp, "speed")
     geo = json.loads((tmp / "results" / "p2_geometry_speed_L1.json").read_text())
     assert any(line.startswith("pre-registered negative") for line in geo["summary"])
+
+
+def test_part2_chart_plane_nuisance(tmp_path):
+    tmp = fake_dataset(tmp_path, "direction")
+    run_script("run_part2.py", tmp, "direction", "--variable", "direction", "--n-clips", "6", "--K", "5",
+               "--n-controls", "2", "--no-bf16", "--plane", "chart", "--nuisance-regress")
+    res = json.loads((tmp / "results" / "p2_steer_direction_direction_L1_scattered_chart_nuis.json").read_text())
+    assert res["subspace"] == "chart" and res["k"] == 2 and res["nuisance_regressed"]["covariates"]
+    assert res["provenance"]["holdout"] == "scattered" and res["layer_role"] == "exploratory"
+    man = res["summary"]["manifold"]["overall"]
+    assert man["probe_err_to_target"] < 0.3 * man["probe_err_to_true"]      # the edit moves the probe to the target

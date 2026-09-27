@@ -1,8 +1,8 @@
 """Steering bake-off at matched delivered norm: held-out angle error vs edit rank (wm.bakeoff).
 
-Same roles, held-out design and steered clips as run_part2.py. The Part 1 probe-QR arm needs step 2's probe
-sequence at this layer: --probe-basis PATH (npz from wm.inlp.save_basis), else the default inlp basis path if it
-exists, else the arm is skipped (said so in the JSON).
+Same roles, held-out design and steered clips as run_part2.py. The probe-QR arm's basis is refit here on knot
+rows at kept values (wm.inlp), unless --probe-basis gives a stored one (flagged: that one saw the evaluators' probe
+folds and the held-out values).
 
 Writes results/p2_bakeoff_{dataset}_{variable}_L{layer}_{holdout}.json and figures/fig4_bakeoff_rank_*.png.
 
@@ -22,16 +22,25 @@ from wm import bakeoff as bo
 from wm import manifold as mf
 from wm.data import PROJECT_ROOT
 from wm.p2_data import load_inputs
+from wm.provenance import layer_role, provenance
 
 _spec = importlib.util.spec_from_file_location("run_part2", Path(__file__).with_name("run_part2.py"))
 p2 = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(p2)
 
 
-def find_basis(args, variable):
-    from wm.inlp import basis_path, load_basis
-    path = Path(args.probe_basis) if args.probe_basis else basis_path(args.dataset, variable, args.layer)
-    return (load_basis(path), str(path)) if path.exists() else (None, f"not found: {path}")
+def find_basis(args, variable, d, m):
+    """Default: refit the probe sequence on knot rows at kept values (bo.refit_probe_basis). --probe-basis PATH uses
+    a stored Part 1 basis instead (fit on all train folds and values: includes the evaluators' probe folds and the
+    held-out values, so that arm is favoured; flagged)."""
+    if args.probe_basis:
+        from wm.inlp import load_basis
+        return load_basis(args.probe_basis), None, {"rows": f"stored basis {args.probe_basis}: all train folds and "
+                                                              "values (includes probe folds + held-out values; "
+                                                              "favours probe_qr)"}
+    if args.no_probe_qr:
+        return None, None, {"rows": "skipped (--no-probe-qr)"}
+    return bo.refit_probe_basis(d, m, variable, args.max_probe_rounds)
 
 
 def run(args):
@@ -40,9 +49,12 @@ def run(args):
     periodic = d["periodic"]
     m = p2.build(d, args.k, "labels" if args.labels_angle else "unsupervised", args.holdout, args.seed, 0, args.spline)
     picks = p2.pick_clips(d, m["held"], args.n_clips, args.seed)
-    basis, basis_note = find_basis(args, variable)
-    res = bo.run_bakeoff(d, m, picks, periodic, basis, args.seed)
+    basis, basis_std, basis_note = find_basis(args, variable, d, m)
+    res = bo.run_bakeoff(d, m, picks, periodic, basis, args.seed, basis_std)
     out = {"dataset": args.dataset, "variable": variable, "layer": args.layer, "holdout": m["design"],
+           **layer_role(args.dataset, args.layer, variable),
+           "provenance": provenance(args.split, seeds={"seed": args.seed}, layer=args.layer, pool="meanpool",
+                                    holdout=args.holdout, spline=args.spline, k=args.k),
            "spline": m["curve"].kind, "k": int(m["pca"].components.shape[0]), "probe_basis": basis_note,
            "norm_matching": "every arm's edit rescaled per clip to the spline arm's ||delta|| ('matched'); "
                             "'unmatched' = each arm's own norm",
@@ -84,7 +96,10 @@ def parse(argv=None):
     p.add_argument("--spline", default="interp", choices=("interp", "smooth"))
     p.add_argument("--n-clips", type=int, default=48)
     p.add_argument("--labels-angle", action="store_true")
-    p.add_argument("--probe-basis", default=None, help="npz of the step-2 probe sequence at this layer")
+    p.add_argument("--probe-basis", default=None,
+                   help="use a stored step-2 basis (flagged: fit on all train) instead of refitting on knot rows")
+    p.add_argument("--no-probe-qr", action="store_true")
+    p.add_argument("--max-probe-rounds", type=int, default=None, help="cap on INLP rounds for the refit")
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--act-dir", default=None)
     p.add_argument("--table", default=None)

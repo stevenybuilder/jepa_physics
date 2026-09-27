@@ -70,6 +70,26 @@ def probe_qr_delta(x, basis, target, periodic, mu, sd):
     return (steer(Xs, V, basis, t, len(basis["W"])) - Xs) * sd, V.shape[1]
 
 
+def refit_probe_basis(d, m, variable, max_rounds=None):
+    """Part 1's probe sequence (wm.inlp.inlp) refit on the knot rows at kept values only, so the probe-QR arm never
+    sees the probe folds (where both evaluators are fit), the test clips, or the held-out values. Standardised on
+    those rows; alpha by CV over their folds. Returns (basis dict, (mu, sd), note)."""
+    from wm.inlp import inlp
+    from wm.probes import cv_select_alpha, targets
+    rows = m["knot"]
+    Y, kind, score_fn = targets(d["df"], variable)
+    X = d["X"].astype(np.float64)
+    mu, sd = X[rows].mean(0), X[rows].std(0) + 1e-8
+    Xs = (X - mu) / sd
+    folds = d["fold"][rows]
+    alpha = cv_select_alpha(Xs[rows], Y[rows], folds, score_fn=score_fn)["alpha"]
+    test = d["role"] == "test"
+    summary, Q, W, b = inlp(Xs[rows], Y[rows], Xs[test], Y[test], folds, alpha, score_fn, kind, max_rounds)
+    note = {"rows": "knot folds at kept values only", "n_rows": int(rows.sum()), "alpha": alpha,
+            "n_probes": int(len(W)), "folds": sorted(int(f) for f in np.unique(folds))}
+    return {"Q": Q, "W": W, "b": b}, (mu, sd), note
+
+
 def arm_deltas(x, src, tgt, m, chart, basis, std, periodic):
     """Endpoint edits [n, D] of every available arm, before norm matching, and each arm's nominal rank."""
     pca = m["pca"]
@@ -97,7 +117,7 @@ def match_norm(delta, ref):
     return delta * np.where(n > 0, r / np.where(n > 0, n, 1.0), 0.0)
 
 
-def run_bakeoff(d, m, picks, periodic, basis=None, seed=0):
+def run_bakeoff(d, m, picks, periodic, basis=None, seed=0, basis_std=None):
     """Steer every picked clip with every arm at the spline arm's ||delta||, read with both evaluators.
     Returns dict(arms={arm: summary}, n_clips, evaluators)."""
     probe_rows = d["role"] == "probe"
@@ -106,7 +126,7 @@ def run_bakeoff(d, m, picks, periodic, basis=None, seed=0):
     knot = m["knot"]
     chart = gc.fit_circular_chart(d["X"][knot], d["y"][knot]) if periodic else None
     tr = d["is_train"]
-    std = (d["X"][tr].mean(0), d["X"][tr].std(0) + 1e-8)
+    std = basis_std or (d["X"][tr].mean(0), d["X"][tr].std(0) + 1e-8)
     acc = {}
     for tgt, pick in picks.items():
         x, src = d["X"][pick].astype(float), d["y"][pick]

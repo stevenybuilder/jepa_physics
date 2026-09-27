@@ -34,6 +34,7 @@ from wm import geometry_checks as gc
 from wm import manifold as mf
 from wm.data import PROJECT_ROOT
 from wm.p2_data import load_inputs
+from wm.provenance import layer_role, provenance
 
 MAIN_ARMS = ("manifold", "linear", "linear_dose_matched", "projected", "reflected")
 GOODFIRE_ARMS = ("goodfire_linear", "goodfire_manifold")
@@ -62,7 +63,8 @@ def shift_of(source, target, periodic):
     return mf.value_error(source, target, periodic)
 
 
-def build(d, k, angle, design="scattered", seed=0, n_controls=20, spline="interp", behaviour_mode="spline"):
+def build(d, k, angle, design="scattered", seed=0, n_controls=20, spline="interp", behaviour_mode="spline",
+          subspace="pca", basis=None):
     """PCA, centroids and all curves from the knot clips at kept values (the held-out design decides which).
     angle: "unsupervised" (choose plane automatically, fall back to labels if the ring is not found) or "labels"."""
     knot_all = d["role"] == "knot"
@@ -70,7 +72,7 @@ def build(d, k, angle, design="scattered", seed=0, n_controls=20, spline="interp
     mask, design_info = mf.heldout_design(values, design, d["periodic"], seed=seed)
     held = values[mask]
     knot = knot_all & ~np.isin(d["y"], held)
-    pca = mf.fit_pca(d["X"][knot], k)
+    pca = gc.fit_subspace(d["X"][knot], d["y"][knot], subspace, k, basis)      # PCA-k unless --plane chart|inlp
     cent = mf.centroids(pca.project(d["X"][knot]), d["y"][knot])
     choice = None
     plane = "activation"
@@ -191,7 +193,8 @@ def bf16_steering_energy(d, d_steer, args, angle, picks):
     steered clips, and the steered waypoints, as a BF16 pipeline would store them)."""
     db = {**d, "X": gc.bf16_round(d["X"])}
     Xs = gc.bf16_round(d_steer["X"])
-    mb = build(db, args.k, angle, args.holdout, args.seed, n_controls=0, spline=args.spline)
+    mb = build(db, args.k, angle, args.holdout, args.seed, n_controls=0, spline=args.spline, behaviour_mode=args.behaviour,
+               subspace=args.plane, basis=args.basis_matrix)
     acc = {a: {"excess_to_curve": [], "excess_to_nearest_real": []} for a in ("manifold", "linear")}
     for tgt, pick in picks.items():
         x, src = Xs[pick].astype(float), d_steer["y"][pick]
@@ -214,10 +217,23 @@ def band(values, spline_value, higher_better):
 
 
 def run(args):
+    variable = args.variable or args.dataset
     d = load_inputs(args.dataset, args.layer, args.variable, args.act_dir, args.table, args.split)
     periodic = d["periodic"]
     angle = "labels" if args.labels_angle else "unsupervised"
-    m = build(d, args.k, angle, args.holdout, args.seed, args.n_controls, args.spline, args.behaviour)
+    nuisance = None
+    if args.nuisance_regress:
+        N, names = gc.nuisance_matrix(d["df"], variable)
+        X_res, r2 = gc.regress_out(d["X"], N, d["is_train"])
+        d = {**d, "X": X_res}
+        nuisance = {"covariates": names, "variance_explained_by_nuisance_train": r2,
+                    "space": "train-standardised activations minus their least-squares fit on the covariates"}
+    basis = gc.load_basis_matrix(args.basis, d["X"][d["is_train"]]) if args.basis else None
+    args.basis_matrix = basis
+    if args.plane == "inlp" and basis is None:
+        raise SystemExit("--plane inlp needs --basis")
+    m = build(d, args.k, angle, args.holdout, args.seed, args.n_controls, args.spline, args.behaviour, args.plane,
+              basis)
     probe_rows = d["role"] == "probe"
     probe = mf.ProbeReadout(d["X"][probe_rows], d["y"][probe_rows], periodic)
     test = np.flatnonzero(d["role"] == "test")
@@ -227,6 +243,8 @@ def run(args):
     if args.context_dataset:
         c = load_inputs(args.context_dataset, args.layer, args.variable or args.dataset, args.context_act_dir,
                         args.context_table, args.context_split)
+        if args.nuisance_regress:           # the context set's own covariates, fit on its own train rows
+            c = {**c, "X": gc.regress_out(c["X"], gc.nuisance_matrix(c["df"], variable)[0], c["is_train"])[0]}
         assert c["X"].shape[1] == d["X"].shape[1], "primary and context activations differ in width"
         ctest = np.flatnonzero(c["role"] == "test")
         ctx["near_ctx"] = mf.NearestRealReadout(c["X"][ctest], c["y"][ctest])
@@ -278,6 +296,11 @@ def run(args):
     cat = {a: {q: np.concatenate(v) for q, v in qs.items() if v} for a, qs in per_arm.items()}
 
     out = {"dataset": args.dataset, "variable": args.variable or args.dataset, "layer": args.layer,
+           **layer_role(args.dataset, args.layer, variable),
+           "provenance": provenance(args.split, seeds={"seed": args.seed, "controls": args.seed}, layer=args.layer,
+                                    pool="meanpool", holdout=args.holdout, spline=args.spline, k=args.k,
+                                    subspace=args.plane, K=args.K, nuisance_regressed=bool(nuisance)),
+           "subspace": args.plane, "nuisance_regressed": nuisance,
            "k": int(m["pca"].components.shape[0]), "K": args.K, "angle_source": m["curve"].coord_source,
            "spline": m["curve"].kind,
            "holdout": m["design"], "held_out_values": m["held"].tolist(),
@@ -364,6 +387,7 @@ def run(args):
     tag = f"{args.dataset}_{args.variable or args.dataset}_L{args.layer}_{args.holdout}"
     if args.context_dataset:
         tag += f"_ctx-{args.context_dataset}"
+    tag += ("" if args.plane == "pca" else f"_{args.plane}") + ("_nuis" if nuisance else "")
     Path(args.results_dir).mkdir(parents=True, exist_ok=True)
     Path(args.figures_dir).mkdir(parents=True, exist_ok=True)
     (Path(args.results_dir) / f"p2_steer_{tag}.json").write_text(json.dumps(out, indent=1))
@@ -558,6 +582,11 @@ def parse(argv=None):
                    help="Eq. 9 behaviour: literal (unsquared, tau=0.5, 128 spline bins) or squared/spread-normalised")
     p.add_argument("--n-control-clips", type=int, default=16, help="steered clips per target used by control draws")
     p.add_argument("--no-bf16", action="store_true", help="skip the BF16 repeat of the steering-energy comparison")
+    p.add_argument("--plane", default="pca", choices=("pca", "chart", "inlp"),
+                   help="steering subspace: top-k PCA (Goodfire), circular-chart plane, or INLP basis (--basis)")
+    p.add_argument("--basis", default=None, help=".npy [D, r] or INLP .npz, for --plane inlp")
+    p.add_argument("--nuisance-regress", action="store_true",
+                   help="regress nuisance covariates out of the activations first (labelled variant)")
     p.add_argument("--context-dataset", default=None, choices=("direction", "speed", "acceleration"),
                    help="held-out context: steer this dataset's test clips with the spline built on --dataset")
     p.add_argument("--context-act-dir", default=None)

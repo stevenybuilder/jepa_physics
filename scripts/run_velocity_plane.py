@@ -28,6 +28,7 @@ from wm import geometry_checks as gc
 from wm import manifold as mf
 from wm.data import PROJECT_ROOT
 from wm.p2_data import load_inputs
+from wm.provenance import layer_role, provenance
 
 SHIFTS = (45.0, 90.0, 135.0, 180.0)
 
@@ -61,7 +62,8 @@ def chord_speed_readout(s, k, n_clips, seed):
 
 
 def run(args):
-    res = {"layers": {}}
+    res = {"provenance": provenance(args.speed_split, seeds={"seed": args.seed}, layers=args.layers, pool="meanpool",
+                                    k=args.k), "layers": {}}
     for layer in args.layers:
         d = load_inputs("direction", layer, "direction", args.dir_act_dir, args.dir_table, args.dir_split)
         s = load_inputs("speed", layer, "direction", args.speed_act_dir, args.speed_table, args.speed_split)
@@ -72,6 +74,7 @@ def run(args):
                                      s["df"]["speed_mps"].to_numpy(float)[s["is_train"]])
         vp.pop("_velocity_fit")
         res["layers"][str(layer)] = {
+            **layer_role("direction", layer, "direction"),
             "direction_set_procrustes_r2_ring": gc.procrustes_r2(C, np.stack([np.cos(r), np.sin(r)], 1))["r2"],
             "speed_set": vp, "chord_speed_readout": chord_speed_readout(s, args.k, args.n_clips, args.seed)}
         print(f"layer {layer}: ring R2 {vp['procrustes_r2_ring']:.3f}  velocity R2 {vp['procrustes_r2_velocity']:.3f}"
