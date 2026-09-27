@@ -19,10 +19,10 @@
 #
 # Cost estimate, from the CPU smoke (2 carriers x 2 targets x 5 arms x layers 12, 22 on the Intel Mac: one full
 # 16-frame forward 14.9 s; context-only encode + predictor 0.59 of that; suffix 0.007 + 0.039 per remaining block;
-# edited context + predictor 0.168 + 0.011 per block), projected to 200 carriers x 4 targets x 5 arms x layers
-# 2, 8, 12, 22: sources 320 + twins 1,270 + edits 13,200 + time-reversed 1,500 + stimuli 1,570 = ~17,900 full-forward
-# equivalents; at 0.16 s each (gpu_session1, RTX 4080 SUPER, batch 16) ~48 GPU-minutes. With ~10 min of setup and
-# model download, ~60 min billed: ~$0.30 at $0.295/h (4080S), ~$0.45 on a 4090 at ~$0.45/h. The forward stage
+# edited context + predictor 0.168 + 0.011 per block), projected to 200 carriers x 4 targets x 6 arms x layers
+# 2, 8, 12, 22: sources 320 + twins 1,270 + edits 15,840 + time-reversed 1,500 + stimuli 1,570 = ~20,500 full-forward
+# equivalents; at 0.16 s each (gpu_session1, RTX 4080 SUPER, batch 16) ~55 GPU-minutes. With ~10 min of setup and
+# model download, ~65 min billed: ~$0.32 at $0.295/h (4080S), ~$0.50 on a 4090 at ~$0.45/h. The forward stage
 # rewrites artifacts/session2/forward/cost_estimate.json from the box's own timings after the first run.
 set -euo pipefail
 

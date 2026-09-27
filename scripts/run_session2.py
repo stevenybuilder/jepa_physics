@@ -16,7 +16,9 @@ extraction, and the stimulus-difficulty extraction. One script, several stages:
 
 Arms (edits at layer L, all added to every token): probe_qr (Part 1 C.12 least squares at N = K, unit target),
 radius_matched (per-probe target = that probe's mean readout radius on basis clips), spline (Part 2 periodic spline
-endpoint, shift mode, residual kept), chord (straight line between the polyline points, endpoint), random_matched
+endpoint, shift mode, residual kept; interpolating, Goodfire A.3), spline_smooth (the count-weighted smoothing spline,
+Goodfire B.1: at the full plan the interpolating spline's endpoint delta is 1.25-10.7x the natural centroid change
+across the held-out arc, 10.7x at L12; the smoothing spline's is 0.6-0.9x), chord (straight line between the polyline points, endpoint), random_matched
 (probe_qr's coordinates through a random orthonormal basis of the same rank, rescaled to probe_qr's raw-space norm);
 zero (the unedited clip) and shuffled_target (each edit scored against a different target's twin / value of the same
 carrier; no extra forward pass) are computed at score time.
@@ -55,7 +57,7 @@ RESULTS = PROJECT_ROOT / "results"
 ACT_ROOT = PROJECT_ROOT / "artifacts" / "activations"
 STIMULI = PROJECT_ROOT / "artifacts" / "stimuli"
 DATASET = "direction"
-EDIT_ARMS = ("probe_qr", "radius_matched", "spline", "chord", "random_matched")
+EDIT_ARMS = ("probe_qr", "radius_matched", "spline", "spline_smooth", "chord", "random_matched")
 GPU_S_PER_CLIP = 0.16          # artifacts/gpu_session1.json: RTX 4080 SUPER, batch 16, full 16-frame forward
 D = 1024
 
@@ -193,6 +195,7 @@ def plan(args):
         cent = mf.centroids(pca.project(X[knot]), y[knot])
         choice = mf.choose_angle_source(cent["C"], cent["values"])
         curve = mf.fit_curve(cent, True, angle=choice["angle"], plane=choice["plane"], spline=args.spline)
+        curve_s = mf.fit_curve(cent, True, angle=choice["angle"], plane=choice["plane"], spline="smooth")
         Z = pca.project(Xc)
         src = y[carriers]
         Kw = max(2, args.waypoints)
@@ -201,6 +204,8 @@ def plan(args):
             Zsp = mf.manifold_coords(Z, curve, ta, tb, Kw)
             Zch = mf.linear_coords(Z, mf.piecewise_linear_point(curve, src), mf.piecewise_linear_point(curve, tg[:, j]), Kw)
             deltas[:, arms.index("spline"), j] = pca.lift_delta(Zsp[:, -1] - Z)
+            deltas[:, arms.index("spline_smooth"), j] = pca.lift_delta(
+                mf.manifold_coords(Z, curve_s, curve_s.coord_of_value(src), curve_s.coord_of_value(tg[:, j]), 2)[:, -1] - Z)
             deltas[:, arms.index("chord"), j] = pca.lift_delta(Zch[:, -1] - Z)
             for k in range(1, Kw - 1):
                 if f"spline_wp{k}" in arms:
