@@ -154,11 +154,7 @@ def fig2b(results, out):
     plt.close(fig)
 
 
-def fig3(results, out):
-    r = load(results, r"p1c_direction_L\d+\.json")
-    if not r:
-        return
-    fig, ax = plt.subplots(figsize=(5.8, 3.8))
+def mae_panel(ax, r, title):
     n = [row["n"] for row in r["single"]]
     ax.plot(n, [row["mae_to_target"] for row in r["single"]], "o-", ms=3.5, color=COLORS["direction"],
             label="to target θ* = 90°")
@@ -168,10 +164,38 @@ def fig3(results, out):
             label="to target, all 64 targets")
     ax.plot(n, [row["mae_to_true"] for row in r["all_targets"]], "--", color=COLORS["speed"],
             label="to true, all 64 targets")
-    ax.set(xlabel="probes used for steering (N)", ylabel="held-out probe MAE (deg)", ylim=(0, 185),
-           title=f"Steering moves a held-out readout to the target (layer {r['frac']:.2f})")
+    ax.set(xlabel="probes used for steering (N)", ylabel="held-out probe MAE (deg)", ylim=(0, 185), title=title)
     ax.xaxis.set_major_locator(MaxNLocator(integer=True))
     legend_top(ax, 2)
+
+
+def radius_band(ax, rows, color, label, ls="-"):
+    n = [row["n"] for row in rows]
+    med = [row["radius"]["median"] for row in rows]
+    ax.plot(n, med, ls, color=color, marker="o", ms=3, label=label)
+    ax.fill_between(n, [row["radius"]["p05"] for row in rows], [row["radius"]["p95"] for row in rows],
+                    color=color, alpha=0.15, lw=0)
+
+
+def fig3(results, out):
+    r = load(results, r"p1c_direction_L\d+\.json")
+    if not r:
+        return
+    has_radius = "radius" in r["single"][0]
+    fig, axes = plt.subplots(1, 2 if has_radius else 1, figsize=(11 if has_radius else 5.8, 3.8), squeeze=False)
+    mae_panel(axes[0][0], r, f"Steering moves a held-out readout to the target (layer {r['frac']:.2f})")
+    if has_radius:   # readout radius ‖(ŝ, ĉ)‖ of the evaluation probe beside the angle (spec §4)
+        ax = axes[0][1]
+        radius_band(ax, r["single"], COLORS["direction"], "paper: unit target (median, 5–95%)")
+        if "radius_matched" in r:
+            radius_band(ax, r["radius_matched"]["single"], COLORS["acceleration"],
+                        "extra: radius-matched target", "--")
+        ax.axhline(r["single"][0]["radius"]["median"], color=COLORS["text"], lw=0.8, ls=":",
+                   label="unsteered test clips (median)")
+        ax.set(xlabel="probes used for steering (N)", ylabel="held-out readout radius ‖(ŝ, ĉ)‖",
+               title="Readout radius during steering (θ* = 90°)", ylim=(0, None))
+        ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+        legend_top(ax, 1)
     fig.savefig(out / "fig3_steering.png")
     plt.close(fig)
 
@@ -180,17 +204,53 @@ def fig3b(results, out):
     r = load(results, r"p1c_direction_L\d+\.json")
     if not r:
         return
-    H = np.array([[np.nan if v is None else v for v in row] for row in r["shift_bins"]["mae_to_target"]])
-    edges = r["shift_bins"]["edges"]
-    fig, ax = plt.subplots(figsize=(6, 3.8))
-    im = ax.imshow(H.T, origin="lower", aspect="auto", cmap="Blues", vmin=0,
-                   extent=(-0.5, H.shape[0] - 0.5, edges[0], edges[-1]))
-    ax.grid(False)
-    ax.set(xlabel="probes used for steering (N)", ylabel="requested shift |θ − θ*| (deg)",
-           title="Error to target by requested shift and N")
-    ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-    fig.colorbar(im, ax=ax, label="MAE to target (deg)")
+    arms = [("paper: unit target", r)] + ([("extra: radius-matched target", r["radius_matched"])]
+                                          if "radius_matched" in r else [])
+    fig, axes = plt.subplots(1, len(arms), figsize=(6 * len(arms), 3.8), squeeze=False)
+    for ax, (name, arm) in zip(axes[0], arms):
+        H = np.array([[np.nan if v is None else v for v in row] for row in arm["shift_bins"]["mae_to_target"]])
+        edges = arm["shift_bins"]["edges"]
+        im = ax.imshow(H.T, origin="lower", aspect="auto", cmap="Blues", vmin=0, vmax=180,
+                       extent=(-0.5, H.shape[0] - 0.5, edges[0], edges[-1]))
+        ax.grid(False)
+        ax.set(xlabel="probes used for steering (N)", ylabel="requested shift |θ − θ*| (deg)",
+               title=f"Error to target by shift and N ({name})")
+        ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+        fig.colorbar(im, ax=ax, label="MAE to target (deg)")
     fig.savefig(out / "fig3b_shift_heatmap.png")
+    plt.close(fig)
+
+
+def fig3c(results, out):
+    """Extras: learned steer vs the two random nulls, and the radius-matched arm (spec 5.3)."""
+    r = load(results, r"p1c_direction_L\d+\.json")
+    if not r or "random_nulls" not in r:
+        return
+    nulls = r["random_nulls"]
+    fig, (a, b) = plt.subplots(1, 2, figsize=(11, 3.8))
+    n = [row["n"] for row in nulls["rows"]]
+    for key, color, label in (("random_basis", COLORS["random"], "random basis, own solve"),
+                              ("random_orientation", COLORS["velocity"], "learned dose, random orientation")):
+        band = [row[key]["mae_to_target"] for row in nulls["rows"]]
+        a.fill_between(n, [x["p05"] for x in band], [x["p95"] for x in band], color=color, alpha=0.25, lw=0)
+        a.plot(n, [x["mean"] for x in band], color=color, lw=1.2, label=f"null: {label} (5–95%)")
+        b.plot(n, [row[key]["empirical_p_to_target"] for row in nulls["rows"]], "o-", ms=3.5, color=color,
+               label=label)
+    a.plot(n, [row["learned"]["mae_to_target"] for row in nulls["rows"]], "o-", ms=3.5,
+           color=COLORS["direction"], label="learned subspace, unit target")
+    if "radius_matched" in r:
+        rm = r["radius_matched"]["single"]
+        a.plot([row["n"] for row in rm], [row["mae_to_target"] for row in rm], "--", color=COLORS["acceleration"],
+               label="learned subspace, radius-matched target")
+    a.set(xlabel="probes used for steering (N)", ylabel="held-out MAE to θ* = 90° (deg)", ylim=(0, 185),
+          title=f"Extra: learned subspace vs random nulls ({nulls['n_draws']} draws each)")
+    b.axhline(1 / (nulls["n_draws"] + 1), color=COLORS["text"], lw=0.8, ls=":", label="resolution 1/(m+1)")
+    b.set(xlabel="probes used for steering (N)", ylabel="empirical rank of learned MAE", yscale="log",
+          ylim=(0.7 / (nulls["n_draws"] + 1), 1.2), title="Rank of the learned steer among null draws")
+    for ax in (a, b):
+        ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+        legend_top(ax, 1)
+    fig.savefig(out / "fig3c_steering_nulls.png")
     plt.close(fig)
 
 
@@ -200,6 +260,6 @@ if __name__ == "__main__":
     parser.add_argument("--figures", type=Path, default=ROOT / "figures")
     args = parser.parse_args()
     args.figures.mkdir(parents=True, exist_ok=True)
-    for make in (fig1, fig1b, fig2, fig2b, fig3, fig3b):
+    for make in (fig1, fig1b, fig2, fig2b, fig3, fig3b, fig3c):
         make(args.results, args.figures)
     print("figures:", sorted(p.name for p in args.figures.glob("*.png")))

@@ -46,5 +46,5 @@ def test_pipeline_on_fake_activations(tmp_path):
     assert "radius" in steer["single"][-1] and steer["radius_matched"]["single"][-1]["n"] == steer["K"]
     assert len(steer["random_nulls"]["rows"]) == steer["K"] and steer["random_nulls"]["n_draws"] >= 20
     for name in ("fig1_layer_curves", "fig1b_direction_circle", "fig2_inlp", "fig2b_dim_vs_layer",
-                 "fig3_steering", "fig3b_shift_heatmap"):
+                 "fig3_steering", "fig3b_shift_heatmap", "fig3c_steering_nulls"):
         assert (figs / f"{name}.png").exists(), name
