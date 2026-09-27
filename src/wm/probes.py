@@ -328,7 +328,7 @@ def chosen_layers(sweep, role="both"):
     return out
 
 
-def load_sweep(dataset, variable, pool="meanpool", results_dir=None):
-    """The step-1 results file; steps 2 and 3 take α and the chosen layer (CV peak) from it."""
-    path = Path(results_dir or RESULTS) / (result_name("p1a", dataset, variable, pool) + ".json")
+def load_sweep(dataset, variable, pool="meanpool", results_dir=None, model="vjepa2"):
+    """The step-1 results file of the same model; steps 2 and 3 take α and the chosen layer from it."""
+    path = Path(results_dir or RESULTS) / (result_name("p1a", dataset, variable, pool, model) + ".json")
     return json.loads(path.read_text())

@@ -57,3 +57,20 @@ def test_pipeline_on_fake_activations(tmp_path):
     for name in ("fig2d_subspace_angles", "fig3_steering_onset", "fig2_inlp_onset", "fig1_layer_curves", "fig1b_direction_circle", "fig2_inlp", "fig2b_dim_vs_layer",
                  "fig3_steering", "fig3b_shift_heatmap", "fig3c_steering_nulls"):
         assert (figs / f"{name}.png").exists(), name
+
+
+def test_random_model_control_steps_2_3(tmp_path):
+    acts, results, inlp_dir = tmp_path / "acts", tmp_path / "results", tmp_path / "inlp"
+    path = write_fake_meanpool(acts, "direction", seed=1)
+    (acts / "direction" / "random").mkdir()
+    path.rename(acts / "direction" / "random" / "meanpool.npy")    # the random-init ViT-L slot
+    common = ["--dataset", "direction", "--model", "random", "--act-root", str(acts), "--results", str(results)]
+    run("run_step1.py", *common)
+    run("run_step2.py", "--inlp-dir", str(inlp_dir), "--seeds", "2", "--layer-role", "peak", *common)
+    run("run_step3.py", "--inlp-dir", str(inlp_dir), "--layer-role", "peak", "--null-draws", "20", *common)
+    peak = json.loads((results / "p1a_direction_direction_meanpool_random.json").read_text())["availability"]["peak"]
+    assert (inlp_dir / f"direction_direction_L{peak}_random.npz").exists()
+    inl = json.loads((results / f"p1b_direction_direction_meanpool_random_L{peak}.json").read_text())
+    steer = json.loads((results / f"p1c_direction_L{peak}_random.json").read_text())
+    assert inl["model"] == "random" and steer["model"] == "random"
+    assert not (results / f"p1c_direction_L{peak}.json").exists()

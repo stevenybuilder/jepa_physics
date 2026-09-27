@@ -310,22 +310,22 @@ def off_target_probe(Xtr, Xte, df, tr, te, folds, kind):
 
 
 def run_steering(dataset, variable=None, point=None, pool="meanpool", act_root=None, results_dir=None,
-                 inlp_dir=None, n_draws=20, layer_role=None):
+                 inlp_dir=None, n_draws=20, layer_role=None, model="vjepa2"):
     """Paper protocol: steering basis from the train probe sequence (step 2), evaluation probe fit on
     test activations (α by CV inside test), test clips steered to θ* = 90° (for scalars, the upper
     median label value) and to every label value, with the paper's unit target. Extras, labelled in
     the output: a radius-matched arm (matched_targets) and two random nulls per n (random_nulls).
     Writes results/p1c_{dataset}_L{point}.json."""
     variable = variable or dataset
-    sweep = load_sweep(dataset, variable, pool, results_dir)
+    sweep = load_sweep(dataset, variable, pool, results_dir, model)
     point = sweep["availability"]["peak"] if point is None else point
-    probes = load_basis(basis_path(dataset, variable, point, pool, inlp_dir))
+    probes = load_basis(basis_path(dataset, variable, point, pool, inlp_dir, model))
     assert len(probes["W"]) > 0, "step 2 found no probe above chance at this layer"
     df = load_table(dataset)
     Y, kind, _ = targets(df, variable)
     assert kind in ("circular", "scalar"), "steering is defined for direction, speed and acceleration"
     tr, te, folds = split_rows(dataset, df)
-    Xtr, Xte = standardized_layer(load_activations(dataset, pool, act_root=act_root), point, tr, te)
+    Xtr, Xte = standardized_layer(load_activations(dataset, pool, model, act_root), point, tr, te)
     off, off_info = off_target_probe(Xtr, Xte, df, tr, te, folds, kind)
     label_all = df["theta_degrees"].to_numpy(float) if kind == "circular" else Y[:, 0]
     labels = label_all[te]
@@ -347,7 +347,7 @@ def run_steering(dataset, variable=None, point=None, pool="meanpool", act_root=N
     res_m["target_rule"] = ("extra arm: probe k's target is its mean readout over train clips whose label equals "
                             "the target value (its own shrinkage included); the paper's arm asks every probe for "
                             "the unit/true value")
-    out = {"dataset": dataset, "variable": variable, "kind": kind, "pool": pool, "point": point,
+    out = {"dataset": dataset, "variable": variable, "kind": kind, "pool": pool, "model": model, "point": point,
            "frac": layer_fraction(point), "alpha": probes["alpha"], "n_test": len(te),
            "layer_role": layer_role, "is_peak": point == sweep["availability"]["peak"],
            "is_onset": point == sweep["availability"]["onset"], "eval_probe": eval_report, "eval_probe_in_sample": eval_report["in_sample"],
@@ -359,6 +359,7 @@ def run_steering(dataset, variable=None, point=None, pool="meanpool", act_root=N
           f"{s[-1]['mae_to_target']:.3g}, MAE-to-true {s[0]['mae_to_true']:.3g} -> {s[-1]['mae_to_true']:.3g}; "
           f"eval probe R2 in-sample {eval_report['in_sample']['r2']:.3f}, out-of-fold "
           f"{eval_report['out_of_fold']['r2_fold_mean']:.3f}")
-    suffix = ("" if variable == dataset else f"_{variable}") + ("" if pool == "meanpool" else f"_{pool}")
+    suffix = (("" if variable == dataset else f"_{variable}") + ("" if pool == "meanpool" else f"_{pool}")
+              + ("" if model == "vjepa2" else f"_{model}"))
     write_json(Path(results_dir or RESULTS) / f"p1c_{dataset}_L{point}{suffix}.json", out)
     return out

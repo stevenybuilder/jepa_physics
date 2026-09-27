@@ -171,8 +171,8 @@ def load_basis(path):
             "point": int(z["point"]), "kind": str(z["kind"])}
 
 
-def basis_path(dataset, variable, point, pool="meanpool", inlp_dir=None):
-    suffix = "" if pool == "meanpool" else f"_{pool}"
+def basis_path(dataset, variable, point, pool="meanpool", inlp_dir=None, model="vjepa2"):
+    suffix = ("" if pool == "meanpool" else f"_{pool}") + ("" if model == "vjepa2" else f"_{model}")
     return Path(inlp_dir or INLP_DIR) / f"{dataset}_{variable}_L{point}{suffix}.npz"
 
 
@@ -184,19 +184,19 @@ def rank_schedule(summary, max_points=16):
 
 
 def run_inlp(dataset, variable, point=None, pool="meanpool", seeds=10, with_random=True,
-             act_root=None, results_dir=None, inlp_dir=None):
+             act_root=None, results_dir=None, inlp_dir=None, model="vjepa2"):
     """Probe sequence at one layer point (default: the step-1 CV peak), α from step 1.
     Writes results/p1b_{dataset}_{variable}_{pool}_L{point}.json and the basis .npz."""
-    sweep = load_sweep(dataset, variable, pool, results_dir)
+    sweep = load_sweep(dataset, variable, pool, results_dir, model)
     point = sweep["availability"]["peak"] if point is None else point
     alpha = sweep["layers"][point]["alpha"]
     df = load_table(dataset)
     Y, kind, score_fn = targets(df, variable)
     tr, te, folds = split_rows(dataset, df)
-    Xtr, Xte = standardized_layer(load_activations(dataset, pool, act_root=act_root), point, tr, te)
+    Xtr, Xte = standardized_layer(load_activations(dataset, pool, model, act_root), point, tr, te)
     summary, Q, W, b = inlp(Xtr, Y[tr], Xte, Y[te], folds, alpha, score_fn, kind)
-    save_basis(basis_path(dataset, variable, point, pool, inlp_dir), Q, W, b, alpha, point, kind)
-    out = {"dataset": dataset, "variable": variable, "kind": kind, "pool": pool, "point": point,
+    save_basis(basis_path(dataset, variable, point, pool, inlp_dir, model), Q, W, b, alpha, point, kind)
+    out = {"dataset": dataset, "variable": variable, "kind": kind, "pool": pool, "model": model, "point": point,
            "frac": layer_fraction(point), "is_peak": point == sweep["availability"]["peak"],
            "is_onset": point == sweep["availability"]["onset"],
            **summary, "sawtooth": sawtooth(summary, W)}
@@ -204,29 +204,30 @@ def run_inlp(dataset, variable, point=None, pool="meanpool", seeds=10, with_rand
         out["random"] = random_removal_curve(Xtr, Y[tr], Xte, Y[te], folds, alpha, score_fn,
                                              rank_schedule(summary), seeds)
     print(f"{dataset}/{variable} point {point}: K={summary['K']} dims={summary['dims']} K({summary['loose_threshold']})={summary['K_loose']}")
-    write_json(Path(results_dir or RESULTS) / (result_name("p1b", dataset, variable, pool) + f"_L{point}.json"), out)
+    write_json(Path(results_dir or RESULTS) / (result_name("p1b", dataset, variable, pool, model) + f"_L{point}.json"), out)
     return out
 
 
-def run_dims_vs_layer(dataset, variable, pool="meanpool", act_root=None, results_dir=None, inlp_dir=None):
+def run_dims_vs_layer(dataset, variable, pool="meanpool", act_root=None, results_dir=None, inlp_dir=None,
+                      model="vjepa2"):
     """Probe sequence at every layer point (no random control); writes ..._dims.json for Fig. 22."""
-    sweep = load_sweep(dataset, variable, pool, results_dir)
+    sweep = load_sweep(dataset, variable, pool, results_dir, model)
     df = load_table(dataset)
     Y, kind, score_fn = targets(df, variable)
     tr, te, folds = split_rows(dataset, df)
-    acts = load_activations(dataset, pool, act_root=act_root)
+    acts = load_activations(dataset, pool, model, act_root)
     rows = []
     for point in range(N_POINTS):
         alpha = sweep["layers"][point]["alpha"]
         Xtr, Xte = standardized_layer(acts, point, tr, te)
         summary, Q, W, b = inlp(Xtr, Y[tr], Xte, Y[te], folds, alpha, score_fn, kind)
-        save_basis(basis_path(dataset, variable, point, pool, inlp_dir), Q, W, b, alpha, point, kind)
+        save_basis(basis_path(dataset, variable, point, pool, inlp_dir, model), Q, W, b, alpha, point, kind)
         rows.append({"point": point, "frac": layer_fraction(point), "post_ln": point == N_POINTS - 1,
                      "alpha": alpha, "K": summary["K"], "dims": summary["dims"], "K_loose": summary["K_loose"],
                      "hit_round_cap": summary["hit_round_cap"]})
         print(f"{dataset}/{variable} point {point:2d}: K={summary['K']} dims={summary['dims']}")
-    out = {"dataset": dataset, "variable": variable, "kind": kind, "pool": pool, "layers": rows}
-    write_json(Path(results_dir or RESULTS) / (result_name("p1b", dataset, variable, pool) + "_dims.json"), out)
+    out = {"dataset": dataset, "variable": variable, "kind": kind, "pool": pool, "model": model, "layers": rows}
+    write_json(Path(results_dir or RESULTS) / (result_name("p1b", dataset, variable, pool, model) + "_dims.json"), out)
     return out
 
 
