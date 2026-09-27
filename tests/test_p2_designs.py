@@ -311,3 +311,10 @@ def test_angle_acceptance_mirror_and_local_swaps():
     C2 = C.copy()
     C2[:, :2] = C[rng.permutation(64), :2]
     assert mf.choose_angle_source(C2, GRID)["angle"] == "labels"
+
+
+def test_planted_ring_reports_real_ring():
+    X, th, _ = ring_data()
+    pr = gc.planted_ring_control(X, th, radii=(1.0,), k=16, seed=7, periodic=True)
+    assert pr["real_ring"]["radius"] == pytest.approx(R, rel=0.05)
+    assert pr["rows"][0]["radius_over_real_ring"] == pytest.approx(pr["rows"][0]["ring_radius"] / pr["real_ring"]["radius"])

@@ -170,15 +170,19 @@ def run(args):
     for line in out["summary"]:
         print(line)
     if args.planted_ring:
-        pr = gc.planted_ring_control(X, y, radii=args.planted_radii, k=args.k, seed=args.seed)
+        pr = gc.planted_ring_control(X, y, radii=args.planted_radii, k=args.k, seed=args.seed, periodic=periodic)
         pr.update({"dataset": args.dataset, "layer": args.layer, "n_train": int(tr.sum()),
                    "labels_used_for_sd_and_stratification": variable, "provenance": out["provenance"],
                    "layer_role": out["layer_role"]})
         (Path(args.results_dir) / f"p2_planted_ring_{tag}.json").write_text(json.dumps(pr, indent=1))
         print("planted ring (r in within-value SD):")
-        print("   r  |corr|  cubic_gain  recovered")
+        print("   r  radius  |corr|  cubic_gain  recovered")
         for r in pr["rows"]:
-            print(f"{r['r_within_sd']:5.2f}  {r['circular_corr']:.3f}  {r['cubic_gain']:10.3f}  {r['recovered']}")
+            print(f"{r['r_within_sd']:5.2f}  {r['ring_radius']:6.2f}  {r['circular_corr']:.3f}  {r['cubic_gain']:10.3f}"
+                  f"  {r['recovered']}")
+        if pr["real_ring"]:
+            rr = pr["real_ring"]
+            print(f"real ring: radius {rr['radius']:.2f}, r = {rr['r_within_sd']:.2f} in its own plane's within-SD")
         out["planted_ring"] = pr
     return out
 
@@ -234,7 +238,7 @@ def parse(argv=None):
     p.add_argument("--nuisance-regress", action="store_true",
                    help="also report the core checks after regressing nuisance covariates out (labelled variant)")
     p.add_argument("--planted-ring", action="store_true", help="planted-ring positive control (r vs recovery)")
-    p.add_argument("--planted-radii", type=float, nargs="+", default=[0.5, 1.0, 2.0, 4.0])
+    p.add_argument("--planted-radii", type=float, nargs="+", default=[0.5, 1.0, 2.0, 4.0, 8.0, 16.0])
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--act-dir", default=None)
     p.add_argument("--table", default=None, help="CSV overriding the manifest table (tests)")

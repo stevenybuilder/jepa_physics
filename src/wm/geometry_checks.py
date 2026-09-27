@@ -315,7 +315,8 @@ def within_value_sd(X, labels, U):
     return float(np.sqrt((resid ** 2).mean()))
 
 
-def planted_ring_control(X, labels, radii=(0.5, 1, 2, 4), k=64, n_values=64, seed=0, stride=16, min_corr=0.95):
+def planted_ring_control(X, labels, radii=(0.5, 1, 2, 4, 8, 16), k=64, n_values=64, seed=0, stride=16, min_corr=0.95,
+                         periodic=False):
     """Plant a ring of known radius into real activations and check that the Part 2 pipeline recovers it.
 
     Ring: two random orthonormal directions Q [D, 2]; synthetic labels theta on a 64-value grid; X' = X + r * sd *
@@ -331,7 +332,11 @@ def planted_ring_control(X, labels, radii=(0.5, 1, 2, 4), k=64, n_values=64, see
     centroid planes) > min_corr, and the cubic beats the line at the stride. `pipeline_angle_source` says whether
     choose_angle_source would also have accepted the unsupervised angle (it additionally demands strict knot order,
     which noisy dense knots can fail while the angle is still recovered).
-    Returns dict(sd, rows=[one per r]).
+    periodic=True (labels are the real direction): also report the real ring in the same terms (circular-chart
+    radius, within-value SD along the chart plane, r) and each planted radius as a fraction of the real one. The
+    within-value SD along a random plane can be several times smaller than along the real ring's plane, so compare
+    absolute radii, not r.
+    Returns dict(sd, rows=[one per r], real_ring).
     """
     from wm.manifold import centroids as _centroids, choose_angle_source, fit_curve
     X = np.asarray(X, dtype=np.float64)
@@ -365,7 +370,15 @@ def planted_ring_control(X, labels, radii=(0.5, 1, 2, 4), k=64, n_values=64, see
                      "loo_err_line": loo["mean_err_line"], "loo_err_cubic": loo["mean_err_cubic"],
                      "cubic_gain": loo["mean_err_line"] / loo["mean_err_cubic"], "loo_winner": loo["winner"],
                      "recovered": bool(corr > min_corr and loo["winner"] == "cubic")})
-    return {"sd": sd, "n_values": n_values, "seed": seed, "min_corr": min_corr, "rows": rows}
+    real = None
+    if periodic:
+        ch = fit_circular_chart(X, labels)
+        rad = float(np.linalg.svd(ch["A"], compute_uv=False).mean())
+        sd_c = within_value_sd(X, labels, np.linalg.qr(ch["A"])[0])
+        real = {"radius": rad, "within_sd_chart_plane": sd_c, "r_within_sd": rad / sd_c}
+        for row in rows:
+            row["radius_over_real_ring"] = row["ring_radius"] / rad
+    return {"sd": sd, "n_values": n_values, "seed": seed, "min_corr": min_corr, "rows": rows, "real_ring": real}
 
 
 # ---------------------------------------------------------------- held-out block reconstruction ------------------
