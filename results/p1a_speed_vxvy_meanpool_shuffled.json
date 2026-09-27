@@ -22,6 +22,67 @@
  ],
  "n_train": 1228,
  "n_test": 308,
+ "all_nan_clips": {
+  "n_all_nan_train": 0,
+  "n_all_nan_test": 0,
+  "per_layer_train": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "per_layer_test": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "rule": "clips NaN at every time step (disk out of frame throughout) are excluded from fit and scores, not imputed"
+ },
  "layers": [
   {
    "point": 0,
@@ -402,6 +463,22 @@
    2
   ],
   "onset_boot_draws_without_onset": 194,
-  "rule": "onset = first point with CV R2 >= 90% of max over points 0..24; CI: 200-draw clip bootstrap of out-of-fold predictions"
+  "rule": "onset = first point with CV R2 >= 90% of max over points 0..24; CI: 200-draw clip bootstrap of out-of-fold predictions",
+  "precision_onset": 0,
+  "precision_rule": "POST-HOC: first point whose CV MAE is within 10% of its minimum"
+ },
+ "provenance": {
+  "split_file": "splits/split_v1.json",
+  "split_sha256": "98e6310c40bf29e81bd8b6bf4b1ac603b89e4104d40ac1047b15dd5dc2be2df2",
+  "seeds": {
+   "split": 0,
+   "other": "all other RNG seeds are 0 (bootstrap, folds, null draws, shuffles); random-removal controls use seeds 0..n-1"
+  },
+  "git_commit": "d9cf57587c8af0ff244af0a042a8adb91bed741a",
+  "git_dirty_src_or_scripts": false,
+  "timestamp_utc": "2026-09-27T19:50:42+00:00",
+  "pool": "meanpool",
+  "model": "vjepa2",
+  "layer": null
  }
 }

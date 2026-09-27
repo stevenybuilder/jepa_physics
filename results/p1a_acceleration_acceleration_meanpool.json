@@ -22,6 +22,67 @@
  ],
  "n_train": 1228,
  "n_test": 308,
+ "all_nan_clips": {
+  "n_all_nan_train": 0,
+  "n_all_nan_test": 0,
+  "per_layer_train": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "per_layer_test": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "rule": "clips NaN at every time step (disk out of frame throughout) are excluded from fit and scores, not imputed"
+ },
  "layers": [
   {
    "point": 0,
@@ -402,6 +463,126 @@
    1
   ],
   "onset_boot_draws_without_onset": 0,
-  "rule": "onset = first point with CV R2 >= 90% of max over points 0..24; CI: 200-draw clip bootstrap of out-of-fold predictions"
+  "rule": "onset = first point with CV R2 >= 90% of max over points 0..24; CI: 200-draw clip bootstrap of out-of-fold predictions",
+  "precision_onset": 19,
+  "precision_rule": "POST-HOC: first point whose CV MAE is within 10% of its minimum",
+  "selectivity_onset": 1,
+  "selectivity_rule": "POST-HOC: first point where V-JEPA's pooled OOF R2 exceeds the random-init ViT-L's by more than the paired 95% clip-bootstrap CI",
+  "selectivity_diff_ci": [
+   [
+    -0.0047530375418896815,
+    0.003534305954600903
+   ],
+   [
+    0.05572144667151553,
+    0.06950410817301107
+   ],
+   [
+    0.04089942251761594,
+    0.054956209466055596
+   ],
+   [
+    0.033934553227833196,
+    0.0463915438783416
+   ],
+   [
+    0.02771864468138567,
+    0.04100961797144643
+   ],
+   [
+    0.02525998561640287,
+    0.037311311146812874
+   ],
+   [
+    0.029659618216459304,
+    0.04186797568858234
+   ],
+   [
+    0.030253584451329654,
+    0.04194387087749168
+   ],
+   [
+    0.03582190469672893,
+    0.04699113965136104
+   ],
+   [
+    0.039256386503272435,
+    0.05091139512579374
+   ],
+   [
+    0.03882692177075256,
+    0.050651515597128834
+   ],
+   [
+    0.037992500267821055,
+    0.04924832487314756
+   ],
+   [
+    0.041324539250552524,
+    0.05289336972224624
+   ],
+   [
+    0.04394528856735412,
+    0.05590004554769787
+   ],
+   [
+    0.04480415478376944,
+    0.057037482171024154
+   ],
+   [
+    0.04702046588110056,
+    0.05919685118946288
+   ],
+   [
+    0.04748029840864584,
+    0.05956321013480337
+   ],
+   [
+    0.04749817069663922,
+    0.059780111752399494
+   ],
+   [
+    0.04669317468864707,
+    0.05937782375920265
+   ],
+   [
+    0.048646640142941545,
+    0.06065752172136734
+   ],
+   [
+    0.049084770074736626,
+    0.06102658387354189
+   ],
+   [
+    0.04945508044507682,
+    0.06189306155598244
+   ],
+   [
+    0.05016401562056907,
+    0.062481718924738014
+   ],
+   [
+    0.05012663885103366,
+    0.06337489649147483
+   ],
+   [
+    0.048837050354287814,
+    0.061938675099822434
+   ]
+  ]
+ },
+ "provenance": {
+  "split_file": "splits/split_v1.json",
+  "split_sha256": "98e6310c40bf29e81bd8b6bf4b1ac603b89e4104d40ac1047b15dd5dc2be2df2",
+  "seeds": {
+   "split": 0,
+   "other": "all other RNG seeds are 0 (bootstrap, folds, null draws, shuffles); random-removal controls use seeds 0..n-1"
+  },
+  "git_commit": "d9cf57587c8af0ff244af0a042a8adb91bed741a",
+  "git_dirty_src_or_scripts": false,
+  "timestamp_utc": "2026-09-27T19:40:23+00:00",
+  "pool": "meanpool",
+  "model": "vjepa2",
+  "layer": null
  }
 }

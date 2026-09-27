@@ -2,9 +2,31 @@
  "dataset": "direction",
  "layer": 8,
  "variable": "direction",
+ "layer_role": "paper_layer",
+ "all_roles": [
+  "paper_layer"
+ ],
+ "source": "/private/tmp/claude-501/-Users-stevenyang/ae13a11f-788a-4ea6-a4fa-c5d4c3df1c0e/scratchpad/wt_p2/results/p1a_direction_direction_meanpool.json",
+ "provenance": {
+  "split_file": "/private/tmp/claude-501/-Users-stevenyang/ae13a11f-788a-4ea6-a4fa-c5d4c3df1c0e/scratchpad/wt_p2/splits/split_v1.json",
+  "split_sha256": "98e6310c40bf29e81bd8b6bf4b1ac603b89e4104d40ac1047b15dd5dc2be2df2",
+  "seeds": {
+   "seed": 0
+  },
+  "commit": "677b3056e1dc9ee1ec55bbc2aa251838c670d3fd",
+  "dirty": false,
+  "git_commit": "677b3056e1dc9ee1ec55bbc2aa251838c670d3fd",
+  "git_dirty_src_or_scripts": false,
+  "timestamp_utc": "2026-09-27T20:43:43+00:00",
+  "layer": 8,
+  "pool": "meanpool",
+  "subspace": "pca",
+  "k": 64
+ },
  "n_train": 1200,
+ "subspace": "pca",
  "k": 64,
- "pca_explained_frac_top10": [
+ "explained_frac_top10": [
   0.2747983681852054,
   0.12471557168859718,
   0.08854133800810962,
@@ -20,13 +42,20 @@
  "min_count": 18,
  "angle": {
   "source": "labels_angle (fallback, flagged)",
+  "plane_used": null,
+  "orientation": null,
+  "max_dev_deg": null,
+  "circular_corr": null,
+  "max_dev_cap_deg": null,
   "activation": {
    "circular_corr": -0.286405157380502,
    "orientation": -1,
    "offset_deg": 84.31823227647342,
    "max_dev_deg": 177.7836832998654,
    "mean_dev_deg": 39.84817951831501,
-   "order_preserved": false
+   "order_preserved": false,
+   "order_frac": 0.5873015873015873,
+   "order_coarse_preserved": false
   },
   "centroid": {
    "circular_corr": -0.8772089945908971,
@@ -34,7 +63,9 @@
    "offset_deg": -139.49290988472183,
    "max_dev_deg": 47.077813131514596,
    "mean_dev_deg": 17.00575318465076,
-   "order_preserved": false
+   "order_preserved": false,
+   "order_frac": 0.6507936507936508,
+   "order_coarse_preserved": true
   }
  },
  "loo": {
@@ -54,7 +85,10 @@
     "winner": "line"
    },
    "winner_same": true,
-   "fp32_line_err_over_noise": 1.1686965638024895
+   "fp32_line_err_over_noise": 1.1686965638024895,
+   "winner": "line",
+   "mean_err_cubic": 2.3324003488921785,
+   "mean_err_line": 1.8577166294785161
   },
   "2": {
    "fp32": {
@@ -72,7 +106,10 @@
     "winner": "line"
    },
    "winner_same": true,
-   "fp32_line_err_over_noise": 1.1686965638024895
+   "fp32_line_err_over_noise": 1.1686965638024895,
+   "winner": "line",
+   "mean_err_cubic": 2.008956986802647,
+   "mean_err_line": 1.8577166294785161
   },
   "4": {
    "fp32": {
@@ -90,7 +127,10 @@
     "winner": "line"
    },
    "winner_same": true,
-   "fp32_line_err_over_noise": 1.2103331427413575
+   "fp32_line_err_over_noise": 1.2103331427413575,
+   "winner": "line",
+   "mean_err_cubic": 2.0513439525818282,
+   "mean_err_line": 1.9239005881595155
   },
   "8": {
    "fp32": {
@@ -108,7 +148,10 @@
     "winner": "line"
    },
    "winner_same": true,
-   "fp32_line_err_over_noise": 1.3235187905662962
+   "fp32_line_err_over_noise": 1.3235187905662962,
+   "winner": "line",
+   "mean_err_cubic": 2.168443748541795,
+   "mean_err_line": 2.103816288004272
   },
   "16": {
    "fp32": {
@@ -126,19 +169,10 @@
     "winner": "cubic"
    },
    "winner_same": true,
-   "fp32_line_err_over_noise": 1.748066291220469
-  }
- },
- "loo_shuffled_control": {
-  "1": {
-   "mean_err_cubic": 6.34464697726842,
-   "mean_err_line": 4.705761687804683,
-   "winner": "line"
-  },
-  "16": {
-   "mean_err_cubic": 5.541434097328428,
-   "mean_err_line": 5.109821640375987,
-   "winner": "line"
+   "fp32_line_err_over_noise": 1.748066291220469,
+   "winner": "cubic",
+   "mean_err_cubic": 2.7665174159239467,
+   "mean_err_line": 2.7786612190124607
   }
  },
  "spread_vs_curvature": {
@@ -164,19 +198,6 @@
    "best": "chord"
   }
  },
- "heldout_reconstruction_note": "held-out centroids rebuilt by the interpolating spline (Goodfire A.3), the count-weighted smoothing spline (B.1) and the chord; pick run_part2 --spline from this train-only check",
- "participation": {
-  "pr_centroids": 3.7530764434395842,
-  "pr_residuals": 7.9894566935345015
- },
- "ring_radius_by_group": {
-  "acceleration_t0": 5.860448935339312,
-  "acceleration_t1": 4.59593063961463,
-  "acceleration_t2": 4.862783082292131,
-  "velocity_t0": 5.059474075080285,
-  "velocity_t1": 5.936915455210741,
-  "velocity_t2": 5.855566955636771
- },
  "circular_chart": {
   "centroids_chart_vs_pc12": {
    "circular_corr": 0.2824347944571519,
@@ -200,5 +221,229 @@
   ],
   "chart_radius": 3.173783317192383,
   "pipeline_plane": "activation"
+ },
+ "expected_sagitta_by_stride": {
+  "1": {
+   "gap_deg": 11.25,
+   "expected_sagitta": 0.015282634155502836,
+   "sagitta_over_centroid_noise": 0.009707817404047131
+  },
+  "2": {
+   "gap_deg": 11.25,
+   "expected_sagitta": 0.015282634155502836,
+   "sagitta_over_centroid_noise": 0.009707817404047131
+  },
+  "4": {
+   "gap_deg": 22.5,
+   "expected_sagitta": 0.060983356500756807,
+   "sagitta_over_centroid_noise": 0.03873777802775512
+  },
+  "8": {
+   "gap_deg": 45.0,
+   "expected_sagitta": 0.2415898698125633,
+   "sagitta_over_centroid_noise": 0.15346244102580994
+  },
+  "16": {
+   "gap_deg": 90.0,
+   "expected_sagitta": 0.9295796115889134,
+   "sagitta_over_centroid_noise": 0.590486498597552
+  }
+ },
+ "loo_shuffled_unmatched_control": {
+  "1": {
+   "mean_err_cubic": 6.34464697726842,
+   "mean_err_line": 4.705761687804683,
+   "winner": "line"
+  },
+  "16": {
+   "mean_err_cubic": 5.541434097328428,
+   "mean_err_line": 5.109821640375987,
+   "winner": "line"
+  }
+ },
+ "participation": {
+  "pr_centroids": 3.7530764434395842,
+  "pr_residuals": 7.9894566935345015
+ },
+ "ring_radius_by_group": {
+  "acceleration_t0": 5.860448935339312,
+  "acceleration_t1": 4.59593063961463,
+  "acceleration_t2": 4.862783082292131,
+  "velocity_t0": 5.059474075080285,
+  "velocity_t1": 5.936915455210741,
+  "velocity_t2": 5.855566955636771
+ },
+ "summary": [
+  "angle: unsupervised atan2 failed in both planes; labels fallback (flagged)",
+  "curvature detectable only where expected sagitta > centroid noise: strides [] (knot gaps [] deg); cubic wins at strides [16]",
+  "held-out reconstruction best: scattered = chord, contiguous = chord"
+ ],
+ "heldout_reconstruction_note": "held-out centroids rebuilt by the interpolating spline (Goodfire A.3), the count-weighted smoothing spline (B.1) and the chord; pick run_part2 --spline from this train-only check",
+ "nuisance_regressed": {
+  "covariates": [
+   "speed_mps",
+   "acceleration_mps2",
+   "start_x",
+   "start_y",
+   "motion=velocity"
+  ],
+  "variance_explained_by_nuisance_train": 0.19911531236803504,
+  "space": "train-standardised activations minus their least-squares fit on the covariates (train rows), same projection for all clips",
+  "n_train": 1200,
+  "subspace": "pca",
+  "k": 64,
+  "explained_frac_top10": [
+   0.1903659548078095,
+   0.10587719827009762,
+   0.08052747936472635,
+   0.07837208429477122,
+   0.05640198376675023,
+   0.05267122523242299,
+   0.038393354893269664,
+   0.03589222370185178,
+   0.03477543142795886,
+   0.025545501403503944
+  ],
+  "n_values": 64,
+  "min_count": 18,
+  "angle": {
+   "source": "labels_angle (fallback, flagged)",
+   "plane_used": null,
+   "orientation": null,
+   "max_dev_deg": null,
+   "circular_corr": null,
+   "max_dev_cap_deg": null,
+   "activation": {
+    "circular_corr": -0.35757652038137566,
+    "orientation": -1,
+    "offset_deg": -139.77618066276293,
+    "max_dev_deg": 176.67950224627558,
+    "mean_dev_deg": 38.03640103644641,
+    "order_preserved": false,
+    "order_frac": 0.6190476190476191,
+    "order_coarse_preserved": false
+   },
+   "centroid": {
+    "circular_corr": -0.7556127072951717,
+    "orientation": -1,
+    "offset_deg": -143.58441806686798,
+    "max_dev_deg": 90.43468222560827,
+    "mean_dev_deg": 23.067126833623696,
+    "order_preserved": false,
+    "order_frac": 0.6349206349206349,
+    "order_coarse_preserved": false
+   }
+  },
+  "loo": {
+   "1": {
+    "mean_err_cubic": 8.127686554452941,
+    "mean_err_line": 6.476156210989988,
+    "winner": "line",
+    "line_err_over_noise": 1.271700694263739
+   },
+   "2": {
+    "mean_err_cubic": 6.997175064559443,
+    "mean_err_line": 6.476156210989988,
+    "winner": "line",
+    "line_err_over_noise": 1.271700694263739
+   },
+   "4": {
+    "mean_err_cubic": 7.202797054253028,
+    "mean_err_line": 6.767630378534185,
+    "winner": "line",
+    "line_err_over_noise": 1.3289364818435507
+   },
+   "8": {
+    "mean_err_cubic": 7.758809111391394,
+    "mean_err_line": 7.562063212807879,
+    "winner": "line",
+    "line_err_over_noise": 1.4849365463845092
+   },
+   "16": {
+    "mean_err_cubic": 10.17097896033372,
+    "mean_err_line": 10.22052202544329,
+    "winner": "cubic",
+    "line_err_over_noise": 2.0069690310183534
+   }
+  },
+  "spread_vs_curvature": {
+   "median_bend": 5.95876010546251,
+   "median_spread": 21.616357931750116,
+   "median_centroid_noise": 4.9928467457108905,
+   "bend_over_noise": 1.2511548638193541,
+   "bend_over_spread": 0.2870346112688399
+  },
+  "heldout_reconstruction": {
+   "scattered": {
+    "interp": 7.863277794085285,
+    "smooth": 5.920667981340488,
+    "chord": 6.224957616319628,
+    "n_seeds": 1,
+    "best": "smooth"
+   },
+   "contiguous": {
+    "interp": 14.819820680061904,
+    "smooth": 7.9487544950925155,
+    "chord": 7.065029659463956,
+    "n_seeds": 4,
+    "best": "chord"
+   }
+  },
+  "circular_chart": {
+   "centroids_chart_vs_pc12": {
+    "circular_corr": 0.39081455176103036,
+    "mae_deg": 34.777097372799304,
+    "max_dev_deg": 162.64283302852974,
+    "orientation": -1
+   },
+   "clips_chart_vs_pc12": {
+    "circular_corr": 0.3965514895298407,
+    "mae_deg": 36.37143857417401,
+    "max_dev_deg": 178.31587546516684,
+    "orientation": -1
+   },
+   "chart_vs_true_mae_deg": {
+    "centroids": 6.567906823837614,
+    "clips_in_sample": 20.540339891664857
+   },
+   "principal_angles_chart_vs_pc12_deg": [
+    25.96630776213215,
+    62.19783829170911
+   ],
+   "chart_radius": 11.414388724050873,
+   "pipeline_plane": "activation"
+  },
+  "expected_sagitta_by_stride": {
+   "1": {
+    "gap_deg": 11.25,
+    "expected_sagitta": 0.0549634015760983,
+    "sagitta_over_centroid_noise": 0.011008429534376288
+   },
+   "2": {
+    "gap_deg": 11.25,
+    "expected_sagitta": 0.0549634015760983,
+    "sagitta_over_centroid_noise": 0.011008429534376288
+   },
+   "4": {
+    "gap_deg": 22.5,
+    "expected_sagitta": 0.21932427870116591,
+    "sagitta_over_centroid_noise": 0.043927700943269817
+   },
+   "8": {
+    "gap_deg": 45.0,
+    "expected_sagitta": 0.8688686057726498,
+    "sagitta_over_centroid_noise": 0.1740226868607678
+   },
+   "16": {
+    "gap_deg": 90.0,
+    "expected_sagitta": 3.3431970541752363,
+    "sagitta_over_centroid_noise": 0.6695973708881036
+   }
+  },
+  "summary": [
+   "angle: unsupervised atan2 failed in both planes; labels fallback (flagged)",
+   "curvature detectable only where expected sagitta > centroid noise: strides [] (knot gaps [] deg); cubic wins at strides [16]",
+   "held-out reconstruction best: scattered = smooth, contiguous = chord"
+  ]
  }
 }

@@ -22,6 +22,67 @@
  ],
  "n_train": 1200,
  "n_test": 300,
+ "all_nan_clips": {
+  "n_all_nan_train": 0,
+  "n_all_nan_test": 0,
+  "per_layer_train": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "per_layer_test": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "rule": "clips NaN at every time step (disk out of frame throughout) are excluded from fit and scores, not imputed"
+ },
  "layers": [
   {
    "point": 0,
@@ -1026,7 +1087,11 @@
    2
   ],
   "onset_boot_draws_without_onset": 0,
-  "rule": "onset = first point with CV R2 >= 90% of max over points 0..24; CI: 200-draw clip bootstrap of out-of-fold predictions"
+  "rule": "onset = first point with CV R2 >= 90% of max over points 0..24; CI: 200-draw clip bootstrap of out-of-fold predictions",
+  "precision_onset": 3,
+  "precision_rule": "POST-HOC: first point reaching 90% of max CV accuracy within 15 deg",
+  "selectivity_onset": null,
+  "selectivity_rule": "POST-HOC: needs the random-init sweep (run_step1.py --model random); filled in when it exists"
  },
  "test_theta": [
   0.0,
@@ -5845,5 +5910,19 @@
    0.9862,
    0.9319
   ]
+ },
+ "provenance": {
+  "split_file": "splits/split_v1.json",
+  "split_sha256": "98e6310c40bf29e81bd8b6bf4b1ac603b89e4104d40ac1047b15dd5dc2be2df2",
+  "seeds": {
+   "split": 0,
+   "other": "all other RNG seeds are 0 (bootstrap, folds, null draws, shuffles); random-removal controls use seeds 0..n-1"
+  },
+  "git_commit": "d9cf57587c8af0ff244af0a042a8adb91bed741a",
+  "git_dirty_src_or_scripts": false,
+  "timestamp_utc": "2026-09-27T19:42:12+00:00",
+  "pool": "diskpool",
+  "model": "vjepa2",
+  "layer": null
  }
 }

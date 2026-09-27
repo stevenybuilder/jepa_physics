@@ -1,0 +1,448 @@
+{
+ "dataset": "speed",
+ "layer": 12,
+ "variable": "direction",
+ "layer_role": "exploratory",
+ "all_roles": [],
+ "source": "missing: /private/tmp/claude-501/-Users-stevenyang/ae13a11f-788a-4ea6-a4fa-c5d4c3df1c0e/scratchpad/wt_p2/results/p1a_speed_direction_meanpool.json",
+ "provenance": {
+  "split_file": "/private/tmp/claude-501/-Users-stevenyang/ae13a11f-788a-4ea6-a4fa-c5d4c3df1c0e/scratchpad/wt_p2/splits/split_v1.json",
+  "split_sha256": "98e6310c40bf29e81bd8b6bf4b1ac603b89e4104d40ac1047b15dd5dc2be2df2",
+  "seeds": {
+   "seed": 0
+  },
+  "commit": "677b3056e1dc9ee1ec55bbc2aa251838c670d3fd",
+  "dirty": false,
+  "git_commit": "677b3056e1dc9ee1ec55bbc2aa251838c670d3fd",
+  "git_dirty_src_or_scripts": false,
+  "timestamp_utc": "2026-09-27T20:42:30+00:00",
+  "layer": 12,
+  "pool": "meanpool",
+  "subspace": "pca",
+  "k": 64
+ },
+ "n_train": 1228,
+ "subspace": "pca",
+ "k": 64,
+ "explained_frac_top10": [
+  0.22883362517984293,
+  0.19556201647040714,
+  0.11800362970408386,
+  0.06926065570853301,
+  0.05448800319560902,
+  0.04630905147929112,
+  0.029471207490755633,
+  0.024789289306278144,
+  0.019700951174658875,
+  0.017862876360055593
+ ],
+ "n_values": 64,
+ "min_count": 12,
+ "angle": {
+  "source": "unsupervised, centroid plane",
+  "plane_used": "centroid",
+  "orientation": -1,
+  "max_dev_deg": 14.623856541450275,
+  "circular_corr": -0.9878304911579857,
+  "max_dev_cap_deg": null,
+  "activation": {
+   "circular_corr": -0.693001600584335,
+   "orientation": -1,
+   "offset_deg": 156.25620246888866,
+   "max_dev_deg": 135.39243679241125,
+   "mean_dev_deg": 26.78939824432261,
+   "order_preserved": false,
+   "order_frac": 0.5873015873015873,
+   "order_coarse_preserved": true
+  },
+  "centroid": {
+   "circular_corr": -0.9878304911579857,
+   "orientation": -1,
+   "offset_deg": 69.13978883297736,
+   "max_dev_deg": 14.623856541450275,
+   "mean_dev_deg": 6.041602194535294,
+   "order_preserved": false,
+   "order_frac": 0.9841269841269841,
+   "order_coarse_preserved": true
+  }
+ },
+ "loo": {
+  "1": {
+   "fp32": {
+    "mean_err_cubic": 4.122357258665065,
+    "mean_err_line": 2.280823890562078,
+    "mean_log_ratio": 0.4181063516678397,
+    "frac_cubic_wins": 0.015625,
+    "winner": "line"
+   },
+   "bf16": {
+    "mean_err_cubic": 3.7581962175183206,
+    "mean_err_line": 2.2758273910062665,
+    "mean_log_ratio": 0.3892379729627536,
+    "frac_cubic_wins": 0.03125,
+    "winner": "line"
+   },
+   "winner_same": true,
+   "fp32_line_err_over_noise": 1.1853774698034363,
+   "winner": "line",
+   "mean_err_cubic": 4.122357258665065,
+   "mean_err_line": 2.280823890562078
+  },
+  "2": {
+   "fp32": {
+    "mean_err_cubic": 2.5111770417851207,
+    "mean_err_line": 2.280823890562078,
+    "mean_log_ratio": 0.09511742609973814,
+    "frac_cubic_wins": 0.015625,
+    "winner": "line"
+   },
+   "bf16": {
+    "mean_err_cubic": 2.5015424955735814,
+    "mean_err_line": 2.275827391006267,
+    "mean_log_ratio": 0.09335020831968759,
+    "frac_cubic_wins": 0.015625,
+    "winner": "line"
+   },
+   "winner_same": true,
+   "fp32_line_err_over_noise": 1.1853774698034363,
+   "winner": "line",
+   "mean_err_cubic": 2.5111770417851207,
+   "mean_err_line": 2.280823890562078
+  },
+  "4": {
+   "fp32": {
+    "mean_err_cubic": 2.4706889890443158,
+    "mean_err_line": 2.2786947093466092,
+    "mean_log_ratio": 0.08139425763116953,
+    "frac_cubic_wins": 0.08333333333333333,
+    "winner": "line"
+   },
+   "bf16": {
+    "mean_err_cubic": 2.4681207726672807,
+    "mean_err_line": 2.277293023799501,
+    "mean_log_ratio": 0.0809855839005063,
+    "frac_cubic_wins": 0.08333333333333333,
+    "winner": "line"
+   },
+   "winner_same": true,
+   "fp32_line_err_over_noise": 1.184270903245453,
+   "winner": "line",
+   "mean_err_cubic": 2.4706889890443158,
+   "mean_err_line": 2.2786947093466092
+  },
+  "8": {
+   "fp32": {
+    "mean_err_cubic": 2.582636970908518,
+    "mean_err_line": 2.5203077397261042,
+    "mean_log_ratio": 0.025029696139520198,
+    "frac_cubic_wins": 0.31919642857142855,
+    "winner": "line"
+   },
+   "bf16": {
+    "mean_err_cubic": 2.5816170524017727,
+    "mean_err_line": 2.519936071736251,
+    "mean_log_ratio": 0.024712760287866502,
+    "frac_cubic_wins": 0.328125,
+    "winner": "line"
+   },
+   "winner_same": true,
+   "fp32_line_err_over_noise": 1.3098407220323856,
+   "winner": "line",
+   "mean_err_cubic": 2.582636970908518,
+   "mean_err_line": 2.5203077397261042
+  },
+  "16": {
+   "fp32": {
+    "mean_err_cubic": 3.4865086044484257,
+    "mean_err_line": 3.5824866490580645,
+    "mean_log_ratio": -0.0253203031287985,
+    "frac_cubic_wins": 0.65,
+    "winner": "cubic"
+   },
+   "bf16": {
+    "mean_err_cubic": 3.4860327895127976,
+    "mean_err_line": 3.5819486888077745,
+    "mean_log_ratio": -0.025303241538608825,
+    "frac_cubic_wins": 0.6541666666666667,
+    "winner": "cubic"
+   },
+   "winner_same": true,
+   "fp32_line_err_over_noise": 1.8618706061600059,
+   "winner": "cubic",
+   "mean_err_cubic": 3.4865086044484257,
+   "mean_err_line": 3.5824866490580645
+  }
+ },
+ "spread_vs_curvature": {
+  "median_bend": 2.116681845967431,
+  "median_spread": 8.291673811680024,
+  "median_centroid_noise": 1.9101430649998274,
+  "bend_over_noise": 1.118035108501132,
+  "bend_over_spread": 0.2595964937988719
+ },
+ "heldout_reconstruction": {
+  "scattered": {
+   "interp": 3.8014998965089797,
+   "smooth": 2.045189781804942,
+   "chord": 2.124063199615841,
+   "n_seeds": 1,
+   "best": "smooth"
+  },
+  "contiguous": {
+   "interp": 11.347002983056658,
+   "smooth": 2.8522852708747566,
+   "chord": 2.378963416680621,
+   "n_seeds": 4,
+   "best": "chord"
+  }
+ },
+ "circular_chart": {
+  "centroids_chart_vs_pc12": {
+   "circular_corr": 0.7095261894365195,
+   "mae_deg": 26.149176143927537,
+   "max_dev_deg": 133.17314510031153,
+   "orientation": -1
+  },
+  "clips_chart_vs_pc12": {
+   "circular_corr": 0.31015436821360093,
+   "mae_deg": 40.13089935004258,
+   "max_dev_deg": 179.84612860472558,
+   "orientation": -1
+  },
+  "chart_vs_true_mae_deg": {
+   "centroids": 3.0631388011794076,
+   "clips_in_sample": 10.156886609652709
+  },
+  "principal_angles_chart_vs_pc12_deg": [
+   4.927127510889785,
+   71.25389228086573
+  ],
+  "chart_radius": 5.893936518266949,
+  "pipeline_plane": "centroid",
+  "centroids_chart_vs_centroid_plane": {
+   "circular_corr": 0.99545748731887,
+   "mae_deg": 4.3608817559355835,
+   "max_dev_deg": 9.02434727200719,
+   "orientation": -1
+  }
+ },
+ "expected_sagitta_by_stride": {
+  "1": {
+   "gap_deg": 11.25,
+   "expected_sagitta": 0.02838091531217534,
+   "sagitta_over_centroid_noise": 0.0148580050532382
+  },
+  "2": {
+   "gap_deg": 11.25,
+   "expected_sagitta": 0.02838091531217534,
+   "sagitta_over_centroid_noise": 0.0148580050532382
+  },
+  "4": {
+   "gap_deg": 22.5,
+   "expected_sagitta": 0.11325033751965975,
+   "sagitta_over_centroid_noise": 0.05928892950207894
+  },
+  "8": {
+   "gap_deg": 45.0,
+   "expected_sagitta": 0.44864920311927914,
+   "sagitta_over_centroid_noise": 0.2348772776971654
+  },
+  "16": {
+   "gap_deg": 90.0,
+   "expected_sagitta": 1.7262940383173595,
+   "sagitta_over_centroid_noise": 0.9037511744270922
+  }
+ },
+ "loo_shuffled_unmatched_control": {
+  "1": {
+   "mean_err_cubic": 14.561421841225812,
+   "mean_err_line": 7.77568755733852,
+   "winner": "line"
+  },
+  "16": {
+   "mean_err_cubic": 9.143887805886282,
+   "mean_err_line": 8.296837679917928,
+   "winner": "line"
+  }
+ },
+ "participation": {
+  "pr_centroids": 3.105802854431621,
+  "pr_residuals": 6.8559879829649475
+ },
+ "ring_radius_by_group": {
+  "velocity_t0": 5.90821678746738,
+  "velocity_t1": 7.952579036835974,
+  "velocity_t2": 8.247973466329292
+ },
+ "summary": [
+  "angle: unsupervised, centroid plane, orientation -1",
+  "curvature detectable only where expected sagitta > centroid noise: strides [] (knot gaps [] deg); cubic wins at strides [16]",
+  "held-out reconstruction best: scattered = smooth, contiguous = chord"
+ ],
+ "heldout_reconstruction_note": "held-out centroids rebuilt by the interpolating spline (Goodfire A.3), the count-weighted smoothing spline (B.1) and the chord; pick run_part2 --spline from this train-only check",
+ "nuisance_regressed": {
+  "covariates": [
+   "speed_mps",
+   "start_x",
+   "start_y"
+  ],
+  "variance_explained_by_nuisance_train": 0.13429444562942705,
+  "space": "train-standardised activations minus their least-squares fit on the covariates (train rows), same projection for all clips",
+  "n_train": 1228,
+  "subspace": "pca",
+  "k": 64,
+  "explained_frac_top10": [
+   0.21601524414306592,
+   0.14948204913321544,
+   0.10504998719886233,
+   0.07265502595650118,
+   0.06228758447058265,
+   0.03813171847996145,
+   0.029509102513808724,
+   0.0246099869812805,
+   0.021635445550930877,
+   0.020144240338770786
+  ],
+  "n_values": 64,
+  "min_count": 12,
+  "angle": {
+   "source": "unsupervised, activation plane",
+   "plane_used": "activation",
+   "orientation": 1,
+   "max_dev_deg": 17.073405692833735,
+   "circular_corr": 0.985533425061891,
+   "max_dev_cap_deg": null,
+   "activation": {
+    "circular_corr": 0.985533425061891,
+    "orientation": 1,
+    "offset_deg": 105.4359705262123,
+    "max_dev_deg": 17.073405692833735,
+    "mean_dev_deg": 6.300253069936587,
+    "order_preserved": false,
+    "order_frac": 0.9206349206349206,
+    "order_coarse_preserved": true
+   },
+   "centroid": {
+    "circular_corr": -0.99183471880777,
+    "orientation": -1,
+    "offset_deg": -107.67031386434897,
+    "max_dev_deg": 11.992501332236031,
+    "mean_dev_deg": 5.1154414484184985,
+    "order_preserved": false,
+    "order_frac": 0.9682539682539683,
+    "order_coarse_preserved": true
+   }
+  },
+  "loo": {
+   "1": {
+    "mean_err_cubic": 16.974602073022854,
+    "mean_err_line": 6.362141184665973,
+    "winner": "line",
+    "line_err_over_noise": 1.3329951665904383
+   },
+   "2": {
+    "mean_err_cubic": 7.125328607575058,
+    "mean_err_line": 6.362141184665973,
+    "winner": "line",
+    "line_err_over_noise": 1.3329951665904387
+   },
+   "4": {
+    "mean_err_cubic": 6.8447650083478875,
+    "mean_err_line": 6.357100056974204,
+    "winner": "line",
+    "line_err_over_noise": 1.3319389500349983
+   },
+   "8": {
+    "mean_err_cubic": 7.076402998804257,
+    "mean_err_line": 6.910649630442937,
+    "winner": "line",
+    "line_err_over_noise": 1.4479185997291069
+   },
+   "16": {
+    "mean_err_cubic": 9.688355633687298,
+    "mean_err_line": 9.93883486893415,
+    "winner": "cubic",
+    "line_err_over_noise": 2.0823836594134475
+   }
+  },
+  "spread_vs_curvature": {
+   "median_bend": 5.939006994084394,
+   "median_spread": 20.471692416986297,
+   "median_centroid_noise": 4.706664283603912,
+   "bend_over_noise": 1.2495369338099218,
+   "bend_over_spread": 0.28658600918619487
+  },
+  "heldout_reconstruction": {
+   "scattered": {
+    "interp": 17.6399684346581,
+    "smooth": 5.397812411072435,
+    "chord": 5.6803266708102385,
+    "n_seeds": 1,
+    "best": "smooth"
+   },
+   "contiguous": {
+    "interp": 90.8702205039356,
+    "smooth": 10.528609831118667,
+    "chord": 6.94014801387501,
+    "n_seeds": 4,
+    "best": "chord"
+   }
+  },
+  "circular_chart": {
+   "centroids_chart_vs_pc12": {
+    "circular_corr": 0.9924203006654901,
+    "mae_deg": 4.888731230243588,
+    "max_dev_deg": 13.78190306868693,
+    "orientation": 1
+   },
+   "clips_chart_vs_pc12": {
+    "circular_corr": 0.9345436081685313,
+    "mae_deg": 9.291912665293545,
+    "max_dev_deg": 122.26754766482172,
+    "orientation": 1
+   },
+   "chart_vs_true_mae_deg": {
+    "centroids": 2.8014855517746833,
+    "clips_in_sample": 7.7523151412200155
+   },
+   "principal_angles_chart_vs_pc12_deg": [
+    4.882480552419613,
+    20.310761342579667
+   ],
+   "chart_radius": 16.227359175820975,
+   "pipeline_plane": "activation"
+  },
+  "expected_sagitta_by_stride": {
+   "1": {
+    "gap_deg": 11.25,
+    "expected_sagitta": 0.07813916982001118,
+    "sagitta_over_centroid_noise": 0.01660181502475458
+   },
+   "2": {
+    "gap_deg": 11.25,
+    "expected_sagitta": 0.07813916982001118,
+    "sagitta_over_centroid_noise": 0.01660181502475458
+   },
+   "4": {
+    "gap_deg": 22.5,
+    "expected_sagitta": 0.3118041563594658,
+    "sagitta_over_centroid_noise": 0.06624737554485532
+   },
+   "8": {
+    "gap_deg": 45.0,
+    "expected_sagitta": 1.2352341665707534,
+    "sagitta_over_centroid_noise": 0.2624436526891885
+   },
+   "16": {
+    "gap_deg": 90.0,
+    "expected_sagitta": 4.752883461848218,
+    "sagitta_over_centroid_noise": 1.0098199436924606
+   }
+  },
+  "summary": [
+   "angle: unsupervised, activation plane, orientation 1",
+   "curvature detectable only where expected sagitta > centroid noise: strides [16] (knot gaps [90.0] deg); cubic wins at strides [16]",
+   "held-out reconstruction best: scattered = smooth, contiguous = chord"
+  ]
+ }
+}
