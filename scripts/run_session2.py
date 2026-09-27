@@ -103,6 +103,11 @@ def inlp_code_hash():
     return h.hexdigest()[:12]
 
 
+def basis_cache_path(out_dir, L, mode, holdout, code, alpha):
+    """Refit cache file; keyed by α too, since α is read from the step-1 sweep JSON, which can be regenerated."""
+    return Path(out_dir) / f"inlp_{DATASET}_L{L}_{mode}_{holdout}_{code}_a{float(alpha):.6g}.npz"
+
+
 def check_stored_basis(probes, Xtr_std, Ytr, L, alpha):
     """The stored step-2 basis must come from exactly these standardised rows: same point and alpha, and its first
     probe must equal a fresh ridge fit on them (round 1 removes nothing, so W_1 = fit_ridge(X_train_std, Y, alpha))."""
@@ -134,7 +139,7 @@ def part1_basis(d, rows, L, mode, holdout, out_dir):
         err = check_stored_basis(probes, Xb, Y[rows], L, alpha)
         return st, probes, f"stored step-2 basis (all train clips; first-probe refit rel diff {err:.1e})", rows
     code = inlp_code_hash()
-    cache = Path(out_dir) / f"inlp_{DATASET}_L{L}_{mode}_{holdout}_{code}.npz"
+    cache = basis_cache_path(out_dir, L, mode, holdout, code, alpha)
     if cache.exists():
         return st, load_basis(cache), f"cached {cache.name}", rows
     probe = d["role"] == "probe"

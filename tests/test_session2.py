@@ -168,3 +168,13 @@ def test_stored_basis_frame_check():
     st2 = Standardizer().fit(d["X"][sub].astype(np.float64))
     with pytest.raises(AssertionError):
         check_stored_basis(probes, st2.transform(d["X"][sub].astype(np.float64)), Y[sub], 22, 10.0)
+
+
+def test_basis_cache_keyed_by_alpha(tmp_path):
+    """A refit cached at one step-1 α is never reused after the sweep picks another α."""
+    import sys
+    sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
+    from run_session2 import basis_cache_path
+    a = basis_cache_path(tmp_path, 12, "design", "arc", "abc", 10.0)
+    assert a == basis_cache_path(tmp_path, 12, "design", "arc", "abc", 10.0)
+    assert a != basis_cache_path(tmp_path, 12, "design", "arc", "abc", 31.622776601683793)
