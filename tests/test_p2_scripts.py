@@ -69,7 +69,7 @@ def test_scripts_end_to_end(tmp_path, dataset):
     else:
         assert geo["knot_spacing"]["better"] == "linear"
 
-    run_script("run_part2.py", tmp, dataset, "--variable", dataset, "--n-clips", "12", "--K", "6")
+    run_script("run_part2.py", tmp, dataset, "--variable", dataset, "--n-clips", "12", "--K", "11")
     tag = f"{dataset}_{dataset}_L1_scattered"
     res = json.loads((tmp / "results" / f"p2_steer_{tag}.json").read_text())
     for fig in ("gap_vs_shift", "path_energy"):
@@ -80,7 +80,62 @@ def test_scripts_end_to_end(tmp_path, dataset):
     shuf = res["controls"]["shuffled_control"]["nearest_real_R"]
     assert shuf["n_draws"] == 20 and shuf["spline_rank"] == 1
     assert s["manifold"]["overall"]["nearest_real_R"] > shuf["p95"]
+    assert res["K"] == 11 and "behaviour_manifold" in res and "deviations_from_goodfire" in res
     if dataset == "direction":
         far_lin = s["linear"]["by_shift"][-1]["excess_to_curve"]
         far_man = s["manifold"]["by_shift"][-1]["excess_to_curve"]
         assert far_lin > 1.0 and far_lin > 3 * abs(far_man)   # large shifts: the line leaves the ring
+        wp = res["waypoint_readout"]
+        lin, man = wp["linear"][-1], wp["manifold"][-1]      # the bin nearest 180 degrees
+        assert len(lin["radius"]) == 11 and min(lin["radius"]) < 0.5 * min(man["radius"])   # radius collapse
+        assert s["linear"]["by_shift"][-1]["behaviour_energy"] > 1.3 * s["manifold"]["by_shift"][-1]["behaviour_energy"]
+        assert res["isometry_behaviour"] > 0.9 and res["isometry_probe"] > 0.9
+        assert "manifold_transport" in s
+
+
+@pytest.mark.parametrize("dataset,design", [("direction", "contiguous"), ("speed", "contiguous"),
+                                            ("speed", "extrapolation")])
+def test_part2_holdout_designs(tmp_path, dataset, design):
+    tmp = fake_dataset(tmp_path, dataset)
+    run_script("run_part2.py", tmp, dataset, "--variable", dataset, "--n-clips", "6", "--K", "5",
+               "--holdout", design, "--n-controls", "3", "--goodfire-baseline", "--spline", "smooth", "--no-bf16")
+    res = json.loads((tmp / "results" / f"p2_steer_{dataset}_{dataset}_L1_{design}.json").read_text())
+    assert res["holdout"]["design"] == design and len(res["held_out_values"]) == 8
+    assert res["spline"] == "smoothing"
+    assert len(res["sagitta_per_target"]) == 8 and all(r["sagitta"] >= 0 for r in res["sagitta_per_target"])
+    assert set(res["goodfire_comparison"]["summary"]) == {"goodfire_linear", "goodfire_manifold"}
+    assert res["controls"]["random_control"]["nearest_real_R"]["n_draws"] == 3
+    if design == "extrapolation":
+        assert res["held_out_values"] == sorted(res["held_out_values"])[-8:]
+
+
+def test_part2_heldout_context(tmp_path):
+    """Direction spline from the direction set, steering clips of a second dataset with the same ring code."""
+    tmp = fake_dataset(tmp_path, "direction")
+    ctx = tmp_path / "ctx"
+    ctx.mkdir()
+    fake_dataset(ctx, "direction")
+    ids = json.loads((ctx / "act" / "ids.json").read_text())
+    X = np.load(ctx / "act" / "meanpool.npy")
+    X = X + 0.05 * np.random.default_rng(1).standard_normal(X.shape).astype(np.float32)
+    np.save(ctx / "act" / "meanpool.npy", X)
+    run_script("run_part2.py", tmp, "direction", "--variable", "direction", "--n-clips", "6", "--K", "5",
+               "--n-controls", "2", "--no-bf16", "--context-dataset", "speed",
+               "--context-act-dir", str(ctx / "act"), "--context-table", str(ctx / "table.csv"),
+               "--context-split", str(ctx / "split.json"))
+    res = json.loads((tmp / "results" / "p2_steer_direction_direction_L1_scattered_ctx-speed.json").read_text())
+    assert res["context"]["steered_dataset"] == "speed" and len(ids) == len(X)
+    man = res["summary"]["manifold"]["overall"]
+    assert man["nearest_real_R_context"] > 0.3 and man["nearest_real_R"] > 0.3
+
+
+def test_load_pair_checks_alignment(tmp_path):
+    from wm.p2_data import load_pair
+    tmp = fake_dataset(tmp_path, "direction")
+    kw = dict(act_dirs=(tmp / "act", tmp / "act"), tables=(tmp / "table.csv", tmp / "table.csv"),
+              splits=(tmp / "split.json", tmp / "split.json"))
+    a, b = load_pair("direction", "speed", 1, "direction", **kw)
+    assert a["X"].shape == b["X"].shape and b["periodic"]
+    (tmp / "act" / "ids.json").write_text(json.dumps(list(range(1, 513))))
+    with pytest.raises(AssertionError):
+        load_pair("direction", "speed", 1, "direction", **kw)

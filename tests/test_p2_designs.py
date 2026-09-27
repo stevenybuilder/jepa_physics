@@ -106,7 +106,8 @@ def test_chord_controls_share_endpoints_and_spacing():
 @pytest.fixture(scope="module")
 def ring_model():
     X, th, Q = ring_data()
-    d = {"X": X, "y": th, "periodic": True, "role": np.where(np.arange(len(th)) % 5 < 3, "knot", "test")}
+    f = np.arange(len(th)) % 5
+    d = {"X": X, "y": th, "periodic": True, "role": np.where(f < 3, "knot", np.where(f == 3, "probe", "test"))}
     m = P2.build(d, 16, "unsupervised", "contiguous", seed=0, n_controls=2)
     return X, th, Q, m
 
@@ -117,7 +118,7 @@ def test_matched_support_residual_identical(ring_model):
     pca = m["pca"]
     Z, resid = pca.project(x), pca.complement(x)
     arms = P2.subspace_arms(Z, src, tgt, m, K=9)
-    assert set(arms) == {"manifold", "linear", "linear_dose_matched", "projected", "reflected"}
+    assert set(arms) == {"manifold", "linear", "linear_dose_matched", "projected", "reflected", "manifold_transport"}
     for name, Zk in arms.items():
         assert Zk.shape == (6, 9, pca.components.shape[0])        # arms only carry in-subspace coordinates
         W = P2.compose(pca, Zk, resid)
@@ -217,3 +218,53 @@ def test_smoothing_spline_crosses_a_held_out_block():
     np.testing.assert_allclose(curve(t0), curve(t0 + 2 * np.pi), atol=1e-9)
     np.testing.assert_allclose(curve.spline(t0, 1), curve.spline(t0 + 2 * np.pi - 1e-12, 1), atol=1e-6)
     np.testing.assert_allclose(curve(curve.coords), curve.points, atol=1e-9)
+
+
+def test_behaviour_manifold_eq9():
+    X, th, _ = ring_data()
+    pca = mf.fit_pca(X[::2], 16)
+    curve = mf.fit_curve(mf.centroids(pca.project(X[::2]), th[::2]), True)
+    bm = mf.BehaviourManifold(X[1::2], th[1::2], True)
+    P = bm.F(X[th == 90.0])
+    assert np.allclose(P.sum(1), 1) and np.all(bm.values[P.mean(0).argmax()] == 90.0)   # peaked at the true value
+    np.testing.assert_allclose(np.linalg.norm(bm.grid, axis=1), 1.0, atol=1e-9)         # M_y stays on the sphere
+    x = X[th == 0.0][:5]
+    Z, resid = pca.project(x), pca.complement(x)
+    src = np.zeros(5)
+    Zs = mf.manifold_coords(Z, curve, curve.coord_of_value(src), curve.coord_of_value(np.full(5, 180.0)), 50)
+    Zl = mf.linear_coords(Z, mf.piecewise_linear_point(curve, src), mf.piecewise_linear_point(curve, 180.0), 50)
+    e_s = bm.bhattacharyya(pca.lift(Zs) + resid[:, None]).sum(1)
+    e_l = bm.bhattacharyya(pca.lift(Zl) + resid[:, None]).sum(1)
+    assert np.all(e_l > 5 * e_s)                              # Goodfire's E_BC ordering on a planted ring
+    assert mf.isometry(curve, bm.geodesic_matrix(curve.values), "precomputed") > 0.95
+
+
+def test_isometry_angular_vs_chord():
+    X, th, _ = ring_data()
+    pca = mf.fit_pca(X, 16)
+    curve = mf.fit_curve(mf.centroids(pca.project(X), th), True)
+    r = np.radians(curve.values)
+    readout = np.stack([np.sin(r), np.cos(r)], 1)
+    ang = mf.isometry(curve, readout, "angular")
+    chord = mf.isometry(curve, readout, "euclidean")
+    assert ang > 0.99 and ang > chord                          # geodesic vs geodesic is linear; chords bend
+
+
+def test_transport_keeps_offset_outward():
+    X, th, _ = ring_data()
+    pca = mf.fit_pca(X, 16)
+    curve = mf.fit_curve(mf.centroids(pca.project(X), th), True)
+    c = curve.points.mean(0)
+    p0 = curve(curve.coord_of_value(0.0))
+    Z0 = (p0 + 0.5 * (p0 - c) / np.linalg.norm(p0 - c))[None]
+    ta, tb = curve.coord_of_value(0.0), curve.coord_of_value(180.0)
+    rad = lambda mode: np.linalg.norm(mf.manifold_coords(Z0, curve, ta, tb, 21, mode)[0] - c, axis=1)
+    r_end = np.linalg.norm(curve(tb) - c)
+    assert rad("transport")[-1] == pytest.approx(r_end + 0.5, abs=0.1)
+    assert rad("shift")[-1] < r_end                           # rigid shift lands the offset on the inner side
+    np.testing.assert_allclose(mf.manifold_coords(Z0, curve, ta, tb, 5, "transport")[0, 0], Z0[0], atol=1e-9)
+    Xl, v = line_data()
+    pl = mf.fit_pca(Xl, 8)
+    cl = mf.fit_curve(mf.centroids(pl.project(Xl), v), False)
+    with pytest.raises(ValueError):
+        mf.manifold_coords(pl.project(Xl[:2]), cl, 1.0, 2.0, 3, "transport")

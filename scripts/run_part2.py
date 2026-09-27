@@ -39,15 +39,19 @@ MAIN_ARMS = ("manifold", "linear", "linear_dose_matched", "projected", "reflecte
 GOODFIRE_ARMS = ("goodfire_linear", "goodfire_manifold")
 CONTROLS = ("random_control", "shuffled_control")
 METRICS = ("probe_err_to_target", "probe_err_to_true", "nearest_real_R", "energy_to_curve", "energy_to_nearest_real",
-           "excess_to_curve", "excess_to_nearest_real", "norm_ratio", "delta_norm", "delta_norm_path")
+           "excess_to_curve", "excess_to_nearest_real", "behaviour_energy", "behaviour_energy_mean", "norm_ratio",
+           "delta_norm", "delta_norm_path", "probe_err_path", "probe_radius_min")
 RANKED = {"nearest_real_R": True, "probe_err_to_target": False, "excess_to_curve": False,
-          "excess_to_nearest_real": False}                       # metric -> higher is better
+          "excess_to_nearest_real": False, "behaviour_energy": False}   # metric -> higher is better
+WAYPOINT_SERIES = ("_wp_err", "_wp_radius", "_wp_bc")
 ARM_NOTES = {
     "manifold": "spline walk in the PCA-k subspace, additive (x + curve(t_k) - curve(t_src)), residual kept",
     "linear": "straight line between the polyline (chord) points at source and target, same subspace, residual kept",
     "linear_dose_matched": "linear arm with its delta rescaled, per clip and per waypoint, to the spline's ||delta||",
     "projected": "the spline's own chord (same endpoints) traversed with the spline's arc-length spacing",
     "reflected": "2 * projected - spline: the bend flipped, same endpoints, dose and waypoint count",
+    "manifold_transport": "spline walk that rotates the clip's offset from the loop with the loop's frame "
+                          "(direction only); residual kept",
     "goodfire_linear": "Goodfire's linear baseline: the whole activation replaced by a full-space chord point",
     "goodfire_manifold": "Goodfire's manifold arm: PCA part replaced by the curve point, residual kept (A.6)",
 }
@@ -83,17 +87,22 @@ def build(d, k, angle, design="scattered", seed=0, n_controls=20, spline="interp
     for s in sag:
         s["sagitta_over_centroid_noise"] = s["sagitta"] / float(np.median(noise))
         s["sagitta_over_spread"] = s["sagitta"] / float(np.median(spread))
+    # reference manifold that NEITHER arm was built from (Goodfire A.7): probe-fold clips at all values, same PCA
+    ref = d["role"] == "probe"
+    ref_cent = mf.centroids(pca.project(d["X"][ref]), d["y"][ref])
+    ref_curve = mf.fit_curve(ref_cent, d["periodic"], angle="labels", spline="smooth")
+    behaviour = mf.BehaviourManifold(d["X"][ref], d["y"][ref], d["periodic"])
     rng = np.random.default_rng(seed)
     controls = {"random_control": [gc.random_smooth_curve(curve, rng) for _ in range(n_controls)],
                 "shuffled_control": [gc.shuffled_curve(curve, rng) for _ in range(n_controls)]}
     return {"pca": pca, "cent": cent, "curve": curve, "angle_choice": choice, "plane": plane,
             "full_curve": full_curve, "held": held, "knot": knot, "design": design_info, "sagitta": sag,
-            "controls": controls}
+            "controls": controls, "ref_curve": ref_curve, "X_ref": d["X"][ref], "behaviour": behaviour}
 
 
-def curve_coords(curve, Z, src, tgt, K):
+def curve_coords(curve, Z, src, tgt, K, mode="shift"):
     ta, tb = curve.coord_of_value(src), curve.coord_of_value(np.full(len(src), tgt))
-    return mf.manifold_coords(Z, curve, ta, tb, K)
+    return mf.manifold_coords(Z, curve, ta, tb, K, mode)
 
 
 def subspace_arms(Z, src, tgt, m, K):
@@ -105,7 +114,10 @@ def subspace_arms(Z, src, tgt, m, K):
     nl, ns = np.linalg.norm(dl, axis=-1, keepdims=True), np.linalg.norm(ds, axis=-1, keepdims=True)
     Zd = Z[:, None] + dl * np.where(nl > 0, ns / np.where(nl > 0, nl, 1.0), 0.0)
     projected, reflected = mf.chord_coords(Zs)
-    return {"manifold": Zs, "linear": Zl, "linear_dose_matched": Zd, "projected": projected, "reflected": reflected}
+    out = {"manifold": Zs, "linear": Zl, "linear_dose_matched": Zd, "projected": projected, "reflected": reflected}
+    if m["curve"].periodic:
+        out["manifold_transport"] = curve_coords(m["curve"], Z, src, tgt, K, mode="transport")
+    return out
 
 
 def compose(pca, Zk, resid):
@@ -127,9 +139,18 @@ def goodfire_arms(x, src, tgt, m, K):
 def evaluate(W, x, src, tgt, m, ctx):
     """Per-clip metrics of waypoints W [n, K, D] steering clips x [n, D] from src to tgt."""
     periodic = ctx["periodic"]
+    n, K = W.shape[:2]
     xs = W[:, -1]
-    e = mf.off_manifold_energy(W, m["pca"], m["curve"], ctx["X_knot"])
-    pred = ctx["probe"].predict(xs)
+    e = mf.off_manifold_energy(W, m["pca"], m["ref_curve"], m["X_ref"], knn=5)
+    raw = ctx["probe"].raw(W.reshape(n * K, -1)).reshape(n, K, -1)         # probe read at every waypoint
+    if periodic:
+        wp_pred = np.degrees(np.arctan2(raw[..., 0], raw[..., 1])) % 360.0
+        wp_radius = np.linalg.norm(raw, axis=-1)
+    else:
+        wp_pred, wp_radius = raw[..., 0], np.full((n, K), np.nan)
+    wp_err = mf.value_error(wp_pred, tgt, periodic)
+    pred = wp_pred[:, -1]
+    bc = m["behaviour"].bhattacharyya(W)                                   # [n, K]
     dn = np.linalg.norm(W - x[:, None], axis=-1)                           # [n, K] delivered dose per waypoint
     out = {"probe_err_to_target": mf.value_error(pred, tgt, periodic),
            "probe_err_to_true": mf.value_error(pred, src, periodic),
@@ -138,8 +159,12 @@ def evaluate(W, x, src, tgt, m, ctx):
            # excess = mean along the path minus the unsteered clip's own distance (waypoint 0)
            "excess_to_curve": e["to_curve"].mean(1) - e["to_curve"][:, 0],
            "excess_to_nearest_real": e["to_nearest_real"].mean(1) - e["to_nearest_real"][:, 0],
+           "behaviour_energy": bc.sum(1), "behaviour_energy_mean": bc.mean(1),
            "norm_ratio": np.linalg.norm(xs, axis=1) / np.linalg.norm(x, axis=1),
            "delta_norm": dn[:, -1], "delta_norm_path": dn.mean(1),
+           "probe_err_path": wp_err.mean(1),
+           "probe_radius_min": wp_radius.min(1) if periodic else np.full(n, np.nan),
+           "_wp_err": wp_err, "_wp_radius": wp_radius, "_wp_bc": bc,
            "_dose": dn, "_energy": np.stack([e["to_curve"], e["to_nearest_real"]], -1), "_delta_end": xs - x}
     if ctx.get("near_ctx") is not None:
         out["nearest_real_R_context"] = ctx["near_ctx"].score(xs, x, tgt)
@@ -163,7 +188,6 @@ def bf16_steering_energy(d, d_steer, args, angle, picks):
     db = {**d, "X": gc.bf16_round(d["X"])}
     Xs = gc.bf16_round(d_steer["X"])
     mb = build(db, args.k, angle, args.holdout, args.seed, n_controls=0, spline=args.spline)
-    X_knot = db["X"][mb["knot"]]
     acc = {a: {"excess_to_curve": [], "excess_to_nearest_real": []} for a in ("manifold", "linear")}
     for tgt, pick in picks.items():
         x, src = Xs[pick].astype(float), d_steer["y"][pick]
@@ -171,7 +195,7 @@ def bf16_steering_energy(d, d_steer, args, angle, picks):
         arms = subspace_arms(Z, src, tgt, mb, args.K)
         for a in acc:
             W = gc.bf16_round(compose(mb["pca"], arms[a], resid)).astype(float)
-            e = mf.off_manifold_energy(W, mb["pca"], mb["curve"], X_knot)
+            e = mf.off_manifold_energy(W, mb["pca"], mb["ref_curve"], mb["X_ref"], knn=5)
             acc[a]["excess_to_curve"].append(e["to_curve"].mean(1) - e["to_curve"][:, 0])
             acc[a]["excess_to_nearest_real"].append(e["to_nearest_real"].mean(1) - e["to_nearest_real"][:, 0])
     return {a: {q: float(np.mean(np.concatenate(v))) for q, v in qs.items()} for a, qs in acc.items()}
@@ -193,7 +217,7 @@ def run(args):
     probe_rows = d["role"] == "probe"
     probe = mf.ProbeReadout(d["X"][probe_rows], d["y"][probe_rows], periodic)
     test = np.flatnonzero(d["role"] == "test")
-    ctx = {"periodic": periodic, "probe": probe, "X_knot": d["X"][m["knot"]],
+    ctx = {"periodic": periodic, "probe": probe,
            "near": mf.NearestRealReadout(d["X"][test], d["y"][test]), "near_ctx": None}
     d_steer = d
     if args.context_dataset:
@@ -203,11 +227,12 @@ def run(args):
         ctest = np.flatnonzero(c["role"] == "test")
         ctx["near_ctx"] = mf.NearestRealReadout(c["X"][ctest], c["y"][ctest])
         d_steer = c
-    arms = MAIN_ARMS + (GOODFIRE_ARMS if args.goodfire_baseline else ())
+    arms = MAIN_ARMS + (("manifold_transport",) if periodic else ()) + (GOODFIRE_ARMS if args.goodfire_baseline else ())
     picks = pick_clips(d_steer, m["held"], args.n_clips, args.seed)
 
     rows, shared = [], {a: [] for a in arms}
-    per_arm = {a: {q: [] for q in (*METRICS, "nearest_real_R_context", "_dose", "_energy", "shift")} for a in arms}
+    per_arm = {a: {q: [] for q in (*METRICS, "nearest_real_R_context", "_dose", "_energy", *WAYPOINT_SERIES, "shift")}
+               for a in arms}
     ctrl = {kind: [{q: [] for q in RANKED} for _ in m["controls"][kind]] for kind in CONTROLS}
     for tgt, pick in picks.items():
         x, src = d_steer["X"][pick].astype(float), d_steer["y"][pick]
@@ -255,13 +280,36 @@ def run(args):
            "n_knot_clips": int(m["knot"].sum()), "n_probe_clips": int(probe_rows.sum()), "n_test_clips": len(test),
            "n_steered_per_target": {str(t): len(p) for t, p in picks.items()},
            "arms": {a: ARM_NOTES[a] for a in arms},
+           "deviations_from_goodfire": {
+               "additive_path": "main arms are additive (x + curve(t_k) - curve(t_src)); Goodfire A.6 replaces the "
+                                "PCA-64 part with the curve point and keeps the complement. That is run as "
+                                "goodfire_manifold under --goodfire-baseline.",
+               "matched_linear": "Goodfire's linear arm replaces the whole activation with a full-space chord point; "
+                                 "the main linear arm edits the same PCA-k subspace as the spline and keeps the "
+                                 "residual (goodfire_linear reproduces theirs).",
+               "behaviour_scale": "Eq. 9 squared distances divided by the mean within-value squared distance "
+                                  "(tau = 0.5 in those units)"},
+           "energy_reference": ("energy_to_curve / excess_to_curve: distance (PCA-k) to a count-weighted smoothing "
+                                "spline through probe-fold centroids at all values, which no arm was built from; "
+                                "energy_to_nearest_real: mean distance to the 5 nearest probe-fold clips (full space)"),
+           "behaviour_manifold": {"source": mf.BehaviourManifold.source, "tau": m["behaviour"].tau,
+                                  "distance_scale": m["behaviour"].scale, "clips": "probe folds at the read layer",
+                                  "metric": "behaviour_energy = E_BC, sum over the K waypoints of the Bhattacharyya "
+                                            "distance to M_y (A.7); behaviour_energy_mean = per waypoint"},
+           "waypoint_readout": waypoint_summary(cat, arms, periodic),
            "matched_support": ("manifold, linear, linear_dose_matched, projected and reflected all edit only the "
                                "PCA-k subspace and add back the identical off-subspace residual of each clip"),
            "dose_matched_note": ("linear_dose_matched = the linear arm's delta rescaled per clip and per waypoint to "
                                  "the spline arm's ||delta|| at the same waypoint (dose-matched comparison)"),
            "readouts": {"probe": mf.ProbeReadout.plays_M_y, "nearest_real": mf.NearestRealReadout.plays_M_y},
            "probe_test_error": float(np.mean(mf.value_error(probe.predict(d["X"][test]), d["y"][test], periodic))),
-           "isometry_probe": mf.isometry(m["curve"], probe.raw(m["pca"].lift(m["curve"].points))),
+           "isometry_probe": mf.isometry(m["curve"], probe.raw(m["pca"].lift(m["curve"].points)),
+                                         "angular" if periodic else "euclidean"),
+           "isometry_behaviour": mf.isometry(m["curve"], m["behaviour"].geodesic_matrix(m["curve"].values),
+                                             "precomputed"),
+           "isometry_note": ("Pearson r between knot-pair geodesics on the activation spline and, for the probe, the "
+                             "angle between (sin, cos) readouts (direction) or |difference| (scalars); for the "
+                             "behaviour manifold, Hellinger geodesics along M_y (Goodfire A.5, geodesic vs geodesic)"),
            "shared_delta_fraction": {a: float(np.mean(v)) for a, v in shared.items()},
            "delta_norm_per_waypoint": {a: cat[a]["_dose"].mean(0).tolist() for a in arms},
            "rescue_harm": rescue_harm(cat, arms),
@@ -298,7 +346,53 @@ def run(args):
     plot_gap(out["summary"], Path(args.figures_dir) / f"fig4_gap_vs_shift_{tag}.png", tag, periodic, main)
     plot_energy({a: cat[a]["_energy"] for a in main}, {a: cat[a]["shift"] for a in main},
                 Path(args.figures_dir) / f"fig4_path_energy_{tag}.png", tag)
+    plot_waypoints(out["waypoint_readout"], Path(args.figures_dir) / f"fig4_waypoint_readout_{tag}.png", tag,
+                   periodic, main)
     return out
+
+
+def waypoint_summary(cat, arms, periodic, n_bins=4):
+    """Per arm and shift bin (the largest bin is the one near 180 degrees for direction): the evaluation probe's
+    error to target and readout radius, and the Bhattacharyya distance to M_y, at every waypoint (mean over clips)."""
+    shifts = np.concatenate([cat[a]["shift"] for a in arms])
+    edges = (np.array([0, 45, 90, 135, 180.01]) if periodic
+             else np.quantile(shifts, np.linspace(0, 1, n_bins + 1)) + np.r_[np.zeros(n_bins), 1e-9])
+    out = {}
+    for a in arms:
+        s = cat[a]["shift"]
+        bins = []
+        for lo, hi in zip(edges[:-1], edges[1:]):
+            sel = (s >= lo) & (s < hi)
+            if not sel.any():
+                continue
+            b = {"shift_lo": float(lo), "shift_hi": float(hi), "n": int(sel.sum()),
+                 "err_to_target": cat[a]["_wp_err"][sel].mean(0).tolist(),
+                 "bhattacharyya": cat[a]["_wp_bc"][sel].mean(0).tolist()}
+            if periodic:
+                b["radius"] = cat[a]["_wp_radius"][sel].mean(0).tolist()
+            bins.append(b)
+        out[a] = bins
+    return out
+
+
+def plot_waypoints(wp, path, tag, periodic, arms):
+    """Largest-shift bin: probe readout radius (direction) or error, and behaviour distance, along the path."""
+    fig, axes = plt.subplots(1, 2, figsize=(9, 3.5))
+    for a in arms:
+        b = wp[a][-1]
+        frac = np.linspace(0, 1, len(b["err_to_target"]))
+        style = "-" if a in ("manifold", "linear") else ":"
+        axes[0].plot(frac, b["radius"] if periodic else b["err_to_target"], style, label=a)
+        axes[1].plot(frac, b["bhattacharyya"], style, label=a)
+    b = wp[arms[0]][-1]
+    axes[0].set(xlabel="fraction of path", ylabel="probe readout radius" if periodic else "probe error to target",
+                title=f"Evaluation probe, shift {b['shift_lo']:.0f}-{b['shift_hi']:.0f}")
+    axes[1].set(xlabel="fraction of path", ylabel="Bhattacharyya distance to M_y", title="Behaviour manifold (Eq. 9)")
+    axes[0].legend(fontsize=7)
+    fig.suptitle(f"Every waypoint scored, {tag}")
+    fig.tight_layout()
+    fig.savefig(path, dpi=150)
+    plt.close(fig)
 
 
 def rescue_harm(cat, arms):
@@ -391,7 +485,7 @@ def parse(argv=None):
     p.add_argument("--layer", type=int, required=True)
     p.add_argument("--variable", default=None)
     p.add_argument("--k", type=int, default=64)
-    p.add_argument("--K", type=int, default=16, help="waypoints per path")
+    p.add_argument("--K", type=int, default=50, help="waypoints per path (Goodfire A.6 uses 50)")
     p.add_argument("--n-clips", type=int, default=48, help="steered test clips per target value")
     p.add_argument("--labels-angle", action="store_true", help="flagged fallback: true angle as spline coordinate")
     p.add_argument("--holdout", default="scattered", choices=mf.HOLDOUT_DESIGNS,

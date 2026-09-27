@@ -452,7 +452,33 @@ def manifold_coords(Z, curve, ta, tb, K, mode="shift"):
         return Z[:, None, :] + on_curve - on_curve[:, :1, :]
     if mode == "replace":
         return on_curve
+    if mode == "transport":
+        return on_curve + transport_offset(Z - on_curve[:, 0], curve, t)
     raise ValueError(mode)
+
+
+def curve_frame(curve, t):
+    """Unit tangent T and unit in-plane normal N of a closed curve at t (N = the direction from the loop's centre,
+    made orthogonal to T). Returns (T, N), each [..., k]."""
+    P = curve(t)
+    T = curve.spline(np.asarray(t, dtype=float), 1)
+    T = T / np.linalg.norm(T, axis=-1, keepdims=True)
+    N = P - curve.points.mean(axis=0)
+    N = N - np.sum(N * T, axis=-1, keepdims=True) * T
+    return T, N / np.linalg.norm(N, axis=-1, keepdims=True)
+
+
+def transport_offset(o, curve, t):
+    """Carry each clip's offset o [n, k] from the curve along the loop, rotating its tangent and normal parts with
+    the loop's frame (o_k = o - (o.T0)T0 - (o.N0)N0 + (o.T0)T_k + (o.N0)N_k) instead of shifting it rigidly.
+    A rigid shift puts an outward offset on the inner side after a 180 degree steer; transport keeps it outward.
+    Exact rotation for a planar loop. Periodic curves only. t [n, K]; returns [n, K, k]."""
+    if not curve.periodic:
+        raise ValueError("transport is defined for a closed curve (direction); use mode='shift' for scalars")
+    T, N = curve_frame(curve, t)                                         # [n, K, k]
+    a, b = np.sum(o * T[:, 0], -1), np.sum(o * N[:, 0], -1)              # [n]
+    rest = o - a[:, None] * T[:, 0] - b[:, None] * N[:, 0]
+    return rest[:, None] + a[:, None, None] * T + b[:, None, None] * N
 
 
 def linear_coords(Z, pa, pb, K):
@@ -522,12 +548,31 @@ def min_distance(A, B, chunk=4096):
     return out.reshape(A.shape[:-1])
 
 
-def off_manifold_energy(W, pca, curve, X_real=None):
-    """Per-waypoint distances for W [.., D]: to the fitted curve (PCA space) and, if X_real is given, to the
-    nearest real training activation (full space; a density proxy). Means are what Goodfire-style summaries use."""
+def knn_distance(A, B, k=5, chunk=2048):
+    """Mean distance from each row of A [.., D] to its k nearest rows of B [m, D] (a kNN density proxy)."""
+    A = np.asarray(A, dtype=np.float64)
+    flat = A.reshape(-1, A.shape[-1])
+    B = np.asarray(B, dtype=np.float64)
+    k = min(k, len(B))
+    b2 = (B ** 2).sum(axis=1)
+    out = np.empty(len(flat))
+    for i in range(0, len(flat), chunk):
+        a = flat[i:i + chunk]
+        d2 = np.maximum((a ** 2).sum(axis=1)[:, None] + b2[None, :] - 2 * a @ B.T, 0.0)
+        out[i:i + chunk] = np.sqrt(np.partition(d2, k - 1, axis=1)[:, :k]).mean(axis=1)
+    return out.reshape(A.shape[:-1])
+
+
+def off_manifold_energy(W, pca, curve, X_real=None, knn=1):
+    """Per-waypoint distances for W [.., D]: to `curve` (PCA space) and, if X_real is given, the mean distance to
+    the knn nearest real activations (full space; a density proxy). Means are what Goodfire-style summaries use.
+
+    Pass a reference curve and real clips that NEITHER steering arm was built from (Goodfire A.7: naturalness is
+    scored against a manifold fit to unintervened data). Scoring against the manifold arm's own spline makes the
+    manifold arm win by construction."""
     out = {"to_curve": curve.distance(pca.project(W))}
     if X_real is not None:
-        out["to_nearest_real"] = min_distance(W, X_real)
+        out["to_nearest_real"] = min_distance(W, X_real) if knn == 1 else knn_distance(W, X_real, knn)
     return out
 
 
@@ -548,15 +593,113 @@ def geodesic_matrix(curve, n=200):
     return G
 
 
-def isometry(curve, readout_points):
-    """Pearson correlation between knot-pair geodesic distances on the activation curve and Euclidean distances
-    between the readouts of the same knots (readout_points [m, q], in the curve's knot order). A.5 without the
-    interior points: the knots here are already dense (48-64 per curve)."""
+def isometry(curve, readout_points, metric="euclidean"):
+    """Pearson correlation between knot-pair geodesic distances on the activation curve and distances between the
+    readouts of the same knots (readout_points [m, q], in the curve's knot order, or an [m, m] distance matrix with
+    metric="precomputed"). Goodfire A.5 compares geodesic with geodesic, so for a (sin, cos) probe readout use
+    metric="angular" (the angle between readouts, wrapped to [0, 180]), not the Euclidean chord. A.5 without
+    interior points: the knots here are already dense (48-64 per curve, like their ages task, K=0)."""
     G = geodesic_matrix(curve)
-    R = np.asarray(readout_points, dtype=float).reshape(len(G), -1)
-    Dr = np.linalg.norm(R[:, None] - R[None], axis=-1)
+    R = np.asarray(readout_points, dtype=float)
+    if metric == "precomputed":
+        Dr = R
+    elif metric == "angular":
+        ang = np.arctan2(R[:, 0], R[:, 1])
+        Dr = np.abs(wrap_pi(ang[:, None] - ang[None]))
+    else:
+        R = R.reshape(len(G), -1)
+        Dr = np.linalg.norm(R[:, None] - R[None], axis=-1)
     iu = np.triu_indices(len(G), 1)
     return float(np.corrcoef(G[iu], Dr[iu])[0, 1])
+
+
+# ---------------------------------------------------------------- behaviour manifold M_y (Goodfire section 5) -----
+
+class BehaviourManifold:
+    """Goodfire section 5 Eq. 9 / App. B.1: for a model with no output distribution, a behaviour is built from the
+    activations themselves: p(z) = softmax_b(-||z - mu_b||^2 / (tau * s2)), tau = 0.5, mu_b the per-value centroids
+    of real clips at the read layer. b_i = mean p over real clips at value i; M_y = a spline through sqrt(b_i) in the
+    tangent plane of the unit sphere at the normalised mean (log map; decoded by the exp map, App. A.4), parameterised
+    by the value (radians for direction). Energy E_BC = sum over waypoints of the Bhattacharyya distance
+    -log sum_i sqrt(p_i q_i) to the nearest point q of M_y (App. A.7).
+
+    s2: "within" (default) = the mean squared distance of a real clip to its own value's centroid, so tau is in units
+    of within-value spread; "raw" = 1 (literal Eq. 9; with 1024-d activations the softmax is then one-hot). The PDF
+    text cannot distinguish ||.||_2 from ||.||^2 in Eq. 9; squared distance (a Gaussian kernel) is used.
+    Build it from real clips that neither steering arm was built from.
+    """
+    source = "Goodfire Manifold Steering, section 5 Eq. 9 and App. B.1 (tau = 0.5), Hellinger/tangent spline App. A.4"
+
+    def __init__(self, X_real, values_real, periodic, tau=0.5, scale="within", n_grid=2000):
+        X, v = np.asarray(X_real, dtype=float), np.asarray(values_real, dtype=float)
+        self.values = np.unique(v)
+        self.periodic, self.tau, self.scale = periodic, tau, scale
+        self.mu = np.array([X[v == u].mean(0) for u in self.values])                       # [B, D]
+        idx = np.searchsorted(self.values, v)
+        self.s2 = float(((X - self.mu[idx]) ** 2).sum(1).mean()) if scale == "within" else 1.0
+        P = self.F(X)
+        b = np.array([P[v == u].mean(0) for u in self.values])                             # [B, B]
+        h = np.sqrt(b)
+        base = h.mean(0)
+        self.base = base / np.linalg.norm(base)
+        tangent = self._log(h)
+        coord = np.radians(self.values) if periodic else self.values
+        if periodic:
+            self.spline = CubicSpline(np.append(coord, coord[0] + TWO_PI), np.vstack([tangent, tangent[:1]]),
+                                      bc_type="periodic")
+            self.grid_t = np.linspace(coord[0], coord[0] + TWO_PI, n_grid, endpoint=False)
+        else:
+            self.spline = CubicSpline(coord, tangent, bc_type="natural")
+            self.grid_t = np.linspace(coord[0], coord[-1], n_grid)
+        self.grid = self.decode(self.grid_t)                                               # [G, B] unit vectors
+
+    def F(self, Z):
+        """Eq. 9: distribution over the B values for activations Z [.., D]."""
+        Z = np.asarray(Z, dtype=float)
+        flat = Z.reshape(-1, Z.shape[-1])
+        d2 = (flat ** 2).sum(1)[:, None] + (self.mu ** 2).sum(1)[None] - 2 * flat @ self.mu.T
+        logits = -np.maximum(d2, 0.0) / (self.tau * self.s2)
+        logits -= logits.max(1, keepdims=True)
+        p = np.exp(logits)
+        return (p / p.sum(1, keepdims=True)).reshape(Z.shape[:-1] + (len(self.mu),))
+
+    def _log(self, h):
+        c = np.clip(h @ self.base, -1.0, 1.0)
+        th = np.arccos(c)[:, None]
+        u = h - c[:, None] * self.base
+        n = np.linalg.norm(u, axis=1, keepdims=True)
+        return np.where(n > 1e-12, th * u / np.where(n > 1e-12, n, 1.0), 0.0)
+
+    def decode(self, t):
+        """Exp map of the tangent spline at coordinates t: points of M_y (unit-norm sqrt-probabilities)."""
+        tv = self.spline(np.asarray(t, dtype=float))
+        n = np.linalg.norm(tv, axis=-1, keepdims=True)
+        return np.cos(n) * self.base + np.sin(n) * tv / np.where(n > 1e-12, n, 1.0)
+
+    def bhattacharyya(self, Z):
+        """Per-row Bhattacharyya distance of p(z) to the nearest grid point of M_y: -log max_q sum sqrt(p q)."""
+        sp = np.sqrt(self.F(Z))
+        flat = sp.reshape(-1, sp.shape[-1])
+        bc = np.empty(len(flat))
+        for i in range(0, len(flat), 4096):
+            bc[i:i + 4096] = (flat[i:i + 4096] @ self.grid.T).max(1)
+        return -np.log(np.clip(bc, 1e-300, 1.0)).reshape(sp.shape[:-1])
+
+    def geodesic(self, v_a, v_b, n=150):
+        """Hellinger length along M_y between two values (App. A.5: 150 sub-intervals, d_H = ||.||_2 / sqrt 2)."""
+        ta = np.radians(v_a) if self.periodic else float(v_a)
+        tb = np.radians(v_b) if self.periodic else float(v_b)
+        step = wrap_pi(tb - ta) if self.periodic else tb - ta
+        pts = self.decode(ta + np.linspace(0, 1, n + 1) * step)
+        return float(np.linalg.norm(np.diff(pts, axis=0), axis=1).sum() / np.sqrt(2))
+
+    def geodesic_matrix(self, values):
+        m = len(values)
+        G = np.zeros((m, m))
+        for i in range(m):
+            for j in range(i + 1, m):
+                G[i, j] = G[j, i] = self.geodesic(values[i], values[j])
+        return G
 
 
 # ---------------------------------------------------------------- readouts ("what plays M_y") ---------------------
