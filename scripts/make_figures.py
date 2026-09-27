@@ -234,6 +234,49 @@ def fig2b(results, out):
     plt.close(fig)
 
 
+def fig2c(results, out):
+    """Extra (spec §6 item 8): four dimensionality estimands per layer, direction vs speed."""
+    path = results / "p1b_dims_four_ways.json"
+    if not path.exists():
+        return
+    r = json.loads(path.read_text())
+    fig, axes = plt.subplots(1, 4, figsize=(20, 3.8))
+    a, b, c, d = axes
+    for v, run in r["variables"].items():
+        rows = [row for row in run["layers"] if not row["post_ln"]]
+        x = [row["frac"] for row in rows]
+        a.plot(x, [row["literal"]["dims"] for row in rows], "o-", ms=3, color=COLORS[v], label=f"{v}: literal (paper)")
+        a.plot(x, [row["whitened"][0]["rank_I_minus_T"] for row in rows], "s--", ms=3, color=COLORS[v],
+               label=f"{v}: whitened rank(I − T)")
+        rr = [row["literal"].get("random_removal_cv_r2") for row in rows]
+        xs = [xi for xi, q in zip(x, rr) if q]
+        m = np.array([q["mean"] for q in rr if q])
+        sd = np.array([q["seed_sd"] for q in rr if q])
+        b.plot(xs, m, color=COLORS[v], label=f"{v}")
+        b.fill_between(xs, m - sd, m + sd, color=COLORS[v], alpha=0.2, lw=0)
+        c.plot(x, [row["leace"]["ridge_r2_after"] for row in rows], "o-", ms=3, color=COLORS[v], label=f"{v}: ridge after")
+        if "mlp_r2_after" in rows[0]["leace"]:
+            c.plot(x, [row["leace"]["mlp_r2_after"] for row in rows], "s--", ms=3, color=COLORS[v], label=f"{v}: MLP after")
+            c.plot(x, [row["leace"]["mlp_r2_before"] for row in rows], ":", color=COLORS[v], label=f"{v}: MLP before")
+        if "dft" in rows[0]:
+            d.plot(x, [row["dft"]["participation_ratio"] or np.nan for row in rows], "o-", ms=3, color=COLORS[v],
+                   label="participation ratio (k ≥ 1)")
+            d.plot(x, [row["dft"]["frac_k_ge_1"][0] for row in rows], "--", color=COLORS["text"],
+                   label="fraction of power at k = 1")
+    a.set(xlabel="layer fraction", ylabel="dimensions", yscale="log", title="(a, b) Literal vs whitened count")
+    b.set(xlabel="layer fraction", ylabel="probe R² after random removal", ylim=(-0.05, 1.02),
+          title="(a) Random removal at the literal rank")
+    c.axhline(0, color=COLORS["random"], lw=0.8)
+    c.set(xlabel="layer fraction", ylabel="5-fold R²", ylim=(-0.2, 1.02), title="(c) After LEACE erasure")
+    d.set(xlabel="layer fraction", title="(d) Direction-centroid harmonics (split-half DFT)")
+    for ax in axes:
+        legend_top(ax, 1)
+    fig.suptitle(f"Extra: how many dimensions is direction? (whitening shrinkage eps = {r['eps_primary']})",
+                 x=0.01, ha="left", y=1.25, fontweight="bold")
+    fig.savefig(out / "fig2c_dims_four_ways.png")
+    plt.close(fig)
+
+
 def fig2d(results, out):
     """Extra (spec §6 item 7): direction vs speed / acceleration subspaces from the INLP bases."""
     path = results / "step2_subspace_angles.json"
@@ -372,7 +415,7 @@ if __name__ == "__main__":
     parser.add_argument("--figures", type=Path, default=ROOT / "figures")
     args = parser.parse_args()
     args.figures.mkdir(parents=True, exist_ok=True)
-    for make in (fig1, fig1b, fig1c, fig1d, fig1e, fig2, fig2b, fig2d, fig3, fig3b, fig3c):
+    for make in (fig1, fig1b, fig1c, fig1d, fig1e, fig2, fig2b, fig2c, fig2d, fig3, fig3b, fig3c):
         make(args.results, args.figures)
     for make in (fig2, fig3, fig3b, fig3c):   # the same figures at the onset layer, when it differs from the peak
         make(args.results, args.figures, "onset")
