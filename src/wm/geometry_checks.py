@@ -396,3 +396,52 @@ def heldout_reconstruction(X, labels, periodic, k=64, angle="unsupervised", plan
         mean = {q: float(np.mean([r[q] for r in runs])) for q in ("interp", "smooth", "chord")}
         out[design] = {**mean, "n_seeds": len(runs), "best": min(mean, key=mean.get)}
     return out
+
+
+# ---------------------------------------------------------------- ring or velocity plane --------------------------
+
+def procrustes_r2(Y, T):
+    """Scaled orthogonal Procrustes of rows Y [m, D] onto 2-D targets T [m, 2] (both centred): Y ~ s T R^T with
+    R [D, 2] orthonormal. Returns dict(r2 = fraction of Y's variance explained, scale s, R, means)."""
+    Y, T = np.asarray(Y, dtype=float), np.asarray(T, dtype=float)
+    my, mt = Y.mean(0), T.mean(0)
+    Yc, Tc = Y - my, T - mt
+    U, S, Vt = np.linalg.svd(Yc.T @ Tc, full_matrices=False)
+    R = U @ Vt
+    s = S.sum() / (Tc ** 2).sum()
+    resid = Yc - s * Tc @ R.T
+    return {"r2": float(1 - (resid ** 2).sum() / (Yc ** 2).sum()), "scale": float(s), "R": R, "mu_y": my, "mu_t": mt}
+
+
+def velocity_plane_check(X, theta_deg, speed, n_speed_bins=8, n_dir_bins=16):
+    """Is direction coded as a ring (cos, sin) independent of speed, or as a velocity plane (v cos, v sin)?
+    On a dataset that crosses speed and direction (the speed set): cell centroids over speed bin x direction bin,
+    Procrustes R^2 onto each target, and the ring radius (direction-bin centroids about their centre) per speed bin.
+    A ring predicts a flat radius; a velocity plane predicts radius proportional to speed."""
+    X, th, v = np.asarray(X, dtype=float), np.asarray(theta_deg, dtype=float), np.asarray(speed, dtype=float)
+    sb = np.clip(np.searchsorted(np.quantile(v, np.linspace(0, 1, n_speed_bins + 1)[1:-1]), v, side="right"),
+                 0, n_speed_bins - 1)
+    db = (np.floor(th / (360.0 / n_dir_bins)).astype(int)) % n_dir_bins
+    cells, Tr, Tv = [], [], []
+    for i in range(n_speed_bins):
+        for j in range(n_dir_bins):
+            rows = (sb == i) & (db == j)
+            if rows.sum() == 0:
+                continue
+            a = np.radians(np.angle(np.exp(1j * np.radians(th[rows])).mean(), deg=True))
+            cells.append(X[rows].mean(0))
+            Tr.append([np.cos(a), np.sin(a)])
+            Tv.append([v[rows].mean() * np.cos(a), v[rows].mean() * np.sin(a)])
+    cells, Tr, Tv = np.array(cells), np.array(Tr), np.array(Tv)
+    ring, vel = procrustes_r2(cells, Tr), procrustes_r2(cells, Tv)
+    radius = []
+    for i in range(n_speed_bins):
+        C = np.array([X[(sb == i) & (db == j)].mean(0) for j in range(n_dir_bins) if ((sb == i) & (db == j)).any()])
+        radius.append({"speed_mean": float(v[sb == i].mean()),
+                       "radius": float(np.linalg.norm(C - C.mean(0), axis=1).mean()), "n_dir_bins": len(C)})
+    r, s = np.array([x["radius"] for x in radius]), np.array([x["speed_mean"] for x in radius])
+    return {"procrustes_r2_ring": ring["r2"], "procrustes_r2_velocity": vel["r2"],
+            "better": "velocity_plane" if vel["r2"] > ring["r2"] else "ring", "n_cells": len(cells),
+            "radius_by_speed": radius, "radius_ratio_top_bottom": float(r[-1] / r[0]),
+            "speed_ratio_top_bottom": float(s[-1] / s[0]), "radius_speed_corr": float(np.corrcoef(r, s)[0, 1]),
+            "_velocity_fit": vel}

@@ -163,3 +163,53 @@ def test_bakeoff_end_to_end(tmp_path):
     for e in ("probe", "mlp"):
         assert arms["spline"][f"err_{e}_matched"] < 0.5 * res["unsteered_err"][e]
     assert (tmp / "figures" / "fig4_bakeoff_rank_direction_direction_L1_contiguous.png").exists()
+
+
+def velocity_dataset(tmp, plane):
+    """Speed-set-like fake: 64 speeds x random directions; ring code (plane=False) or velocity code (plane=True)."""
+    rng = np.random.default_rng(2)
+    n = 64 * 16
+    v = np.repeat(np.linspace(0.5, 4.0, 64), 16)
+    th = rng.choice(np.arange(64) * 360.0 / 64, size=n)
+    r = np.radians(th)
+    amp = v if plane else np.full(n, 2.0)
+    X = rng.standard_normal((n, N_LAYERS, D)).astype(np.float32) * 0.3
+    X[:, 1, 0] += amp * np.cos(r)
+    X[:, 1, 1] += amp * np.sin(r)
+    X[:, 1, 2] += 0 if plane else 2.0 * v                          # ring: a separate speed axis
+    act = tmp / "act"
+    act.mkdir(parents=True)
+    np.save(act / "meanpool.npy", X)
+    ids = np.arange(n)
+    (act / "ids.json").write_text(json.dumps(ids.tolist()))
+    pd.DataFrame({"id": ids, "label": v, "theta_degrees": th, "speed_mps": v, "acceleration_mps2": 0.0,
+                  "motion": "velocity"}).to_csv(tmp / "table.csv", index=False)
+    fold = {str(i): (-1 if i % 5 == 0 else int(i % 5 - 1)) for i in ids}
+    (tmp / "split.json").write_text(json.dumps({"fold": fold}))
+
+
+@pytest.mark.parametrize("plane", [False, True])
+def test_velocity_plane_script(tmp_path, plane):
+    dir_tmp = fake_dataset(tmp_path, "direction")
+    sp = tmp_path / "speed"
+    sp.mkdir()
+    velocity_dataset(sp, plane)
+    spec = importlib.util.spec_from_file_location("vp", ROOT / "scripts" / "run_velocity_plane.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    res = module.run(module.parse([
+        "--layers", "1", "--k", "16", "--n-clips", "60",
+        "--dir-act-dir", str(dir_tmp / "act"), "--dir-table", str(dir_tmp / "table.csv"),
+        "--dir-split", str(dir_tmp / "split.json"), "--speed-act-dir", str(sp / "act"),
+        "--speed-table", str(sp / "table.csv"), "--speed-split", str(sp / "split.json"),
+        "--results-dir", str(tmp_path / "results"), "--figures-dir", str(tmp_path / "figures")]))
+    L = res["layers"]["1"]
+    assert L["direction_set_procrustes_r2_ring"] > 0.9
+    vp = L["speed_set"]
+    mid180 = [c for c in L["chord_speed_readout"] if c["d_theta"] == 180.0][0]
+    if plane:
+        assert vp["better"] == "velocity_plane" and vp["radius_ratio_top_bottom"] > 2.5
+        assert mid180["ratio_velocity_plane_radius"] < 0.4          # cos(90 deg) = 0: the chord kills speed
+    else:
+        assert vp["better"] == "ring" and 0.7 < vp["radius_ratio_top_bottom"] < 1.4
+        assert 0.8 < mid180["ratio_ridge_speed_probe"] < 1.2         # a ring leaves the speed readout alone
