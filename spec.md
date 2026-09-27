@@ -285,12 +285,25 @@ not edited into them):
   untrained ViT-L is at the level of random nonlinear features of a clean low-dimensional input; V-JEPA's block 1
   (0.875 / 0.983 / 0.977) is no better than this floor either. (One random-feature seed extrapolates badly on the
   acceleration test clips, test R² 0.17 vs CV 0.97; the other two give 0.97–0.98.)
-- Step 2 (direction): **"tens of dimensions" reproduces at the peak layer** (point 22: K = 23, 46 dims; K = 20 at the
-  Fig. 22 threshold; paper §7.2 says 40–50). At the onset layer (point 2) the code is far more redundant (K = 104,
-  208 dims). **No sawtooth** at either layer on R², MAE or within-15° accuracy (fraction of rises 0.0, drop
-  autocorrelation 0.92–0.98); consecutive probe planes are 6–8° apart, i.e. successive probes are weakening copies
-  of one (sin, cos) mixture, not alternating sin/cos features. Random removal of the same number of dimensions leaves
-  R² unchanged (0.99 → 0.99).
+- Step 2, FINAL (leak fixed; nested K = probes until chance on held-out folds; K at the paper's Fig. 22
+  threshold in brackets; paper-protocol K in parentheses). Direction: onset(2) 289 [152] (395); point 8: 40 [21] (83);
+  paper layer point 9: 37 [23] (46); peak(22) 88 [37] (94). Speed: onset(1) 361; 8: 45; 9: 39; peak(19) 89 (103).
+  Acceleration: onset(1) 466; 8: 48; 9: 41; peak(21) 67 (74). Reading: at the paper's layer every variable needs
+  "tens" of probes (37–41), the paper's first claim; speed does **not** need fewer than direction in probe count
+  (39 vs 37 at point 9, 89 vs 88 at the peaks), only in dimensions (direction probes are 2-output); early layers
+  hold each variable in hundreds of weak redundant directions, the random-features picture of step 1. **No
+  sawtooth** for direction under either protocol on within-15° accuracy (fraction of rises 0.0–0.15, drop
+  autocorrelation 0.7–0.98); random removal of the same number of dimensions leaves R² unchanged. An earlier run
+  (K = 23 at the peak) came from the fold leak described in §5.2 and is superseded.
+- Step 3, FINAL (paper protocol, N grid, evaluation probe fit on test as in C.12, out-of-fold R² 0.97–0.99 at
+  paper/peak layers). Direction at point 9 (K = 37): MAE-to-target 78° at N = 1, 8.7° at N = 5, 3.1° at N = 10,
+  2.9° at N = 20; MAE-to-true rises to 87°; median norm ratio 1.12 at N = K; the learned basis beats the calibrated
+  random-basis null from N ≈ 10 (empirical p 0.095 at N = 10, the 1/21 floor beyond). Peak (22, K = 88): 72° → 5.5°
+  (N = 5) → 2.8° (N = 20). Onset (2, K = 289): 86° at N = 1, 21° at N = 20, 7° at N = K, indistinguishable from the
+  random-basis null at every N ≤ 20 (p ≈ 0.5): steering at the onset layer is not specific to the probes. Speed and
+  acceleration reach ≈ 0.1 of their range by N = 5–10 at every layer with norm ratios 0.9–0.95. Fig. 24's shape
+  (single probe fails, many probes reach the target, MAE-to-true rises) reproduces, with fewer probes than the
+  paper's 20.
 - Part 2 pre-checks (direction, points 8/12/22): a ring exists (supervised circular chart fits the 64 centroids at
   3.5–7° MAE, radius 3.2–7.3, growing with depth); at point 12 its plane is 6° from the top-2 PC plane. Local
   curvature is below centroid noise at knot spacings ≤ 45° (sagitta 0.04–0.4 vs noise ≈ 1.5) and detectable at 90°.
