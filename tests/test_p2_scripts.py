@@ -301,6 +301,28 @@ def test_part2_inlp_plane_nuisance_uses_standardised_basis_as_is(tmp_path, monke
     assert np.allclose(cos, 1.0, rtol=0, atol=1e-10)
 
 
+def test_geometry_inlp_plane_nuisance_uses_standardised_basis_as_is(tmp_path, monkeypatch):
+    """run_geometry_checks --plane inlp --nuisance-regress: the residual pass gets the stored Q unchanged (it used to
+    get basis=None and crash in fit_subspace)."""
+    from wm import geometry_checks as gc
+    tmp = fake_dataset(tmp_path, "direction")
+    Q = np.linalg.qr(np.random.default_rng(1).standard_normal((D, 4)))[0]
+    np.savez(tmp / "basis.npz", Q=Q)
+    seen, real = [], gc.fit_subspace
+
+    def spy(X, labels, kind="pca", k=64, basis=None):
+        seen.append(basis)
+        return real(X, labels, kind, k, basis)
+
+    monkeypatch.setattr(gc, "fit_subspace", spy)
+    run_script("run_geometry_checks.py", tmp, "direction", "--plane", "inlp", "--basis", str(tmp / "basis.npz"),
+               "--nuisance-regress")
+    geo = json.loads((tmp / "results" / "p2_geometry_direction_L1_inlp.json").read_text())
+    assert "nuisance_regressed" in geo
+    cos = np.linalg.svd(Q.T @ np.linalg.qr(seen[-1])[0], compute_uv=False)
+    assert np.allclose(cos, 1.0, rtol=0, atol=1e-10)
+
+
 def test_velocity_chord_uses_knot_folds_only(tmp_path, monkeypatch):
     sp = tmp_path / "speed"
     sp.mkdir()

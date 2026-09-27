@@ -151,7 +151,9 @@ def run(args):
     if args.nuisance_regress:
         nm, R = gc.fit_nuisance(d["X"], d["df"], variable, tr)
         names, r2 = nm["names"], nm["r2_train"]
-        nr, *_ = analyse(R[tr], y, periodic, d["df"][tr], args, None if args.plane == "inlp" else basis, full=False)
+        # residuals are already train-standardised, so a stored INLP Q is used as is (not Q / raw SD), as in run_part2
+        nbasis = gc.load_basis_matrix(args.basis) if args.plane == "inlp" else basis
+        nr, *_ = analyse(R[tr], y, periodic, d["df"][tr], args, nbasis, full=False)
         out["nuisance_regressed"] = {"covariates": names, "variance_explained_by_nuisance_train": r2,
                                      "space": "train-standardised activations minus their least-squares fit on the "
                                               "covariates (train rows), same projection for all clips",
