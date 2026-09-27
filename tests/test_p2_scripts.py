@@ -232,12 +232,19 @@ def test_velocity_plane_script(tmp_path, plane):
     assert L["direction_set_procrustes_r2_ring"] > 0.9
     vp = L["speed_set"]
     mid180 = [c for c in L["chord_speed_readout"] if c["d_theta"] == 180.0][0]
+    assert set(L["chord_predictions"]) >= {"mlp_speed_ratio", "nearest_real_same_minus_reduced"}
+    assert L["chord_verdict"]["summary"]
     if plane:
         assert vp["better"] == "velocity_plane" and vp["radius_ratio_top_bottom"] > 2.5
-        assert mid180["ratio_velocity_plane_radius"] < 0.4          # cos(90 deg) = 0: the chord kills speed
+        assert mid180["eq9_speed_mean_ratio"] < 0.6                    # the chord drags the speed read down
+        assert L["chord_verdict"]["calls"]["eq9_speed_mean_ratio"] == "velocity_plane"
+        assert L["chord_verdict"]["calls"]["nearest_real_same_minus_reduced"] == "velocity_plane"
+        assert "ring" not in L["chord_verdict"]["calls"].values()
     else:
         assert vp["better"] == "ring" and 0.7 < vp["radius_ratio_top_bottom"] < 1.4
-        assert 0.8 < mid180["ratio_ridge_speed_probe"] < 1.2         # a ring leaves the speed readout alone
+        assert 0.8 < mid180["eq9_speed_mean_ratio"] < 1.2              # a ring leaves the speed read alone
+        assert L["chord_verdict"]["calls"]["eq9_speed_mean_ratio"] == "ring"
+        assert "velocity_plane" not in L["chord_verdict"]["calls"].values()
 
 
 def test_geometry_options(tmp_path):
