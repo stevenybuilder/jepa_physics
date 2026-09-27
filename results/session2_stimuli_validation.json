@@ -1,0 +1,199 @@
+{
+ "layout": {
+  "directions_deg": [
+   0.0,
+   45.0,
+   90.0,
+   135.0,
+   180.0,
+   225.0,
+   270.0,
+   315.0
+  ],
+  "speeds_mps": [
+   1.0,
+   2.0,
+   3.0,
+   4.0,
+   5.0,
+   6.0,
+   7.0
+  ],
+  "starts_m": [
+   [
+    0.5478,
+    -0.9209
+   ],
+   [
+    -1.8361,
+    -1.9339
+   ],
+   [
+    1.2531,
+    1.651
+   ],
+   [
+    0.4265,
+    0.918
+   ],
+   [
+    0.1745,
+    1.7403
+   ],
+   [
+    1.2634,
+    -1.989
+   ],
+   [
+    1.4296,
+    -1.8657
+   ]
+  ],
+  "start_rule": "7 starts uniform in [-2, 2]^2, numpy default_rng(0), shared by every direction x speed cell; constant speed; 16 frames at 24 fps",
+  "n_clips": 392
+ },
+ "paper_layout": {
+  "renderer": {
+   "radius": 10.5,
+   "fg": [
+    231,
+    116,
+    41
+   ],
+   "bg": [
+    29,
+    32,
+    30
+   ],
+   "round_centre": true,
+   "supersample": 8,
+   "codec": true,
+   "bit_rate": 40000,
+   "gop": 12
+  },
+  "set": "paper_layout",
+  "n_clips": 392,
+  "label_values": [
+   0.0,
+   45.0,
+   90.0,
+   135.0,
+   180.0,
+   225.0,
+   270.0,
+   315.0
+  ],
+  "codec_mae_vs_precodec_mean": 1.0587380021607793,
+  "codec_mae_vs_precodec_max": 1.0770670572916667,
+  "centroid_err_px_median": 0.08198339492017476,
+  "centroid_err_px_p95": 0.08922167075395114,
+  "centroid_err_px_max": 0.11841564183081435,
+  "n_frames_centre_inside_12px": 5762,
+  "n_frames_inside_disk_not_found": 0,
+  "frac_frames_disk_visible": 0.9665178571428571,
+  "frac_frames_fully_in_view": 0.9186862244897959,
+  "examples_png": "figures/stimuli_paper_layout_examples.png"
+ },
+ "hard": {
+  "renderer": {
+   "floor_grey": 110.0,
+   "floor_contrast": 0.2,
+   "radius": 5.25,
+   "light_offset_r": 0.45,
+   "shade_max": 1.2,
+   "shade_min": 0.3,
+   "shade_falloff_r": 2.0,
+   "texture_seed": 1,
+   "round_centre": false,
+   "fg": [
+    231,
+    116,
+    41
+   ],
+   "codec": "same MPEG-4 Part 2 path"
+  },
+  "set": "hard",
+  "n_clips": 392,
+  "label_values": [
+   0.0,
+   45.0,
+   90.0,
+   135.0,
+   180.0,
+   225.0,
+   270.0,
+   315.0
+  ],
+  "codec_mae_vs_precodec_mean": 0.834495769877012,
+  "codec_mae_vs_precodec_max": 0.8541571299235026,
+  "centroid_err_px_median": 0.22621160120380174,
+  "centroid_err_px_p95": 0.5044994902737832,
+  "centroid_err_px_max": 1.032298240940852,
+  "n_frames_centre_inside_12px": 5762,
+  "n_frames_inside_disk_not_found": 0,
+  "frac_frames_disk_visible": 0.9572704081632653,
+  "frac_frames_fully_in_view": 0.9186862244897959,
+  "examples_png": "figures/stimuli_hard_examples.png"
+ },
+ "disk_mask_note": "wm.data.disk_pixels (red > 128 and red > green, blue) finds the disk in paper_layout; in the hard set the shaded rim can fall below it, so the hard-set centroid check uses |decoded - decoded floor| summed over channels > 60, and extract.py's diskmask/diskpool on the hard set is approximate",
+ "renderer_validation_vs_supplied": {
+  "codec": {
+   "frame_mae_mean": 0.07077631950378419,
+   "frame_mae_p95": 0.08965225219726564,
+   "disk_box_mae_mean": 4.0827519968464046,
+   "iou_mean": 0.9845321008229192,
+   "iou_min": 0.9745762711864406,
+   "frac_frames_iou_gt_0.95": 1.0,
+   "n_frames": 320
+  },
+  "no_codec": {
+   "frame_mae_mean": 1.075825579961141,
+   "frame_mae_p95": 1.0856862386067707,
+   "disk_box_mae_mean": 6.196852381998656,
+   "iou_mean": 0.9941908393976877,
+   "iou_min": 0.9857549857549858,
+   "frac_frames_iou_gt_0.95": 1.0,
+   "n_frames": 320
+  },
+  "mask_twin_iou_mean": 0.9941908393976877,
+  "verdict": "pixel twin usable",
+  "clip_ids": [
+   24,
+   60,
+   111,
+   260,
+   400,
+   457,
+   751,
+   758,
+   814,
+   839,
+   906,
+   943,
+   946,
+   968,
+   1091,
+   1211,
+   1259,
+   1361,
+   1402,
+   1451
+  ]
+ },
+ "provenance": {
+  "split_file": "splits/split_v1.json",
+  "split_sha256": "98e6310c40bf29e81bd8b6bf4b1ac603b89e4104d40ac1047b15dd5dc2be2df2",
+  "seeds": {
+   "split": 0,
+   "other": "all other RNG seeds are 0 (bootstrap, folds, null draws, shuffles); random-removal controls use seeds 0..n-1"
+  },
+  "commit": "388b58645c58670140ef585511e4e00776904c97",
+  "dirty": true,
+  "git_commit": "388b58645c58670140ef585511e4e00776904c97",
+  "git_dirty_src_or_scripts": true,
+  "timestamp_utc": "2026-09-27T20:27:53+00:00",
+  "pool": null,
+  "model": null,
+  "layer": null
+ }
+}
