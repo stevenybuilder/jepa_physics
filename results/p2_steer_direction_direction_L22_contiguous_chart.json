@@ -14,11 +14,11 @@
    "seed": 0,
    "controls": 0
   },
-  "commit": "8e552c15c83c22f7174b200ba93eccbd0b6084f5",
+  "commit": "8d3cac8a15fbfdbb85444757c24a5ad5d294af50",
   "dirty": false,
-  "git_commit": "8e552c15c83c22f7174b200ba93eccbd0b6084f5",
+  "git_commit": "8d3cac8a15fbfdbb85444757c24a5ad5d294af50",
   "git_dirty_src_or_scripts": false,
-  "timestamp_utc": "2026-09-27T21:19:58+00:00",
+  "timestamp_utc": "2026-09-27T23:05:50+00:00",
   "layer": 22,
   "pool": "meanpool",
   "holdout": "contiguous",
@@ -517,7 +517,7 @@
      0.604405721010113,
      0.6087986976796305,
      0.6130350126427891,
-     0.6167483942222256,
+     0.6167483942222257,
      0.6198045759406788,
      0.6220929649679684,
      0.6237209381887716,
@@ -8963,6 +8963,7 @@
   }
  },
  "summary_notes": [
+  "verdict: path-geometry positive, independent-readout null; spline better on path metrics (path probe error +4.99, min readout radius +0.218, ordering +0.123) ... these restate the geometry steered along; on independent readouts: endpoint error +0.281, distance to curve -0.325, nearest-real distance -0.0912 (practical gain on: none); bend = 0.15x centroid noise; values are spline gains over the chord (+ = better); statistical-only losses, not counted: ['nearest-real distance']",
   "behaviour manifold (Eq. 9) caveat: at the steered layer the behaviour function F is itself a distance-to-centroid function of the edited activation, so behaviour_energy and isometry_behaviour are partly circular there; they become informative only at later layers (propagation) or through the predictor",
   "replace arms (goodfire_manifold, goodfire_linear): behaviour energy and entropy not comparable: on-curve by construction (residual replaced, so Eq. 9 gives a sharp distribution that no real clip has); compare replace arms on probe readouts and nearest-real only",
   "behaviour_energy_rel_floor = mean Bhattacharyya distance per waypoint / the unsteered real-clip floor (test clips at their own value); 1 = as natural as a real clip"
@@ -9004,7 +9005,7 @@
    "146.25": 0.15690343602708912,
    "151.875": 0.21305741719601487,
    "157.5": 0.10397558979360501,
-   "163.125": 0.19487253819112546,
+   "163.125": 0.19487253819112585,
    "168.75": 0.1948744396202775,
    "174.375": 0.06226256668613389,
    "180.0": 0.05370756957963369,
@@ -9038,8 +9039,13 @@
    "337.5": 0.16812341585895935,
    "343.125": 0.17447008386233465,
    "348.75": 0.16184220731063426,
-   "354.375": 0.2863455265479797
+   "354.375": 0.28634552654798007
   }
+ },
+ "energy_floor": {
+  "to_curve": 2.233121166239957,
+  "to_nearest_real": 10.180952746057807,
+  "note": "unsteered real test clips: mean distance to the reference curve and to the 5 nearest probe-fold clips (the same measures as energy_to_curve / energy_to_nearest_real)"
  },
  "tau_sensitivity": [
   {
@@ -9062,12 +9068,12 @@
   },
   {
    "tau": 1.0,
-   "floor": 0.08282141235395614,
+   "floor": 0.08282141235395613,
    "manifold": 0.08691553584278816,
    "linear": 0.08761973292339426,
    "gap_linear_minus_manifold": 0.0007041970806060949,
-   "manifold_rel_floor": 1.049433152278723,
-   "linear_rel_floor": 1.0579357491385368
+   "manifold_rel_floor": 1.0494331522787232,
+   "linear_rel_floor": 1.057935749138537
   },
   {
    "tau": 2.0,
@@ -23640,7 +23646,7 @@
       0.015089213140482892,
       0.012444957543535052,
       0.011879959902230954,
-      0.014362114493584882,
+      0.014362114493584878,
       0.016641516949533013,
       0.0230171307175304,
       0.031345143481318304,
@@ -26971,7 +26977,7 @@
       0.03360129848442412,
       0.033352590753721774,
       0.04153027816934573,
-      0.04874255372836132,
+      0.0487425537283613,
       0.04884638155202154,
       0.05488516266907153,
       0.03865288605814131,
@@ -34911,7 +34917,7 @@
   }
  },
  "gaps_note": "manifold minus each other arm on the same (clip, target) rows: 95% CI from a paired bootstrap over clips, each clip's targets resampled together (1000 draws); mean +/- SE over (source value, target) pairs as Goodfire A.7 reports; mean +/- SE over targets also kept; overall and by shift bin",
- "arc_note": "direction: intermediate_mass, ordering_spearman and argmax_on_arc use the arc the arm traverses (sign of the spline's intrinsic-coordinate step, mapped to label orientation; arc_sign per row: +1 increasing label angle); ordering_spearman = Spearman correlation of waypoint index with the Eq. 9 argmax value's offset along that arc; argmax_on_arc = fraction of waypoints whose argmax lies on the arc, endpoints included",
+ "arc_note": "direction: intermediate_mass, ordering_spearman and argmax_on_arc use the spline's traversed arc, applied to every arm (sign of the spline's intrinsic-coordinate step from source to target, mapped to label orientation; all arms share these endpoints; arc_sign per row: +1 increasing label angle); ordering_spearman = Spearman correlation of waypoint index with the Eq. 9 argmax value's offset along that arc; argmax_on_arc = fraction of waypoints whose argmax lies on the arc, endpoints included",
  "rows": [
   {
    "arm": "manifold",
@@ -107490,6 +107496,63 @@
    "arc_sign": 1.0
   }
  ],
+ "verdict": {
+  "call": "path_geometry_positive",
+  "text": "path-geometry positive, independent-readout null; spline better on path metrics (path probe error +4.99, min readout radius +0.218, ordering +0.123) ... these restate the geometry steered along; on independent readouts: endpoint error +0.281, distance to curve -0.325, nearest-real distance -0.0912 (practical gain on: none); bend = 0.15x centroid noise; values are spline gains over the chord (+ = better); statistical-only losses, not counted: ['nearest-real distance']",
+  "spline_better_than_chord_on": [
+   "probe_err_to_target",
+   "probe_err_path",
+   "probe_radius_min",
+   "ordering_spearman"
+  ],
+  "practical_on": [
+   "probe_err_path"
+  ],
+  "independent_practical_gain_on": [],
+  "worse_by_practical_margin_on": [
+   "excess_to_curve"
+  ],
+  "spline_worse_than_chord_on": [
+   "excess_to_curve",
+   "excess_to_nearest_real"
+  ],
+  "worse_statistical_only_on": [
+   "excess_to_nearest_real"
+  ],
+  "path_geometry_better_on": [
+   "probe_err_path",
+   "probe_radius_min",
+   "ordering_spearman"
+  ],
+  "spline_equals_projected_reflected": false,
+  "sagitta_over_noise_median": 0.14697728909074703,
+  "practical_margins": {
+   "excess_to_curve": 0.22331211662399572,
+   "excess_to_nearest_real": 1.0180952746057808,
+   "behaviour_energy": 0.9630764732938496,
+   "probe_err_path": 3.1229984945058824,
+   "probe_err_to_target": 3.1229984945058824
+  },
+  "gains": {
+   "probe_err_to_target": 0.28053569486320273,
+   "excess_to_curve": -0.3254702654832596,
+   "excess_to_nearest_real": -0.09120059276093627,
+   "probe_err_path": 4.988470064635159,
+   "probe_radius_min": 0.2180518188483171,
+   "ordering_spearman": 0.12297100992462398,
+   "behaviour_energy": 0.0502002007878037
+  },
+  "rule": "2 SE over (source, target) pairs; practical: energies >= 0.1 x real-clip floor, endpoint/path error >= probe out-of-sample error; a loss counts only beyond its margin; positive needs a practical INDEPENDENT gain and bend >= 0.5x noise",
+  "metrics": [
+   "probe_err_to_target",
+   "excess_to_curve",
+   "excess_to_nearest_real",
+   "probe_err_path",
+   "probe_radius_min",
+   "ordering_spearman",
+   "behaviour_energy"
+  ]
+ },
  "controls_note": "20 draws each, on the first 16 steered clips per target (the spline value in each band is on the same clips); spline_rank = 1 + number of draws better than the spline arm (1 = spline best); band = 5-95% of the draws' means",
  "precision_steering_energy": {
   "fp32": {
