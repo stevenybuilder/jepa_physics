@@ -1,7 +1,8 @@
 import numpy as np
 import pandas as pd
 
-from wm.probes import (Standardizer, availability, cv_select_alpha, fit_ridge, predict, ridge_path, score,
+from wm.probes import (Standardizer, availability, bootstrap_onset, cv_select_alpha, precision_onset,
+                       selectivity_onset, fit_ridge, predict, ridge_path, score,
                        targets)
 
 
@@ -63,3 +64,28 @@ def test_ridge_path_matches_fit_ridge():
     for alpha, (W, b) in zip([0.1, 10.0], ridge_path(X, Y, [0.1, 10.0])):
         W2, b2 = fit_ridge(X, Y, alpha)
         assert np.allclose(W, W2) and np.allclose(b, b2)
+
+
+def test_selectivity_and_precision_onsets():
+    rng = np.random.default_rng(0)
+    y = rng.standard_normal((400, 1))
+    noise = lambda sd: y + sd * rng.standard_normal((400, 1))
+    model = [noise(3.0) if p < 6 else noise(0.2) for p in range(26)]      # informative from point 6
+    random = [noise(0.8) for _ in range(26)]                              # moderately informative everywhere
+    onset, cis = selectivity_onset(y, model, random, lambda a, b: score(a, b, "scalar"), n_boot=100)
+    assert onset == 6 and cis[5][1] < 0 < cis[6][0] and len(cis) == 25
+    rows = [{"cv_mae_mean": m} for m in [5, 4, 2, 1.15, 1.05, 1.0, 1.2] + [1.3] * 19]
+    assert precision_onset(rows, "scalar") == 4                           # 1.05 <= 1.1 * min
+    rows = [{"cv_acc15_mean": a} for a in [0.1, 0.5, 0.85, 0.95, 0.9] + [0.9] * 21]
+    assert precision_onset(rows, "circular") == 3                         # 0.95 is max; 0.855 needed
+
+
+def test_bootstrap_onset_ci_and_no_onset_count():
+    rng = np.random.default_rng(1)
+    y = rng.standard_normal((300, 1))
+    oofs = [y + (3.0 if p < 10 else 0.3) * rng.standard_normal((300, 1)) for p in range(25)]
+    ci, n_none = bootstrap_onset(y, oofs, lambda a, b: score(a, b, "scalar"), n_boot=100)
+    assert ci[0] <= 10 <= ci[1] and ci[1] - ci[0] <= 2 and n_none == 0
+    flat = [rng.standard_normal((300, 1)) for _ in range(25)]                # no information anywhere
+    ci, n_none = bootstrap_onset(y, flat, lambda a, b: score(a, b, "scalar"), n_boot=50)
+    assert ci is None and n_none == 50

@@ -74,3 +74,9 @@ def test_random_model_control_steps_2_3(tmp_path):
     steer = json.loads((results / f"p1c_direction_L{peak}_random.json").read_text())
     assert inl["model"] == "random" and steer["model"] == "random"
     assert not (results / f"p1c_direction_L{peak}.json").exists()
+    # post-hoc onsets: the V-JEPA sweep picks up the random-init sweep's out-of-fold predictions
+    write_fake_meanpool(acts, "direction", seed=0)
+    run("run_step1.py", "--dataset", "direction", "--act-root", str(acts), "--results", str(results))
+    av = json.loads((results / "p1a_direction_direction_meanpool.json").read_text())["availability"]
+    assert "selectivity_diff_ci" in av and len(av["selectivity_diff_ci"]) == 25
+    assert av["precision_onset"] is not None and "POST-HOC" in av["precision_rule"]

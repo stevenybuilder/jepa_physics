@@ -188,6 +188,59 @@ def bootstrap_onset(Y, oofs, score_fn, n_boot=200, seed=0):
     return [int(np.percentile(onsets, 2.5)), int(np.percentile(onsets, 97.5))], n_none
 
 
+def precision_onset(layers, kind):
+    """Post-hoc (labelled; the pre-registered rule is availability()): first point over 0..24 reaching
+    90% of the max CV accuracy within 15° (direction), or whose CV MAE is within 10% of its minimum
+    (scalars and Cartesian pairs)."""
+    body = layers[:LAST_BLOCK + 1]
+    if kind == "circular":
+        acc = np.array([r["cv_acc15_mean"] for r in body])
+        return int(np.argmax(acc >= 0.9 * acc.max())) if acc.max() > 0 else None
+    mae = np.array([r["cv_mae_mean"] for r in body])
+    return int(np.argmax(mae <= 1.1 * mae.min()))
+
+
+def selectivity_onset(Y, oofs_model, oofs_random, score_fn, n_boot=200, seed=0):
+    """Post-hoc (labelled): first point over 0..24 where the model's pooled out-of-fold R² exceeds the
+    random-init model's by more than the paired clip-bootstrap CI (2.5th percentile of the difference > 0).
+    Both sweeps use the same train clips and folds. Returns (onset or None, per-point [lo, hi] of the
+    difference)."""
+    rng = np.random.default_rng(seed)
+    idxs = [rng.integers(0, len(Y), len(Y)) for _ in range(n_boot)]
+    cis = []
+    for a, b in zip(oofs_model[:LAST_BLOCK + 1], oofs_random[:LAST_BLOCK + 1]):
+        diff = [score_fn(Y[i], a[i])["r2"] - score_fn(Y[i], b[i])["r2"] for i in idxs]
+        cis.append([float(np.percentile(diff, 2.5)), float(np.percentile(diff, 97.5))])
+    hits = [p for p, (lo, _) in enumerate(cis) if lo > 0]
+    return (hits[0] if hits else None), cis
+
+
+def oof_path(results_dir, name):
+    """Out-of-fold predictions of a step-1 sweep (artifacts/oof, next to results/), for post-hoc onsets."""
+    return Path(results_dir or RESULTS).resolve().parent / "artifacts" / "oof" / f"{name}.npz"
+
+
+def patch_selectivity(dataset, variable, pool, results_dir=None, n_boot=200, seed=0):
+    """Add the selectivity onset to the V-JEPA step-1 file once both it and the random-init sweep have
+    saved out-of-fold predictions (either order). No-op if either is missing."""
+    names = {m: result_name("p1a", dataset, variable, pool, m) for m in ("vjepa2", "random")}
+    paths = {m: oof_path(results_dir, n) for m, n in names.items()}
+    js = Path(results_dir or RESULTS) / (names["vjepa2"] + ".json")
+    if not (all(p.exists() for p in paths.values()) and js.exists()):
+        return None
+    zv, zr = np.load(paths["vjepa2"]), np.load(paths["random"])
+    assert np.array_equal(zv["Y"], zr["Y"]), "the two sweeps must use the same train clips"
+    _, _, score_fn = targets(load_table(dataset), variable)
+    onset, cis = selectivity_onset(zv["Y"], zv["oof"], zr["oof"], score_fn, n_boot, seed)
+    out = json.loads(js.read_text())
+    out["availability"]["selectivity_onset"] = onset
+    out["availability"]["selectivity_diff_ci"] = cis
+    out["availability"]["selectivity_rule"] = ("POST-HOC: first point where V-JEPA's pooled OOF R2 exceeds the "
+                                               "random-init ViT-L's by more than the paired 95% clip-bootstrap CI")
+    write_json(js, out)
+    return onset
+
+
 # ---------------------------------------------------------------- data plumbing
 
 def load_activations(dataset, pool="meanpool", model="vjepa2", act_root=None):
@@ -301,6 +354,12 @@ def layer_sweep(dataset, variable, pool="meanpool", model="vjepa2", shuffled=Fal
     avail["onset_ci"], avail["onset_boot_draws_without_onset"] = bootstrap_onset(
         Ytr, oofs[:LAST_BLOCK + 1], score_fn, n_boot, seed)
     avail["rule"] = "onset = first point with CV R2 >= 90% of max over points 0..24; CI: 200-draw clip bootstrap of out-of-fold predictions"
+    avail["precision_onset"] = precision_onset(layers, kind)
+    avail["precision_rule"] = ("POST-HOC: first point reaching 90% of max CV accuracy within 15 deg" if kind == "circular"
+                               else "POST-HOC: first point whose CV MAE is within 10% of its minimum")
+    if model == "vjepa2" and not shuffled:
+        avail["selectivity_onset"] = None
+        avail["selectivity_rule"] = "POST-HOC: needs the random-init sweep (run_step1.py --model random); filled in when it exists"
 
     out = {"dataset": dataset, "variable": variable, "kind": kind, "pool": pool, "model": model,
            "shuffled": shuffled, "alphas": ALPHAS.tolist(), "n_train": len(tr), "n_test": len(te),
@@ -310,8 +369,16 @@ def layer_sweep(dataset, variable, pool="meanpool", model="vjepa2", shuffled=Fal
         out["test_theta"] = df["theta_degrees"].to_numpy()[te].tolist()
         out["test_pred"] = {str(p): test_preds[p].round(4).tolist() for p in shown}
         out["test_radius"] = {str(p): readout_radius(test_preds[p]).round(4).tolist() for p in shown}
-    path = Path(results_dir or RESULTS) / (result_name("p1a", dataset, variable, pool, model, shuffled) + ".json")
+    name = result_name("p1a", dataset, variable, pool, model, shuffled)
+    path = Path(results_dir or RESULTS) / (name + ".json")
     write_json(path, out)
+    op = oof_path(results_dir, name)
+    op.parent.mkdir(parents=True, exist_ok=True)
+    np.savez(op, Y=Ytr, oof=np.stack(oofs))
+    if not shuffled and model in ("vjepa2", "random"):
+        patch_selectivity(dataset, variable, pool, results_dir, n_boot, seed)
+        if model == "vjepa2":
+            out = json.loads(path.read_text())
     return out
 
 
