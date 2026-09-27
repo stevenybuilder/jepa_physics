@@ -268,3 +268,27 @@ def test_part2_chart_plane_nuisance(tmp_path):
     assert res["provenance"]["holdout"] == "scattered" and res["layer_role"] == "exploratory"
     man = res["summary"]["manifold"]["overall"]
     assert man["probe_err_to_target"] < 0.3 * man["probe_err_to_true"]      # the edit moves the probe to the target
+
+
+def test_part2_inlp_plane_nuisance_uses_standardised_basis_as_is(tmp_path, monkeypatch):
+    """With --nuisance-regress the activations are already train-standardised, so the INLP Q must span the steering
+    plane unchanged (not Q divided by the residuals' SD)."""
+    from wm import geometry_checks as gc
+    tmp = fake_dataset(tmp_path, "direction")
+    X = np.load(tmp / "act" / "meanpool.npy")
+    X[1::2, 1, 2:6] += 3.0                            # features the motion covariate explains (residual SD << 1)
+    np.save(tmp / "act" / "meanpool.npy", X)
+    Q = np.linalg.qr(np.random.default_rng(1).standard_normal((D, 4)))[0]
+    np.savez(tmp / "basis.npz", Q=Q)
+    seen, real = {}, gc.fit_subspace
+
+    def spy(X, labels, kind="pca", k=64, basis=None):
+        seen["B"] = basis
+        return real(X, labels, kind, k, basis)
+
+    monkeypatch.setattr(gc, "fit_subspace", spy)
+    run_script("run_part2.py", tmp, "direction", "--variable", "direction", "--n-clips", "6", "--K", "5",
+               "--n-controls", "2", "--no-bf16", "--plane", "inlp", "--basis", str(tmp / "basis.npz"),
+               "--nuisance-regress")
+    cos = np.linalg.svd(Q.T @ np.linalg.qr(seen["B"])[0], compute_uv=False)
+    assert np.allclose(cos, 1.0, rtol=0, atol=1e-10)

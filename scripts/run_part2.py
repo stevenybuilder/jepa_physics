@@ -228,7 +228,9 @@ def run(args):
         d = {**d, "X": X_res}
         nuisance = {"covariates": names, "variance_explained_by_nuisance_train": r2,
                     "space": "train-standardised activations minus their least-squares fit on the covariates"}
-    basis = gc.load_basis_matrix(args.basis, d["X"][d["is_train"]]) if args.basis else None
+    # an INLP .npz Q lives in train-standardised coordinates; the nuisance residuals already do too, so it is used
+    # as is there (dividing by the residuals' SD would distort it); raw activations get the covector map Q / SD
+    basis = (gc.load_basis_matrix(args.basis, None if nuisance else d["X"][d["is_train"]]) if args.basis else None)
     args.basis_matrix = basis
     if args.plane == "inlp" and basis is None:
         raise SystemExit("--plane inlp needs --basis")
