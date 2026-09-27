@@ -4,7 +4,7 @@ direction vs speed, on train clips only (test is not read). Writes results/p1b_d
   python scripts/run_step2_dims.py [--points 8 12] [--no-mlp] [--mlp-folds 5] [--eps 1e-3 1e-2 1e-1]
 
 (a) literal K (the paper's count; read from p1b_*_dims.json when step 2 --all-layers has run, else
-    recomputed) with the random-removal R² at the same rank; (b) whitened count, rank(I - T), at each
+    recomputed) with the random-removal R² at the same rank; (b) whitened, residualised K (Jin Alg. 1) at each
     shrinkage eps (the first eps is primary); (c) ridge and MLP R² before / after a LEACE erasure of the
     target (rank 2 for direction, 1 for speed); (d) split-half DFT spectrum of the 64 direction centroids.
 A planted-ring control (clean, sheared, with a k = 3 harmonic, three copies) goes through the same code.
@@ -71,7 +71,7 @@ if not args.no_control:
         control[name] = {"planted": {k: (str(v) if isinstance(v, dict) else v) for k, v in kw.items()},
                          **four_ways(X, np.stack([np.sin(r), np.cos(r)], 1), folds_c, "circular", th)}
         c = control[name]
-        print(f"control {name}: literal K {c['literal']['K']}, whitened rank {c['whitened'][0]['rank_I_minus_T']}, "
+        print(f"control {name}: literal K {c['literal']['K']}, whitened K {c['whitened'][0]['K']}, "
               f"LEACE ridge R2 {c['leace']['ridge_r2_after']:.3f}, DFT PR {c['dft']['participation_ratio']:.2f}")
     out["control"] = control
 
@@ -96,8 +96,8 @@ for variable in args.variables:
                "literal_source": "p1b dims file" if point in stored else "recomputed",
                **four_ways(Xtr, Y[tr], folds, kind, theta, alpha, stored.get(point))}
         rows.append(row)
-        print(f"{variable} point {point:2d}: literal dims {row['literal']['dims']}, whitened rank "
-              f"{row['whitened'][0]['rank_I_minus_T']}, LEACE ridge R2 {row['leace']['ridge_r2_after']:.3f}"
+        print(f"{variable} point {point:2d}: literal K {row['literal']['K']}, whitened K "
+              f"{row['whitened'][0]['K']}, LEACE ridge R2 {row['leace']['ridge_r2_after']:.3f}"
               + (f", MLP R2 {row['leace']['mlp_r2_after']:.3f}" if "mlp_r2_after" in row["leace"] else "")
               + (f", DFT PR {row['dft']['participation_ratio']}" if "dft" in row else ""))
     out["variables"][variable] = {"kind": kind, "layers": rows}

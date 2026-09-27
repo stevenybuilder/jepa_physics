@@ -266,9 +266,9 @@ def fig2c(results, out):
     for v, run in r["variables"].items():
         rows = [row for row in run["layers"] if not row["post_ln"]]
         x = [row["frac"] for row in rows]
-        a.plot(x, [row["literal"]["dims"] for row in rows], "o-", ms=3, color=COLORS[v], label=f"{v}: literal (paper)")
-        a.plot(x, [row["whitened"][0]["rank_I_minus_T"] for row in rows], "s--", ms=3, color=COLORS[v],
-               label=f"{v}: whitened rank(I − T)")
+        a.plot(x, [row["literal"]["K"] for row in rows], "o-", ms=3, color=COLORS[v], label=f"{v}: literal K (paper)")
+        a.plot(x, [row["whitened"][0]["K"] for row in rows], "s--", ms=3, color=COLORS[v],
+               label=f"{v}: whitened, residualised K")
         rr = [row["literal"].get("random_removal_cv_r2") for row in rows]
         xs = [xi for xi, q in zip(x, rr) if q]
         m = np.array([q["mean"] for q in rr if q])
@@ -284,7 +284,7 @@ def fig2c(results, out):
                    label="participation ratio (k ≥ 1)")
             d.plot(x, [row["dft"]["frac_k_ge_1"][0] for row in rows], "--", color=COLORS["text"],
                    label="fraction of power at k = 1")
-    a.set(xlabel="layer fraction", ylabel="dimensions", yscale="log", title="(a, b) Literal vs whitened count")
+    a.set(xlabel="layer fraction", ylabel="probes K", yscale="log", title="(a, b) Literal vs whitened count")
     b.set(xlabel="layer fraction", ylabel="probe R² after random removal", ylim=(-0.05, 1.02),
           title="(a) Random removal at the literal rank")
     c.axhline(0, color=COLORS["random"], lw=0.8)

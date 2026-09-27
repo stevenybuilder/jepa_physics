@@ -30,8 +30,8 @@ def rings():
 def test_whitened_count_is_2_and_literal_count_inflates_under_shear(rings):
     Xc, thc = rings["clean"]
     Xs, ths = rings["sheared"]
-    assert whitened_count(Xc, sincos(thc), FOLDS, "circular")["rank_I_minus_T"] == 2
-    assert whitened_count(Xs, sincos(ths), FOLDS, "circular")["rank_I_minus_T"] == 2
+    assert whitened_count(Xc, sincos(thc), FOLDS, "circular")["K"] == 1
+    assert whitened_count(Xs, sincos(ths), FOLDS, "circular")["K"] == 1
     k_clean, k_shear = literal_K(Xc, sincos(thc)), literal_K(Xs, sincos(ths))
     assert k_clean == 1 and k_shear >= 3
 
@@ -69,7 +69,7 @@ def test_dims_script_on_fake_activations_and_figure(tmp_path):
     out = json.loads((results / "p1b_dims_four_ways.json").read_text())
     row = out["variables"]["direction"]["layers"][1]
     assert row["point"] == 12 and row["leace"]["ridge_r2_after"] < 0.1 and "dft" in row
-    assert row["whitened"][0]["rank_I_minus_T"] >= 2
+    assert row["whitened"][0]["K"] >= 1
     assert "dft" not in out["variables"]["speed"]["layers"][0]
     run("make_figures.py", "--results", str(results), "--figures", str(figs))
     assert (figs / "fig2c_dims_four_ways.png").exists()

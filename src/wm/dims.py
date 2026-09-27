@@ -2,9 +2,9 @@
 paper's count, not a replacement.
 
 (a) literal: the paper's orthogonal probe sequence K (inlp.inlp) against the random-removal band.
-(b) whitened: the same sequence in the whitened metric (Jin et al. 2608.10566, Alg. 1): whiten with the
-    train covariance, iterate probe -> QR -> project, and report rank(I - T) of the composite erasure T
-    mapped back to the original coordinates. Affine-invariant; a clean linear ring returns 2.
+(b) whitened: the probe sequence in the whitened metric with the target residualised on the directions
+    already removed (Jin et al. 2608.10566, Alg. 1); reports the whitened K. Affine-invariant; a clean
+    linear ring returns K = 1 (2 dims).
 (c) LEACE: closed-form least-squares concept erasure (Belrose et al. 2306.03819) of the target, then a
     fresh ridge and a small MLP are fit on the erased features; R² near 0 means the rank-m erasure removed
     what a linear (ridge) or nonlinear (MLP) probe could find.
@@ -15,8 +15,7 @@ from functools import partial
 
 import numpy as np
 
-from wm.inlp import inlp
-from wm.probes import ALPHAS, cv_select_alpha, score
+from wm.probes import ALPHAS, cv_select_alpha, fit_ridge, predict, ridge_path, score
 
 
 def whitener(X, eps=1e-2):
@@ -29,19 +28,46 @@ def whitener(X, eps=1e-2):
 
 
 def whitened_count(Xtr, Ytr, folds, kind, eps=1e-2, max_rounds=None):
-    """Estimand (b). Probe sequence on Z = (X − μ) S^{-1/2} with the paper's stopping rule; α by CV at
-    round 1 and then fixed, as in step 2. Returns K, the number of rounds, and rank(I − T), where
-    T = S^{1/2} (I − QQᵀ) S^{-1/2} is the composite erasure in the original coordinates."""
+    """Estimand (b), after Jin et al. Alg. 1: the probe sequence in the whitened metric with the target
+    residualised on the directions already removed. Round k: Z_k = Z − Z Q Qᵀ; Y_k = Y minus its
+    least-squares fit on the removed coordinates Z Q; a ridge probe Z_k → Y_k is scored on the 5 folds
+    (residualisation and probe both fit on the fold's training part); its weights' QR extends Q.
+    Stops when the fold-mean R² of the residualised target falls below the paper's threshold (0.1
+    direction, 0.05 scalars). α by CV at round 1, then fixed. Reports the whitened K (and K·m)."""
     Ytr = np.asarray(Ytr, float).reshape(len(Ytr), -1)
-    mu, S_mhalf, S_half = whitener(Xtr, eps)
+    mu, S_mhalf, _ = whitener(Xtr, eps)
     Z = (Xtr - mu) @ S_mhalf
-    score_fn = partial(score, kind=kind)
-    alpha = cv_select_alpha(Z, Ytr, folds, ALPHAS, score_fn)["alpha"]
-    dummy = np.linspace(0, len(Z) - 1, 20).astype(int)     # inlp's test-score slot, unused here
-    summary, Q, _, _ = inlp(Z, Ytr, Z[dummy], Ytr[dummy], folds, alpha, score_fn, kind, max_rounds)
-    I_minus_T = S_half @ Q @ Q.T @ S_mhalf if Q.shape[1] else np.zeros((Z.shape[1], Z.shape[1]))
-    return {"K": summary["K"], "dims": summary["dims"], "rank_I_minus_T": int(np.linalg.matrix_rank(I_minus_T, tol=1e-8)),
-            "alpha": float(alpha), "eps": eps, "cv_r2_by_round": [r["cv_r2"] for r in summary["rounds"]]}
+    d, m = Z.shape[1], Ytr.shape[1]
+    thresh = 0.1 if kind == "circular" else 0.05
+    alpha = cv_select_alpha(Z, Ytr, folds, ALPHAS, partial(score, kind="scalar"))["alpha"]
+    Q = np.zeros((d, 0))
+    r2_by_round = []
+    for _ in range(max_rounds or d // m):
+        Zk = Z - (Z @ Q) @ Q.T
+        r2s = []
+        for k in np.unique(folds):
+            val = folds == k
+            Yk = _residualise(Z[~val] @ Q, Ytr[~val], Z[val] @ Q, Ytr[val])
+            W, b = fit_ridge(Zk[~val], Yk[0], alpha)
+            r2s.append(score(Yk[1], predict(Zk[val], W, b), "scalar")["r2"])
+        r2_by_round.append(float(np.mean(r2s)))
+        if r2_by_round[-1] < thresh:
+            break
+        W, _ = fit_ridge(Zk, _residualise(Z @ Q, Ytr, Z[:1] @ Q, Ytr[:1])[0], alpha)
+        W = W - Q @ (Q.T @ W)
+        Q = np.hstack([Q, np.linalg.qr(W)[0]])
+    K = Q.shape[1] // m
+    return {"K": K, "dims": K * m, "alpha": float(alpha), "eps": eps, "stop_r2": thresh,
+            "cv_r2_by_round": r2_by_round, "hit_round_cap": r2_by_round[-1] >= thresh}
+
+
+def _residualise(A_fit, Y_fit, A_apply, Y_apply):
+    """Residuals of Y on the columns of A (with intercept), fit on (A_fit, Y_fit), applied to both."""
+    if A_fit.shape[1] == 0:
+        return Y_fit - Y_fit.mean(axis=0), Y_apply - Y_fit.mean(axis=0)
+    A1 = np.hstack([A_fit, np.ones((len(A_fit), 1))])
+    B = np.linalg.lstsq(A1, Y_fit, rcond=None)[0]
+    return Y_fit - A1 @ B, Y_apply - np.hstack([A_apply, np.ones((len(A_apply), 1))]) @ B
 
 
 def leace_fit(X, Y, eps=1e-2):
@@ -59,35 +85,49 @@ def leace_fit(X, Y, eps=1e-2):
 
 def mlp_cv_r2(X, Y, folds, hidden=64, max_iter=300, seed=0, n_folds=None):
     """Fold-mean R² of a one-hidden-layer MLP (sklearn, adam, early stopping), standardised inputs."""
-    from sklearn.neural_network import MLPRegressor
     Y = np.asarray(Y, float).reshape(len(Y), -1)
-    r2s = []
-    for k in np.unique(folds)[:n_folds]:
-        val = folds == k
-        mlp = MLPRegressor(hidden_layer_sizes=(hidden,), max_iter=max_iter, early_stopping=True, random_state=seed)
-        mlp.fit(X[~val], Y[~val] if Y.shape[1] > 1 else Y[~val, 0])
-        P = mlp.predict(X[val]).reshape(val.sum(), -1)
-        r2s.append(score(Y[val], P, "scalar")["r2"])
-    return float(np.mean(r2s))
+    return _mlp_folds(lambda k: (X[folds != k], X[folds == k]), Y, folds, n_folds, hidden, max_iter, seed)
 
 
 def leace_scores(Xtr, Ytr, folds, kind, eps=1e-2, mlp=True, mlp_folds=None):
-    """Estimand (c). The eraser is fit on all of train, then fresh probes are scored on the 5 folds of the
-    erased train set. Also reports the same probes before erasure (the ceiling). R² for direction is the
-    mean over (sin, cos)."""
+    """Estimand (c). Inside each of the 5 folds the eraser is fit on the fold's training part only and
+    applied to both parts; a fresh ridge (α picked by the fold-mean score over the grid) and an MLP are
+    then fit on the erased training part and scored on the erased held-out part. Also reports the same
+    probes before erasure (the ceiling). R² for direction is the mean over (sin, cos)."""
     Ytr = np.asarray(Ytr, float).reshape(len(Ytr), -1)
-    erase = leace_fit(Xtr, Ytr, eps)
-    Xe = erase(Xtr)
     sf = partial(score, kind=kind)
-    out = {"rank": Ytr.shape[1], "eps": eps,
+    fold_ids = np.unique(folds)
+    erased = {}
+    for k in fold_ids:
+        val = folds == k
+        erase = leace_fit(Xtr[~val], Ytr[~val], eps)
+        erased[k] = (erase(Xtr[~val]), erase(Xtr[val]))
+    curves = np.zeros((len(ALPHAS), len(fold_ids)))
+    for j, k in enumerate(fold_ids):
+        val = folds == k
+        for i, (W, b) in enumerate(ridge_path(erased[k][0], Ytr[~val], ALPHAS)):
+            curves[i, j] = sf(Ytr[val], predict(erased[k][1], W, b))["r2"]
+    out = {"rank": Ytr.shape[1], "eps": eps, "eraser_fit": "per fold, on the fold's training part",
            "ridge_r2_before": cv_select_alpha(Xtr, Ytr, folds, ALPHAS, sf)["cv_mean"],
-           "ridge_r2_after": cv_select_alpha(Xe, Ytr, folds, ALPHAS, sf)["cv_mean"]}
+           "ridge_r2_after": float(curves.mean(axis=1).max())}
     if mlp:
-        mu, sd = Xtr.mean(axis=0), Xtr.std(axis=0) + 1e-8
-        out["mlp_r2_before"] = mlp_cv_r2((Xtr - mu) / sd, Ytr, folds, n_folds=mlp_folds)
-        mu, sd = Xe.mean(axis=0), Xe.std(axis=0) + 1e-8
-        out["mlp_r2_after"] = mlp_cv_r2((Xe - mu) / sd, Ytr, folds, n_folds=mlp_folds)
+        out["mlp_r2_before"] = _mlp_folds(lambda k: (Xtr[folds != k], Xtr[folds == k]), Ytr, folds, mlp_folds)
+        out["mlp_r2_after"] = _mlp_folds(lambda k: erased[k], Ytr, folds, mlp_folds)
     return out
+
+
+def _mlp_folds(parts, Y, folds, n_folds=None, hidden=64, max_iter=300, seed=0):
+    """Fold-mean MLP R² where parts(k) gives (X_train_part, X_heldout_part), standardised on the train part."""
+    from sklearn.neural_network import MLPRegressor
+    r2s = []
+    for k in np.unique(folds)[:n_folds]:
+        val = folds == k
+        A, B = parts(k)
+        mu, sd = A.mean(axis=0), A.std(axis=0) + 1e-8
+        mlp = MLPRegressor(hidden_layer_sizes=(hidden,), max_iter=max_iter, early_stopping=True, random_state=seed)
+        mlp.fit((A - mu) / sd, Y[~val] if Y.shape[1] > 1 else Y[~val, 0])
+        r2s.append(score(Y[val], mlp.predict((B - mu) / sd).reshape(val.sum(), -1), "scalar")["r2"])
+    return float(np.mean(r2s))
 
 
 def split_half_spectrum(X, theta_deg, kmax=8, seed=0):
