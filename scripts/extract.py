@@ -1,7 +1,7 @@
 """Extract pooled V-JEPA 2 activations.
 
-  python scripts/extract.py run   --dataset speed [--model vjepa2|random] [--limit N | --ids 1 2 3]
-  python scripts/extract.py merge --dataset speed [--model vjepa2|random]
+  python scripts/extract.py run   --dataset speed [--model vjepa2|random|videomae] [--limit N | --ids 1 2 3]
+  python scripts/extract.py merge --dataset speed [--model vjepa2|random|videomae]
 
 Output: artifacts/activations/{dataset}/{model}/ (or --out).
 """
@@ -16,7 +16,8 @@ from wm.extract import merge, run_extraction  # noqa: E402
 parser = argparse.ArgumentParser()
 parser.add_argument("command", choices=["run", "merge"])
 parser.add_argument("--dataset", required=True, choices=DATASETS)
-parser.add_argument("--model", default="vjepa2", choices=["vjepa2", "random"])
+parser.add_argument("--model", default="vjepa2", choices=["vjepa2", "random", "videomae"],
+                    help="videomae = MCG-NJU/videomae-large (224 px resize, 1568 tokens; see wm.extract)")
 parser.add_argument("--out", type=Path, default=None)
 parser.add_argument("--limit", type=int, default=None, help="first N clips in manifest order")
 parser.add_argument("--ids", type=int, nargs="+", default=None)
