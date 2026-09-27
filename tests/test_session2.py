@@ -146,3 +146,25 @@ def test_predictor_smoke_one_clip(model, clips, zero_pass):
     assert np.isclose(recovery(rf, z0, rf)[0], 1.0) and np.isclose(recovery(z0, z0, rf)[0], 0.0)
     mse_own = ((z0 - rf) ** 2).mean().item()
     print(f"\ncontext leak (rel diff) {leak:.3f}; predictor MSE to own real future {mse_own:.3f}")
+
+
+@needs_acts
+def test_stored_basis_frame_check():
+    """--part1-basis paper: a basis is accepted only with the standardiser of the rows it was fit on (all train)."""
+    import sys
+    sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
+    from run_session2 import check_stored_basis
+    from wm.inlp import inlp
+    from wm.p2_data import load_inputs
+    d = load_inputs("direction", 22)
+    Y, kind, score_fn = targets(d["df"], "direction")
+    tr = d["is_train"]
+    st = Standardizer().fit(d["X"][tr].astype(np.float64))
+    Xtr = st.transform(d["X"][tr].astype(np.float64))
+    _, Q, W, b = inlp(Xtr, Y[tr], Xtr[:5], Y[tr][:5], d["fold"][tr], 10.0, score_fn, kind, max_rounds=2)
+    probes = {"Q": Q, "W": W, "b": b, "alpha": 10.0, "point": 22, "kind": kind}
+    assert check_stored_basis(probes, Xtr, Y[tr], 22, 10.0) < 1e-6
+    sub = tr & (d["fold"] != 0)                                             # a different row set / standardiser
+    st2 = Standardizer().fit(d["X"][sub].astype(np.float64))
+    with pytest.raises(AssertionError):
+        check_stored_basis(probes, st2.transform(d["X"][sub].astype(np.float64)), Y[sub], 22, 10.0)

@@ -94,26 +94,56 @@ def default_layers():
     return sorted({av["onset"], 8, 12, av["peak"]})
 
 
+def inlp_code_hash():
+    """sha256 (first 12 hex) of the code that produces a probe sequence (wm/inlp.py + wm/probes.py as on disk), so a
+    cached basis is never reused after either file changes."""
+    h = hashlib.sha256()
+    for name in ("inlp.py", "probes.py"):
+        h.update((PROJECT_ROOT / "src" / "wm" / name).read_bytes())
+    return h.hexdigest()[:12]
+
+
+def check_stored_basis(probes, Xtr_std, Ytr, L, alpha):
+    """The stored step-2 basis must come from exactly these standardised rows: same point and alpha, and its first
+    probe must equal a fresh ridge fit on them (round 1 removes nothing, so W_1 = fit_ridge(X_train_std, Y, alpha))."""
+    assert probes["point"] == L, (probes["point"], L)
+    assert np.isclose(probes["alpha"], alpha), (probes["alpha"], alpha)
+    W1, _ = fit_ridge(Xtr_std, Ytr, alpha)
+    err = float(np.abs(W1 - probes["W"][0]).max() / np.abs(W1).max())
+    assert err < 1e-6, f"stored basis at L{L} was not fit on these train rows / this standardiser (rel {err:.2e})"
+    return err
+
+
 def part1_basis(d, rows, L, mode, holdout, out_dir):
-    """Standardiser + INLP probe sequence for the Part 1 arms at layer L, from `rows` (train-standardised on those
-    rows). mode 'paper' reuses artifacts/inlp/direction_direction_L{L}.npz when it exists (fit on all train)."""
+    """Standardiser + INLP probe sequence for the Part 1 arms at layer L.
+
+    mode 'design': fit on `rows` (knot clips at kept values), standardised on those same rows.
+    mode 'paper': the Part 1 protocol, all train clips standardised on all train clips (as probes.standardized_layer);
+      reuses artifacts/inlp/direction_direction_L{L}.npz when present, after check_stored_basis confirms it was fit on
+      exactly that frame, else refits. Held-out target values are then inside the basis (flagged in the output).
+    Refits are cached in out_dir keyed by mode, holdout and inlp_code_hash()."""
     df = d["df"]
     Y, kind, score_fn = targets(df, DATASET)
-    st = Standardizer().fit(d["X"][rows].astype(np.float64))
-    if mode == "paper" and basis_path(DATASET, DATASET, L).exists():
-        return st, load_basis(basis_path(DATASET, DATASET, L)), "stored step-2 basis (all train clips)"
-    cache = Path(out_dir) / f"inlp_{DATASET}_L{L}_{mode}_{holdout}.npz"
-    if cache.exists():
-        return st, load_basis(cache), f"cached {cache.name}"
     alpha = load_sweep(DATASET, DATASET)["layers"][L]["alpha"]
+    if mode == "paper":
+        rows = d["is_train"]
+    st = Standardizer().fit(d["X"][rows].astype(np.float64))
     Xb = st.transform(d["X"][rows].astype(np.float64))
+    if mode == "paper" and basis_path(DATASET, DATASET, L).exists():
+        probes = load_basis(basis_path(DATASET, DATASET, L))
+        err = check_stored_basis(probes, Xb, Y[rows], L, alpha)
+        return st, probes, f"stored step-2 basis (all train clips; first-probe refit rel diff {err:.1e})", rows
+    code = inlp_code_hash()
+    cache = Path(out_dir) / f"inlp_{DATASET}_L{L}_{mode}_{holdout}_{code}.npz"
+    if cache.exists():
+        return st, load_basis(cache), f"cached {cache.name}", rows
     probe = d["role"] == "probe"
     Xp = st.transform(d["X"][probe].astype(np.float64))
     t0 = time.time()
     summary, Q, W, b = inlp(Xb, Y[rows], Xp, Y[probe], d["fold"][rows], alpha, score_fn, kind)
     save_basis(cache, Q, W, b, alpha, L, kind)
     print(f"  INLP L{L} ({mode}): K={summary['K']} in {time.time() - t0:.0f} s")
-    return st, load_basis(cache), f"INLP refit on {int(rows.sum())} clips ({mode}), alpha {alpha}"
+    return st, load_basis(cache), f"INLP refit on {int(rows.sum())} clips ({mode}), alpha {alpha}, code {code}", rows
 
 
 def plan(args):
@@ -141,7 +171,10 @@ def plan(args):
     info = {"layers": layers, "carrier_rows": carriers.tolist(), "carrier_ids": df["id"].to_numpy()[carriers].tolist(),
             "targets": tg.tolist(), "arms": arms, "edit_arms": list(EDIT_ARMS), "holdout": hinfo,
             "held_values": held.tolist(), "n_targets": args.n_targets, "part1_basis": args.part1_basis,
-            "spline": args.spline, "k": args.k, "waypoints": args.waypoints, "seed": args.seed, "per_layer": {}}
+            "spline": args.spline, "k": args.k, "waypoints": args.waypoints, "seed": args.seed,
+            "inlp_code_sha256_12": inlp_code_hash(), "per_layer": {}}
+    if args.part1_basis == "paper" and args.holdout != "none":
+        info["part1_basis_note"] = "paper basis: all train clips, so the held-out target values are inside the Part 1 basis"
     arrays = {"carrier_rows": carriers, "carrier_ids": df["id"].to_numpy()[carriers], "targets": tg}
     full = np.load(ACT_ROOT / DATASET / "vjepa2" / "meanpool.npy", mmap_mode="r")
     arrays["carrier_stored_meanpool"] = np.asarray(full[carriers], np.float32)
@@ -167,8 +200,7 @@ def plan(args):
         d = load_inputs(DATASET, L)
         X = d["X"].astype(np.float64)
         knot = (d["role"] == "knot") & ~np.isin(y, held if args.holdout != "none" else [])
-        rows_b = knot if args.part1_basis == "design" else d["is_train"] & ~np.isin(y, held if args.holdout != "none" else [])
-        st, probes, bsrc = part1_basis(d, rows_b, L, args.part1_basis, args.holdout, out)
+        st, probes, bsrc, rows_b = part1_basis(d, knot, L, args.part1_basis, args.holdout, out)
         V = build_basis(probes["W"])
         K = len(probes["W"])
         op = steering_operator(V, probes, K)
