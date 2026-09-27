@@ -299,3 +299,19 @@ def test_part2_inlp_plane_nuisance_uses_standardised_basis_as_is(tmp_path, monke
                "--nuisance-regress")
     cos = np.linalg.svd(Q.T @ np.linalg.qr(seen["B"])[0], compute_uv=False)
     assert np.allclose(cos, 1.0, rtol=0, atol=1e-10)
+
+
+def test_velocity_chord_uses_knot_folds_only(tmp_path, monkeypatch):
+    sp = tmp_path / "speed"
+    sp.mkdir()
+    velocity_dataset(sp, plane=True)
+    spec = importlib.util.spec_from_file_location("vp", ROOT / "scripts" / "run_velocity_plane.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    from wm.p2_data import load_inputs
+    s = load_inputs("speed", 1, "direction", sp / "act", sp / "table.csv", sp / "split.json")
+    seen = []
+    real_fit_pca = module.mf.fit_pca
+    monkeypatch.setattr(module.mf, "fit_pca", lambda X, k: seen.append(len(X)) or real_fit_pca(X, k))
+    module.chord_speed_readout(s, 8, 20, 0)
+    assert seen == [int((s["role"] == "knot").sum())]

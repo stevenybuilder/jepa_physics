@@ -34,8 +34,10 @@ SHIFTS = (45.0, 90.0, 135.0, 180.0)
 
 
 def chord_speed_readout(s, k, n_clips, seed):
-    """Midpoint / start ratio of two speed readouts along a direction chord steer on the speed set."""
-    tr, probe = s["is_train"], s["role"] == "probe"
+    """Midpoint / start ratio of two speed readouts along a direction chord steer on the speed set. Same role split
+    as run_part2: PCA, centroids and the velocity-plane fit use knot folds 0-2 only; the ridge speed evaluator uses
+    probe folds 3-4; steered clips are test."""
+    tr, probe = s["role"] == "knot", s["role"] == "probe"
     speed = s["df"]["speed_mps"].to_numpy(float)
     pca = mf.fit_pca(s["X"][tr], k)
     cent = mf.centroids(pca.project(s["X"][tr]), s["y"][tr])            # direction centroids, averaged over speed
@@ -76,7 +78,8 @@ def run(args):
         res["layers"][str(layer)] = {
             **layer_role("direction", layer, "direction"),
             "direction_set_procrustes_r2_ring": gc.procrustes_r2(C, np.stack([np.cos(r), np.sin(r)], 1))["r2"],
-            "speed_set": vp, "chord_speed_readout": chord_speed_readout(s, args.k, args.n_clips, args.seed)}
+            "speed_set": vp, "chord_speed_readout": chord_speed_readout(s, args.k, args.n_clips, args.seed),
+            "chord_roles": "fit on knot folds 0-2, speed evaluator on probe folds 3-4, steered clips from test"}
         print(f"layer {layer}: ring R2 {vp['procrustes_r2_ring']:.3f}  velocity R2 {vp['procrustes_r2_velocity']:.3f}"
               f"  radius top/bottom {vp['radius_ratio_top_bottom']:.2f} (speed ratio {vp['speed_ratio_top_bottom']:.1f})")
     res["note"] = ("velocity plane: R2_velocity > R2_ring, radius ratio ~ speed ratio, chord midpoint ratio ~ "
