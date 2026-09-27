@@ -13,6 +13,14 @@ WDS = (0.01, 0.1, 0.4, 0.8)
 BETAS, EPS = (0.9, 0.999), 1e-8   # torch.optim.Adam defaults
 
 
+def init_linear(d, m, seed=0):
+    """torch.nn.Linear-style init U(±1/√d) from a fresh RNG with this seed: W [d, m], b [m]. fit_adam_grid starts
+    from exactly this (then keeps drawing minibatch permutations from the same RNG)."""
+    rng = np.random.default_rng(seed)
+    bound = 1 / np.sqrt(d)
+    return rng.uniform(-bound, bound, (d, m)), rng.uniform(-bound, bound, m), rng
+
+
 def fit_adam_grid(X, Y, configs, epochs, batch=64, seed=0, decoupled=False):
     """Train one linear probe per (lr, wd) in `configs` at once, each with its own Adam state, on the same
     minibatch sequence. Adam as in torch.optim.Adam with weight_decay (coupled L2: g += wd·W), applied
@@ -24,10 +32,9 @@ def fit_adam_grid(X, Y, configs, epochs, batch=64, seed=0, decoupled=False):
     (n, d), m, G = X.shape, Y.shape[1], len(configs)
     lr = np.array([c[0] for c in configs])[:, None, None]
     wd = np.array([c[1] for c in configs])[:, None, None]
-    rng = np.random.default_rng(seed)
-    bound = 1 / np.sqrt(d)
-    W = np.repeat(rng.uniform(-bound, bound, (1, d, m)), G, axis=0)
-    b = np.repeat(rng.uniform(-bound, bound, (1, m)), G, axis=0)
+    W0, b0, rng = init_linear(d, m, seed)
+    W = np.repeat(W0[None], G, axis=0)
+    b = np.repeat(b0[None], G, axis=0)
     mW, vW, mb, vb = np.zeros_like(W), np.zeros_like(W), np.zeros_like(b), np.zeros_like(b)
     (b1, b2), t = BETAS, 0
     for _ in range(epochs):

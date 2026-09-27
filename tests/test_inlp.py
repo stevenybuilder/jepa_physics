@@ -12,7 +12,7 @@ def run(Y, n_copies, kind):
     X = copies_code(Y, n_copies, d=40, seed=0)
     tr, te, folds = split(len(Y))
     score_fn = partial(score, kind=kind)
-    summary, Q, W, b = inlp(X[tr], Y[tr], X[te], Y[te], folds, 1.0, score_fn, kind)
+    summary, Q, W, b = inlp(X[tr], Y[tr], X[te], Y[te], folds, 1.0, score_fn, kind, protocols=("nested", "paper"))
     rand = random_removal_curve(X[tr], Y[tr], X[te], Y[te], folds, 1.0, score_fn,
                                 [r["dims_removed"] for r in summary["rounds"]], seeds=3)
     return summary, Q, W, rand
@@ -76,7 +76,8 @@ def test_acc15_per_round_sawtooth_on_all_metrics_and_loose_K():
     Y = np.stack([np.sin(theta), np.cos(theta)], 1)
     summary, Q, W, rand = run(Y, 3, "circular")
     rounds = summary["rounds"]
-    assert all(0 <= r["cv_acc15"] <= 1 and "test_acc15" in r for r in rounds)
+    assert all(0 <= r["cv_acc15"] <= 1 for r in rounds)
+    assert all("test_acc15" in r for r in summary["paper"]["rounds"])
     assert rounds[0]["cv_acc15"] > 0.9 and rounds[-1]["cv_acc15"] < 0.3
     assert "cv_acc15" in rand["rows"][0]
     st = sawtooth(summary, W)
@@ -86,3 +87,92 @@ def test_acc15_per_round_sawtooth_on_all_metrics_and_loose_K():
     y = np.random.default_rng(0).uniform(-1.7, 1.7, 1200)[:, None]
     s2, *_ = run(y, 4, "scalar")
     assert s2["K_r2_01"] == s2["K_loose"] and s2["K_loose"] <= s2["K"] and "R2 < 0.1" in s2["loose_threshold"]
+
+
+def test_planted_rank_nested_and_paper_K_and_bug2_fields():
+    """Planted rank-r code: nested pooled K = r exactly, every fold's K and the paper-protocol K within ±1."""
+    y = np.random.default_rng(7).uniform(-1.7, 1.7, 1200)[:, None]   # seed 0 would equal split()'s test draw
+    s, Q, W, _ = run(y, 4, "scalar")
+    assert s["K"] == 4 and s["protocol"] == "nested" and s["K_probes"] == 4 and "dims_2K" not in s
+    assert all(abs(k - 4) <= 1 for k in s["K_folds"]) and s["K_fold_min"] <= 4 <= s["K_fold_max"]
+    assert abs(s["paper"]["K"] - 4) <= 1 and s["paper"]["protocol"] == "paper" and "test" in s["paper"]["test_read"]
+    assert all("test_r2" in r and "cv_r2" not in r for r in s["paper"]["rounds"])
+    theta = np.radians(np.random.default_rng(1).uniform(0, 360, 1200))
+    s, Q, W, rand = run(np.stack([np.sin(theta), np.cos(theta)], 1), 3, "circular")
+    assert s["K"] == 3 and abs(s["paper"]["K"] - 3) <= 1 and all(abs(k - 3) <= 1 for k in s["K_folds"])
+    assert s["K_probes"] == 3 and s["dims_2K"] == 6 == s["dims"] and s["paper"]["dims_2K"] == 2 * s["paper"]["K"]
+    assert Q.shape == (40, 6) and np.allclose(Q.T @ Q, np.eye(6), atol=1e-8)
+    row = rand["rows"][-1]
+    assert {"cv_r2", "test_r2", "cv_acc15", "test_acc15"} <= set(row) and rand["protocols"]["cv_*"] == "nested"
+
+
+def test_nested_curve_never_sees_the_scored_folds_labels():
+    """Permuting the held-out fold's labels in the labels the removals are fit on leaves that fold's nested curve
+    unchanged; the old (leaky) path, removals fit on all train rows, does change."""
+    from wm.inlp import nested_curve, probe_sequence, ridge_fit
+    from wm.probes import fit_ridge, predict
+    theta = np.radians(np.random.default_rng(1).uniform(0, 360, 1200))
+    Y = np.stack([np.sin(theta), np.cos(theta)], 1)
+    X = copies_code(Y, 3, d=40, seed=0)
+    tr, te, folds = split(len(Y))
+    X, Y = X[tr], Y[tr]
+    sf = partial(score, kind="circular")
+    val = folds == folds.min()
+    Yperm = Y.copy()
+    Yperm[val] = Y[val][np.random.default_rng(5).permutation(val.sum())]
+    base = nested_curve(X, Y, folds, 1.0, sf, "circular")
+    perm = nested_curve(X, Y, folds, 1.0, sf, "circular", Yfit=Yperm)
+    n = min(len(base["rounds"]), len(perm["rounds"]))
+    assert n >= 3
+    assert np.allclose([r["fold_r2"][0] for r in base["rounds"][:n]], [r["fold_r2"][0] for r in perm["rounds"][:n]],
+                       atol=1e-10)
+
+    def leaky(Yfit, rounds=3):   # the removed code: Q_k fit on all train rows, the scored fold projected through it
+        seq, out = probe_sequence(X, Yfit, ridge_fit(1.0)), []
+        Q = np.zeros((40, 0))
+        for _ in range(rounds):
+            Xk = X - X @ Q @ Q.T
+            W, b = fit_ridge(Xk[~val], Y[~val], 1.0)
+            out.append(sf(Y[val], predict(Xk[val], W, b))["r2"])
+            _, Wk, *_ = next(seq)
+            Q = np.hstack([Q, np.linalg.qr(Wk)[0]])
+        return np.array(out)
+    assert np.abs(leaky(Y) - leaky(Yperm)).max() > 1e-3
+
+
+def test_isolated_dips():
+    from wm.inlp import isolated_dips
+    assert isolated_dips([0.9, 0.8, 0.3, 0.8, 0.7, 0.2, 0.1]) == [3]
+
+
+def test_adam_sequence_logs_and_flags_untrained_rounds(monkeypatch):
+    from wm.inlp import adam_sequence
+    theta = np.radians(np.random.default_rng(1).uniform(0, 360, 1200))
+    Y = np.stack([np.sin(theta), np.cos(theta)], 1)
+    X = copies_code(Y, 3, d=40, seed=0)
+    tr, te, _ = split(len(Y))
+    s, W = adam_sequence(X[tr], Y[tr], X[te], Y[te], partial(score, kind="circular"), "circular", max_rounds=12,
+                         batch=64)
+    r = s["rounds"]
+    assert r[0]["test_acc15"] > 0.5 and not r[0]["failed_to_train"] and W.shape == (len(r), 40, 2)
+    assert {"W_norm", "W_move_from_init", "train_mse", "train_r2", "train_acc15", "test_r2"} <= set(r[0])
+    assert s["recipe"]["lr"] == 1e-3 and s["recipe"]["weight_decay"] == 1e-4 and s["recipe"]["epochs_used"] == 100
+    assert s["K_first"] <= s["K_patience"] and "dips_vs_failed" in s["sawtooth"]
+    # a round whose probe never trains (round 2 returns its init): flagged, scores low, removes ~nothing, and the
+    # next round recovers -> an isolated dip at round 2 that the dips-vs-failed table attributes to the failure
+    import wm.inlp as inlp_mod
+    from wm.adam_probe import init_linear
+    real, calls = inlp_mod.fit_adam, {"n": 0}
+
+    def flaky(X, Yf, lr, wd, epochs, batch, seed, decoupled):
+        calls["n"] += 1
+        return init_linear(X.shape[1], Yf.shape[1], seed)[:2] if calls["n"] == 2 else real(X, Yf, lr, wd, epochs, batch, seed, decoupled)
+    monkeypatch.setattr(inlp_mod, "fit_adam", flaky)
+    s2, _ = adam_sequence(X[tr], Y[tr], X[te], Y[te], partial(score, kind="circular"), "circular", max_rounds=8,
+                          batch=64, patience=2)
+    r2 = s2["rounds"]
+    assert r2[1]["failed_to_train"] and not r2[0]["failed_to_train"] and not r2[2]["failed_to_train"]
+    assert r2[2]["test_acc15"] > r2[1]["test_acc15"] + 0.3
+    dv = s2["sawtooth"]["dips_vs_failed"]
+    assert 2 in dv["isolated_dips"] and dv["dips_that_failed"] == [2] and dv["p_dip_given_failed"] == 1.0
+    assert s2["K_first"] == 1 and s2["K_patience"] == 3     # the paper's first-at-chance rule stops at the tooth
