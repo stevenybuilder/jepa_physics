@@ -448,3 +448,90 @@ def velocity_plane_check(X, theta_deg, speed, n_speed_bins=8, n_dir_bins=16):
             "radius_by_speed": radius, "radius_ratio_top_bottom": float(r[-1] / r[0]),
             "speed_ratio_top_bottom": float(s[-1] / s[0]), "radius_speed_corr": float(np.corrcoef(r, s)[0, 1]),
             "_velocity_fit": vel}
+
+
+# ---------------------------------------------------------------- nuisance regression and alternative subspaces -----
+
+def nuisance_matrix(df, variable):
+    """Nuisance covariates for `variable` (Engels et al. 2405.14860 App. K style): every physical covariate except the
+    variable itself: speed, acceleration, motion type (one-hot), start_x, start_y, and (cos, sin) of direction when
+    direction is not the variable. Constant columns dropped. Returns (N [n, c], column names). The QA json holds
+    only a dataset summary of disk visibility, so a per-clip visible fraction is not included."""
+    cols, names = [], []
+    th = np.radians(df["theta_degrees"].to_numpy(float))
+    cand = {"speed_mps": df["speed_mps"], "acceleration_mps2": df["acceleration_mps2"],
+            "start_x": df["start_x"] if "start_x" in df else None, "start_y": df["start_y"] if "start_y" in df else None}
+    skip = {"speed": "speed_mps", "acceleration": "acceleration_mps2"}.get(variable)
+    for name, col in cand.items():
+        if col is not None and name != skip:
+            cols.append(np.asarray(col, float))
+            names.append(name)
+    if variable != "direction":
+        cols += [np.cos(th), np.sin(th)]
+        names += ["cos_theta", "sin_theta"]
+    if "motion" in df:
+        for mtype in sorted(df["motion"].unique())[1:]:
+            cols.append((df["motion"] == mtype).to_numpy(float))
+            names.append(f"motion={mtype}")
+    N = np.stack(cols, 1)
+    keep = N.std(0) > 1e-12
+    return N[:, keep], [n for n, k in zip(names, keep) if k]
+
+
+def regress_out(X, N, train):
+    """Standardise X on train rows, fit X_std ~ [1, N] by least squares on train rows only, and return the residual
+    for every row (the same projection applied to all clips)."""
+    X = np.asarray(X, dtype=np.float64)
+    mu, sd = X[train].mean(0), X[train].std(0) + 1e-8
+    Xs = (X - mu) / sd
+    M = np.column_stack([np.ones(len(N)), N])
+    B = np.linalg.lstsq(M[train], Xs[train], rcond=None)[0]
+    R = Xs - M @ B
+    r2 = 1 - (R[train] ** 2).sum() / (((Xs[train] - Xs[train].mean(0)) ** 2).sum())
+    return R, float(r2)
+
+
+def fit_subspace(X, labels, kind="pca", k=64, basis=None):
+    """The subspace in which centroids, splines and steering paths live, as a PCA-like object (project / lift /
+    complement). kind: "pca" (top-k PCA, Goodfire A.3), "chart" (the 2-D supervised circular-chart plane, for when
+    the unsupervised angle check fails) or "inlp" (span of a Part 1 INLP basis, basis [D, r], orthonormalised)."""
+    from wm.manifold import PCA
+    X = np.asarray(X, dtype=np.float64)
+    if kind == "pca":
+        return fit_pca(X, k)
+    if kind == "chart":
+        B = fit_circular_chart(X, labels)["A"]
+    elif kind == "inlp":
+        B = np.asarray(basis, dtype=float)
+    else:
+        raise ValueError(kind)
+    Qb = np.linalg.qr(B)[0].T                                           # [r, D]
+    mean = X.mean(0)
+    Zc = (X - mean) @ Qb.T
+    var = Zc.var(0, ddof=1)
+    order = np.argsort(var)[::-1]
+    return PCA(mean=mean, components=Qb[order], explained=var[order])
+
+
+def load_basis_matrix(path, X_train=None):
+    """[D, r] basis from a .npy, or the Q of an INLP .npz (train-standardised coordinates, mapped to raw-space
+    directions by dividing by the train SD when X_train is given)."""
+    if str(path).endswith(".npz"):
+        Q = np.load(path)["Q"]
+        if X_train is not None:
+            Q = Q / (np.asarray(X_train).std(0) + 1e-8)[:, None]
+        return Q
+    return np.load(path)
+
+
+def expected_sagitta(radius, n_values, strides, noise):
+    """Per stride: the chord-vs-arc gap at the middle of the gap the LOO test leaves (2 spacings for stride 1, else
+    `stride` spacings), r (1 - cos(gap / 2)), and its ratio to the centroid noise. Curvature is detectable only where
+    the ratio is well above 1."""
+    out = {}
+    for s in strides:
+        gap = np.radians((2 if s == 1 else s) * 360.0 / n_values)
+        sag = radius * (1 - np.cos(gap / 2))
+        out[str(s)] = {"gap_deg": float(np.degrees(gap)), "expected_sagitta": float(sag),
+                       "sagitta_over_centroid_noise": float(sag / noise)}
+    return out

@@ -217,3 +217,38 @@ def test_velocity_plane_script(tmp_path, plane):
     else:
         assert vp["better"] == "ring" and 0.7 < vp["radius_ratio_top_bottom"] < 1.4
         assert 0.8 < mid180["ratio_ridge_speed_probe"] < 1.2         # a ring leaves the speed readout alone
+
+
+def test_geometry_options(tmp_path):
+    """--nuisance-regress, --plane chart, and the speed set read as a direction dataset; provenance + layer role."""
+    tmp = fake_dataset(tmp_path, "direction")
+    run_script("run_geometry_checks.py", tmp, "direction", "--nuisance-regress", "--plane", "chart")
+    geo = json.loads((tmp / "results" / "p2_geometry_direction_L1_chart.json").read_text())
+    assert geo["subspace"] == "chart" and geo["k"] == 2
+    assert geo["angle"]["plane_used"] in ("activation", "centroid") and geo["angle"]["orientation"] in (1, -1)
+    nr = geo["nuisance_regressed"]
+    assert "speed_mps" not in nr["covariates"] and "motion=velocity" in nr["covariates"]   # speed constant here
+    assert nr["angle"]["plane_used"] is not None
+    assert geo["layer_role"] == "exploratory" and len(geo["provenance"]["split_sha256"]) == 64
+    assert geo["provenance"]["commit"] is not None
+    assert "expected_sagitta_by_stride" in geo and geo["summary"]
+    sp = tmp_path / "speedset"
+    sp.mkdir()
+    velocity_dataset(sp, plane=False)
+    spec = importlib.util.spec_from_file_location("g", ROOT / "scripts" / "run_geometry_checks.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    out = module.run(module.parse(["--dataset", "speed", "--variable", "direction", "--layer", "1", "--k", "16",
+                                   "--act-dir", str(sp / "act"), "--table", str(sp / "table.csv"),
+                                   "--split", str(sp / "split.json"), "--results-dir", str(sp / "results"),
+                                   "--figures-dir", str(sp / "figures"), "--nuisance-regress"]))
+    assert (sp / "results" / "p2_geometry_speed_direction_L1.json").exists()
+    assert out["angle"]["plane_used"] is not None
+    assert "speed_mps" in out["nuisance_regressed"]["covariates"]
+
+
+def test_geometry_speed_negative_summary(tmp_path):
+    tmp = fake_dataset(tmp_path, "speed")
+    run_script("run_geometry_checks.py", tmp, "speed")
+    geo = json.loads((tmp / "results" / "p2_geometry_speed_L1.json").read_text())
+    assert any(line.startswith("pre-registered negative") for line in geo["summary"])

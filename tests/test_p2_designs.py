@@ -294,3 +294,20 @@ def test_paired_bootstrap():
     rng = np.random.default_rng(0)
     b = P2.paired_bootstrap(1.0 + rng.standard_normal(400))
     assert b["ci95"][0] < b["mean"] < b["ci95"][1] and b["ci95"][0] > 0.8 and b["ci95"][1] < 1.2
+
+
+def test_angle_acceptance_mirror_and_local_swaps():
+    """A mirrored ring whose neighbouring knots swap by noise is recovered (sign recorded); a scrambled one is not."""
+    rng = np.random.default_rng(0)
+    t = np.radians(GRID)
+    noisy = -t + np.radians(8.0) * rng.standard_normal(64)          # mirror + ~8 deg jitter: many local swaps
+    C = np.zeros((64, 6))
+    C[:, 0], C[:, 1] = np.cos(noisy), np.sin(noisy)
+    C[:, 2:] = 0.01 * rng.standard_normal((64, 4))
+    ch = mf.choose_angle_source(C, GRID)
+    c = ch["checks"]["activation"]
+    assert c["order_frac"] < 1.0 and c["order_coarse_preserved"]
+    assert ch["angle"] == "unsupervised" and ch["orientation"] == -1
+    C2 = C.copy()
+    C2[:, :2] = C[rng.permutation(64), :2]
+    assert mf.choose_angle_source(C2, GRID)["angle"] == "labels"
