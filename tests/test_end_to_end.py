@@ -50,6 +50,7 @@ def test_pipeline_on_fake_activations(tmp_path):
     assert steer["eval_probe"]["out_of_fold"]["r2_fold_mean"] <= steer["eval_probe"]["in_sample"]["r2"]
     assert "radius" in steer["single"][-1] and steer["radius_matched"]["single"][-1]["n"] == steer["K"]
     assert len(steer["random_nulls"]["rows"]) == steer["K"] and steer["random_nulls"]["n_draws"] >= 20
+    assert steer["off_target_probe"]["variable"] == "speed" and "off_target" in steer["single"][-1]
     angles = json.loads((results / "step2_subspace_angles.json").read_text())
     rows = [r for r in angles["pairs"]["direction_vs_speed"] if "mapped" in r]
     assert rows and all(0 <= r["mapped"]["min_angle_deg"] <= 90 for r in rows)

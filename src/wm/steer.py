@@ -125,7 +125,7 @@ def distance(a, b, kind):
 
 
 def evaluate(Xte, labels, probes, eval_W, eval_b, kind, single_target, all_targets, n_bins=8,
-             single_full=None, all_full=None):
+             single_full=None, all_full=None, off=None):
     """Steer every test clip and read it with the held-out evaluation probe, for n = 0..K.
 
     single_target: every clip steered to one value (θ* = 90° for direction).
@@ -135,6 +135,7 @@ def evaluate(Xte, labels, probes, eval_W, eval_b, kind, single_target, all_targe
     None = the paper's target, encode(value) required of every probe.
     Norm ratio ‖x*‖/‖x‖ is per clip, in standardised coordinates. For direction the evaluation
     probe's readout radius ‖(ŝ, ĉ)‖ is logged beside the angle (per n, and per clip at n = 0 and K).
+    off: optional off-target probe (off_target_probe) read on the single-target steered clips at every n.
     """
     V = build_basis(probes["W"])
     K = len(probes["W"])
@@ -165,6 +166,12 @@ def evaluate(Xte, labels, probes, eval_W, eval_b, kind, single_target, all_targe
             row["radius"] = radius_summary(P)
             if n == 0:
                 radius_at_0 = readout_radius(P)
+        if off is not None:
+            r_off = decode(predict(Xs[off["mask"]], off["W"], off["b"]), off["kind"])
+            if n == 0:
+                off_before = r_off
+            row["off_target"] = {"mae_to_true": float(distance(r_off, off["labels"], off["kind"]).mean()),
+                                 "mean_abs_change": float(distance(r_off, off_before, off["kind"]).mean())}
         single.append(row)
         if n == K:
             ratios_at_K = ratio
@@ -276,6 +283,32 @@ def eval_probe_cv(Xte, Yte, kind, seed=0):
     return W, b, report
 
 
+def off_target_probe(Xtr, Xte, df, tr, te, folds, kind):
+    """The off-target readout (spec 5.3, §6 item 4): steering direction should leave speed alone and vice
+    versa. A ridge probe for the other variable, fit on train clips of the same dataset (α by CV on the
+    train folds, same coordinates as the steer) and read on the steered test clips. Direction set: speed
+    probe on constant-speed clips only (the accelerating half has no single speed). Speed and
+    acceleration sets: direction probe on all clips (64 directions, fully crossed)."""
+    if kind == "circular":
+        name, off_kind = "speed", "scalar"
+        y = df["speed_mps"].to_numpy(float)
+        motion = df["motion"].to_numpy()
+        m_tr, m_te = motion[tr] == "velocity", motion[te] == "velocity"
+        Y = y[:, None]
+        labels = y[te][m_te]
+    else:
+        name, off_kind = "direction", "circular"
+        th = np.radians(df["theta_degrees"].to_numpy(float))
+        Y = np.stack([np.sin(th), np.cos(th)], axis=1)
+        m_tr, m_te = np.ones(len(tr), bool), np.ones(len(te), bool)
+        labels = df["theta_degrees"].to_numpy(float)[te]
+    cv = cv_select_alpha(Xtr[m_tr], Y[tr][m_tr], folds[m_tr], ALPHAS, partial(score, kind=off_kind))
+    W, b = fit_ridge(Xtr[m_tr], Y[tr][m_tr], cv["alpha"])
+    info = {"variable": name, "alpha": cv["alpha"], "cv_r2_train": cv["cv_mean"], "n_test_clips": int(m_te.sum()),
+            "fit": "train clips of this dataset" + (" with motion == velocity" if kind == "circular" else "")}
+    return {"W": W, "b": b, "kind": off_kind, "mask": m_te, "labels": labels}, info
+
+
 def run_steering(dataset, variable=None, point=None, pool="meanpool", act_root=None, results_dir=None,
                  inlp_dir=None, n_draws=20, layer_role=None):
     """Paper protocol: steering basis from the train probe sequence (step 2), evaluation probe fit on
@@ -291,19 +324,20 @@ def run_steering(dataset, variable=None, point=None, pool="meanpool", act_root=N
     df = load_table(dataset)
     Y, kind, _ = targets(df, variable)
     assert kind in ("circular", "scalar"), "steering is defined for direction, speed and acceleration"
-    tr, te, _ = split_rows(dataset, df)
+    tr, te, folds = split_rows(dataset, df)
     Xtr, Xte = standardized_layer(load_activations(dataset, pool, act_root=act_root), point, tr, te)
+    off, off_info = off_target_probe(Xtr, Xte, df, tr, te, folds, kind)
     label_all = df["theta_degrees"].to_numpy(float) if kind == "circular" else Y[:, 0]
     labels = label_all[te]
     all_targets = np.unique(label_all)
     single = 90.0 if kind == "circular" else float(all_targets[len(all_targets) // 2])
     eval_W, eval_b, eval_report = eval_probe_cv(Xte, Y[te], kind)
-    res = evaluate(Xte, labels, probes, eval_W, eval_b, kind, single, all_targets)
+    res = evaluate(Xte, labels, probes, eval_W, eval_b, kind, single, all_targets, off=off)
     nulls = random_nulls(Xte, labels, probes, eval_W, eval_b, kind, single, n_draws)
     m_all = matched_targets(Xtr, label_all[tr], probes, all_targets)
     m_single = m_all[np.flatnonzero(np.isclose(all_targets, single))[0]]
     res_m = evaluate(Xte, labels, probes, eval_W, eval_b, kind, single, all_targets,
-                     single_full=m_single, all_full=m_all)
+                     single_full=m_single, all_full=m_all, off=off)
     res_m["random_nulls"] = random_nulls(Xte, labels, probes, eval_W, eval_b, kind, single, n_draws,
                                          target_full=m_single)
     m = probes["W"].shape[2]
@@ -319,7 +353,7 @@ def run_steering(dataset, variable=None, point=None, pool="meanpool", act_root=N
            "is_onset": point == sweep["availability"]["onset"], "eval_probe": eval_report, "eval_probe_in_sample": eval_report["in_sample"],
            "space": "train-standardised activations",
            "arm": "paper: unit target (sin θ*, cos θ*) / true value required of every probe", **res,
-           "random_nulls": nulls, "radius_matched": res_m}
+           "random_nulls": nulls, "radius_matched": res_m, "off_target_probe": off_info}
     s = res["single"]
     print(f"{dataset}/{variable} point {point}: K={res['K']} MAE-to-target {s[0]['mae_to_target']:.3g} -> "
           f"{s[-1]['mae_to_target']:.3g}, MAE-to-true {s[0]['mae_to_true']:.3g} -> {s[-1]['mae_to_true']:.3g}; "

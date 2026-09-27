@@ -166,3 +166,32 @@ def test_residualised_basis_equals_paper_raw_stacked_basis(world):
         full = steer(X_te, build_basis(probes["W"]), probes, encode(90.0, "circular"), N)
         paper = steer(X_te, V_raw, probes, encode(90.0, "circular"), N)
         assert np.allclose(full, paper, atol=1e-8)
+
+
+def test_off_target_speed_readout_unmoved_when_codes_orthogonal_moved_when_shared():
+    rng = np.random.default_rng(5)
+    n = 1500
+    theta = rng.choice(ALL_T, n)
+    speed = rng.uniform(1, 7, n)
+    Yd = encode(theta, "circular")
+    tr, te, folds = split(n)
+    s_code = ((speed - 4) / 2)[:, None]
+    for shared, bound in ((False, 0.1), (True, None)):
+        # shared: speed is written on the same axis as the first direction copy's sin
+        Z = np.hstack([Yd + 0.1 * rng.standard_normal((n, 2)), Yd + 0.2 * rng.standard_normal((n, 2)),
+                       s_code + 0.05 * rng.standard_normal((n, 1)), rng.standard_normal((n, 11))])
+        if shared:
+            Z[:, 0] += s_code[:, 0]
+        X = Z @ np.linalg.qr(np.random.default_rng(0).standard_normal((16, 16)))[0].T
+        _, Q, W, b = inlp(X[tr], Yd[tr], X[te], Yd[te], folds, 1.0, partial(score, kind="circular"), "circular")
+        probes = {"Q": Q, "W": W, "b": b}
+        eW, eb = fit_ridge(X[te], Yd[te], 1.0)
+        sW, sb = fit_ridge(X[tr], speed[tr], 1.0)
+        off = {"W": sW, "b": sb, "kind": "scalar", "mask": np.ones(te.sum(), bool), "labels": speed[te]}
+        res = evaluate(X[te], theta[te], probes, eW, eb, "circular", 90.0, ALL_T[::8], off=off)
+        ch = [row["off_target"]["mean_abs_change"] for row in res["single"]]
+        assert ch[0] == 0.0 and res["single"][0]["off_target"]["mae_to_true"] < 0.5
+        if shared:
+            assert max(ch) > 0.5                     # steering direction drags the speed readout
+        else:
+            assert max(ch) < bound                   # speed readout untouched (m/s)
