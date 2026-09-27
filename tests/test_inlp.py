@@ -54,9 +54,14 @@ def test_principal_angles_planted_orthogonal_identical_and_random():
     A, B = R[:, :4], R[:, 4:6]                       # orthogonal codes
     o = subspace_overlap(A, B)
     assert np.allclose(o["angles_deg"], 90, atol=1e-6) and o["overlap"] < 1e-12
+    assert abs(o["mean_angle_deg"] - 90) < 1e-6 and abs(o["grassmann_distance_rad"] - np.sqrt(2) * np.pi / 2) < 1e-6
+    assert o["overlap_B_from_A"] < 1e-12 and o["random_expectation_B_from_A"] == 2 / d
+    half = subspace_overlap(A, np.hstack([A[:, :1], B[:, :1]]))     # B shares one of its two directions with A
+    assert abs(half["overlap_A_from_B"] - 0.5) < 1e-10 and abs(half["overlap_B_from_A"] - 0.25) < 1e-10
     assert o["random_expectation"] == 4 / d
     s = subspace_overlap(A, A[:, :2] @ np.array([[2.0, 1.0], [0.5, -1.0]]))   # same span, other basis
     assert np.allclose(s["angles_deg"], 0, atol=1e-5) and abs(s["overlap"] - 1) < 1e-10
+    assert s["grassmann_distance_rad"] < 1e-6 and s["mean_angle_deg"] < 1e-5
     lo, hi = o["random_overlap_p05_p95"]
     assert lo < 4 / d < hi
     # covector map: a readout that is identical in raw space maps onto itself

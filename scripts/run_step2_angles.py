@@ -44,7 +44,8 @@ out = {"pool": args.pool, "A": "direction (direction set)",
        "note": ("bases for different variables come from different datasets (direction set vs speed set vs "
                 "acceleration set) but the same layer point; primary numbers map B's readout directions into the "
                 "direction set's train-standardised coordinates (w * sd_direction / sd_B); as_stored compares the "
-                "stored bases directly. overlap = ||Q_A^T Q_B||_F^2 / dim B, random expectation = k_A / d."),
+                "stored bases directly. Paper C.4 metrics: mean principal angle, Grassmann distance sqrt(sum theta^2) "
+                "(radians), overlap A<-B = ||Q_A^T Q_B||_F^2 / dim B (random k_A/d) and B<-A (/ dim A, random k_B/d)."),
        "pairs": {}}
 for other in ("speed", "acceleration"):
     rows = []
@@ -65,6 +66,8 @@ for other in ("speed", "acceleration"):
         rows.append(row)
         main = row.get("mapped", row["as_stored"])
         print(f"direction vs {other} point {point:2d}: k_A={main['k_A']} k_B={main['k_B']} "
-              f"min angle {main['min_angle_deg']:.1f} overlap {main['overlap']:.3f} (random {main['random_expectation']:.3f})")
+              f"mean angle {main['mean_angle_deg']:.1f} Grassmann {main['grassmann_distance_rad']:.2f} "
+              f"overlap A<-B {main['overlap_A_from_B']:.3f} (random {main['random_expectation_A_from_B']:.3f}) "
+              f"B<-A {main['overlap_B_from_A']:.3f} (random {main['random_expectation_B_from_A']:.3f})")
     out["pairs"][f"direction_vs_{other}"] = rows
 write_json(Path(args.results or RESULTS) / "step2_subspace_angles.json", out)

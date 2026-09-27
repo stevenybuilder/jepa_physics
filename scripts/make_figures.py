@@ -313,17 +313,22 @@ def fig2d(results, out):
         key = "mapped" if all("mapped" in row for row in rows) else "as_stored"
         x = [row["frac"] for row in rows]
         o = [row[key] for row in rows]
-        a.plot(x, [v["overlap"] for v in o], "o-", ms=3.5, color=COLORS[other], label=f"direction vs {other}")
-        a.fill_between(x, [v["random_overlap_p05_p95"][0] for v in o], [v["random_overlap_p05_p95"][1] for v in o],
-                       color=COLORS[other], alpha=0.15, lw=0)
-        a.plot(x, [v["random_expectation"] for v in o], ":", color=COLORS[other], lw=1)
-        b.plot(x, [v["min_angle_deg"] for v in o], "o-", ms=3.5, color=COLORS[other], label=f"direction vs {other}")
+        a.plot(x, [v.get("overlap_A_from_B", v["overlap"]) for v in o], "o-", ms=3.5, color=COLORS[other],
+               label=f"direction ← {other} (/dim {other})")
+        a.plot(x, [v.get("random_expectation_A_from_B", v["random_expectation"]) for v in o], ":", color=COLORS[other], lw=1)
+        if "overlap_B_from_A" in o[0]:
+            a.plot(x, [v["overlap_B_from_A"] for v in o], "s--", ms=3, color=COLORS[other],
+                   label=f"{other} ← direction (/dim direction)")
+            a.plot(x, [v["random_expectation_B_from_A"] for v in o], ":", color=COLORS[other], lw=1, alpha=0.5)
+        if "mean_angle_deg" in o[0]:
+            b.plot(x, [v["mean_angle_deg"] for v in o], "o-", ms=3.5, color=COLORS[other], label=f"{other}: mean angle")
+        b.plot(x, [v["min_angle_deg"] for v in o], "--", color=COLORS[other], lw=1.2, label=f"{other}: smallest angle")
         b.fill_between(x, [v["random_min_angle_p05_p95"][0] for v in o], [v["random_min_angle_p05_p95"][1] for v in o],
                        color=COLORS[other], alpha=0.15, lw=0)
-    a.plot([], [], ":", color=COLORS["text"], lw=1, label="random expectation k_A/d (band: 5–95%)")
-    a.set(xlabel="layer fraction", ylabel="overlap |Q_A^T Q_B|²_F / dim B", title="Extra: shared readout subspace")
-    b.set(xlabel="layer fraction", ylabel="smallest principal angle (deg)", ylim=(0, 92),
-          title="Extra: closest pair of directions")
+    a.plot([], [], ":", color=COLORS["text"], lw=1, label="random expectation k/d (paper Eq. 3)")
+    a.set(xlabel="layer fraction", ylabel="projection overlap (paper Eq. 1)", title="Direction vs speed/acceleration subspaces")
+    b.set(xlabel="layer fraction", ylabel="principal angle (deg)", ylim=(0, 92),
+          title="Principal angles (band: smallest angle, random B)")
     for ax in (a, b):
         legend_top(ax, 1)
     fig.savefig(out / "fig2d_subspace_angles.png")

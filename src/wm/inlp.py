@@ -242,6 +242,10 @@ def orthonormal(M):
 def subspace_overlap(QA, QB, n_random=20, seed=0):
     """Principal angles between span(QA) and span(QB) (paper C.4), with a random reference.
 
+    Paper metrics (C.4, Table 3): mean principal angle, Grassmann distance sqrt(Σθ²) (Eq. 2, radians), and
+    the projection overlap in both directions, A ← B = ‖Q_AᵀQ_B‖²_F / k_B (Eq. 1, random expectation k_A/d)
+    and B ← A = ‖Q_AᵀQ_B‖²_F / k_A (expectation k_B/d). Extras below.
+
     angles_deg: all min(k_A, k_B) principal angles, ascending (0° = shared direction, 90° = orthogonal).
     overlap = ‖Q_AᵀQ_B‖²_F / k_B, the mean squared cosine: the fraction of B's subspace inside A's.
     Its expectation for a uniformly random B is k_A / d. The random band redraws B (same k_B) n_random
@@ -258,7 +262,14 @@ def subspace_overlap(QA, QB, n_random=20, seed=0):
         c = np.clip(np.linalg.svd(QA.T @ R, compute_uv=False), 0.0, 1.0)
         r_over.append(float(np.sum(c ** 2) / kB))
         r_min.append(float(np.degrees(np.arccos(c.max()))))
+    ang_rad = np.radians(angles)
     return {"k_A": int(kA), "k_B": int(kB), "d": int(d), "angles_deg": np.sort(angles).tolist(),
+            # the paper's C.4 metrics (Table 3): mean angle, Eq. 1 both ways with Eq. 3 expectations, Eq. 2
+            "mean_angle_deg": float(angles.mean()),
+            "grassmann_distance_rad": float(np.sqrt(np.sum(ang_rad ** 2))),
+            "overlap_A_from_B": float(np.sum(cos ** 2) / kB), "random_expectation_A_from_B": kA / d,
+            "overlap_B_from_A": float(np.sum(cos ** 2) / kA), "random_expectation_B_from_A": kB / d,
+            # extras
             "min_angle_deg": float(angles.min()), "median_angle_deg": float(np.median(angles)),
             "overlap": float(np.sum(cos ** 2) / kB), "random_expectation": kA / d,
             "random_overlap_p05_p95": [float(np.percentile(r_over, 5)), float(np.percentile(r_over, 95))],
