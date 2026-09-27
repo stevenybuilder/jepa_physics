@@ -148,11 +148,21 @@ class Curve:
         order = np.argsort(self.values)
         xv, tc = self.values[order].astype(float), self.coords[order].astype(float)
         if not self.periodic:
-            return np.interp(v, xv, tc)
+            return interp_extrap(v, xv, tc)
         tc = np.unwrap(np.append(tc, tc[0]))            # continuous around the loop, either orientation
         xv = np.append(xv, xv[0] + 360.0)
         x = (np.asarray(v, dtype=float) - xv[0]) % 360.0 + xv[0]
         return np.interp(x, xv, tc) % TWO_PI
+
+
+def interp_extrap(x, xp, fp):
+    """np.interp inside [xp[0], xp[-1]], and the end segments extended linearly outside it (np.interp would clamp).
+    Used for extrapolation targets: the line continues its last chord, never stops at the last knot."""
+    x = np.asarray(x, dtype=float)
+    y = np.interp(x, xp, fp)
+    lo, hi = x < xp[0], x > xp[-1]
+    y = np.where(lo, fp[0] + (x - xp[0]) * (fp[1] - fp[0]) / (xp[1] - xp[0]), y)
+    return np.where(hi, fp[-1] + (x - xp[-1]) * (fp[-1] - fp[-2]) / (xp[-1] - xp[-2]), y)
 
 
 def natural_cubic(C, coord, values=None):
@@ -185,8 +195,10 @@ def compare_angles(t_intrinsic, theta_deg):
     """How well an unsupervised angle matches the true angle.
 
     Allows either orientation and any offset (the sign and zero of atan2 are arbitrary). Returns circular
-    correlation (Jammalamadaka), the aligned max and mean absolute deviation in degrees, the orientation, and
-    whether the knots keep their order around the loop.
+    correlation (Fisher & Lee 1983; signed by orientation), the aligned max and mean absolute deviation in degrees,
+    the orientation, and whether the knots keep their order around the loop. Fisher-Lee, not Jammalamadaka: the
+    latter centres on each sample's circular mean, which is undefined for angles spread evenly round the circle
+    (exactly the 64-value grid), and it then scores near-perfect agreement as ~0.6.
     """
     a = np.asarray(t_intrinsic, dtype=float)
     b = np.radians(np.asarray(theta_deg, dtype=float))
@@ -194,8 +206,7 @@ def compare_angles(t_intrinsic, theta_deg):
     def circ_mean(x):
         return np.angle(np.exp(1j * x).mean())
 
-    sa, sb = np.sin(a - circ_mean(a)), np.sin(b - circ_mean(b))
-    rho = float(np.sum(sa * sb) / np.sqrt(np.sum(sa ** 2) * np.sum(sb ** 2)))
+    rho = fisher_lee(a, b)
 
     best = None
     for sign in (1, -1):
@@ -207,6 +218,19 @@ def compare_angles(t_intrinsic, theta_deg):
     steps = np.diff(np.unwrap(a[np.argsort(b)]))
     order_preserved = bool(np.all(steps * best["orientation"] > 0))
     return {"circular_corr": rho, **best, "order_preserved": order_preserved}
+
+
+def fisher_lee(a, b):
+    """Fisher-Lee circular-circular correlation of angles a, b (radians): sum_{i<j} sin(a_i-a_j) sin(b_i-b_j),
+    normalised; rotation invariant, +1 same orientation, -1 reflected. Closed form, O(n)."""
+    a, b = np.asarray(a, dtype=float), np.asarray(b, dtype=float)
+    n = len(a)
+    A, B = np.sum(np.cos(a) * np.cos(b)), np.sum(np.sin(a) * np.sin(b))
+    C, D = np.sum(np.cos(a) * np.sin(b)), np.sum(np.sin(a) * np.cos(b))
+    E, F = np.sum(np.cos(2 * a)), np.sum(np.sin(2 * a))
+    G, H = np.sum(np.cos(2 * b)), np.sum(np.sin(2 * b))
+    den = np.sqrt((n ** 2 - E ** 2 - F ** 2) * (n ** 2 - G ** 2 - H ** 2))
+    return float(4 * (A * B - C * D) / den) if den > 0 else float("nan")
 
 
 def choose_angle_source(C, values_deg, max_dev_deg=30.0):
@@ -276,6 +300,67 @@ def heldout_mask(values, every=4, periodic=False):
     return mask
 
 
+HOLDOUT_DESIGNS = ("scattered", "contiguous", "extrapolation")
+
+
+def heldout_design(values, design, periodic, seed=0, block=8, every=4):
+    """Held-out label values for one of three designs (spec.md section 6 item 1). values must be sorted (np.unique).
+
+    scattered:     every 4th value (heldout_mask; interior for scalars). A local interpolation check only.
+    contiguous:    one block of `block` consecutive values. Direction: a 45 degree arc (8 of 64) starting at an index
+                   drawn from `seed`, wrapping round 0/360. Scalars: an interior block (at least one kept knot on
+                   each side), start drawn from `seed`. The spline-vs-line claim rests on this design.
+    extrapolation: the top `block` values (scalars only; direction has no extrapolation).
+    Returns (mask [m] bool, info dict naming the design and the held-out values).
+    """
+    values = np.asarray(values)
+    m = len(values)
+    info = {"design": design}
+    if design == "scattered":
+        mask = heldout_mask(values, every, periodic)
+    elif design == "contiguous":
+        rng = np.random.default_rng(seed)
+        start = int(rng.integers(m)) if periodic else int(rng.integers(1, m - block))
+        idx = (start + np.arange(block)) % m
+        mask = np.zeros(m, bool)
+        mask[idx] = True
+        info.update({"seed": seed, "block_start_index": start, "block_first_value": float(values[idx[0]]),
+                     "block_last_value": float(values[idx[-1]])})
+        if periodic:
+            info["arc_width_deg"] = float(block * 360.0 / m)
+    elif design == "extrapolation":
+        if periodic:
+            raise ValueError("direction is periodic: there is no extrapolation design")
+        mask = np.zeros(m, bool)
+        mask[np.argsort(values)[-block:]] = True
+        info["note"] = ("targets lie beyond the last kept knot: the spline extends its end cubic piece, the line "
+                        "extends its last chord")
+    else:
+        raise ValueError(f"unknown held-out design {design!r}; choose from {HOLDOUT_DESIGNS}")
+    info["held_out_values"] = values[mask].astype(float).tolist()
+    return mask, info
+
+
+def sagitta(curve, values):
+    """Per target value: the distance (PCA units) between the curve point and the chord point between the kept
+    neighbouring knots, i.e. how far apart the spline's and the line's targets are. Also names the neighbours."""
+    values = np.asarray(values, dtype=float)
+    dist = np.linalg.norm(curve(curve.coord_of_value(values)) - piecewise_linear_point(curve, values), axis=-1)
+    kv = np.sort(curve.values.astype(float))
+    out = []
+    for v, s in zip(values, np.atleast_1d(dist)):
+        if curve.periodic:
+            below = kv[kv < v].max() if (kv < v).any() else kv.max()
+            above = kv[kv > v].min() if (kv > v).any() else kv.min()
+        else:
+            below = kv[kv < v].max() if (kv < v).any() else None
+            above = kv[kv > v].min() if (kv > v).any() else None
+            if above is None:                       # extrapolation: the last chord is extended
+                below, above = kv[-2], kv[-1]
+        out.append({"value": float(v), "sagitta": float(s), "chord_from": float(below), "chord_to": float(above)})
+    return out
+
+
 def fit_curve(cent, periodic, keep=None, angle="unsupervised", plane="activation"):
     """Fit the right spline to a centroids() dict, optionally on a subset of values (keep mask).
 
@@ -309,20 +394,51 @@ def manifold_path(x, pca, curve, ta, tb, K, mode="shift"):
     x = np.asarray(x, dtype=float)
     single = x.ndim == 1
     X = np.atleast_2d(x)
-    ta = np.broadcast_to(np.asarray(ta, dtype=float), (len(X),))
-    tb = np.broadcast_to(np.asarray(tb, dtype=float), (len(X),))
+    out = pca.lift(manifold_coords(pca.project(X), curve, ta, tb, K, mode)) + pca.complement(X)[:, None, :]
+    return out[0] if single else out
+
+
+def manifold_coords(Z, curve, ta, tb, K, mode="shift"):
+    """The PCA-coordinate waypoints [n, K, k] of manifold_path for clips at PCA coordinates Z [n, k]."""
+    Z = np.atleast_2d(np.asarray(Z, dtype=float))
+    ta = np.broadcast_to(np.asarray(ta, dtype=float), (len(Z),))
+    tb = np.broadcast_to(np.asarray(tb, dtype=float), (len(Z),))
     s = np.linspace(0.0, 1.0, K)
     t = ta[:, None] + s[None, :] * curve.step(ta, tb)[:, None]          # [n, K]
     on_curve = curve(t)                                                  # [n, K, k]
-    Z = pca.project(X)                                                   # [n, k]
     if mode == "shift":
-        Zk = Z[:, None, :] + on_curve - on_curve[:, :1, :]
-    elif mode == "replace":
-        Zk = on_curve
-    else:
-        raise ValueError(mode)
-    out = pca.lift(Zk) + pca.complement(X)[:, None, :]
-    return out[0] if single else out
+        return Z[:, None, :] + on_curve - on_curve[:, :1, :]
+    if mode == "replace":
+        return on_curve
+    raise ValueError(mode)
+
+
+def linear_coords(Z, pa, pb, K):
+    """Straight-line steer inside the PCA subspace: z + s (pb - pa), s = 0..1 in K steps. Z [n, k]; pa, pb [n, k]
+    or [k] (the polyline points at the source and target values). Returns [n, K, k]. Lifted with the clip's own
+    complement this is the matched-support linear arm: same subspace and same off-subspace residual as the spline."""
+    s = np.linspace(0.0, 1.0, K)[None, :, None]
+    diff = np.broadcast_to(np.asarray(pb, float) - np.asarray(pa, float), np.shape(Z))
+    return np.asarray(Z, float)[:, None, :] + s * diff[:, None, :]
+
+
+def chord_coords(Zk):
+    """Curvature controls for a path of waypoints Zk [n, K, k] (jepa_steering's registered action-geometry arms).
+
+    projected: the straight chord between the path's own endpoints, traversed with the path's arc-length spacing
+               (waypoint k sits at fraction s_k / s_K of the chord, s = cumulative length along the path).
+    reflected: 2 * projected - path, the bend flipped to the other side of the chord.
+    Both have the path's endpoints, dose and waypoint count. Returns (projected, reflected), each [n, K, k].
+    """
+    Zk = np.asarray(Zk, dtype=float)
+    seg = np.linalg.norm(np.diff(Zk, axis=1), axis=-1)                    # [n, K-1]
+    s = np.concatenate([np.zeros((len(Zk), 1)), np.cumsum(seg, axis=1)], axis=1)
+    total = s[:, -1:]
+    uniform = np.broadcast_to(np.linspace(0.0, 1.0, Zk.shape[1]), s.shape)
+    f = np.where(total > 0, s / np.where(total > 0, total, 1.0), uniform)  # zero-length path: uniform fractions
+    a, b = Zk[:, :1], Zk[:, -1:]
+    projected = a + f[..., None] * (b - a)
+    return projected, 2 * projected - Zk
 
 
 def steer_to_value(x, pca, curve, target_value, K=2, source_value=None, mode="shift"):
@@ -344,6 +460,7 @@ def piecewise_linear_point(curve, v):
         t = (np.asarray(t) - tc[0]) % TWO_PI + tc[0]
     else:
         P, tc = curve.points, curve.coords
+        return np.stack([interp_extrap(t, tc, P[:, j]) for j in range(P.shape[1])], axis=-1)
     return np.stack([np.interp(t, tc, P[:, j]) for j in range(P.shape[1])], axis=-1)
 
 
