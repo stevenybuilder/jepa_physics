@@ -250,6 +250,28 @@ tuning. Backup slide only.
 | 2 | direction 2K in the tens, sawtooth; speed K smaller, no sawtooth | INLP K inside the random band | INLP vs random band |
 | 3 | MAE-to-target falls with N, single probe fails, MAE-to-true rises | flat in N, or single probe already reaches target | Fig. 24 on our data |
 
+Outcomes on real data (27 Sep, `results/p1a_*.json`, `p1b_*.json`, `p2_geometry_*.json`; kept next to the expectations,
+not edited into them):
+- Step 1: **falsified for onset.** All three variables are linearly decodable from block 1 (CV R² 0.88–0.98 at
+  point 1, ≈ 0 at the embedding point), no emergence zone, no late decline. A random-init ViT-L reaches 0.85 (direction),
+  0.92 (speed), 0.91 (acceleration) and 0.99 on (vx, vy) at block 1 and stays flat. Raw pixels with a linear probe do
+  not (0.15 / 0.44 / 0.35); the disk-trajectory floor makes every Cartesian target exactly linear but cannot read a
+  magnitude (R² 0.00). Reading: one attention block with rotary positions turns displacement into linear velocity and
+  a norm-like magnitude, trained or not; V-JEPA's training adds precision with depth (direction 10.7° → 3.0°, speed
+  MAE 0.11 → 0.07), not availability. Start position predicts direction at chance (R² 0.00), so this is not a data
+  confound.
+- Step 2 (direction): **"tens of dimensions" reproduces at the peak layer** (point 22: K = 23, 46 dims; K = 20 at the
+  Fig. 22 threshold; paper §7.2 says 40–50). At the onset layer (point 2) the code is far more redundant (K = 104,
+  208 dims). **No sawtooth** at either layer on R², MAE or within-15° accuracy (fraction of rises 0.0, drop
+  autocorrelation 0.92–0.98); consecutive probe planes are 6–8° apart, i.e. successive probes are weakening copies
+  of one (sin, cos) mixture, not alternating sin/cos features. Random removal of the same number of dimensions leaves
+  R² unchanged (0.99 → 0.99).
+- Part 2 pre-checks (direction, points 8/12/22): a ring exists (supervised circular chart fits the 64 centroids at
+  3.5–7° MAE, radius 3.2–7.3, growing with depth); at point 12 its plane is 6° from the top-2 PC plane. Local
+  curvature is below centroid noise at knot spacings ≤ 45° (sagitta 0.04–0.4 vs noise ≈ 1.5) and detectable at 90°.
+  Speed at point 12 is a straight, evenly spaced line (knot-spacing R² 0.999 linear, participation ratio 1.65): the
+  pre-registered negative.
+
 ## 7b. Deviations from the paper, in one table (Part 1)
 
 | Item | Paper | Here | Why | Effect |

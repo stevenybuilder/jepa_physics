@@ -1,0 +1,165 @@
+{
+ "dataset": "speed",
+ "layer": 12,
+ "variable": "speed",
+ "n_train": 1228,
+ "k": 64,
+ "pca_explained_frac_top10": [
+  0.22883362517984293,
+  0.19556201647040714,
+  0.11800362970408386,
+  0.06926065570853301,
+  0.05448800319560902,
+  0.04630905147929112,
+  0.029471207490755633,
+  0.024789289306278144,
+  0.019700951174658875,
+  0.017862876360055593
+ ],
+ "n_values": 64,
+ "min_count": 19,
+ "loo": {
+  "1": {
+   "fp32": {
+    "mean_err_cubic": 2.5946236097284525,
+    "mean_err_line": 2.0772763727457195,
+    "mean_log_ratio": 0.2225692038997753,
+    "frac_cubic_wins": 0.0,
+    "winner": "line"
+   },
+   "bf16": {
+    "mean_err_cubic": 2.5984457304704844,
+    "mean_err_line": 2.0801800984854526,
+    "mean_log_ratio": 0.2228302022301099,
+    "frac_cubic_wins": 0.0,
+    "winner": "line"
+   },
+   "winner_same": true,
+   "fp32_line_err_over_noise": 0.9430565385905165
+  },
+  "2": {
+   "fp32": {
+    "mean_err_cubic": 2.2263075689819405,
+    "mean_err_line": 2.0772763727457195,
+    "mean_log_ratio": 0.06941020027244359,
+    "frac_cubic_wins": 0.04838709677419355,
+    "winner": "line"
+   },
+   "bf16": {
+    "mean_err_cubic": 2.2294588268583335,
+    "mean_err_line": 2.080180098485453,
+    "mean_log_ratio": 0.06943585336245489,
+    "frac_cubic_wins": 0.04838709677419355,
+    "winner": "line"
+   },
+   "winner_same": true,
+   "fp32_line_err_over_noise": 0.9430565385905165
+  },
+  "4": {
+   "fp32": {
+    "mean_err_cubic": 2.265106575978904,
+    "mean_err_line": 2.127297711790501,
+    "mean_log_ratio": 0.06405606717705269,
+    "frac_cubic_wins": 0.08888888888888889,
+    "winner": "line"
+   },
+   "bf16": {
+    "mean_err_cubic": 2.267973375138623,
+    "mean_err_line": 2.130003895289263,
+    "mean_log_ratio": 0.06402225801322792,
+    "frac_cubic_wins": 0.08888888888888889,
+    "winner": "line"
+   },
+   "winner_same": true,
+   "fp32_line_err_over_noise": 0.9625637122239765
+  },
+  "8": {
+   "fp32": {
+    "mean_err_cubic": 2.3268662148171924,
+    "mean_err_line": 2.207837384347559,
+    "mean_log_ratio": 0.05384278129924519,
+    "frac_cubic_wins": 0.1760204081632653,
+    "winner": "line"
+   },
+   "bf16": {
+    "mean_err_cubic": 2.3312412523834802,
+    "mean_err_line": 2.2116408900091695,
+    "mean_log_ratio": 0.053988948504044974,
+    "frac_cubic_wins": 0.1760204081632653,
+    "winner": "line"
+   },
+   "winner_same": true,
+   "fp32_line_err_over_noise": 0.9934665167187149
+  },
+  "16": {
+   "fp32": {
+    "mean_err_cubic": 2.5499491005231043,
+    "mean_err_line": 2.477123185819334,
+    "mean_log_ratio": 0.031898560705896695,
+    "frac_cubic_wins": 0.25416666666666665,
+    "winner": "line"
+   },
+   "bf16": {
+    "mean_err_cubic": 2.5536940560977035,
+    "mean_err_line": 2.4804767409692734,
+    "mean_log_ratio": 0.031992456336260036,
+    "frac_cubic_wins": 0.25277777777777777,
+    "winner": "line"
+   },
+   "winner_same": true,
+   "fp32_line_err_over_noise": 1.105896206524046
+  }
+ },
+ "loo_shuffled_control": {
+  "1": {
+   "mean_err_cubic": 7.316156108705339,
+   "mean_err_line": 5.088409874092688,
+   "winner": "line"
+  },
+  "16": {
+   "mean_err_cubic": 6.127536773411814,
+   "mean_err_line": 5.922918474124395,
+   "winner": "line"
+  }
+ },
+ "spread_vs_curvature": {
+  "median_bend": 2.0805580622860376,
+  "median_spread": 9.782580327329267,
+  "median_centroid_noise": 2.235299839905684,
+  "bend_over_noise": 0.9428935014999847,
+  "bend_over_spread": 0.21631460460840263
+ },
+ "heldout_reconstruction": {
+  "scattered": {
+   "interp": 2.521790199447584,
+   "smooth": 1.9172943771649607,
+   "chord": 2.0546969833885096,
+   "n_seeds": 1,
+   "best": "smooth"
+  },
+  "contiguous": {
+   "interp": 5.483469667792145,
+   "smooth": 2.1499176126214357,
+   "chord": 2.1605834620776068,
+   "n_seeds": 4,
+   "best": "smooth"
+  },
+  "extrapolation": {
+   "interp": 234.42162091570782,
+   "smooth": 4.95471401864152,
+   "chord": 11.944809044404728,
+   "n_seeds": 1,
+   "best": "smooth"
+  }
+ },
+ "heldout_reconstruction_note": "held-out centroids rebuilt by the interpolating spline (Goodfire A.3), the count-weighted smoothing spline (B.1) and the chord; pick run_part2 --spline from this train-only check",
+ "participation": {
+  "pr_centroids": 1.6498774717708036,
+  "pr_residuals": 8.648782066648625
+ },
+ "knot_spacing": {
+  "r2_linear": 0.9992154364332991,
+  "r2_log": 0.9088154787588854,
+  "better": "linear"
+ }
+}

@@ -1,0 +1,204 @@
+{
+ "dataset": "direction",
+ "layer": 8,
+ "variable": "direction",
+ "n_train": 1200,
+ "k": 64,
+ "pca_explained_frac_top10": [
+  0.2747983681852054,
+  0.12471557168859718,
+  0.08854133800810962,
+  0.06768659839985358,
+  0.05524841844929926,
+  0.044342142217617606,
+  0.03530256753932706,
+  0.031596571608355835,
+  0.02618044034983689,
+  0.022561024590265766
+ ],
+ "n_values": 64,
+ "min_count": 18,
+ "angle": {
+  "source": "labels_angle (fallback, flagged)",
+  "activation": {
+   "circular_corr": -0.286405157380502,
+   "orientation": -1,
+   "offset_deg": 84.31823227647342,
+   "max_dev_deg": 177.7836832998654,
+   "mean_dev_deg": 39.84817951831501,
+   "order_preserved": false
+  },
+  "centroid": {
+   "circular_corr": -0.8772089945908971,
+   "orientation": -1,
+   "offset_deg": -139.49290988472183,
+   "max_dev_deg": 47.077813131514596,
+   "mean_dev_deg": 17.00575318465076,
+   "order_preserved": false
+  }
+ },
+ "loo": {
+  "1": {
+   "fp32": {
+    "mean_err_cubic": 2.3324003488921785,
+    "mean_err_line": 1.8577166294785161,
+    "mean_log_ratio": 0.23632939512847223,
+    "frac_cubic_wins": 0.046875,
+    "winner": "line"
+   },
+   "bf16": {
+    "mean_err_cubic": 2.3276072408195283,
+    "mean_err_line": 1.8559185004241894,
+    "mean_log_ratio": 0.23488535790096315,
+    "frac_cubic_wins": 0.046875,
+    "winner": "line"
+   },
+   "winner_same": true,
+   "fp32_line_err_over_noise": 1.1686965638024895
+  },
+  "2": {
+   "fp32": {
+    "mean_err_cubic": 2.008956986802647,
+    "mean_err_line": 1.8577166294785161,
+    "mean_log_ratio": 0.07876152298674288,
+    "frac_cubic_wins": 0.03125,
+    "winner": "line"
+   },
+   "bf16": {
+    "mean_err_cubic": 2.0074105779864797,
+    "mean_err_line": 1.8559185004241894,
+    "mean_log_ratio": 0.07896377976664651,
+    "frac_cubic_wins": 0.046875,
+    "winner": "line"
+   },
+   "winner_same": true,
+   "fp32_line_err_over_noise": 1.1686965638024895
+  },
+  "4": {
+   "fp32": {
+    "mean_err_cubic": 2.0513439525818282,
+    "mean_err_line": 1.9239005881595155,
+    "mean_log_ratio": 0.06586217251168397,
+    "frac_cubic_wins": 0.13541666666666666,
+    "winner": "line"
+   },
+   "bf16": {
+    "mean_err_cubic": 2.051301543754789,
+    "mean_err_line": 1.9234290712220863,
+    "mean_log_ratio": 0.06602680173025889,
+    "frac_cubic_wins": 0.140625,
+    "winner": "line"
+   },
+   "winner_same": true,
+   "fp32_line_err_over_noise": 1.2103331427413575
+  },
+  "8": {
+   "fp32": {
+    "mean_err_cubic": 2.168443748541795,
+    "mean_err_line": 2.103816288004272,
+    "mean_log_ratio": 0.031548883042630364,
+    "frac_cubic_wins": 0.30580357142857145,
+    "winner": "line"
+   },
+   "bf16": {
+    "mean_err_cubic": 2.168468680545175,
+    "mean_err_line": 2.1036769156088075,
+    "mean_log_ratio": 0.03163870177063504,
+    "frac_cubic_wins": 0.3125,
+    "winner": "line"
+   },
+   "winner_same": true,
+   "fp32_line_err_over_noise": 1.3235187905662962
+  },
+  "16": {
+   "fp32": {
+    "mean_err_cubic": 2.7665174159239467,
+    "mean_err_line": 2.7786612190124607,
+    "mean_log_ratio": -0.0019700489902888785,
+    "frac_cubic_wins": 0.5104166666666666,
+    "winner": "cubic"
+   },
+   "bf16": {
+    "mean_err_cubic": 2.766426883717924,
+    "mean_err_line": 2.778410425143242,
+    "mean_log_ratio": -0.0018782863112245156,
+    "frac_cubic_wins": 0.5104166666666666,
+    "winner": "cubic"
+   },
+   "winner_same": true,
+   "fp32_line_err_over_noise": 1.748066291220469
+  }
+ },
+ "loo_shuffled_control": {
+  "1": {
+   "mean_err_cubic": 6.34464697726842,
+   "mean_err_line": 4.705761687804683,
+   "winner": "line"
+  },
+  "16": {
+   "mean_err_cubic": 5.541434097328428,
+   "mean_err_line": 5.109821640375987,
+   "winner": "line"
+  }
+ },
+ "spread_vs_curvature": {
+  "median_bend": 1.7776804789743519,
+  "median_spread": 6.821805051087749,
+  "median_centroid_noise": 1.5742605695417795,
+  "bend_over_noise": 1.1389188211928611,
+  "bend_over_spread": 0.26128589718295536
+ },
+ "heldout_reconstruction": {
+  "scattered": {
+   "interp": 2.244848540723998,
+   "smooth": 1.8007874471442997,
+   "chord": 1.795846929865214,
+   "n_seeds": 1,
+   "best": "chord"
+  },
+  "contiguous": {
+   "interp": 4.334377355511805,
+   "smooth": 2.4358577100228143,
+   "chord": 1.9844318988767453,
+   "n_seeds": 4,
+   "best": "chord"
+  }
+ },
+ "heldout_reconstruction_note": "held-out centroids rebuilt by the interpolating spline (Goodfire A.3), the count-weighted smoothing spline (B.1) and the chord; pick run_part2 --spline from this train-only check",
+ "participation": {
+  "pr_centroids": 3.7530764434395842,
+  "pr_residuals": 7.9894566935345015
+ },
+ "ring_radius_by_group": {
+  "acceleration_t0": 5.860448935339312,
+  "acceleration_t1": 4.59593063961463,
+  "acceleration_t2": 4.862783082292131,
+  "velocity_t0": 5.059474075080285,
+  "velocity_t1": 5.936915455210741,
+  "velocity_t2": 5.855566955636771
+ },
+ "circular_chart": {
+  "centroids_chart_vs_pc12": {
+   "circular_corr": 0.2824347944571519,
+   "mae_deg": 37.912160034846806,
+   "max_dev_deg": 177.35403002414617,
+   "orientation": -1
+  },
+  "clips_chart_vs_pc12": {
+   "circular_corr": 0.15072433022999157,
+   "mae_deg": 47.75161952023762,
+   "max_dev_deg": 179.62806313011,
+   "orientation": -1
+  },
+  "chart_vs_true_mae_deg": {
+   "centroids": 7.0653444046526666,
+   "clips_in_sample": 26.01114931264132
+  },
+  "principal_angles_chart_vs_pc12_deg": [
+   26.02541416847212,
+   81.27293156277918
+  ],
+  "chart_radius": 3.173783317192383,
+  "pipeline_plane": "activation"
+ }
+}
