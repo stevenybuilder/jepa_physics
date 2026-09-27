@@ -195,3 +195,17 @@ def test_off_target_speed_readout_unmoved_when_codes_orthogonal_moved_when_share
             assert max(ch) > 0.5                     # steering direction drags the speed readout
         else:
             assert max(ch) < bound                   # speed readout untouched (m/s)
+
+
+def test_grouped_folds_and_stratified_halves_keep_identical_clips_together():
+    from wm.steer import grouped_folds, stratified_halves
+    groups = np.array(["a", "a", "b", "c", "c", "c", "d", "e"] * 5)
+    labels = np.repeat(np.arange(8), 5)
+    groups = np.char.add(groups, labels.astype(str))                     # units nested in labels
+    folds = grouped_folds(groups)
+    for g in np.unique(groups):
+        assert len(set(folds[groups == g])) == 1
+    in_a = stratified_halves(groups, labels)
+    for g in np.unique(groups):
+        assert len(set(in_a[groups == g])) == 1
+    assert 0.3 < in_a.mean() < 0.7 and all(in_a[labels == v].any() or (~in_a[labels == v]).any() for v in range(8))

@@ -23,6 +23,8 @@ parser.add_argument("--results", type=Path, default=None)
 parser.add_argument("--inlp-dir", type=Path, default=None)
 parser.add_argument("--model", default="vjepa2", choices=["vjepa2", "random"],
                     help="random = the random-init ViT-L control; outputs carry _random")
+parser.add_argument("--strict-eval", action="store_true",
+                    help="extra: also fit the evaluation probe on one half of test and steer the other half")
 parser.add_argument("--null-draws", type=int, default=20, help="draws per random null (>= 20 per spec 5.3)")
 args = parser.parse_args()
 
@@ -32,4 +34,4 @@ for dataset in [args.dataset] if args.dataset else VARIABLES:
              else chosen_layers(load_sweep(dataset, variable, args.pool, args.results, args.model), args.layer_role))
     for point, role in roles.items():
         run_steering(dataset, args.variable, point, args.pool, args.act_root, args.results, args.inlp_dir,
-                     args.null_draws, role, args.model)
+                     args.null_draws, role, args.model, args.strict_eval)

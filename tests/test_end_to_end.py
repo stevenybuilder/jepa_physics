@@ -27,7 +27,7 @@ def test_pipeline_on_fake_activations(tmp_path):
     for dataset in ("direction", "speed"):
         run("run_step1.py", "--dataset", dataset, "--variable", dataset, *common)
         run("run_step2.py", "--dataset", dataset, "--inlp-dir", str(inlp_dir), "--seeds", "2", *common)
-        run("run_step3.py", "--dataset", dataset, "--inlp-dir", str(inlp_dir), *common)
+        run("run_step3.py", "--dataset", dataset, "--inlp-dir", str(inlp_dir), "--strict-eval", *common)
     run("run_step2.py", "--dataset", "direction", "--all-layers", "--inlp-dir", str(inlp_dir), *common)
     run("run_step2_angles.py", "--inlp-dir", str(inlp_dir), *common)
     run("make_figures.py", "--results", str(results), "--figures", str(figs))
@@ -51,6 +51,8 @@ def test_pipeline_on_fake_activations(tmp_path):
     assert "radius" in steer["single"][-1] and steer["radius_matched"]["single"][-1]["n"] == steer["K"]
     assert len(steer["random_nulls"]["rows"]) == steer["K"] and steer["random_nulls"]["n_draws"] >= 20
     assert steer["off_target_probe"]["variable"] == "speed" and "off_target" in steer["single"][-1]
+    assert steer["protocol"].startswith("paper protocol") and steer["strict_eval"]["n_A"] + steer["strict_eval"]["n_B"] == steer["n_test"]
+    assert steer["strict_eval"]["A_to_B"]["single"][-1]["mae_to_target"] < steer["strict_eval"]["A_to_B"]["single"][0]["mae_to_target"]
     angles = json.loads((results / "step2_subspace_angles.json").read_text())
     rows = [r for r in angles["pairs"]["direction_vs_speed"] if "mapped" in r]
     assert rows and all(0 <= r["mapped"]["min_angle_deg"] <= 90 for r in rows)

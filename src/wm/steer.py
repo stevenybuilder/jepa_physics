@@ -12,6 +12,7 @@ import numpy as np
 
 from wm.inlp import basis_path, load_basis
 from wm.metrics import radius_summary, readout_radius
+from wm.splits import load_split
 from wm.probes import (ALPHAS, RESULTS, cv_select_alpha, drop_nan_clips, fit_ridge, layer_fraction, load_activations,
                        load_sweep, load_table, predict, score, split_rows, standardized_layer, targets,
                        write_json)
@@ -267,16 +268,37 @@ def random_nulls(Xte, labels, probes, eval_W, eval_b, kind, single_target, n_dra
             "rows": rows}
 
 
-def eval_probe_cv(Xte, Yte, kind, seed=0):
+def grouped_folds(groups, k=5, seed=0):
+    """Fold per row with identical clips (same group, e.g. frame hash) kept in one fold."""
+    uniq, inv = np.unique(np.asarray(groups), return_inverse=True)
+    return (np.random.default_rng(seed).permutation(len(uniq)) % k)[inv]
+
+
+def stratified_halves(groups, labels, seed=0):
+    """Bool mask of half A: identical-clip units dealt alternately to A and B within each label value."""
+    rng = np.random.default_rng(seed)
+    groups, labels = np.asarray(groups), np.asarray(labels)
+    in_a = np.zeros(len(groups), bool)
+    turn = 0
+    for v in np.unique(labels):
+        units = rng.permutation(np.unique(groups[labels == v]))
+        for u in units:
+            in_a[groups == u] = turn % 2 == 0
+            turn += 1
+    return in_a
+
+
+def eval_probe_cv(Xte, Yte, kind, seed=0, groups=None):
     """Evaluation probe on the test activations (the paper's protocol), with α chosen by 5-fold CV
-    inside test (random folds, seed 0) rather than taken from step 1. Returns (W, b, report): the
-    in-sample fit (the paper reports this: 0.99 from 103 clips in d = 1024) and the out-of-fold score
-    at the chosen α (n < d here too, so in-sample R² is optimistic), both labelled."""
-    folds = np.random.default_rng(seed).permutation(len(Yte)) % 5
+    inside test rather than taken from step 1; folds keep identical clips (groups = frame hash) together.
+    Returns (W, b, report): the in-sample fit (the paper reports this: 0.99 from 103 clips in d = 1024)
+    and the out-of-fold score at the chosen α (n < d here too, so in-sample R² is optimistic)."""
+    groups = np.arange(len(Yte)) if groups is None else groups
+    folds = grouped_folds(groups, 5, seed)
     cv = cv_select_alpha(Xte, Yte, folds, ALPHAS, partial(score, kind=kind))
     W, b = fit_ridge(Xte, Yte, cv["alpha"])
     fit = score(Yte, predict(Xte, W, b), kind)
-    report = {"alpha": cv["alpha"], "alpha_rule": "5-fold CV inside test (random folds, seed 0), 13 log-spaced values",
+    report = {"alpha": cv["alpha"], "alpha_rule": "5-fold CV inside test, folds grouped by frame hash (identical clips together), seed 0, 13 log-spaced values",
               "in_sample": {"r2": fit["r2"], "mae": fit["mae"]},
               "out_of_fold": {"r2_fold_mean": cv["cv_mean"], "r2_fold_sd": cv["cv_sd"],
                               "mae_fold_mean": cv["cv_mae_mean"], "mae_fold_sd": cv["cv_mae_sd"]}}
@@ -310,7 +332,7 @@ def off_target_probe(Xtr, Xte, df, tr, te, folds, kind):
 
 
 def run_steering(dataset, variable=None, point=None, pool="meanpool", act_root=None, results_dir=None,
-                 inlp_dir=None, n_draws=20, layer_role=None, model="vjepa2"):
+                 inlp_dir=None, n_draws=20, layer_role=None, model="vjepa2", strict_eval=False):
     """Paper protocol: steering basis from the train probe sequence (step 2), evaluation probe fit on
     test activations (α by CV inside test), test clips steered to θ* = 90° (for scalars, the upper
     median label value) and to every label value, with the paper's unit target. Extras, labelled in
@@ -333,7 +355,9 @@ def run_steering(dataset, variable=None, point=None, pool="meanpool", act_root=N
     labels = label_all[te]
     all_targets = np.unique(label_all)
     single = 90.0 if kind == "circular" else float(all_targets[len(all_targets) // 2])
-    eval_W, eval_b, eval_report = eval_probe_cv(Xte, Y[te], kind)
+    hashes = load_split(dataset)["frame_hash"]
+    groups = np.array([hashes[str(i)] for i in df["id"].to_numpy()[te]])
+    eval_W, eval_b, eval_report = eval_probe_cv(Xte, Y[te], kind, groups=groups)
     res = evaluate(Xte, labels, probes, eval_W, eval_b, kind, single, all_targets, off=off)
     nulls = random_nulls(Xte, labels, probes, eval_W, eval_b, kind, single, n_draws)
     m_all = matched_targets(Xtr, label_all[tr], probes, all_targets)
@@ -349,11 +373,23 @@ def run_steering(dataset, variable=None, point=None, pool="meanpool", act_root=N
     res_m["target_rule"] = ("extra arm: probe k's target is its mean readout over train clips whose label equals "
                             "the target value (its own shrinkage included); the paper's arm asks every probe for "
                             "the unit/true value")
+    if strict_eval:   # extra: probe fit on one stratified half of test, steering evaluated on the other
+        in_a = stratified_halves(groups, labels)
+        strict = {"rule": "test split into two halves stratified by label, identical clips kept together; evaluation "
+                          "probe fit on one half (alpha by grouped CV inside it), the other half steered and read",
+                  "n_A": int(in_a.sum()), "n_B": int((~in_a).sum())}
+        for name, fit_rows, steer_rows in (("A_to_B", in_a, ~in_a), ("B_to_A", ~in_a, in_a)):
+            W_h, b_h, rep_h = eval_probe_cv(Xte[fit_rows], Y[te][fit_rows], kind, groups=groups[fit_rows])
+            r = evaluate(Xte[steer_rows], labels[steer_rows], probes, W_h, b_h, kind, single, all_targets)
+            strict[name] = {"eval_probe": rep_h, "single": r["single"], "all_targets": r["all_targets"]}
+        res["strict_eval"] = strict
     out = {"dataset": dataset, "variable": variable, "kind": kind, "pool": pool, "model": model, "point": point,
            "frac": layer_fraction(point), "alpha": probes["alpha"], "n_test": len(te),
            "layer_role": layer_role, "is_peak": point == sweep["availability"]["peak"],
            "is_onset": point == sweep["availability"]["onset"], "eval_probe": eval_report, "eval_probe_in_sample": eval_report["in_sample"],
            "space": "train-standardised activations", "all_nan_clips_excluded": n_nan,
+           "protocol": "paper protocol (C.12): the evaluation probe is fit on the same test clips it steers; "
+                       "strict_eval (if run) is the extra split-half version",
            "arm": "paper: unit target (sin θ*, cos θ*) / true value required of every probe", **res,
            "random_nulls": nulls, "radius_matched": res_m, "off_target_probe": off_info}
     s = res["single"]
