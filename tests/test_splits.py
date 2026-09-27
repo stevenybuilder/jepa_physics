@@ -29,3 +29,21 @@ def test_validate_split_catches_leak():
     bad = dict(s, test_ids=s["test_ids"] + [s["train_ids"][0]])
     with pytest.raises(AssertionError):
         validate_split("speed", bad)
+
+
+def test_split_env_override(monkeypatch):
+    import importlib
+
+    import wm.splits as splits
+    from wm.data import PROJECT_ROOT
+    monkeypatch.delenv("WM_SPLIT_PATH", raising=False)
+    monkeypatch.delenv("WM_TEST_SIZE", raising=False)
+    importlib.reload(splits)
+    assert splits.SPLIT_PATH == PROJECT_ROOT / "splits" / "split_v1.json" and splits.TEST_SIZE == 0.2
+    monkeypatch.setenv("WM_SPLIT_PATH", "splits/split_paper70.json")
+    monkeypatch.setenv("WM_TEST_SIZE", "0.3")
+    importlib.reload(splits)
+    assert splits.SPLIT_PATH == PROJECT_ROOT / "splits" / "split_paper70.json" and splits.TEST_SIZE == 0.3
+    monkeypatch.delenv("WM_SPLIT_PATH")
+    monkeypatch.delenv("WM_TEST_SIZE")
+    importlib.reload(splits)

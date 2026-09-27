@@ -85,7 +85,8 @@ def result_provenance(obj=None):
     """Part 1 form (probes.write_json): split file + sha256, seeds, git commit, UTC timestamp, and the pool / model /
     layer of the result when it carries them. Carries both commit key conventions."""
     obj = obj if isinstance(obj, dict) else {}
-    return {"split_file": str(SPLIT_PATH.relative_to(PROJECT_ROOT)),
+    return {"split_file": str(SPLIT_PATH.relative_to(PROJECT_ROOT) if SPLIT_PATH.is_relative_to(PROJECT_ROOT)
+                              else SPLIT_PATH),
             "split_sha256": sha256_file(SPLIT_PATH) if SPLIT_PATH.exists() else "missing",
             "seeds": {"split": SEED, "other": "all other RNG seeds are 0 (bootstrap, folds, null draws, shuffles); "
                                                 "random-removal controls use seeds 0..n-1"},

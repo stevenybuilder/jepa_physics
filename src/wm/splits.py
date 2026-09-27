@@ -3,8 +3,12 @@
 Protocol: clips with byte-identical decoded frames are merged into one unit; units are split
 80/20 at random (seed 0), stratified by label value; 5 stratified folds (seed 0) inside train.
 Test clips get fold = -1.
+
+Env overrides (sensitivity runs only; defaults unchanged): WM_SPLIT_PATH (file, relative to the project root unless
+absolute) and WM_TEST_SIZE (test fraction used by make_split).
 """
 import json
+import os
 from collections import Counter
 
 import numpy as np
@@ -12,9 +16,9 @@ from sklearn.model_selection import StratifiedKFold, StratifiedShuffleSplit
 
 from wm.data import PROJECT_ROOT, load_table
 
-SPLIT_PATH = PROJECT_ROOT / "splits" / "split_v1.json"
+SPLIT_PATH = PROJECT_ROOT / os.environ.get("WM_SPLIT_PATH", "splits/split_v1.json")  # absolute env path wins
 SEED = 0
-TEST_SIZE = 0.2
+TEST_SIZE = float(os.environ.get("WM_TEST_SIZE", 0.2))
 N_FOLDS = 5
 
 

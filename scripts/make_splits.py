@@ -1,4 +1,4 @@
-"""Write splits/split_v1.json for all three datasets and validate it.
+"""Write splits/split_v1.json (or $WM_SPLIT_PATH, test fraction $WM_TEST_SIZE) for all three datasets and validate it.
 
 Frame hashes come from results/qa_{dataset}.json (run scripts/run_qa.py first); a few are
 re-decoded here as a spot check.
