@@ -151,7 +151,8 @@ def evaluate_point(X, vis, last_vis, Y, kind, tr, te, folds, n_boot=1000, n_perm
     ever_absent = absent.any(axis=1)
     absent_steps = np.unique(np.nonzero(absent)[1])
     step_is_absent_time = np.isin(np.arange(T), absent_steps)[None, :]
-    lag = np.where(absent, np.arange(T)[None, :] - last_vis[:, None], -1)          # >0 on trailing absences
+    seen = last_vis >= 0                                                             # never-visible clips have no lag
+    lag = np.where(absent & seen[:, None], np.arange(T)[None, :] - last_vis[:, None], -1)   # >0 on trailing absences
 
     def read(rows, Pm):
         in_rows = np.zeros(N, bool)
@@ -170,7 +171,7 @@ def evaluate_point(X, vis, last_vis, Y, kind, tr, te, folds, n_boot=1000, n_perm
         persistence = {}
         last_mask = np.zeros_like(vis)
         last_mask[np.arange(N), np.clip(last_vis, 0, T - 1)] = True
-        c, t = _tokens(last_mask & (ever_absent & in_rows)[:, None])
+        c, t = _tokens(last_mask & (ever_absent & seen & in_rows)[:, None])
         persistence["0"] = _score_tokens(Y[c], Pm[c, t], c, kind, n_boot, rng)
         for L in range(1, T):
             c, t = _tokens((lag == L) & in_rows[:, None])

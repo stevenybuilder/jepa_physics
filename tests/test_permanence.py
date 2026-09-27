@@ -69,3 +69,16 @@ def test_scalar_target():
     keep, vanish = out["points"]
     assert keep["pooled"]["absent"]["r2"] > 0.8
     assert vanish["pooled"]["absent"]["r2"] < 0.3
+
+
+def test_never_visible_clip_has_no_persistence_lag():
+    tp, mask, Y, tr, te, folds, trailing = synthetic()
+    gone = int(te[np.flatnonzero(trailing[te] == 0)[0]])                     # a test clip that never loses the disk
+    mask[gone] = False                                                        # ... now never visible at all
+    out = run(tp, mask, Y, "circular", tr, te, folds, points=(0,), n_boot=10, n_perm=10, log=lambda *a: None)
+    per = out["points"][0]["test"]["persistence"]
+    n_trailing = {L: int((trailing[te] >= L).sum()) for L in (1, 2, 3)}
+    assert per["0"]["n_clips"] == int((trailing[te] > 0).sum())               # lag 0 only for clips seen then lost
+    for L in (1, 2, 3):
+        assert per[str(L)]["n_clips"] == n_trailing[L]
+    assert out["points"][0]["test"]["absent"]["n_clips"] == int((trailing[te] > 0).sum()) + 1
