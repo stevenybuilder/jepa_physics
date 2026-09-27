@@ -262,15 +262,17 @@ not edited into them):
   confound.
 - Step 1 extras, labelled (`results/p1a_paperscale_*.json`, `figures/fig1f_paperscale.png`, `results/p1a_*_randfeat.json`,
   `results/p1a_baseline_comparison.json`): **at the paper's scale the direction onset moves from point 2 to point 4–5,
-  and the cause is sample size, not the 8 directions.** V-JEPA 2 direction, block 1 → block 8 CV R²: full data (1,200
-  clips) 0.875 → 0.973, onset 2; paper's 8 directions (188 clips, random folds) 0.649 → 0.946, onset 4 [CI 3–5];
-  same clips with folds that hold out whole directions (one reading of the paper's unspecified "grouped CV", pooled
-  out-of-fold R²) 0.441 → 0.910, onset 5 [5–5]; 188 random clips over all 64 directions (10 seeds) 0.650 ± 0.035 →
-  0.941, onset 4 [3–5]; 240 clips 0.686 → 0.947, onset 4. The random-init ViT-L stays flat with onset 1 in every
-  condition (block 1 → 8: 0.727 → 0.746, grouped 0.634 → 0.667, 240 clips 0.744 → 0.765), so at small n V-JEPA's rise
+  and the cause is sample size, not the 8 directions.** All subsamples come from the split's train rows only, with
+  folds grouped by identical-clip unit. V-JEPA 2 direction, block 1 → block 8 CV R²: full data (1,200 clips) 0.875 →
+  0.973, onset 2; paper's 8 directions (150 train clips, random folds) 0.590 → 0.933, onset 5 [CI 4–5]; same clips
+  with folds that hold out whole directions (one reading of the paper's unspecified "grouped CV", pooled out-of-fold
+  R²) 0.396 → 0.899, onset 5 [5–8]; 150 random train clips over all 64 directions (10 seeds) 0.638 ± 0.039 → 0.933,
+  onset 5 [3–6]; 240 clips 0.686 → 0.943, onset 4 [3–5]. The random-init ViT-L stays flat with onset 1 in every
+  condition (block 1 → 8: 0.664 → 0.699, grouped 0.647 → 0.695, 240 clips 0.734 → 0.750), so at small n V-JEPA's rise
   over blocks 1–5 is selective, but it is still nowhere near the paper's ~0.22 at the first layer and onset at
-  layer 8. Speed is unaffected for V-JEPA (block 1 ≥ 0.95, onset 1 everywhere); the random model's speed onset slips
-  to 2–5 at small n. The random-ViT result itself has a floor: 1,024 fixed random ReLU features of the 32-number disk
+  layer 8. Speed is unaffected for V-JEPA (block 1 ≥ 0.94, onset 1 everywhere); the random model's speed curve drops
+  and its onset becomes unstable at small n (8 directions: onset 3 [2–6]; direction-grouped: 0.294 → 0.468, onset 11
+  [3–20]; 152 clips over 64 directions: onset 4 [2–9]). The random-ViT result itself has a floor: 1,024 fixed random ReLU features of the 32-number disk
   centroid trajectory, same ridge probe, reach CV R² 0.875 ± 0.007 (direction), 0.982 (speed), 0.970 (acceleration)
   and 1.000 on (vx, vy) / (ax, ay) (3 seeds), where a linear probe on the same 32 numbers gets 0.805 / −0.001 /
   −0.002 / 1.000; on the 30 frame differences the random features reach ≥ 0.993 for every variable. So block 1 of an

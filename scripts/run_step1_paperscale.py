@@ -4,10 +4,11 @@
 
 For direction (direction set) and speed (speed set), every layer point, V-JEPA 2 and the random-init ViT-L:
   (a) full   : the step-1 sweep on our split (read from results/p1a_*_meanpool{,_random}.json + artifacts/oof)
-  (b) dir8   : the paper's 8 directions (θ ∈ {0, 45, …, 315}), all clips at those angles, 5 random folds
+  All subsamples are drawn from the split's TRAIN rows only; random folds are grouped by frame_hash (wm.splits units).
+  (b) dir8   : the paper's 8 directions (θ ∈ {0, 45, …, 315}), all train clips at those angles, 5 random folds
   (c) dir8_grouped : same clips, 5 folds that each hold out whole directions (one reading of the paper's unspecified
                  "grouped CV"; α and the curve use pooled out-of-fold R², the fold-mean is undefined)
-  (d) matched: random subsets of --n-matched clips over all 64 directions, 5 random folds, --seeds seeds (mean ± SD);
+  (d) matched: random subsets of --n-matched train clips over all 64 directions, 5 random folds, --seeds seeds (mean ± SD);
       also at n = |dir8| so (b) vs this isolates direction coverage from sample size
 Onset = first point reaching 90% of the curve's max over points 0..24; CI = clip bootstrap of the OOF predictions
 (for (d) pooled over seeds). Writes results/p1a_paperscale_{dataset}_{variable}.json and figures/fig1f_paperscale.png.
@@ -21,10 +22,11 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from wm.data import PROJECT_ROOT, load_table  # noqa: E402
+from wm.splits import load_split  # noqa: E402
 from wm.paperscale import (ci_from_draws, direction_grouped_folds, eight_direction_rows, onset_draws,  # noqa: E402
                            probe_rows, random_folds, summarise_curve)
 from wm.probes import (LAST_BLOCK, N_POINTS, RESULTS, availability, layer_fraction, layer_matrix,  # noqa: E402
-                       load_activations, oof_path, result_name, targets, write_json)
+                       load_activations, oof_path, result_name, split_rows, targets, write_json)
 
 RUNS = [("direction", "direction"), ("speed", "speed")]
 MODELS = ("vjepa2", "random")
@@ -50,20 +52,24 @@ def run(dataset, variable, args, results):
     df = load_table(dataset)
     Y, kind, score_fn = targets(df, variable)
     theta = df["theta_degrees"].to_numpy(float)
-    n_all = len(df)
-    rows8 = eight_direction_rows(theta)
-    specs = {"dir8": (rows8, random_folds(len(rows8), 5, 0), "fold_mean"),
+    train, _, _ = split_rows(dataset, df)          # subsamples come from the split's train rows only
+    split = load_split(dataset)
+    unit = np.array([split["frame_hash"][str(i)] for i in df["id"]])   # identical-clip units stay in one fold
+    rows8 = train[eight_direction_rows(theta[train])]
+    specs = {"dir8": (rows8, random_folds(len(rows8), 5, 0, unit[rows8]), "fold_mean"),
              "dir8_grouped": (rows8, direction_grouped_folds(theta[rows8], 5, 0), "pooled")}
     matched = {"matched": args.n_matched, "matched_dir8n": len(rows8)}
     for tag, n in matched.items():
         for s in range(args.seeds):
-            rows = np.sort(np.random.default_rng(1000 + s).choice(n_all, n, replace=False))
-            specs[f"{tag}/{s}"] = (rows, random_folds(n, 5, s), "fold_mean")
+            rows = np.sort(np.random.default_rng(1000 + s).choice(train, n, replace=False))
+            specs[f"{tag}/{s}"] = (rows, random_folds(n, 5, s, unit[rows]), "fold_mean")
     grouped_check = {int(k): sorted(set(np.round(theta[rows8][specs["dir8_grouped"][1] == k], 3)))
                      for k in range(5)}
 
     out = {"dataset": dataset, "variable": variable, "kind": kind, "pool": "meanpool", "label": "PART 1 EXTRA (paper scale)",
            "paper_design": "8 directions x 7 speeds x 7 starts = 392 clips, Adam probes, 5-fold grouped CV",
+           "subsample_pool": f"train rows of splits/split_v1.json only ({len(train)} clips); folds grouped by frame_hash "
+                             f"({len(set(unit[train]))} units)",
            "n_dir8": int(len(rows8)), "dir8_theta": sorted(set(np.round(theta[rows8], 3))),
            "dir8_grouped_fold_directions": grouped_check, "n_matched": args.n_matched, "seeds": args.seeds,
            "motion_counts_dir8": df["motion"].iloc[rows8].value_counts().to_dict(),
@@ -162,7 +168,7 @@ def figure(outs, path):
                 ax.set_xlabel("layer fraction (dotted: block 8, the paper's emergence layer)")
     axes[0, 0].plot([], [], "v", color="#52514e", label="onset (90% of max); bar = 95% bootstrap CI")
     axes[0, 0].legend(loc="lower left", bbox_to_anchor=(0, 1.1), ncol=3, fontsize=8)
-    fig.suptitle("Extra: Step 1 at the paper's scale (8 directions, ~190 clips) vs full data", x=0.01, ha="left",
+    fig.suptitle("Extra: Step 1 at the paper's scale (8 directions, ~150 train clips) vs full data", x=0.01, ha="left",
                  y=1.06, fontweight="bold")
     fig.savefig(path)
     plt.close(fig)

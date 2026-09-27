@@ -22,12 +22,15 @@ def eight_direction_rows(theta_deg, step=45.0):
     return np.where(np.isclose(r, 0.0, atol=1e-6) | np.isclose(r, step, atol=1e-6))[0]
 
 
-def random_folds(n, n_folds=5, seed=0):
-    """Fold id per row: a random permutation cut into n_folds near-equal parts."""
-    perm = np.random.default_rng(seed).permutation(n)
-    folds = np.empty(n, int)
-    folds[perm] = np.arange(n) % n_folds
-    return folds
+def random_folds(n, n_folds=5, seed=0, groups=None):
+    """Fold id per row: units (rows sharing a `groups` value, e.g. wm.splits frame_hash = byte-identical clips; each
+    row its own unit if None) are shuffled and dealt round-robin to n_folds folds, so a unit never spans two folds."""
+    groups = np.arange(n) if groups is None else np.asarray(groups)
+    uniq, unit = np.unique(groups, return_inverse=True)
+    perm = np.random.default_rng(seed).permutation(len(uniq))
+    fold_of_unit = np.empty(len(uniq), int)
+    fold_of_unit[perm] = np.arange(len(uniq)) % n_folds
+    return fold_of_unit[unit]
 
 
 def direction_grouped_folds(theta_deg, n_folds=5, seed=0):

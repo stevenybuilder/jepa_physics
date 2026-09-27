@@ -91,3 +91,11 @@ def test_centroid_inputs_shapes_and_nan_fill():
     Dtr, _ = centroid_inputs(cen, tr, te, "diff")
     assert Ztr.shape == (15, 32) and Zte.shape == (5, 32) and Dtr.shape == (15, 30)
     assert np.isfinite(Ztr).all() and Ztr[3, 10] == 0.0          # NaN -> train mean (0 after z-scoring)
+
+
+def test_random_folds_keep_identical_clip_units_together():
+    units = np.repeat(np.arange(40), 3)                         # 40 units of 3 identical clips each
+    folds = random_folds(len(units), 5, seed=1, groups=units)
+    assert all(len(set(folds[units == u])) == 1 for u in range(40))
+    assert np.bincount(folds).tolist() == [24] * 5
+    assert np.array_equal(random_folds(30, 5, 0), random_folds(30, 5, 0, np.arange(30)))
