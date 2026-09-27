@@ -53,8 +53,9 @@ one merged direction set that mixes both motion types. Two things to state on sl
   - `meanpool` [N, 26, 1024] float32: mean over all 2,048 tokens. **This is the paper's representation; every Part 1 result
     uses it.**
   - `timepool` [N, 26, 8, 1024]: mean over the 256 patches per time step.
-  - `diskpool` [N, 26, 8, 1024] + `diskmask` [N, 8, 16, 16]: mean over only the patches the disk covers (blue-channel
-    threshold, max-pooled to the patch grid over both frames of a tubelet); NaN + flag where the disk is out of frame.
+  - `diskpool` [N, 26, 8, 1024] + `diskmask` [N, 8, 16, 16]: mean over only the patches the disk covers (red channel > 128:
+    the disk is orange, RGB ≈ (226, 113, 43), not blue as DATA.md says; max-pooled to the patch grid over both frames
+    of a tubelet); NaN + flag where the disk is out of frame.
     This is a cheap stand-in for the paper's per-patch analysis (App. C.5) and is what tells us whether pooling hides
     the signal.
   - Full tokens are not stored (~19 GB per layer). Anything that writes into the model re-runs the encoder from the
