@@ -70,14 +70,16 @@ def test_scripts_end_to_end(tmp_path, dataset):
         assert geo["knot_spacing"]["better"] == "linear"
 
     run_script("run_part2.py", tmp, dataset, "--variable", dataset, "--n-clips", "12", "--K", "6")
-    tag = f"{dataset}_{dataset}_L1"
+    tag = f"{dataset}_{dataset}_L1_scattered"
     res = json.loads((tmp / "results" / f"p2_steer_{tag}.json").read_text())
     for fig in ("gap_vs_shift", "path_energy"):
         assert (tmp / "figures" / f"fig4_{fig}_{tag}.png").exists()
-    assert len(res["held_out_values"]) == 16
+    assert len(res["held_out_values"]) == 16 and res["holdout"]["design"] == "scattered"
     s = res["summary"]
-    # the real steer beats the shuffled control
-    assert s["manifold"]["overall"]["nearest_real_R"] > s["shuffled_control"]["overall"]["nearest_real_R"]
+    # the real steer beats every shuffled-centroid draw
+    shuf = res["controls"]["shuffled_control"]["nearest_real_R"]
+    assert shuf["n_draws"] == 20 and shuf["spline_rank"] == 1
+    assert s["manifold"]["overall"]["nearest_real_R"] > shuf["p95"]
     if dataset == "direction":
         far_lin = s["linear"]["by_shift"][-1]["excess_to_curve"]
         far_man = s["manifold"]["by_shift"][-1]["excess_to_curve"]

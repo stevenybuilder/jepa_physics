@@ -30,11 +30,23 @@ def load_inputs(dataset, layer, variable=None, act_dir=None, table=None, split=N
     s = json.loads(Path(split).read_text()) if split else load_split(dataset)
 
     ids = json.loads((act_dir / "ids.json").read_text())
-    assert ids == [int(i) for i in df["id"]], "activation rows are not in manifest id order"
-    X = np.asarray(np.load(act_dir / "meanpool.npy", mmap_mode="r")[:, layer], dtype=np.float32)
+    assert ids == [int(i) for i in df["id"]], f"{dataset}: activation rows are not in manifest id order"
+    mp = np.load(act_dir / "meanpool.npy", mmap_mode="r")
+    assert mp.shape[0] == len(ids), f"{dataset}: meanpool has {mp.shape[0]} rows, ids.json {len(ids)}"
+    X = np.asarray(mp[:, layer], dtype=np.float32)
 
     fold = {int(k): v for k, v in s["fold"].items()}
     f = np.array([fold[int(i)] for i in df["id"]])
     role = np.where(f < 0, "test", np.where(np.isin(f, KNOT_FOLDS), "knot", "probe"))
     return {"X": X, "df": df, "y": df[LABEL_COLUMN[variable]].to_numpy(dtype=float),
             "periodic": variable == "direction", "role": role, "is_train": f >= 0}
+
+
+def load_pair(primary, context, layer, variable, act_dirs=(None, None), tables=(None, None), splits=(None, None)):
+    """Two datasets at the same layer, for held-out context: e.g. a direction spline built on the direction set and
+    steered on speed-set clips (variable="direction" reads theta_degrees from both tables). Each dataset's rows are
+    checked against its own ids.json and manifest; the two must share the activation width."""
+    a = load_inputs(primary, layer, variable, act_dirs[0], tables[0], splits[0])
+    b = load_inputs(context, layer, variable, act_dirs[1], tables[1], splits[1])
+    assert a["X"].shape[1] == b["X"].shape[1], "primary and context activations differ in width"
+    return a, b
