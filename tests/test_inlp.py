@@ -44,3 +44,23 @@ def test_project_out_removes_span():
     Q = np.linalg.qr(rng.standard_normal((10, 3)))[0]
     X = project_out(rng.standard_normal((50, 10)), Q)
     assert np.abs(X @ Q).max() < 1e-12
+
+
+def test_principal_angles_planted_orthogonal_identical_and_random():
+    from wm.inlp import covectors_into, subspace_overlap
+    rng = np.random.default_rng(0)
+    d = 60
+    R = np.linalg.qr(rng.standard_normal((d, d)))[0]
+    A, B = R[:, :4], R[:, 4:6]                       # orthogonal codes
+    o = subspace_overlap(A, B)
+    assert np.allclose(o["angles_deg"], 90, atol=1e-6) and o["overlap"] < 1e-12
+    assert o["random_expectation"] == 4 / d
+    s = subspace_overlap(A, A[:, :2] @ np.array([[2.0, 1.0], [0.5, -1.0]]))   # same span, other basis
+    assert np.allclose(s["angles_deg"], 0, atol=1e-5) and abs(s["overlap"] - 1) < 1e-10
+    lo, hi = o["random_overlap_p05_p95"]
+    assert lo < 4 / d < hi
+    # covector map: a readout that is identical in raw space maps onto itself
+    sA, sB = rng.uniform(0.5, 2, d), rng.uniform(0.5, 2, d)
+    w_raw = rng.standard_normal((d, 1))
+    mapped = covectors_into(w_raw * sB[:, None], sB, sA)   # w in B coords -> A coords
+    assert subspace_overlap(mapped, w_raw * sA[:, None])["min_angle_deg"] < 1e-5

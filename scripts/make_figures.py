@@ -227,6 +227,38 @@ def fig2b(results, out):
     plt.close(fig)
 
 
+def fig2d(results, out):
+    """Extra (spec §6 item 7): direction vs speed / acceleration subspaces from the INLP bases."""
+    path = results / "step2_subspace_angles.json"
+    if not path.exists():
+        return
+    r = json.loads(path.read_text())
+    fig, (a, b) = plt.subplots(1, 2, figsize=(11, 3.8))
+    for pair, rows in r["pairs"].items():
+        other = pair.split("_vs_")[1]
+        rows = [row for row in rows if not row["post_ln"] and "as_stored" in row]
+        if not rows:
+            continue
+        key = "mapped" if all("mapped" in row for row in rows) else "as_stored"
+        x = [row["frac"] for row in rows]
+        o = [row[key] for row in rows]
+        a.plot(x, [v["overlap"] for v in o], "o-", ms=3.5, color=COLORS[other], label=f"direction vs {other}")
+        a.fill_between(x, [v["random_overlap_p05_p95"][0] for v in o], [v["random_overlap_p05_p95"][1] for v in o],
+                       color=COLORS[other], alpha=0.15, lw=0)
+        a.plot(x, [v["random_expectation"] for v in o], ":", color=COLORS[other], lw=1)
+        b.plot(x, [v["min_angle_deg"] for v in o], "o-", ms=3.5, color=COLORS[other], label=f"direction vs {other}")
+        b.fill_between(x, [v["random_min_angle_p05_p95"][0] for v in o], [v["random_min_angle_p05_p95"][1] for v in o],
+                       color=COLORS[other], alpha=0.15, lw=0)
+    a.plot([], [], ":", color=COLORS["text"], lw=1, label="random expectation k_A/d (band: 5–95%)")
+    a.set(xlabel="layer fraction", ylabel="overlap |Q_A^T Q_B|²_F / dim B", title="Extra: shared readout subspace")
+    b.set(xlabel="layer fraction", ylabel="smallest principal angle (deg)", ylim=(0, 92),
+          title="Extra: closest pair of directions")
+    for ax in (a, b):
+        legend_top(ax, 1)
+    fig.savefig(out / "fig2d_subspace_angles.png")
+    plt.close(fig)
+
+
 def mae_panel(ax, r, title):
     n = [row["n"] for row in r["single"]]
     ax.plot(n, [row["mae_to_target"] for row in r["single"]], "o-", ms=3.5, color=COLORS["direction"],
@@ -333,6 +365,6 @@ if __name__ == "__main__":
     parser.add_argument("--figures", type=Path, default=ROOT / "figures")
     args = parser.parse_args()
     args.figures.mkdir(parents=True, exist_ok=True)
-    for make in (fig1, fig1b, fig1c, fig1d, fig1e, fig2, fig2b, fig3, fig3b, fig3c):
+    for make in (fig1, fig1b, fig1c, fig1d, fig1e, fig2, fig2b, fig2d, fig3, fig3b, fig3c):
         make(args.results, args.figures)
     print("figures:", sorted(p.name for p in args.figures.glob("*.png")))

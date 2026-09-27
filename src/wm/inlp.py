@@ -208,3 +208,46 @@ def run_dims_vs_layer(dataset, variable, pool="meanpool", act_root=None, results
     out = {"dataset": dataset, "variable": variable, "kind": kind, "pool": pool, "layers": rows}
     write_json(Path(results_dir or RESULTS) / (result_name("p1b", dataset, variable, pool) + "_dims.json"), out)
     return out
+
+
+# ---------------------------------------------------------------- subspace angles (spec §6 item 7, paper C.4)
+
+def orthonormal(M):
+    """Orthonormal basis of span(M) (columns), dropping numerically null directions."""
+    U, s, _ = np.linalg.svd(np.asarray(M, float), full_matrices=False)
+    return U[:, s > s.max() * 1e-10] if s.size and s.max() > 0 else U[:, :0]
+
+
+def subspace_overlap(QA, QB, n_random=20, seed=0):
+    """Principal angles between span(QA) and span(QB) (paper C.4), with a random reference.
+
+    angles_deg: all min(k_A, k_B) principal angles, ascending (0° = shared direction, 90° = orthogonal).
+    overlap = ‖Q_AᵀQ_B‖²_F / k_B, the mean squared cosine: the fraction of B's subspace inside A's.
+    Its expectation for a uniformly random B is k_A / d. The random band redraws B (same k_B) n_random
+    times and reports the 5-95% range of the overlap and of the smallest angle.
+    """
+    QA, QB = orthonormal(QA), orthonormal(QB)
+    d, kA, kB = QA.shape[0], QA.shape[1], QB.shape[1]
+    cos = np.clip(np.linalg.svd(QA.T @ QB, compute_uv=False), 0.0, 1.0)
+    angles = np.degrees(np.arccos(cos))
+    rng = np.random.default_rng(seed)
+    r_over, r_min = [], []
+    for _ in range(n_random):
+        R = np.linalg.qr(rng.standard_normal((d, kB)))[0]
+        c = np.clip(np.linalg.svd(QA.T @ R, compute_uv=False), 0.0, 1.0)
+        r_over.append(float(np.sum(c ** 2) / kB))
+        r_min.append(float(np.degrees(np.arccos(c.max()))))
+    return {"k_A": int(kA), "k_B": int(kB), "d": int(d), "angles_deg": np.sort(angles).tolist(),
+            "min_angle_deg": float(angles.min()), "median_angle_deg": float(np.median(angles)),
+            "overlap": float(np.sum(cos ** 2) / kB), "random_expectation": kA / d,
+            "random_overlap_p05_p95": [float(np.percentile(r_over, 5)), float(np.percentile(r_over, 95))],
+            "random_min_angle_p05_p95": [float(np.percentile(r_min, 5)), float(np.percentile(r_min, 95))]}
+
+
+def covectors_into(Q_B, std_B, std_A):
+    """Map readout directions (covectors) from dataset B's standardised coordinates into dataset A's.
+
+    A readout w·z_B with z_B = (x − μ_B)/σ_B is the raw covector w/σ_B, which in A's coordinates is
+    w·σ_A/σ_B. This is the map under which the overlap answers the off-target question: a steering edit
+    Δz_A changes B's readout by (w ⊙ σ_A/σ_B)·Δz_A. Returns an orthonormal basis of the mapped span."""
+    return orthonormal(Q_B * (np.asarray(std_A) / np.asarray(std_B))[:, None])

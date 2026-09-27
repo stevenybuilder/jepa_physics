@@ -29,6 +29,7 @@ def test_pipeline_on_fake_activations(tmp_path):
         run("run_step2.py", "--dataset", dataset, "--inlp-dir", str(inlp_dir), "--seeds", "2", *common)
         run("run_step3.py", "--dataset", dataset, "--inlp-dir", str(inlp_dir), *common)
     run("run_step2.py", "--dataset", "direction", "--all-layers", "--inlp-dir", str(inlp_dir), *common)
+    run("run_step2_angles.py", "--inlp-dir", str(inlp_dir), *common)
     run("make_figures.py", "--results", str(results), "--figures", str(figs))
 
     sweep = json.loads((results / "p1a_direction_direction_meanpool.json").read_text())
@@ -45,6 +46,9 @@ def test_pipeline_on_fake_activations(tmp_path):
     assert steer["eval_probe"]["out_of_fold"]["r2_fold_mean"] <= steer["eval_probe"]["in_sample"]["r2"]
     assert "radius" in steer["single"][-1] and steer["radius_matched"]["single"][-1]["n"] == steer["K"]
     assert len(steer["random_nulls"]["rows"]) == steer["K"] and steer["random_nulls"]["n_draws"] >= 20
-    for name in ("fig1_layer_curves", "fig1b_direction_circle", "fig2_inlp", "fig2b_dim_vs_layer",
+    angles = json.loads((results / "step2_subspace_angles.json").read_text())
+    rows = [r for r in angles["pairs"]["direction_vs_speed"] if "mapped" in r]
+    assert rows and all(0 <= r["mapped"]["min_angle_deg"] <= 90 for r in rows)
+    for name in ("fig2d_subspace_angles", "fig1_layer_curves", "fig1b_direction_circle", "fig2_inlp", "fig2b_dim_vs_layer",
                  "fig3_steering", "fig3b_shift_heatmap", "fig3c_steering_nulls"):
         assert (figs / f"{name}.png").exists(), name
