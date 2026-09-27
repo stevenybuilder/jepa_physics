@@ -1,8 +1,9 @@
 # Priorities: what Sonia expects at minimum, and what makes it stand out
 
 Two tiers. Tier 1 is not negotiable: every item ships, with a figure and a results file, before any Tier 2 item is
-shown. Tier 2 is ranked; the cut line moves with time. Status as of 27 Sep 2026 (evening): code exists and is tested
-on synthetic data for most of Tier 1; nothing has run on real activations yet (extraction in progress).
+shown. Tier 2 is ranked; the cut line moves with time. Status as of 27 Sep 2026, 16:30 ET: activations extracted and verified; step 1 and its controls, step 2 (direction) and
+the Part 2 pre-checks have run on real data (outcomes in spec.md §7); step 3 running; engineers landing fixes from the
+fidelity and QA passes.
 
 Sources: README (what is asked), the physics paper's own conventions (what she takes for granted), the Goodfire
 paper's A.3–A.7 and §5, the fidelity check against both PDFs, `lit_review.md` §1 and its "table stakes" item,
@@ -14,14 +15,14 @@ paper's A.3–A.7 and §5, the fidelity check against both PDFs, `lit_review.md`
 
 | # | Item | Why it is expected | Status |
 |---|---|---|---|
-| 1.1 | Layer-wise linear probes on mean-pooled tokens at every layer for direction (sin/cos), speed, acceleration, plus the Cartesian pairs; x-axis layer fraction; fold mean ± SD | Fig. 2, App. B; the README's first bullet | code done; run pending |
+| 1.1 | Layer-wise linear probes on mean-pooled tokens at every layer for direction (sin/cos), speed, acceleration, plus the Cartesian pairs; x-axis layer fraction; fold mean ± SD | Fig. 2, App. B; the README's first bullet | run on real data (results/p1a_*) |
 | 1.2 | A stated rule for "where each variable becomes available", with onset, peak and decline reported per variable (90 % of max, bootstrap CI on the onset layer) | README says "identify where each variable becomes available"; the paper's three-part finding | done |
 | 1.3 | Direction treated as circular everywhere: sin/cos targets, atan2 decode, circular MAE, a (ŝ, ĉ) scatter coloured by θ at three layers, radius reported | Paper §3.2, C.7; README Part 2 hint | done (radius: in progress) |
-| 1.4 | Selectivity controls on the layer curves: shuffled labels, random-init ViT-L, pixel baseline | Any reviewer; in a fixed-camera scene raw pixels can match V-JEPA 2 (lit_review §1.8) | random-init extracted in session 1; pixel + shuffle code pending |
-| 1.5 | Iterative nullspace probing exactly as C.11: QR, project out, refit, the paper's stopping thresholds, 2K vs K, at the emergence layer and per layer (dimension vs depth) | App. C.11, Figs. 4c, 22, 23 | done; onset-layer run in progress |
+| 1.4 | Selectivity controls on the layer curves: shuffled labels, random-init ViT-L, pixel baseline | Any reviewer; in a fixed-camera scene raw pixels can match V-JEPA 2 (lit_review §1.8) | random-init and pixel/trajectory run (results/p1a_*_random, _pixels, _trajectory); shuffled + disk-pool running |
+| 1.5 | Iterative nullspace probing exactly as C.11: QR, project out, refit, the paper's stopping thresholds, 2K vs K, at the emergence layer and per layer (dimension vs depth) | App. C.11, Figs. 4c, 22, 23 | direction run at onset (2) and peak (22); speed/accel running; random-model flag being added |
 | 1.6 | INLP read for dimensionality **and** redundancy: sawtooth vs smooth decay (direction vs speed), the paper's within-15° accuracy per round, and a random-removal band behind the curve | README asks for "dimensionality and redundancy"; Fig. 23; the band is what makes "tens" a claim | done; within-15° metric in progress |
-| 1.7 | Multi-probe subspace steering exactly as C.12: V from the probes, least-squares c\*, held-out evaluation probe, MAE-to-target and MAE-to-true vs N, single probe fails, ~20 reach target | App. C.12, Fig. 24; README's third bullet | done; run pending |
-| 1.8 | Held-out cuts both ways: subspace from train, evaluation probe on clips it never saw, steered clips never in the subspace | README: "held-out data not used to construct the subspace" | done |
+| 1.7 | Multi-probe subspace steering exactly as C.12: V from the probes, least-squares c\*, held-out evaluation probe, MAE-to-target and MAE-to-true vs N, single probe fails, ~20 reach target | App. C.12, Fig. 24; README's third bullet | running (results/p1c_*) |
+| 1.8 | Held-out cuts both ways: subspace from train, evaluation probe on clips it never saw, steered clips never in the subspace | README: "held-out data not used to construct the subspace" | done; provenance fields (split hash, seed, commit) being added to result JSONs |
 | 1.9 | The acceleration confound (all clips start at rest; the paper's too) stated on the slide, not fixed silently; direction reported per motion type | Honesty; App. A.1.2 | in spec; per-motion-type panel done |
 | 1.10 | One deviations table (ridge vs Adam with a parity check, split, input size, hidden-state points, 64 directions) | She will ask | spec §7b; Adam check in progress |
 | 1.11 | Reproducibility: committed split file, seeds, frame hashes, versions, TF32 off, every slide number from a results JSON | Her own repo standards | done |
@@ -31,13 +32,13 @@ paper's A.3–A.7 and §5, the fidelity check against both PDFs, `lit_review.md`
 | # | Item | Why it is expected | Status |
 |---|---|---|---|
 | 2.1 | Activation manifold per A.3: PCA-64 on train, one centroid per value, natural cubic spline for speed/acceleration, **periodic** spline for direction, intrinsic angle from atan2(PC2, PC1) unsupervised and checked against θ | A.3; README: "circular structure of direction" | done |
-| 2.2 | The ring shown: centroids in PC1–PC2 coloured by θ, closed loop or not, per layer | The first thing she will look for | figure pending run |
+| 2.2 | The ring shown: centroids in PC1–PC2 coloured by θ, closed loop or not, per layer | The first thing she will look for | pre-checks run at 8/12/22 (ring found by the chart; unsupervised angle check being fixed for mirrored rings) |
 | 2.3 | Manifold vs linear steering at matched endpoints with K waypoints, orthogonal complement preserved, both arms editing the same subspace (matched support) | A.6; the fidelity check found the linear arm edited the complement, being fixed | in progress |
 | 2.4 | The linear path through the ring's centre shown for large shifts; readout angle and radius at every waypoint, not the endpoint | Goodfire Fig. 4; endpoints coincide by construction | in progress |
 | 2.5 | Off-manifold energy and isometry with a stated M_y, using Goodfire's own no-output recipe (§5 Eq. 9, B.1: softmax over centroid distances, τ = 0.5), geodesic vs geodesic | A.5, A.7, §5 | in progress |
 | 2.6 | Held-out label values never used as knots or in the subspace; evaluation probe on disjoint clips; results vs angular shift | README: "meaningful held-out steering evaluation" | scattered done; contiguous arc in progress |
 | 2.7 | A random-curve / shuffled-centroid control with ≥ 20 draws and the spline's empirical rank | Without it spline-vs-line is a demo | in progress |
-| 2.8 | Cheap geometry pre-checks before any spline (knot-subsampling curvature, spread vs bend, participation ratio, cone check, BF16 repeat) and a planted-ring positive control | Lets a null be a null | done; planted ring in progress |
+| 2.8 | Cheap geometry pre-checks before any spline (knot-subsampling curvature, spread vs bend, participation ratio, cone check, BF16 repeat) and a planted-ring positive control | Lets a null be a null | run at 8/12/22 and speed 12; planted ring pending |
 | 2.9 | Negatives kept and reported; nothing from the skip list | Her paper reports its own negatives (speed has no sawtooth) | policy |
 
 ## Tier 2: what would make it stand out, ranked (impact × feasibility, from lit_review.md)
