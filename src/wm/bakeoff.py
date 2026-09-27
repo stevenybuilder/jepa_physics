@@ -70,13 +70,12 @@ def probe_qr_delta(x, basis, target, periodic, mu, sd):
     return (steer(Xs, V, basis, t, len(basis["W"])) - Xs) * sd, V.shape[1]
 
 
-def refit_probe_basis(d, m, variable, max_rounds=None):
-    """Part 1's probe sequence (wm.inlp.inlp) refit on the knot rows at kept values only, so the probe-QR arm never
-    sees the probe folds (where both evaluators are fit), the test clips, or the held-out values. Standardised on
-    those rows; alpha by CV over their folds. Returns (basis dict, (mu, sd), note)."""
+def refit_inlp_basis(d, rows, variable, max_rounds=None, rows_note="knot folds at kept values only"):
+    """Part 1's probe sequence (wm.inlp.inlp) refit on `rows` only, standardised on those rows, alpha by CV over
+    their folds. Returns (basis dict {Q, W, b}, (mu, sd), note). Q is in the rows' standardised coordinates; Q / sd
+    gives raw-space directions."""
     from wm.inlp import inlp
     from wm.probes import cv_select_alpha, targets
-    rows = m["knot"]
     Y, kind, score_fn = targets(d["df"], variable)
     X = d["X"].astype(np.float64)
     mu, sd = X[rows].mean(0), X[rows].std(0) + 1e-8
@@ -85,9 +84,15 @@ def refit_probe_basis(d, m, variable, max_rounds=None):
     alpha = cv_select_alpha(Xs[rows], Y[rows], folds, score_fn=score_fn)["alpha"]
     test = d["role"] == "test"
     summary, Q, W, b = inlp(Xs[rows], Y[rows], Xs[test], Y[test], folds, alpha, score_fn, kind, max_rounds)
-    note = {"rows": "knot folds at kept values only", "n_rows": int(rows.sum()), "alpha": alpha,
+    note = {"rows": rows_note, "n_rows": int(rows.sum()), "alpha": alpha,
             "n_probes": int(len(W)), "folds": sorted(int(f) for f in np.unique(folds))}
     return {"Q": Q, "W": W, "b": b}, (mu, sd), note
+
+
+def refit_probe_basis(d, m, variable, max_rounds=None):
+    """The probe-QR arm's basis refit on the knot rows at kept values only, so it never sees the probe folds (where
+    both evaluators are fit), the test clips, or the held-out values."""
+    return refit_inlp_basis(d, m["knot"], variable, max_rounds)
 
 
 def arm_deltas(x, src, tgt, m, chart, basis, std, periodic):

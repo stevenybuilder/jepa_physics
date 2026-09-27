@@ -315,3 +315,18 @@ def test_velocity_chord_uses_knot_folds_only(tmp_path, monkeypatch):
     monkeypatch.setattr(module.mf, "fit_pca", lambda X, k: seen.append(len(X)) or real_fit_pca(X, k))
     module.chord_speed_readout(s, 8, 20, 0)
     assert seen == [int((s["role"] == "knot").sum())]
+
+
+def test_part2_inlp_plane_refit(tmp_path):
+    tmp = fake_dataset(tmp_path, "direction")
+    run_script("run_part2.py", tmp, "direction", "--variable", "direction", "--n-clips", "6", "--K", "5",
+               "--n-controls", "2", "--no-bf16", "--plane", "inlp", "--max-probe-rounds", "2", "--holdout", "contiguous")
+    res = json.loads((tmp / "results" / "p2_steer_direction_direction_L1_contiguous_inlp.json").read_text())
+    b = res["subspace_basis"]
+    assert b["rows"] == "knot folds at kept values only" and b["folds"] == [0, 1, 2]
+    fold = json.loads((tmp / "split.json").read_text())["fold"]
+    y = pd.read_csv(tmp / "table.csv")["theta_degrees"].to_numpy()
+    held = set(res["held_out_values"])
+    expect = sum(1 for i, v in enumerate(y) if 0 <= fold[str(i)] <= 2 and v not in held)
+    assert b["n_rows"] == expect                                      # knot rows at the 56 kept values only
+    assert res["k"] == 2 * b["n_probes"]

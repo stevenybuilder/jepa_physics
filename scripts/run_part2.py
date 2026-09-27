@@ -228,12 +228,22 @@ def run(args):
         d = {**d, "X": X_res}
         nuisance = {"covariates": names, "variance_explained_by_nuisance_train": r2,
                     "space": "train-standardised activations minus their least-squares fit on the covariates"}
-    # an INLP .npz Q lives in train-standardised coordinates; the nuisance residuals already do too, so it is used
-    # as is there (dividing by the residuals' SD would distort it); raw activations get the covector map Q / SD
-    basis = (gc.load_basis_matrix(args.basis, None if nuisance else d["X"][d["is_train"]]) if args.basis else None)
+    basis, basis_note = None, None
+    if args.plane == "inlp" and not args.basis:
+        # default: refit the INLP sequence on knot rows at kept values (never the probe folds, test, held-out arc)
+        from wm.bakeoff import refit_inlp_basis
+        values = np.unique(d["y"])
+        held = values[mf.heldout_design(values, args.holdout, periodic, seed=args.seed)[0]]
+        rows = (d["role"] == "knot") & ~np.isin(d["y"], held)
+        B, (_, sd_rows), basis_note = refit_inlp_basis(d, rows, variable, args.max_probe_rounds)
+        basis = B["Q"] / sd_rows[:, None]                      # standardised-space covectors -> raw directions
+    elif args.basis:
+        # a stored INLP .npz Q lives in train-standardised coordinates; the nuisance residuals already do too, so it
+        # is used as is there; raw activations get the covector map Q / SD
+        basis = gc.load_basis_matrix(args.basis, None if nuisance else d["X"][d["is_train"]])
+        basis_note = {"rows": f"stored basis {args.basis}: all train folds and values (includes the evaluators' "
+                              "probe folds and the held-out values; favours the inlp subspace)"}
     args.basis_matrix = basis
-    if args.plane == "inlp" and basis is None:
-        raise SystemExit("--plane inlp needs --basis")
     m = build(d, args.k, angle, args.holdout, args.seed, args.n_controls, args.spline, args.behaviour, args.plane,
               basis)
     probe_rows = d["role"] == "probe"
@@ -305,7 +315,7 @@ def run(args):
            "provenance": provenance(args.split, seeds={"seed": args.seed, "controls": args.seed}, layer=args.layer,
                                     pool="meanpool", holdout=args.holdout, spline=args.spline, k=args.k,
                                     subspace=args.plane, K=args.K, nuisance_regressed=bool(nuisance)),
-           "subspace": args.plane, "nuisance_regressed": nuisance,
+           "subspace": args.plane, "subspace_basis": basis_note, "nuisance_regressed": nuisance,
            "k": int(m["pca"].components.shape[0]), "K": args.K, "angle_source": m["curve"].coord_source,
            "spline": m["curve"].kind,
            "holdout": m["design"], "held_out_values": m["held"].tolist(),
@@ -589,7 +599,9 @@ def parse(argv=None):
     p.add_argument("--no-bf16", action="store_true", help="skip the BF16 repeat of the steering-energy comparison")
     p.add_argument("--plane", default="pca", choices=("pca", "chart", "inlp"),
                    help="steering subspace: top-k PCA (Goodfire), circular-chart plane, or INLP basis (--basis)")
-    p.add_argument("--basis", default=None, help=".npy [D, r] or INLP .npz, for --plane inlp")
+    p.add_argument("--basis", default=None,
+                   help="stored .npy/.npz basis for --plane inlp (flagged); default refits INLP on knot rows")
+    p.add_argument("--max-probe-rounds", type=int, default=None, help="cap on INLP rounds for the --plane inlp refit")
     p.add_argument("--nuisance-regress", action="store_true",
                    help="regress nuisance covariates out of the activations first (labelled variant)")
     p.add_argument("--context-dataset", default=None, choices=("direction", "speed", "acceleration"),
