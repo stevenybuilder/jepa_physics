@@ -1,186 +1,300 @@
 # Lessons from jepa_steering for the V-JEPA physics take-home
 
-Source: github.com/stevenybuilder/jepa_steering (commit 8151517, 14 Sep 2026), mined 27 Sep 2026. The value is in its
-12 `reports/*_CORRECTION.md` and `*_AUDIT.md` post-mortems, not its code: it has no ridge-probe, INLP, circular-metric
-or subspace-steering code, so everything in Part 1 is written fresh. Where a lesson is already in `spec.md` the
-section is given.
+Rewritten 27 Sep 2026. Two sources. (1) The **public** repo, github.com/stevenybuilder/jepa_steering at commit 8151517
+(14 Sep). It is the basis of the first version of this file, and its paths are relative to the repo root. (2) The
+user's **local** folder, `/Users/stevenyang/Documents/jepa_steering`, cited as `js/`. It holds the root notes, the
+fresh-v2 analysis outputs and the gitignored `docs/archive/`, none of which reached the public repo. A plain `grep`
+skips `docs/archive/`; use `command grep`. The *why* of Part 2 is in `PART2_RATIONALE.md`; this file does not repeat it.
 
-## Pitfalls, most severe first
+**Verdicts.** APPLIES = use as written. ADAPT = the idea transfers, the details change. DOES NOT APPLY = this project
+has no counterpart. The difference behind most ADAPT and DOES NOT APPLY verdicts: jepa_steering edited an
+*action-conditioned predictor* whose outputs fed a CEM planner, so its final endpoint was task success over 96
+scenarios. Here we probe a *frozen video encoder* that has no actions, no planner and no output distribution; the
+endpoints are probe readouts and later-layer activations over ~1,500 clips per dataset. Two consequences follow.
+Statistical power is cheap here, where there it was the binding limit. And "behaviour" has to be defined; there it
+came for free.
 
-| # | What went wrong there | How it would show up here | Rule (spec §) |
+## 1. Pitfalls, most severe first (public repo; verdicts added)
+
+| # | What went wrong there | How it would show up here | Rule (spec §) | Verdict |
+|---|---|---|---|---|
+| 1 | Push-T split by rollout ID put all 185 families in fit, dev and holdout (`PUSHT_LINEAGE_CORRECTION.md`) | clips sharing a start position or seed in train and test | group ids; `validate_split` raises (§3) | ADAPT: the clips are independent renders, so the leakage risk is label values and dev reuse, not families |
+| 2 | 160 of 12,600 MetaWorld rows were byte-identical (`METAWORLD_LINEAGE_CORRECTION.md`) | duplicate clips | sha256 decoded frames (§3) | APPLIES: done, 0 duplicates in all three sets (`results/qa_*.json`) |
+| 3 | FP32 cubic beat linear at every block; BF16 reversed it (`CONTROLLED_GEOMETRY.md`) | INLP K, QR bases, spline-vs-line residuals | fp32, TF32 off, float32 `meanpool` (§2) | APPLIES, and most directly to Part 2's curvature test |
+| 4 | Wrapper silently differed from upstream (`POINTMAZE_TRAINING_SAMPLER_CORRECTION.md`) | no-resize preprocessing hides a bug | assert intended deviation (§2, §8) | APPLIES |
+| 5 | 5 of 286 goal images had wrong hashes (`METAWORLD_STIMULUS_REPAIR.md`) | activations out of step with videos | frame hash in each file (§2) | APPLIES, cheaply |
+| 6 | One frozen random direction per task beat the learned edit on Reach (`MATCHED_RANDOM_CONTROL_AUDIT_20260911.md`) | "steering works" with no random comparison | ≥ 20 random draws, two kinds of null (see §7) | APPLIES; the local folder sharpens it (§7) |
+| 7 | Dose matched on average, not per window: 49% of cubic windows passed (`PATHWAY_GEOMETRY.md`) | mean norm drift fine, single clips blow up | per-clip ‖Δ‖ (§5.3) | APPLIES |
+| 8 | "1,152 rows, not 1,152 contexts" (`CONTROLLED_GEOMETRY.md`) | CIs over clips when the unit is the label value | bootstrap by label value | ADAPT: this applies to *geometry* claims (64 centroids); per-clip readouts can use clips |
+| 9 | "Best observed edit" labelled post hoc | CV-chosen layer or K reported as a result | label selections; test read once (§3) | APPLIES |
+| 10 | A published 48.2 was never treated as an effect (`DROID_BASELINE_RECONCILIATION_AUDIT.md`) | our R² vs the paper's | paper numbers are qualitative only | APPLIES |
+
+## 2. Practices, helpers, and spec corrections already made (public repo)
+
+Practices, all APPLIES unless marked: hash-order split (`src/offline_study/core/protocol.py::study_split`); manifest
+guard (`validate_manifest`); tensor digests (`data/inventory.py`); fail fast on degenerate cases
+(`fitting/operator_fit.py::_unit`); a results checker (`scripts/check_public_results.py`, ours `check_results.py`);
+zero-dose identity tests; protocol JSON committed before analysis (ours `splits/split_v1.json`); undefined stays
+undefined (disk-pool NaN); separate endpoints (decodable → steerable → propagated). Helpers:
+`analysis/mechanism/common.py` (`paired_bootstrap`, `holm`), `representation_geometry.py` (`random_subspace`,
+`principal_angles_deg`, `participation_ratio`). Spec corrections already applied: float32 `meanpool`; fp32 with TF32
+off; an "intended deviation" test in place of processor parity; frame hashing; a matched random steering control.
+
+## 3. Scientific findings from the public repo, re-checked against the local folder
+
+| Finding (public repo) | Verdict | Local-folder correction or nuance |
+|---|---|---|
+| Curvature is real in FP32 and vanishes in BF16 | APPLIES | Dose normalisation *also* reverses it: raw cubic fidelity error was "99.89% lower", but at the requested dose it was "16.03% higher" (per `js/docs/PATHWAY_GEOMETRY.md`). Compare splines at matched delivered dose |
+| Curvature didn't matter for behaviour (≤ 0.026% of MSE) | ADAPT | There is no behaviour to fail here. The analogue is "curvature doesn't change later-layer agreement" |
+| The four-anchor test only sees second order | APPLIES | The README calls the centre point "a held-out action" (`js/README.md` L24). It is interpolation by construction |
+| "Rank 4 and 8 met the rule; rank 1 did not" | **CORRECTED** | On Reach, rank 1 passed the effect and matched-random gates (1.899%) and failed only equivalence to the best arm (`js/rank 4 intervention.md`). And the delivered edit's participation ratio (1.37–3.07) roughly matches the random control's (e.g. 3.01 vs 3.07 on PointMaze), "consistent with the dimensionality being set by the calibration procedure rather than by the learned directions" (`js/analysis/out/fresh-v2/representation_geometry/representation_geometry.md` L140). A rank count can be a property of the fitting procedure |
+| The edit is ~99% one constant shift | APPLIES | The applied mean direction had cosine 0.91–0.96 with the intercept column, i.e. mostly a constant push (same file) |
+| "No partial spatial support passed" | **CORRECTED** | Those sweeps used **rank 1**, so they cannot identify the rank-4 support (`js/Rank Edit.md`, "How the existing findings constrain the choice") |
+| "Learned was never better than random" | **CORRECTED** | True for behaviour. False offline: the fixed-response learned edit beat its matched random by 1.203% [0.962, 1.445] and 1.475% [1.185, 1.765] of native forecast error (`js/paper/extended_abstract.md` L57). Random edits supplied "a third to a half of the native-relative gain" (`js/docs/MECHANISM_HYPOTHESES.md` L118). The honest line: *specific at the readout, not at the outcome*. This also contradicts `PART2_RATIONALE.md`'s "none of it changed forecasts more than a matched random edit did" |
+| Better forecasts didn't change decisions | ADAPT | The local fresh-v2 analysis adds that forecast–success sign concordance was 5/19 cells, ρ = −0.04 (`js/analysis/out/fresh-v2/forecast_decision_outcome/`). Here, read it as: probe gains at layer L need not propagate |
+| Earlier blocks corrected more (B0 3.03% → B5 0.475%) | ADAPT | This was "intervention susceptibility, not a unique physics layer" (`js/docs/MECHANISMS.md`). Here, sweep the steering layer across the emergence zone and do not pick one |
+| Second-read divergence 42/100, 59/100 | APPLIES | This is the reason for the later-layer readout (nonobvious §5.3) |
+| Attention maps, search entropy, factorials, operator search | APPLIES (don't) | The archive adds a stop list; see §9 |
+
+## 4. From the local folder: reasoning, dead ends, and what we would do differently
+
+**The trajectory the public repo hides.** jepa_steering began as a *hazard × action mechanism search* on RoboCasa
+egg scenes. It pivoted to driving (protocol v0.6–v0.9) and ended on JEPA-WM MetaWorld steering. The first two were
+abandoned as structured nulls:
+
+- *Egg loop.* The model reproduced the action effect (recovered fraction 0.63) but not hazard specificity. The best
+  patch recovered 0.1%, a bilinear probe scored AUROC 0.500, and the Jacobian "sonar" scored 0.16, *below* its random
+  control at 0.32. V-JEPA 2-AC reproduced 0% of the interaction. Cause as stated: the egg was "100% beyond the DROID
+  p95", i.e. out of distribution (`js/docs/archive/legacy-branches-2026-09-04/root-plans/LOOP1_SUMMARY.md`).
+- *Driving and the "Sonar" plans.* The post-mortem memo is the clearest what-we'd-do-differently document: "seven
+  protocol versions, about eighteen instruments … each added after a null"; "Hypothesis-first conjunction target … A
+  null cannot say which conjunct failed"; "Instrument after every null; statistics outrunning signal" (every site at
+  the permutation floor p = 1/2001); "Stereotyped stimulus → rank-1 template"
+  (`js/docs/archive/legacy-branches-2026-09-04/handoffs/xie_lens_2026-09-03.md` L19–22).
+  `WORLD_MODEL_SONAR_PLAN.md`, a ten-module "Frankenstein Sonar", was archived unrun after its first cell finished at
+  1/15 successes and failed class support (`js/docs/archive/deferred-threads-2026-09-05/snapshot/`).
+- *Main line.* The development gain did not hold on fresh data. Reach refined edit minus native was +6.25 pp in
+  development (`js/wm-approaches.md` §6) and 0.00 pp on 96 fresh scenarios, with all 48 contrasts including zero
+  (`js/fresh_confirmation_results.md`). The panel could resolve about 25 pp against a pre-registered useful effect of
+  5 pp: "a real effect at the useful-effect scale would usually be missed by this design"
+  (`js/analysis/out/fresh-v2/regime_report/regime_report.md`). An illustrative power calculation needed about 1,466
+  paired scenarios (`js/matched random control.md` §7).
+- *An earlier warning, ignored.* A full-spatial correction cut forecast MSE by 26.83% (visual) and 49.35% (proprio),
+  yet moved two action choices in physically worse directions (`js/Rank Edit.md`, "What the findings support so far").
+
+**Written down, never run** (`js/docs/MECHANISM_HYPOTHESES.md` §B): refit the operator to the planner's own goal
+distance (H4); per-iteration CEM scores (H3); read/write validation of one direction (H7); switch the edit off after
+the first divergence (H5). Also unrun: an orientation-only random control (`js/matched random control.md` §4), an
+action-conditioned coefficient predictor, and an outcome-trained basis (`js/Rank Edit.md`, Designs 2–3).
+
+| What they concluded | Verdict here | What we do |
+|---|---|---|
+| "The decisive comparison is selectivity, not success rate … Monotone dose over {0.25, 0.5, 1.0}" (`xie_lens_2026-09-03.md` L68) | APPLIES | Every steer reports target change, off-target change, and a dose curve |
+| Stop adding an instrument after a null; "the next null gets a stimulus or a scale change" (same memo, L93) | APPLIES | Fixed analysis list in `spec.md`; a null ends that thread |
+| "Stereotyped stimulus → rank-1 template"; copy-delta baseline beat the model 0.92 vs 0.68–0.83 (`cross model design jepa.md` F1, F4) | ADAPT | A single disk on black is stereotyped. The pixel baseline and random-init ViT are the template controls |
+| "COAST had clean outcome labels before fitting geometry; we tried to answer several harder questions at once" (`root-plans/vla_learnings.md` L91) | APPLIES | Our labels are native and exact. Fit geometry only after layer curves exist |
+| Design too small to resolve the effect it was registered to detect (`regime_report.md`) | ADAPT | Power is not our bottleneck (1,500 clips, 64 values), but centroid-level claims have n = 64 or 16 |
+| The edit basis contains its own readout: "principal angles … 0.0°, 0.0°, 0.0° … the edit writes along the axes it reads" (`representation_geometry.md` L60) | APPLIES | The same risk as scoring with the subspace's own probe. The evaluation probe must be fit on disjoint clips, and its alignment with V reported |
+| Win frequency ≠ average: 93/128 families positive yet a negative mean (`js/findings.md`); Reach rescued 23, broke 17 (`js/wm-approaches.md` §6) | APPLIES | Report per-clip improved and worsened counts beside mean MAE |
+
+## 5. Circular structure and held-out evaluation: what jepa_steering already knew
+
+**Cyclic variables appeared twice, both in archived threads; neither became a steering result.** The main line,
+Push-T, Wall and PointMaze, used open scalars only. The DROID "orientation" action error is a wrap-unaware sum of
+absolute deltas and was never primary (`js/src/offline_study/tasks/droid/droid_contract.py` L40–44).
+
+1. **Egg loop (2 Sep).** A circular chart for hazard bearing was "at chance (only two bearings per scene)", so the
+   test could not have succeeded (`js/docs/archive/legacy-branches-2026-09-04/handoffs/HANDOFF.md` L438).
+2. **Reach-Wall geometry map (5 Sep).** A PEZ-style screen with "circular direction targets" decoded the hand's
+   realised XZ motion direction on 150 discovery trajectories. It was never steered, and the thread was deferred
+   the same day (details in §6, P2).
+
+This corrects the working assumption that jepa_steering "never had a cyclic variable". Still, the closed-spline,
+intrinsic-angle and chord-through-centre reasoning comes from the physics paper and Goodfire, not from prior work.
+What does transfer is the machinery and one result: a circular chart, a rotating-code detector, and a **planted
+rotating-code positive control that passed** (`LOOP1_SUMMARY.md` L24, L36). Copy that control before trusting any
+"no ring" or "no curve" result.
+
+| What they knew | Source | Verdict | Consequence here |
 |---|---|---|---|
-| 1 | Push-T was split by rollout ID, so all 185 initial-state families sat in fit, dev and holdout at once; no confirmation data could be saved (`PUSHT_LINEAGE_CORRECTION.md`) | clips that share a generator seed or start position landing in both train and test | every clip gets a group id; split by group; `validate_split` raises if a group spans two splits (§3) |
-| 2 | 160 of 12,600 MetaWorld rows were byte-identical and counted as independent (`METAWORLD_LINEAGE_CORRECTION.md`) | duplicate clips inflate n and leak across the split | sha256 the decoded frames before writing the split; merge duplicates; report the count (§3) |
-| 3 | In FP32 a cubic fit beat a linear one at every block; in BF16 linear won. Rounding only the stored outputs to BF16 took a log-ratio from −5.4 to −0.09 (`CONTROLLED_GEOMETRY.md`, `COMPUTE.md`) | INLP's K, QR bases and small steering residuals are all rounding-sensitive | fp32 forward, TF32 off for matmul and cuDNN; `meanpool` stored float32; CPU-vs-GPU tolerance fixed before the run; torch version on the box recorded (§2) |
-| 4 | A wrapper silently differed from upstream (`shuffle=True` vs False; a YAML resize overridden by the loader) (`POINTMAZE_TRAINING_SAMPLER_CORRECTION.md`, `DROID_BASELINE_RECONCILIATION_AUDIT.md`) | our deliberate no-resize/no-crop preprocessing hides a real bug, or gets mistaken for one | the smoke test asserts the intended deviation from the HF processor and asserts normalisation constants and token count (§2, §8) |
-| 5 | 5 of 286 goal images had wrong hashes from an off-by-one RGB render; whole RNG streams were rerun rather than patching episodes (`METAWORLD_STIMULUS_REPAIR.md`) | activations silently out of step with the videos they came from | bind the frame hash into every activation file; re-extraction must reproduce the same bytes (§2) |
-| 6 | One frozen random direction per task; it beat the learned edit post hoc on Reach (`MATCHED_RANDOM_CONTROL_AUDIT_20260911.md`) | "steering works" with no matched random comparison | random subspace of the same rank and per-clip ‖Δ‖, 10 seeds, read by the same evaluation probe (§6.4); 10-seed random-removal band for INLP (§6.3) |
-| 7 | Dose matched on average but not per window; cubic arms passed the per-window check 49% of the time (`PATHWAY_GEOMETRY.md`) | mean norm drift looks fine while individual clips blow up | log requested vs delivered ‖Δ‖ per clip, never just the mean (§5.3) |
-| 8 | "1,152 rows, not 1,152 contexts"; the bootstrap unit is the family (`CONTROLLED_GEOMETRY.md`, `AUTHOR_VALIDATION_AUDIT.md`) | CIs computed over ~1,500 clips when the independent unit is the label value | bootstrap by label-value cluster; a minimum-detectable-effect at n = 64 (or 48/16) values, not clips (§4) |
-| 9 | The "best observed edit" was labelled post hoc; a checker asserts the disclosure text exists (`scripts/check_public_results.py`) | the CV-chosen layer or INLP stopping round presented as a result | label them as selections; test is read once (§3) |
-| 10 | A published 48.2 vs their 51.1 was never used as an effect; only a concurrent native baseline counted (`DROID_BASELINE_RECONCILIATION_AUDIT.md`) | comparing our R² to the paper's numbers as if it were evidence | paper numbers are a qualitative reference only; every contrast uses our own controls (§0, §6.2) |
+| "Held-out" means three things: excluded from fitting; excluded from development evaluation; untouched by development. "Calling all three simply 'held-out' obscures the evidence" | `js/methods_comparison.md`, "Which inputs were unseen" | APPLIES | Every held-out claim names its sense (`spec_updates_proposed.md` #2) |
+| Reshuffling does not undo exposure; new seeds are not new source families | `js/AGENTS.md`; `js/push T recommendation.md` | APPLIES | Part 2 choices are made on train folds; test is read once for Part 2 |
+| "Response audit" families were held out *only from calibration*, "not an independent test" | `js/docs/FIXED_RESPONSE_RANK4.md` | APPLIES | A probe's own CV fold is not a held-out steering test |
+| The held-out point was the symmetric centre, which is pure interpolation; earlier curvature targets "had already appeared elsewhere in exploration" | `js/docs/CURVED_ACTION_RESPONSE_FOLLOWUP.md` | APPLIES | Every-4th-value holdout is interpolation over 11.25° gaps. Add contiguous-arc and extrapolation designs |
+| "No unseen-action family"; circular test failed on sparse coverage | `LOOP1_SUMMARY.md`; `HANDOFF.md` L438 | APPLIES | 64 angles is dense. Held-out *contexts* exist too: the speed set covers 0.25–4 m/s, while the direction set covers 1–7 |
+| Leakage found: row-level Push-T split, byte duplicates, a dropped seed, bf16 leaking ~1e-3 of a removed component | `js/docs/EXPERIMENT_PLAN.md`; `handoffs/caft_inspired_report_2026-09-03.md` L37 | APPLIES | INLP projections in fp32; check the residual probe after projection |
+| Interchange: an H3-only swap recovers R = 0.50; persistent replacement gives R = 1; "one-block replacement can create inconsistency with the other five blocks" | `js/docs/ACTION_COUNTERFACTUAL.md`; `js/docs/INTERVENTION_MECHANISM_AUDIT.md` | ADAPT | Edit all 8 time steps vs some; compare against a real clip at θ\* at every later layer |
+| Cyclic donor interchange (i → i+1 mod 300) beat random by only 0.007–0.0084 Spearman | `js/docs/ACTION_CONDITION_SPECIFICITY.md` | ADAPT | The Part 2 transplant: swap the ring coordinate between clips and read later layers |
 
-## Practices to copy
+## 6. Nonlinearity: the full record
 
-- Deterministic split by hash order, independent of input order: `src/offline_study/core/protocol.py::study_split`.
-- Manifest guard for duplicate ids and groups crossing splits: `protocol.py::validate_manifest`.
-- Content hashing of tensors (dtype, shape, bytes): `src/offline_study/data/inventory.py::_update_tensor_digest`.
-- Fail fast on degenerate cases (no finite norm, too few samples, shape mismatch): `fitting/operator_fit.py::_unit`.
-- A checker that asserts every README/slide number equals the JSON behind it: `scripts/check_public_results.py::check`.
-  Ours: `check_results.py` (§8).
-- Zero-dose identity and hook-vs-native byte parity tests before any intervention: `tests/unit/interventions/`.
-  Ours: N = 0 steering returns x unchanged; hook output matches native forward (§8).
-- Protocol JSON committed before analysis: `paper/data/controlled_geometry_analysis_protocol.json`. Ours: `splits/split_v1.json` first commit.
-- Undefined stays undefined: never epsilon-fill or drop an undefined value inside an aggregate. Ours: disk-pool NaN + flag when the disk is out of frame.
-- Separate endpoints: "an improvement at one does not establish the next" (`docs/MECHANISMS.md`). Ours: decodable → steerable at the same layer → propagated through later layers are three claims.
+The public repo reduces this to "curvature is real in FP32, vanishes in BF16, and has no behavioural effect". The
+local record holds six investigations, P1–P6. Tags: **(a)** measured curvature, **(b)** nonlinear probes, **(c)**
+nonlinear edits and their effect, **(d)** precision, **(e)** rotating, circular or periodic structure. "Stands" means
+nothing later contradicted it; "qualified" means a later test narrowed it. `arch/` = `js/docs/archive/legacy-branches-2026-09-04/`.
 
-## Liftable helpers
+**P1. Egg loop, JEPA-WM DROID predictor on RoboCasa, 2 Sep** (`arch/root-plans/LOOP1_SUMMARY.md` L24–29, L36;
+`arch/handoffs/HANDOFF.md` L436–438; the method docstring survives only in
+`js/scripts/cgs_pilot/__pycache__/geometry_localize.cpython-39.pyc`).
+- (e) *Rotating-code detector.* The linear localizer projects each scene onto the **global** mean direction. That is
+  "blind to a relational code whose direction rotates … if the interaction direction is f(bearing) with f covering
+  the circle, the global mean is ~0." The fix compared projection onto the mean of the k covariate-nearest scenes
+  (local) against the global mean, added RSA against bearing, and fitted a circular model. Result: 0/324 entries
+  local > global. At the one candidate site, global t = 3.9 vs local t = 2.8 (local − global −0.26, CI excludes 0),
+  so the code is "not rotating". RSA against bearing was significant at 12/324, which is chance. The planted
+  rotating-code control passed.
+- (b) kNN, RBF kernel ridge and Jacobian-local readouts beat linear at 6/324 entries (chance ≈ 16). The circular
+  chart (`CircularFactorized`: X ≈ μ + A[cos θ, sin θ], phase decoded as atan2 on the fitted plane, harmonic readout;
+  from the `geometry_models` bytecode) was at chance with two bearings per scene. A bilinear probe scored AUROC
+  0.500. Sliced-W2 found "nothing beyond the first two moments". TwoNN intrinsic dimension was 4–5.
+- (c) Edits stayed on-manifold (Mahalanobis +≤ 0.013 vs +0.01 random) and did nothing: conceptor steering peaked at
+  0.23%. Minimum-distortion "causal-metric" steering collapsed to its Euclidean twin (cos > 0.999) because the target
+  was rank 1: "no specificity" (`arch/handoffs/steering_operators_report_2026-09-03.md` L240–249, L335–340).
+- *At the time:* no curved code, and "the linear localization was not blind to a curved code". **Stands, but moot.**
+  The model expressed 0–6% of the effect, so there was little to localize.
 
-`analysis/mechanism/common.py` (`paired_bootstrap`, `holm`, `write_json`, `sha256`); `representation_geometry.py`
-(`random_subspace`, `principal_angles_deg`, `participation_ratio`); `operator_fit.py::orthogonal_random_control`;
-`core/protocol.py` (`study_split`, `validate_manifest`, drop its dataset whitelist).
+**P2. Reach-Wall geometry map, JEPA-WM MetaWorld, 5 Sep, 150 discovery trajectories**
+(`js/docs/archive/deferred-threads-2026-09-05/snapshot/Geometry Map Experiment.md` L79–82, L193–200;
+`js/scripts/geometry_map/__pycache__/screen_emergence_geometry.*.pyc`).
+- (e)+(b) *The PEZ protocol applied to a world model.* Realised XZ motion direction was weak in the image encoder
+  (peak CV R² 0.046) and rose to R² 0.573 at predictor block 3, where magnitude also peaked (R² 0.812). Orthogonal
+  probes left "useful realized-direction signal after removing eight directions" and fell below threshold after
+  ten. Direction was ~75° from the progress and magnitude subspaces and 72° from wall distance. kNN probes "did not
+  beat the linear screen".
+- (c) Action patching was monotone in all 48 snapshots at dose 0.5: block 2 transferred 0.450 of the intended
+  change vs 0.020 for an orientation sham, and block 3 transferred 0.490 vs 0.002.
+- *At the time:* "rules out a single-vector coordinate model", so a small multi-direction subspace was the first
+  steering candidate. **Never superseded, never followed up.** The thread was deferred the same day, and the
+  artefacts are not in the local folder.
 
-## Where spec.md was corrected because of this review
+**P3. Action-path curvature and learned charts, Push-T, 5–7 Sep** (`js/docs/CURVED_ACTION_RESPONSE_FOLLOWUP.md`;
+docstrings in `js/scripts/geometry_map/__pycache__/`).
+- (a) Full-spatial action-response paths were bent. Curved interpolation improved causal interchange fidelity over
+  endpoint-line reparameterisation, **but** a cubic downstream comparison lost to the near-chord comparator on 3 of
+  4 states. Conditioning on actual history improved prediction *and* increased bending. The sample was 4 reused
+  states and 32 correlated paths, with targets "already appeared elsewhere in exploration".
+- (c) Tried, with no result files locally (they lived in `archive/2026-09-07-workspace/`, absent here):
+  - diffusion-map intrinsic charts vs equal-rank PCA, on a "within-state action-direction holdout, NOT
+    episode-generalization" (`learn_intrinsic_chart`);
+  - a PCA-64 natural-spline path adapted from Goodfire A.3/A.5/A.6 that "preserve[s] the off-subspace residual"
+    (`run_density_geometry_pilot`);
+  - PCA-4 coordinates with an RBF-64 decoder, and chart controls "leav[ing] the enclosing PCA64 complement
+    unchanged" (`native_chart_control`);
+  - a mean/radius decomposition of bending, "not proof that residuals live on spheres" (`decompose_action_curvature`).
+- (b) A coordinate-transform null recorded that "a frozen linear world readout plus known frame conversion is a
+  competing explanation; no new nonlinear network mechanism is required" for an RBF readout gain
+  (`coordinate_transform_null`).
+- Earlier, a full-spatial correction cut forecast MSE by 26.83% (visual) and 49.35% (proprio) yet worsened two action
+  choices (`js/Rank Edit.md`).
+- *At the time:* "observed curvature does not establish useful steering." **Stands.** It was kept only as a
+  candidate question.
 
-- float16 storage of the main activations → float32 for `meanpool`.
-- No run precision stated → fp32, TF32 off, tolerance and torch version recorded.
-- "Processor parity" test → "intended processor deviation" assertion.
-- No duplicate/family audit before the split → frame hashing and `validate_split`.
-- Steering had norm drift and off-target readouts but no matched random control → added.
+**P4. Registered action-response geometry, 5 tasks × FP32/BF16, 7–8 Sep** (`js/docs/ACTION_GEOMETRY.md` protocol;
+`js/docs/PATHWAY_GEOMETRY.md`; `js/findings.md` L82, L262).
+- (a) *Design.* One action direction, offsets ±0.05 and ±0.1, and the omitted centre reconstructed from four
+  anchors. Four arms:
+  - linear, weights 1/4 each;
+  - "cubic", weights [−1/6, 2/3, 2/3, −1/6], which equals a quadratic fit at the centre;
+  - **projected cubic**, the cubic estimate projected onto the endpoint chord;
+  - **reflected curvature**, 2·projection − cubic, i.e. the same bend with the opposite sign.
 
-## Scientific findings and what they mean for Part 2
+  The last two separate "speed along a line from a correctly oriented curved deviation" (`js/docs/EXPERIMENT_PLAN.md`).
+- (d) Raw reconstruction advantage of cubic: +93.96% to +99.99% in FP32, −35.1% to −46.8% in BF16. Linear-to-cubic
+  MSE ratio on Wall and PointMaze: 3,967 and 7,020 in FP32; in BF16, cubic error was 43% and 42% higher.
+- (c) All four arms were "inconclusive" on all five tasks. H6 forecast effects were ≤ 0.026% of native MSE, with
+  mixed signs.
+- (d) Dose effects: requested dose was 7.44 in BF16 vs 0.0066 in FP32. Only 49–51% of FP32 cubic windows passed the
+  per-window dose check, against 98% for linear. Dose normalisation *reversed* fidelity: raw error 99.89% lower
+  became 16.03% higher after normalising.
+- *At the time:* "a specific diagnostic boundary, not a rejection of manifold steering". **Qualified by P5.**
 
-Paths below are relative to the jepa_steering repo root unless they start with `~/`. That project steered the
-action-conditioned predictor of JEPA-WM (6 blocks, 256 patches × 400 features, edit at block 3 / imagined step 3) and
-scored forecasts with a CEM planner. The one claim not in the repo (the TRM note) comes from
-`~/.claude/projects/-Users-stevenyang/memory/rep-geometry-transcoder-2026-09-06-state.md`.
+**P5. Controlled geometry, 64 contexts × 6 blocks, 13 Sep** (`js/docs/CONTROLLED_GEOMETRY.md`).
+- (d) No fitted bank and no dose normalisation. Log(cubic/linear) centre error: FP32 −5.40 to −7.89; FP32 rounded to
+  BF16 and back −0.098 to +0.010; actual BF16 rollout +0.16 to +0.31. The actual-minus-roundtrip lower bounds are
+  ≥ 0.209.
+- *At the time:* "a numerical mechanism result … not evidence of a physical manifold". Output rounding explains most
+  of the flip but not all of it. **Stands.** Reading: at offsets of ±0.1, the "curvature" is a smooth second-order
+  response visible only above the arithmetic noise floor.
+- The quoted size varies by source. `js/docs/MECHANISM_HYPOTHESES.md` L297 says "~1,000×", which matches P5
+  (e^6.7 ≈ 800×), not P4's +94% on Reach (≈ 17×).
 
-### A. Representational geometry
+**P6. Fresh-v2 geometry of the delivered edit, 13 Sep, post hoc**
+(`js/analysis/out/fresh-v2/representation_geometry/representation_geometry.md`).
+- Measures the fitted object, not curvature. The participation ratio matched random; the edit basis contains its
+  readout (0° angles); verdict "mixed: neither picture cleanly".
+- `js/docs/MECHANISM_HYPOTHESES.md` L371–376: "The fresh panel adds nothing about curvature … no manifold claim either way."
 
-| Finding | Numbers | Source |
-|---|---|---|
-| The response to one action coordinate is strongly curved in FP32 and the curvature disappears in BF16 | Mean ln(cubic/linear omitted-centre MSE) was −5.40 (block 0) to −7.78 (block 5) on Reach in FP32. Rounding the FP32 outputs to BF16 gave −0.088 to +0.010; a real BF16 rollout gave +0.16 to +0.30 (the straight line won at every block, 64 contexts) | `docs/CONTROLLED_GEOMETRY.md` |
-| Same flip on 5 tasks, with fitted edits | Cubic's raw reconstruction advantage was +93.96% to +99.99% in FP32 and −35.1% to −46.8% in BF16 | `docs/PATHWAY_GEOMETRY.md` |
-| Curvature didn't matter for behaviour | Cubic-vs-linear edits changed step-6 forecast error by at most 0.026% of native MSE, with mixed signs. "No geometry arm qualifies on any task" | `docs/PATHWAY_GEOMETRY.md`, `reports/CORRECTED_OFFLINE_RESULTS.md` |
-| The curvature test was weaker than its name | The weights [−1/6, 2/3, 2/3, −1/6] on four symmetric anchors equal a quadratic fit at the centre, so the test "cannot identify third-order dynamics", "a dense manifold, or model-native physical axes" | `docs/PATHWAY_GEOMETRY.md`, `docs/MECHANISMS.md` |
-| Dose confound across precisions | The requested edit size for Reach was 7.4422 in BF16 and 0.0065586 in FP32. Only 49.02% of FP32 cubic windows passed the per-window dose check, against 98.08% for linear | `docs/PATHWAY_GEOMETRY.md` |
-| Dimensionality: one direction is not enough | Rank 4 and rank 8 met the rank-selection rule; rank 1 did not | `reports/CORRECTED_OFFLINE_RESULTS.md` |
-| Inside the rank-4 subspace, only about 1.4 to 3 directions carry the edit | Participation ratio (tr M)²/tr(M²) of the delivered coefficients: 2.23 Reach, 1.37 Reach-Wall, 3.07 PointMaze, 1.92 Wall | `docs/RESULTS.md`; code in `analysis/mechanism/representation_geometry.py::participation_ratio` |
-| The edit is mostly one constant shift | 98.855% (Reach) and 99.615% (Reach-Wall) of coefficient energy is shared across candidates. The shared part alone reproduces the relative cost change at 0.983 and 0.998 | `docs/MECHANISMS.md`, `docs/PILOT_MECHANISMS.md` |
-| A constant shift still changes rankings | ‖z+d−g‖² − ‖z−g‖² = 2d·(z−g) + ‖d‖², and the first term differs across candidates | `docs/MECHANISMS.md` |
-| Staying inside the input's own subspace mattered only a little | The action encoder is a rank-20 map into 400 dimensions. Random edits inside its range disrupted rankings more than edits outside it at blocks 1 and 4, by about 0.0021–0.0025 Spearman. "Affine encoder-range membership is not membership in a physical or global activation manifold" | `docs/ACTION_COUNTERFACTUAL.md` |
+**What feeds Part 2 here**
 
-Density and off-manifold energy were never measured. The repo computes principal angles and participation ratios
-only for fitted bases (`representation_geometry.py`), and no output from that script is committed.
+1. **Global-mean blindness (P1).** Averaged over angles, a direction code has mean ≈ 0, the ring's centre. A single
+   mean-difference steering vector is therefore the wrong baseline. Steering must be target-conditioned: the Part 1
+   least squares per θ\*, or the spline.
+2. **The circular chart (P1) is a ready population-level model.** Fit X ≈ μ + A[cos θ, sin θ] on train and decode
+   atan2. This matches the paper's per-neuron GLM (C.7) and should agree with Goodfire's atan2(PC2, PC1). The
+   local-vs-global projection test answers whether the speed axis rotates with θ (cone vs cylinder).
+3. **Planted positive control (P1)** before any null about rings or curvature.
+4. **A reflected-curvature arm (P4).** A spline bent the wrong way, with the same endpoints, arc length and dose, is
+   the sharpest matched control for spline steering. Add a projected (chord) arm with the spline's spacing.
+5. **Noise floor (P5).** The curvature gain must beat within-value clip scatter and BF16 rounding of `meanpool`.
+6. **Matched delivered dose (P4).** Normalisation reversed a fidelity result once; compare spline and line per clip at equal ‖Δ‖.
+7. **A readout gain is not curvature (P3).** Nonlinear decoding of θ can come from a known frame conversion
+   (Cartesian (vx, vy) through atan2). This is the Cartesian-vs-polar question in §8.
+8. **A prior estimate (P2).** In a JEPA-WM predictor, motion direction needed ~10 orthogonal directions and sat ~75°
+   from magnitude. The paper's 40–136 is for a video encoder. Compare, do not import.
+9. **Unseen-donor interchange (P3, `run_action_path_interchange`).** Patch real activations of clips at a held-out
+   θ into recipients, and compare with the spline point at that θ. This is the held-out transplant design.
 
-**Verdict:** the local curvature is real in FP32 and has almost no effect on behaviour. Both "dense nonlinear
-manifold" and "linear" are left explicitly unsupported.
+## 7. Representational geometry and steering: applicable findings
 
-### B. Steering
+| Topic | What they found (source) | Verdict | Use here |
+|---|---|---|---|
+| Linear vs curved, precision, dose | See §6 (P1–P5) | APPLIES | Leave-one-out cubic vs line on centroids, in FP32 and BF16-rounded, at matched delivered dose, with a planted-ring control |
+| Dense vs sparse | "mixed: neither picture cleanly … a small number of directions with distributed support"; 149–252 of 256 effective patches (`representation_geometry.md`) | ADAPT | Report both: rank (INLP K) and spatial spread (disk-pool vs mean-pool) |
+| Rank | The rank count was set partly by calibration (PR matched random) (§3) | APPLIES | INLP K is only a claim against the random-removal band |
+| Transport | Cross-checkpoint angles ~85–90° vs a random 89.64°; adjacent-layer subspaces 80–89°; "An orthogonal rotation alone is not a contribution" (`representation_geometry.md`; `LOOP1_SUMMARY.md`; `WORLD_MODEL_SONAR_PLAN.md` L217) | ADAPT | Transport across *datasets*: a direction spline built on the direction set, used on speed-set clips |
+| Matched random | "Norm matching does not match effect"; calibrated-random vs orientation-only are "different null hypotheses"; one realization "cannot estimate between-basis variability"; m draws give resolution 1/(m+1); the refined control was "byte-identical across all task banks" (`js/matched random control.md` §3–7; `representation_geometry.md` L54) | APPLIES | Two kinds of null, ≥ 20 draws each; never one shared seed |
+| Null too easy | An isotropic null is wrong where the real edits lie in a subspace (rank ≤ 20 of 400); "match the empirical mean and covariance, randomly rotate real vectors, or permute" (`js/docs/PLANNING_CONTROL_LITERATURE.md` L15; `root-plans/LRH.md` L17) | APPLIES | Add a covariance-matched random curve (random smooth path through PCA-64) beside the isotropic one |
+| Support confound | Goodfire's linear arm replaces the whole residual; its manifold arm keeps the off-PCA residual: "support changes alongside geometry … motivate matched-support baselines" (`PLANNING_CONTROL_LITERATURE.md` L28; `refs/steering_paper.txt` L2717–2724) | APPLIES, top priority | Spline and line edit the same subspace and keep the same residual |
+| Dose | Planned but never run: a monotone dose–response along a real interpolation path (`root-plans/JEPA rep geometry.md` §2.5). "Do not normalize every edit to the boundary" (`WORLD_MODEL_SONAR_PLAN.md` L395) | APPLIES | K waypoints; report readout angle *and* radius at each |
+| Off-target | Min-distortion steering collapsed to its Euclidean twin (cos > 0.999): "no specificity" (`handoffs/steering_operators_report_2026-09-03.md`). "Collateral effects do not prove superposition" (`WORLD_MODEL_SONAR_PLAN.md` L334) | APPLIES | Steer direction and read speed (and vice versa). First measure the direction–speed principal angles against k/d |
+| Saturated readout | First-action hashes changed 96/96 under learned *and* random edits (`forecast_decision_outcome.md` L20–23). The public docs omit the random half | APPLIES | The nearest-centroid "class flip" readout saturates at large doses. Report it with the random arm |
+| Trusted readouts | Paired outcome; the model's own forward on a counterfactual input (R). Distrusted: hashes, a proxy MSE that isn't the objective, nHSIC/CKA, significance without magnitude ("recovery 0.000 … reported as an artifact"), coefficient norm as OOD (`INTERVENTION_MECHANISM_AUDIT.md` §4) | APPLIES | Trust: a disjoint evaluation probe plus later-layer agreement with real clips at the target value |
+| Semantic/manifold bar | "predict a specified physical variable on held-out examples … preserving appropriate others"; manifold claims need "a fitted chart/metric and an on-manifold versus matched linear comparison" (`js/paper/research_synthesis.md` §3) | APPLIES | This is the bar for the Part 2 headline |
 
-- **What was tried:** a learned rank-four edit at the block-3 output, applied to all 256 patches and all features;
-  visual-plus-action coupling with each part scaled by 1/√2; a rank-one sweep over every block; linear, cubic,
-  projected and reflected geometry edits; action-conditioning swaps (`docs/METHODS.md`,
-  `reports/CORRECTED_OFFLINE_RESULTS.md`). No partial spatial support (subsets of patches) passed the advancement
-  rule, so the edit needs all patches (`reports/CORRECTED_OFFLINE_RESULTS.md`).
-- **What worked (forecast error only):** the learned rank-four edit cut step-6 proprioceptive MSE by 2.36% on Reach
-  and 2.19% on Reach-Wall. Joint coupling plus rank 4 gave 4.824% [3.668, 5.980] (`docs/RESULTS.md`,
-  `reports/CORRECTED_OFFLINE_RESULTS.md`).
-- **Layers:** in the rank-one sweep, earlier blocks corrected more: 3.026% at block 0 falling to 0.475% at block 5
-  on Reach (BF16). Push-T didn't reproduce this (`docs/MECHANISMS.md`). Action-history sensitivity peaked at block 1
-  (`docs/ACTION_COUNTERFACTUAL.md`). The chosen block 3 was "not retroactively justified".
-- **Better forecasts didn't change decisions.** The first choice stayed the same in 191 of 192 states. The rule
-  "the edit's cost spread is smaller than the winner's lead" certified 184 of them in advance (`README.md`,
-  `docs/MECHANISMS.md`). Physical 15-step prefix endpoints: all 8 intervals include 0
-  (`docs/PLANNED_PREFIX_REPLAY.md`). Protected success on fresh scenarios: all 48 contrasts include 0. On Reach,
-  21 scenarios were rescued and 21 lost, so both arms stayed at 52/96 (`docs/RESULTS.md`).
-- **Learned was never better than random.** Adaptive search changed under both the learned and the random edit, and
-  all 6 learned-minus-random intervals include 0 (`docs/CEM_EXPANSION.md`). In development, the random coupling
-  control scored 60.42% on Reach, the highest observed rate (`reports/CORE_METAWORLD_BEHAVIORAL_RESULTS.md`).
-- **Dose–response:** only the precision flip (A) and the per-block decline were measured. There was no graded dose
-  curve against a behavioural endpoint.
-- **Transport:** there was no cross-task operator; every task got its own fit (`docs/METHODS.md`). Push-T joint
-  edits made forecasts worse (−0.638%) (`reports/CORRECTED_OFFLINE_RESULTS.md`).
-- **"Readout-subspace fix works on nav, not contact" (TRM, arXiv 2605.22164):** the fix in that paper leaves the
-  world model alone and changes the planner's terminal cost to use the subspace a position probe reads. That took a
-  navigation task from 7% to 96.7% success (a shuffled control gave 0%), but only moved Push-T, a contact task, from
-  40% to 52.7%. Nothing published edits the model's internals for contact tasks. The sister project's version of
-  this idea (ablating everything outside the probe span) gained +1.16 pp at n=4 (memory file above). In short, a
-  probe subspace helps when the target is literally position; it helps much less when the physics goes beyond it.
+## 8. Variables beyond the three (from the physics paper; our data supports each)
 
-### C. Methods that transfer to a frozen video encoder plus predictor
+Each row can run on stored activations unless marked. Line numbers refer to `refs/physics_paper.txt`.
 
-| Method (repo source) | What it is | Analogue for V-JEPA 2 |
-|---|---|---|
-| Read-site sweep with all layers reported (`docs/MECHANISMS.md` layer map) | Edit every block and show the full grid, never one chosen block | Yes: steer at every depth in the emergence zone, report all of them |
-| Matched controls (`docs/METHODS.md`) | A random subspace of the same rank, support and dose with its own calibration; isotropic vs in-range random | Yes: a random curve with matched length through PCA-64, and a spline through centroids with shuffled labels |
-| Decodable → used ladder (`docs/MECHANISMS.md`) | Four separate endpoints: activation reconstruction, forecast, candidate score, closed-loop success. "An improvement at one does not establish the next" | Partial: readout at the steer layer → readout at later layers after propagation → predictor forecast readout. There is no planner |
-| Action counterfactual (`docs/ACTION_COUNTERFACTUAL.md`) | R = 1 − D(patch, cf)/D(unmodified, cf) against the model's own forward on a changed input. Patching both occurrences reproduced it byte-exactly; patching one gave R ≈ 0.50 | **Yes, the strongest one:** compare against real clips with the target value (the Goodfire centroid, or a re-rendered clip if the generator is available), at the steer layer and every later layer |
-| Planned-prefix replay (`docs/PLANNED_PREFIX_REPLAY.md`) | Execute the plans each model chose, from identical resets | None: there are no actions |
-| History ranking (`docs/LCFM_HISTORY_RANKING.md`) | Spearman, top-10 overlap and winner agreement with the counterfactual reference; an edit made at one time step only lost 17 of 32 winners | Yes: the nearest of the 64 centroids to the steered activation is the "winner". Also edit all 8 time steps vs some of them |
-| Decision-margin certificate (`docs/MECHANISMS.md`) | If the edit's cost spread is smaller than the winner's lead, the choice cannot change | Yes: if ‖Δ‖ is less than half the gap to the nearest other centroid, the class cannot flip. This predicts which small steers are null before running them |
+| Variable / test | Paper basis | What it would show here | Cost | Part |
+|---|---|---|---|---|
+| Cartesian (vx, vy) vs polar (speed, sin θ, cos θ): onset layers | Table 1 "Polar factorization dominates" (L81); Fig. 2b–c (L257–260); only vx and ax are plotted | If (vx, vy) comes up before θ, direction's "emergence" may be the normalisation v/‖v‖, which weakens Table 1. Needs constant-speed clips (750 in the direction set, all of the speed set) | minutes | P1 support |
+| (ax, ay) vs \|a\|, and the rest-start confound | §5.2 (L264–275); A.1.2: the acceleration set is "initialized at rest" (L684) | In the paper's data, acceleration ≡ mean speed ≡ displacement too, so "no velocity intermediate" is untested there and here. Say so as a critique of the paper | none (slide) | P1 |
+| Direction × speed / motion type: ring vs cone vs cylinder | §7.1 ring (L409–420); Goodfire cylinder task with ghost points (`steering_paper.txt` L2640–2647, L3255–3257) | Ring radius vs speed on the speed set (24 of 64 angles per speed) and on velocity vs acceleration clips. A radius that depends on speed makes the manifold 2-D: fit a thin-plate spline over (θ, speed) | minutes | P2 core |
+| Speed tuning shape | C.8: quadratic GLM, "preferred speeds at intermediate values" (L1128–1150) | Bump-tuned units imply a *curved* speed centroid path. Do not assume speed is straight; test leave-one-out and log vs linear knot spacing | minutes | P2 |
+| Start position / retinotopy | C.5: local → global at the emergence zone; half-frame generalisation (L985–1012); Table 1 "object-centric slots" (L88–91) | Train the direction probe on start x < 0, test on x > 0, per layer, mean-pool vs disk-pool. This is also a held-out *context* for Part 2 steering | minutes | P1 support, P2 |
+| Direction vs speed subspace angles | C.4 method and k/d baseline (L891–925). Table 3 (L944–968) reports **only motion vs IntPhys**, never direction vs speed | Whether steering direction can leave speed intact. Random expectation for k = 40 of 1,024 is ≈ 3.9% | minutes | P1→P2 bridge |
+| The sin/cos sawtooth | §7.2, Fig. 4c (L377–380); C.10, Fig. 23 (L1178) | With 64 angles, check whether consecutive INLP probes are rotated ~90° in the (s, c) response plane. If not, the sawtooth is a 2-output QR artefact | minutes | P1 |
+| Direction dimension, stated three ways | 40–50 (L402); 14–136 (L1217); 66–136 in Table 3, with a flat 400 at layers 20–23 | Report K against the random band; do not aim for any of the paper's figures | none | P1 |
+| Held-out evaluation probe fit in-sample | C.12: 103 test clips, R² = 0.99 in d = 1,024 (L1245) | Our evaluation probe needs an out-of-fold R², or the "held-out probe" is not validated | minutes | P1 |
+| Temporal locality | C.6 Table 4: temporal attention ablation hurts direction, spatial barely does (L1060–1085) | `timepool` gives a cheap proxy: direction from 2 tubelets vs 8 | minutes | P1 support (optional) |
+| Resolution | C.6: 224², 196 patches, 1,568 tokens (L1020–1021) | We use 256² → 16 × 16. Compare by layer fraction only | none | P1 note |
 
-### D. What this means for Part 2 (manifold steering on V-JEPA)
+## 9. What not to spend time on (public list, plus the archive stop list)
 
-1. **Where a spline should win.** Curvature was large locally and irrelevant at small doses (A), so a spline should
-   beat a straight line only when the steer goes far. For direction, a straight path between far angles cuts
-   through the middle of the circle. Report the win as a function of |θ − θ\*|, which the 64 directions allow
-   (spec §5.3). For speed, expect little difference inside the training range and a gap only at far or held-out
-   values. Acceleration here is the same variable as displacement (spec §1), so an acceleration spline can't be told
-   apart from a speed/distance spline. Say so rather than claiming a separate manifold.
-2. **Cheap checks before fitting splines, using the stored float32 `meanpool`:**
-   - leave-one-value-out centroid reconstruction, linear vs cubic, at held-out knots (asymmetric, unlike the repo's
-     test, which could only see second-order structure);
-   - the same test with the stored activations rounded to BF16 (a one-line check against A's flip);
-   - the ratio of within-value scatter to the curvature signal;
-   - participation ratio of the 64 centroids vs of the within-value noise;
-   - principal angles between the INLP basis, the centroid PCA plane, and the speed and direction subspaces;
-   - the off-manifold energy of the Part 1 linear steer. If it already stays near the centroid curve, a spline has
-     little room to win.
-3. **Shared vs clip-specific share of each Δ.** Split each steer into its mean over clips and each clip's residual,
-   as in `docs/MECHANISMS.md`. At 99% shared, a spline step and a linear step are nearly the same edit.
-4. **What Goodfire's metrics catch:** steps that leave the data (off-manifold energy; compare the isotropic vs
-   in-range results) and uneven step sizes (isometry).
-5. **What they miss, each seen in the repo:**
-   - curvature that is a precision artefact (A);
-   - an edit that matches at the steer layer but is undone later, when unedited tokens or later layers re-read the
-     original value. This is the second-read divergence: 42 of 100 and 59 of 100 winners changed
-     (`docs/LCFM_REPLICATION.md`);
-   - a probe fit on the same centroids that scores an on-manifold steer well by construction;
-   - no win over a random curve (B);
-   - dose matched on average but not per clip (A).
-6. **Which behavioural readout to trust:** agreement with the model's own forward on a real clip that has the target
-   value, measured at the steer layer and every later layer, plus an evaluation probe fit on disjoint clips at
-   held-out values (spec §6.1). A probe readout at the same layer is the weakest rung; forecast gains of 2% did not
-   move decisions (B). The sister project found that the native latent-L2 goal cost misranks physically better
-   actions even with oracle futures (memory file above), so V-JEPA 2 predictor latents are a readout, not ground
-   truth.
+Attention-distance maps (`docs/PILOT_MECHANISMS.md`); search-entropy measures; output-interaction factorials;
+learned-operator search; symmetric four-point curvature tests; stimuli the researcher invents; n = 4 reused states.
+From the archive: "Jacobian sonar, bilinear, higher-order, curved-manifold … relational transport" as main-line
+instruments; "running geometry before a closed-loop outcome exists"; "three-way-interaction estimands as the first
+target"; "protocol versions faster than results" (`xie_lens_2026-09-03.md`). All APPLY. Our "closed-loop outcome" is
+Part 1's steering readout, which must exist before Part 2 geometry.
 
-### E. What not to spend time on
+## 10. Ideas for the talk (verdicts)
 
-- Attention-distance maps. They are "a distance map, not a causal map", and heads showed 1.106–9.521 patches of
-  spread (`docs/PILOT_MECHANISMS.md`).
-- Search-entropy or proposal-drift measurements. All intervals span 0 (`docs/CEM_EXPANSION.md`,
-  `docs/PILOT_MECHANISMS.md`).
-- Output-interaction factorials. The effects were ≤0.08% of MSE on the MetaWorld tasks (`docs/PATHWAY_GEOMETRY.md`).
-- Searching over learned operators. Learned never beat random (B); the sister project got 29 null configs at n=4
-  (`~/.claude/projects/-Users-stevenyang/memory/postmortem-2026-09-06-three-projects.md`).
-- Symmetric 4-point "cubic" tests (A).
-- Stimuli the researcher invents, and n=4 reused states (postmortem memory).
-- Hash-binding every artefact. The repo's docs are mostly provenance text; keep what the first pass listed and stop
-  there.
-
-### F. Ideas worth stealing for the talk
-
-- **The clean negative:** "numerical precision can reverse a geometry result" (`README.md`,
-  `docs/figures/geometry_control_story.png`). The Part 2 version: run the held-out-knot spline-vs-line test in FP32
-  and in BF16-rounded activations, and show whether the winner holds.
-- **Match now, diverge later:** `docs/figures/lcfm_context_lifetime.png`. The Part 2 version plots the
-  counterfactual score R against depth after a steer, for one-shot vs all-token edits.
-- **Certificate CDF:** perturbation divided by margin, with a line at 1 (`docs/figures/decision_margin_story.png`).
-  It explains nulls in advance.
-- **A random control that wins, shown honestly** (Reach-Wall's best arm was randomised coupling; `README.md`).
-  Also show the per-clip churn behind a net-zero result (21 rescues and 21 losses; `docs/RESULTS.md`).
-- **The shared-shift identity** 2d·(z−g) + ‖d‖² as a slide on why a "boring" constant steer still moves readouts
-  (`docs/MECHANISMS.md`).
-- **Figures that show every layer and arm, with no chosen layer** (`docs/figures/layer_mechanism_*`).
+- The precision flip as the clean negative. APPLIES: the contiguous-arc spline-vs-line test in FP32 and BF16-rounded.
+- "Match now, diverge later" (`docs/figures/lcfm_context_lifetime.png`). APPLIES: plot later-layer agreement vs depth
+  after a steer.
+- The decision-margin certificate. ADAPT: ‖Δ‖ below half the gap to the nearest other centroid means the class
+  cannot flip, which predicts null small steers.
+- A random control that wins, shown honestly, with per-clip churn (21 rescued, 21 lost on fresh Reach;
+  `js/README.md` L204). APPLIES.
+- Development vs fresh. APPLIES as a methods slide: +6.25 pp became 0.00 pp, which is why the test split is read once.

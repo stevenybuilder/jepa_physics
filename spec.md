@@ -30,7 +30,10 @@ and pooling; no fitted component ever touches the final test clips; every slide 
 
 Differences from the paper's data: 64 directions instead of 8 (the circle can be drawn directly), labels in m/s,
 one merged direction set that mixes both motion types. Two things to state on slides rather than fix:
-- acceleration clips all start at rest, so acceleration, mean speed and total displacement are one variable here;
+- acceleration clips all start at rest, so acceleration, mean speed and total displacement are one variable here.
+  The paper's acceleration set has the same confound (sphere "initialized at rest", App. A.1.2), so this limits the
+  paper's own "acceleration decodable without a velocity intermediate" claim, not only our reproduction. The 750
+  accelerating direction-set clips also start from rest and cannot separate it either;
 - fast clips can leave the frame. A data-QA step records the fraction of frames with the disk visible per clip.
 
 ## 2. Model, extraction, pooling
@@ -47,8 +50,11 @@ one merged direction set that mixes both motion types. Two things to state on sl
   asserted as intended, not hidden).
 - Precision: fp32 forward with TF32 disabled for matmul and cuDNN (the tubelet embed is a Conv3d, which PyTorch runs
   in TF32 by default on Ampere+). jepa_steering lesson: TF32/BF16 flipped a geometry result there. `meanpool` is stored
-  float32; the two 8-step pools float16. CPU-vs-GPU check tolerance fixed in advance: max |Δ| < 1e-3 on 8 clips, torch
-  version on the box recorded.
+  float32; the two 8-step pools float16. CPU-vs-GPU check tolerance: originally max |Δ| < 1e-3 on 8 clips. Measured 27 Sep
+  (`artifacts/gpu_session1.json`): local-CPU vs box-GPU 3.9e-3, but local-CPU vs box-CPU 4.6e-3 and same-GPU batch 8
+  vs 16 6.0e-3, all in blocks 17–24 where activations reach ~150 (worst relative error 2.4e-4). The absolute bar was
+  below fp32 accumulation noise on any device. Revised rule: per-layer relative error max|Δ|/max|x| < 1e-3, and the
+  GPU-vs-GPU batch gap must not exceed the CPU-vs-CPU gap by more than 2×. Torch version on the box recorded.
 - Pooling, one row per manifest `id`, each file carrying the sha256 of the decoded frames it came from:
   - `meanpool` [N, 26, 1024] float32: mean over all 2,048 tokens. **This is the paper's representation; every Part 1 result
     uses it.**
@@ -86,9 +92,17 @@ Held-out *label values* (steering to a value the subspace never saw, splines eva
 of the paper's method. They belong to Part 2, where the README asks us to decide "what constitutes a meaningful
 held-out steering evaluation"; see §6 item 1. Part 1 does not depend on them.
 
+"Held-out" is used in three senses and every result says which it meets: excluded from *fitting*; excluded from
+*development decisions* (layer, K, knot count, spline type, α); *untouched* until the final read. All Part 2 design
+choices are made on the train folds. `test` is read once for Part 1 and once for Part 2's final table; anything
+chosen after a test read is labelled exploratory. (jepa_steering's development gain of +6.25 pp was 0.00 pp on
+fresh scenarios; the three senses had been conflated.)
+
 ## 4. Metrics
 
-Direction: probe outputs (sin θ, cos θ); report R² on the pair and circular MAE in degrees (chance ≈ 90°). Speed and
+Direction: probe outputs (sin θ, cos θ); report R² on the pair and circular MAE in degrees (chance ≈ 90°), plus the
+readout radius ‖(ŝ, ĉ)‖ per clip (ridge readouts shrink below 1; atan2 of a near-zero readout is noise, and a straight
+path between opposite angles passes through radius 0, so dose curves need the radius beside the angle). Speed and
 acceleration: R² and MAE in physical units. Cartesian (vx, vy), (ax, ay) as in Fig. 2b. Uncertainty: mean ± SD over
 the 5 folds, as the paper reports; 95% bootstrap CIs on test where a difference is claimed.
 
@@ -104,6 +118,17 @@ the 5 folds, as the paper reports; 95% bootstrap CIs on test where a difference 
   panel; controls overlaid where run); `fig1b_direction_circle` ((ŝ, ĉ) on test coloured by θ at three layers); a
   table of test scores at each variable's chosen layer.
 - Layer choice for steps 2–3: the layer with the best CV score per variable, expected in the emergence zone.
+- Cheap support runs on stored activations, after the core grid (all Part 1 support, minutes each):
+  (a) **Cartesian vs polar onset**: onset layer of (vx, vy) vs (sin θ, cos θ) on constant-speed clips, same
+  availability rule and bootstrap CI. The paper asserts polar dominates (Table 1) but shows only vx and ax curves;
+  if (vx, vy) comes up earlier, direction's "emergence" may be the normalisation v/‖v‖.
+  (b) **Direction transfer** (`fig1c`): direction probe fit on the direction set, evaluated on speed-set clips
+  (speeds 0.25–4 m/s, starts in [−1.2, 1.2]², partly outside the direction set's 1–7 m/s and [−2, 2]²) and on
+  acceleration-set clips. Held-out context at no extraction cost.
+  (c) **Spatial generalisation** (paper C.5 / Fig. 18b stand-in): direction probe trained on start x < 0, tested on
+  x > 0 and the reverse, per layer, on `meanpool` and `diskpool`.
+- Note for Q&A: the paper's attention analysis used 224² input (14 × 14 patches, 1,568 tokens); ours is 256² without
+  crop (16 × 16, 2,048 tokens). Layer fraction is comparable, patch-level counts are not.
 
 ### 5.2 Iterative nullspace probing (paper App. C.11)
 - At the chosen layer per variable, and every layer for the dimensionality-vs-depth plot (Fig. 22).
@@ -112,7 +137,9 @@ the 5 folds, as the paper reports; 95% bootstrap CIs on test where a difference 
   the one standardised coordinate system; nullspaces here are not orthogonal in raw space, so nothing mixes the two.
 - Stop (paper): direction R² < 0.1 or circular MAE > 80°; speed and acceleration R² < 0.05 or MAE > 90% of the
   predict-the-mean baseline. Dimensionality = 2K (direction) or K (scalars). Also report K at the R² < 0.3 threshold
-  Fig. 22 uses.
+  Fig. 22 uses. The paper itself gives three figures for direction's dimension (40–50 in §7.2, 14–136 in C.11,
+  66–136 in Table 3 with a flat 400 at layers 20–23 that looks like a cap); we report our K against the random band
+  and do not aim for any of them.
 - One control (MJ): random orthonormal subspaces of matched rank projected out, 10 seeds. "Tens of dimensions" means
   something only against that band. Note on the slide that n ≈ 1,200 train clips vs d = 1024, so K is a fold-scored ridge count.
 - Output: `fig2_inlp` (score vs round for direction and speed, random band behind; does the sawtooth appear for
@@ -125,21 +152,45 @@ the 5 folds, as the paper reports; 95% bootstrap CIs on test where a difference 
   evaluation probe fit on `test` activations only; steer `test` clips toward θ\* = 90°, and also toward every one of
   the 64 directions; plot MAE-to-target and MAE-to-true vs N (paper: 82.9° → 11.9° at N = 20, single probe > 50°).
   Report the result as a function of the angular shift |θ − θ\*| as well, which 64 directions make possible.
+  The evaluation probe's α is chosen by CV within `test` and its R² is reported **out-of-fold** (the paper's 0.99 is
+  in-sample from 103 clips in d = 1024; ours is ~300 clips, still n < d).
+  Steering target: the paper's unit vector (sin θ\*, cos θ\*) is the reproduction; also run a radius-matched target
+  (mean readout of real train clips at θ\*), since least squares toward a unit target pushes activations beyond the
+  data when ridge readouts have radius < 1.
 - Same procedure for speed and acceleration with scalar probes and unseen magnitudes (Part 2's baseline).
+- Random nulls, two kinds, ≥ 20 draws each: (i) a random orthonormal basis of the same rank with its own
+  least-squares solve (calibrated random); (ii) the learned c\* applied through a random basis Q with ‖Qc‖ = ‖Vc‖ per
+  clip (orientation only). Report the empirical rank; one draw cannot estimate between-basis variability.
 - Logged for free: per-clip norm drift ‖x\*‖/‖x‖ and the speed readout before/after steering direction (§6 item 4).
 - Output: `fig3_steering` (the paper's Fig. 24 on our data), `fig3b_shift_heatmap`.
 
 ## 6. Additions beyond the paper, ranked, each with its trigger
 
-Run only after §5 is complete. None is needed for Part 1.
+Run only after §5 is complete. None is needed for Part 1. The reasoning behind Part 2 (why steer at all, what
+spline steering is, why direction's circularity is the test case, what jepa_steering's nonlinearity results do and
+do not transfer, the five-rung evidence ladder and the decision tree) is in `PART2_RATIONALE.md`; the judgment
+items are in `nonobvious_components.md` §4–10.
 
-1. **Held-out label values + strict evaluation probe (Part 2's evaluation design).** Refit the steering subspace on
-   clips from 48 of the 64 values (every 4th value held out, interior for speed/acceleration), fit the evaluation probe
-   on clips disjoint from both the subspace clips and the steered clips, and steer toward the 16 unseen values. This
-   is what a "meaningful held-out steering evaluation" means for splines (a spline through all 64 centroids evaluated
-   on the same 64 is interpolation by construction; precedent: Kantamneni & Tegmark 2025, arXiv 2502.00873, App.
-   C.2). Running the Part 1 subspace method under the same design gives Part 2 its like-for-like baseline. Trigger:
-   start of Part 2.
+1. **Held-out label values + strict evaluation probe (Part 2's evaluation design).** Fit the evaluation probe on
+   clips disjoint from both the knot/subspace clips and the steered clips, and steer toward values never used as
+   knots. Three held-out designs, reported separately: (a) **scattered**, every 4th value held out (a local
+   interpolation check; the largest remaining gap is 11.25°, where a chord and a cubic nearly agree, so this cannot
+   separate spline from line); (b) **contiguous**, one 45° arc of direction (8 values) and one interior block of 8
+   speed and 8 acceleration values held out; the spline-vs-line claim rests on this one; (c) **extrapolation**, the
+   top 8 speeds and accelerations, labelled as such. A held-out value is also the one place where an *endpoint*
+   readout can separate the methods: there is no centroid to land on, the line's target is a chord point and the
+   spline's is the curve point, and they differ by the sagitta, which grows with arc length. Precedent for held-out
+   values: Kantamneni & Tegmark 2025, arXiv 2502.00873, App. C.2. Running the Part 1 subspace method under the same
+   design gives Part 2 its like-for-like baseline. Trigger: start of Part 2.
+   - **Matched support.** Spline and line arms edit the same subspace (centroid PCA-k plane or the Part 1 basis V)
+     and both keep the clip's off-subspace residual. Goodfire's own linear baseline replaces the whole activation
+     with a chord point while its manifold arm keeps the residual, so its comparison mixes "residual kept vs erased"
+     with "curved vs straight". Run Goodfire's version once, labelled as such.
+   - **Two curvature controls** with the same endpoints, dose and waypoint count: *reflected* (2·chord − spline, the
+     bend flipped) and *projected* (the chord traversed with the spline's spacing). A random curve tests bending at
+     all; the reflected curve tests bending the right way.
+   - **Held-out context:** steer speed-set clips (unseen speeds and start range) with a direction spline built on
+     the direction set.
 2. **Controls on the layer curves:** shuffled-label probe, pixel baseline (32² frames + frame differences, PCA-256),
    random-init ViT-L. Trigger: any variable whose curve is high from the embedding layer onward (a disk on black is
    nearly pixel-decodable). The random-init extraction is cheap, so it is done in GPU session 1 regardless.
@@ -151,6 +202,11 @@ Run only after §5 is complete. None is needed for Part 1.
 6. **Attentive probe** (GPU session 2, tokens kept on the box only). Trigger: the mean-pool direction curve shows no
    clear rise, or disk-pool beats mean-pool by more than the CI. The paper's Fig. 18a says the mean-pool curve rises
    gradually, so a gradual curve is the expected reproduction.
+7. **Direction-vs-speed and direction-vs-acceleration subspace angles** (paper C.4 method: principal angles,
+   projection overlap ‖Q_AᵀQ_B‖²_F / dim B, random expectation k_A/d), per layer, from the INLP bases. The paper's
+   Table 3 only compares motion with its possible-vs-impossible task, so direction vs speed is unmeasured there.
+   This decides whether steering direction can leave speed untouched (the off-target readout). Trigger: before any
+   off-target claim; minutes on stored bases.
 
 Not doing: LEACE, regularisation sweeps of K, MLP layer curves, per-patch heatmaps, attention ablations, neuron
 tuning. Backup slide only.
