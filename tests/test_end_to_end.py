@@ -29,6 +29,7 @@ def test_pipeline_on_fake_activations(tmp_path):
         run("run_step2.py", "--dataset", dataset, "--inlp-dir", str(inlp_dir), "--seeds", "2", *common)
         run("run_step3.py", "--dataset", dataset, "--inlp-dir", str(inlp_dir), "--strict-eval", *common)
     run("run_step2.py", "--dataset", "direction", "--all-layers", "--inlp-dir", str(inlp_dir), *common)
+    run("run_step2.py", "--dataset", "direction", "--recipe", "adam", "--layer", "8", "--adam-max-rounds", "6", *common)
     run("run_step2_angles.py", "--inlp-dir", str(inlp_dir), *common)
     run("make_figures.py", "--results", str(results), "--figures", str(figs))
 
@@ -44,6 +45,11 @@ def test_pipeline_on_fake_activations(tmp_path):
     assert (results / f"p1b_direction_direction_meanpool_L{peak}.json").exists()
     assert (inlp_dir / f"direction_direction_L{peak}.npz").exists()
     onset = av["onset"]
+    p8 = json.loads((results / "p1b_direction_direction_meanpool_L8.json").read_text())   # paper layer, default set
+    assert p8["is_paper_layer"] and p8["protocol"] == "nested" and p8["paper"]["protocol"] == "paper"
+    assert p8["K_probes"] == p8["K"] and p8["dims_2K"] == 2 * p8["K"] and "test" in p8["provenance"]["test_read"]
+    adam = json.loads((results / "p1b_direction_direction_meanpool_L8_adam.json").read_text())
+    assert adam["recipe"]["lr"] == 1e-3 and adam["rounds"] and "dips_vs_failed" in adam["sawtooth"]
     assert onset != peak and (results / f"p1b_direction_direction_meanpool_L{onset}.json").exists()
     steer_onset = json.loads((results / f"p1c_direction_L{onset}.json").read_text())
     assert steer_onset["layer_role"] == "onset" and steer_onset["is_onset"] and not steer_onset["is_peak"]

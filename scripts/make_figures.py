@@ -188,27 +188,39 @@ def fig1e(results, out):
     plt.close(fig)
 
 
+def load_adam(results, v):
+    """The Adam-recipe probe sequence for variable v (paper's layer 8 first), or None."""
+    hits = [json.loads(p.read_text()) for p in sorted(results.glob(f"p1b_{v}_{v}_meanpool_L*_adam.json"))]
+    hits.sort(key=lambda d: not d.get("is_paper_layer", False))
+    return hits[0] if hits else None
+
+
 def fig2(results, out, role="peak"):
     runs = {v: load(results, rf"p1b_{v}_{v}_meanpool_L\d+\.json", role) for v in ("direction", "speed")}
     runs = {v: r for v, r in runs.items() if r}
     if not runs:
         return
-    fig, axes = plt.subplots(2, len(runs), figsize=(5 * len(runs), 8.2), squeeze=False,
+    adam = {v: load_adam(results, v) for v in runs}
+    n_rows = 3 if any(adam.values()) else 2
+    fig, axes = plt.subplots(n_rows, len(runs), figsize=(5 * len(runs), 4.1 * n_rows), squeeze=False,
                              gridspec_kw={"hspace": 0.75})
     for ax, (v, r) in zip(axes[1], runs.items()):   # the paper's Fig. 23: accuracy within 15° / R² vs probe number
-        key = "cv_acc15" if r["kind"] == "circular" and "cv_acc15" in r["rounds"][0] else "cv_r2"
+        paper = r.get("paper")
+        block, pre = (paper, "test") if paper else (r, "cv")        # the paper scores Fig. 23 on test
+        key = f"{pre}_acc15" if r["kind"] == "circular" and f"{pre}_acc15" in block["rounds"][0] else f"{pre}_r2"
         m_out = r.get("m", 2 if r["kind"] == "circular" else 1)
-        k = np.array([row["round"] for row in r["rounds"]])
-        y = 100 * np.array([row[key] for row in r["rounds"]])
+        k = np.array([row["round"] for row in block["rounds"]])
+        y = 100 * np.array([row[key] for row in block["rounds"]])
         if "random" in r and key in r["random"]["rows"][0]:
             rk = np.array([row["dims_removed"] for row in r["random"]["rows"]]) / m_out + 1
             rm = 100 * np.array([row[key] for row in r["random"]["rows"]])
             rs = 100 * np.array([row[key + "_seed_sd"] for row in r["random"]["rows"]])
             ax.fill_between(rk, rm - rs, rm + rs, color=COLORS["random"], alpha=0.3, lw=0)
             ax.plot(rk, rm, color=COLORS["random"], label="random subspace of the same rank removed first")
-        ax.plot(k, y, "-", color=COLORS[v], lw=1.5, label="orthogonal probe sequence")
-        ax.set(xlabel="orthogonal probe number", ylim=(0, 102),
-               ylabel="accuracy within 15° (%)" if key == "cv_acc15" else "validation R² (%)",
+        ax.plot(k, y, "-", color=COLORS[v], lw=1.5,
+                label="orthogonal probe sequence, " + ("paper protocol (test)" if paper else "nested CV"))
+        metric = "accuracy within 15° (%)" if key.endswith("acc15") else "R² (%)"
+        ax.set(xlabel="orthogonal probe number", ylim=(0, 102), ylabel=("test " if paper else "held-out fold ") + metric,
                title=f"{v} encoding redundancy (paper Fig. 23 style)")
         ax.xaxis.set_major_locator(MaxNLocator(integer=True))
         legend_top(ax, 1)
@@ -221,15 +233,43 @@ def fig2(results, out, role="peak"):
             rm = np.array([row["cv_r2"] for row in r["random"]["rows"]])
             rs = np.array([row["cv_r2_seed_sd"] for row in r["random"]["rows"]])
             ax.fill_between(rx, rm - rs, rm + rs, color=COLORS["random"], alpha=0.3, lw=0)
-            ax.plot(rx, rm, color=COLORS["random"], label=f"random subspace ({r['random']['seeds']} seeds)")
-        ax.plot(x, m, "o-", color=COLORS[v], ms=3.5, label="orthogonal probe sequence")
+            ax.plot(rx, rm, color=COLORS["random"], label=f"random subspace, nested ({r['random']['seeds']} seeds)")
+        ax.plot(x, m, "o-", color=COLORS[v], ms=3.5, label="probe sequence, nested CV (fold mean ± SD)")
         ax.fill_between(x, m - s, m + s, color=COLORS[v], alpha=0.18, lw=0)
+        paper = r.get("paper")
+        if paper:
+            ax.plot([row["dims_removed"] for row in paper["rounds"]], [row["test_r2"] for row in paper["rounds"]],
+                    "--", color=COLORS[v], lw=1.2, label="probe sequence, paper protocol (test)")
         stop = 0.1 if r["kind"] == "circular" else 0.05
         ax.axhline(stop, color=COLORS["text"], lw=0.8, ls="--")
-        ax.set(xlabel="dimensions removed", title=f"{v}: {r['dims']} dims (layer {r['frac']:.2f})")
+        folds = f", folds {r['K_fold_min']}–{r['K_fold_max']}" if "K_fold_min" in r else ""
+        kp = f"; paper K = {paper['K']}" if paper else ""
+        ax.set(xlabel="dimensions removed", ylim=(-0.1, 1.02),
+               title=f"{v}: K = {r['K']} probes nested{folds}{kp}\n{r['dims']} dims (layer {r['frac']:.2f})")
         ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-        legend_top(ax, 1)
-    axes[0][0].set_ylabel("probe R² (5-fold mean)")
+        ax.legend(loc="upper right", fontsize=8, handlelength=1.5)
+    axes[0][0].set_ylabel("probe R²")
+    if n_rows == 3:
+        for ax, v in zip(axes[2], runs):
+            a = adam[v]
+            if not a:
+                ax.axis("off")
+                continue
+            key = "test_acc15" if "test_acc15" in a["rounds"][0] else "test_r2"
+            k = np.array([row["round"] for row in a["rounds"]])
+            y = 100 * np.array([row[key] for row in a["rounds"]])
+            bad = np.array([row["failed_to_train"] for row in a["rounds"]])
+            ax.plot(k, y, "-", color=COLORS[v], lw=1.2, label="Adam probe sequence (C.11 recipe), test")
+            ax.plot(k[bad], y[bad], "x", color=COLORS["text"], ms=6, label="round failed to train")
+            dips = a["sawtooth"]["dips_vs_failed"]["isolated_dips"]
+            ax.plot(dips, [100 * a["rounds"][d - 1][key] for d in dips], "o", mfc="none", mec=COLORS["text"], ms=8,
+                    label="isolated dip (sawtooth tooth)")
+            ax.set(xlabel="orthogonal probe number", ylim=(0, 102),
+                   ylabel="test accuracy within 15° (%)" if key == "test_acc15" else "test R² (%)",
+                   title=f"{v}, Adam recipe (layer {a['frac']:.2f}): K = {a['K_first']} probes (first at chance"
+                         + (", round cap)" if a["K_first"] == len(a["rounds"]) else ")"))
+            ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+            legend_top(ax, 1)
     fig.savefig(out / f"fig2_inlp{suffix(role)}.png")
     plt.close(fig)
 
@@ -244,10 +284,14 @@ def fig2b(results, out):
         body = [row for row in r["layers"] if not row["post_ln"]]
         x = [row["frac"] for row in body]
         loose = [row.get("K_loose", row.get("K_r2_03")) for row in body]
+        dims = "dims = 2K" if r["kind"] == "circular" else "dims = K"
         ax.plot(x, [np.nan if k is None else k for k in loose], "o-", ms=3.5, color=COLORS[v],
-                label=f"{v} (R² < {0.3 if r['kind'] == 'circular' else 0.1})")
-        ax.plot(x, [row["K"] for row in body], ":", color=COLORS[v], lw=1.2, label=f"{v}, strict stop")
-    ax.set(xlabel="layer fraction", ylabel="number of orthogonal probes K",
+                label=f"{v}, nested (R² < {0.3 if r['kind'] == 'circular' else 0.1}; {dims})")
+        ax.plot(x, [row["K"] for row in body], ":", color=COLORS[v], lw=1.2, label=f"{v}, nested, strict stop")
+        if "paper" in body[0]:
+            ax.plot(x, [np.nan if row["paper"]["K_loose"] is None else row["paper"]["K_loose"] for row in body], "--",
+                    color=COLORS[v], lw=1.0, alpha=0.7, label=f"{v}, paper protocol (test)")
+    ax.set(xlabel="layer fraction", ylabel="probes (K)",
            title="Probes trainable before chance, by depth (paper Fig. 22)")
     ax2 = ax.twinx()   # K depends on the per-layer ridge α (fixed at the step-1 CV value), so show it
     for v, r in runs.items():
