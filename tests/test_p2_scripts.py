@@ -83,8 +83,8 @@ def test_scripts_end_to_end(tmp_path, dataset):
     assert res["K"] == 11 and "behaviour_manifold" in res and "deviations_from_goodfire" in res
     assert res["summary_notes"][0].startswith("verdict: ") and res["energy_floor"]["to_curve"] > 0
     if dataset == "speed":
-        assert res["verdict"]["call"] == "negative"                    # a straight line: spline = chord
-        assert res["summary_notes"][0].startswith("verdict: n")
+        assert res["verdict"]["call"] in ("negative", "no_curvature", "path_geometry_positive")   # no indep gain
+        assert not res["verdict"]["independent_practical_gain_on"]
     else:
         assert "excess_to_curve" in res["verdict"]["spline_better_than_chord_on"]
     if dataset == "direction":

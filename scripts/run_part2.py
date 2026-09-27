@@ -744,93 +744,101 @@ def _mean_or_none(v):
     return float(np.mean(v)) if v else None
 
 
-NON_EQ9 = ("excess_to_curve", "excess_to_nearest_real", "probe_err_path", "probe_err_to_target")
+INDEPENDENT = ("probe_err_to_target", "excess_to_curve", "excess_to_nearest_real")     # not the geometry steered along
+PATH_GEOMETRY = ("probe_err_path", "probe_radius_min", "ordering_spearman", "behaviour_energy")
+HIGHER_IS_BETTER = ("probe_radius_min", "ordering_spearman", "nearest_real_R")
+SHORT = {"probe_err_to_target": "endpoint error", "excess_to_curve": "distance to curve",
+         "excess_to_nearest_real": "nearest-real distance", "probe_err_path": "path probe error",
+         "probe_radius_min": "min readout radius", "ordering_spearman": "ordering", "behaviour_energy": "Eq. 9 energy"}
 
 
-def curvature_verdict(gaps, sagitta, floors, periodic, metrics=("excess_to_curve", "excess_to_nearest_real",
-                                                                  "probe_err_path", "probe_err_to_target",
-                                                                  "behaviour_energy"), z=2.0,
-                      min_frac_floor=0.1, min_sagitta_ratio=0.5):
-    """Rule-based verdict over pairs (z SE), with an effect-size condition.
+def curvature_verdict(gaps, sagitta, floors, periodic, z=2.0, min_frac_floor=0.1, min_sagitta_ratio=0.5):
+    """Rule-based verdict, spline (manifold) vs chord (linear) over (source, target) pairs.
 
-    negative, "no curvature at knot scale: spline = chord": the spline coincides with the projected, reflected and
-    chord arms on every metric. negative, "no curvature benefit": better than the chord on no metric.
-    positive: better on some metric by a PRACTICAL margin, worse on none, and the geometry is resolvable (median
-    sagitta / centroid noise >= min_sagitta_ratio). Practical margin: energies >= min_frac_floor of the unsteered
-    real-clip floor (behaviour_energy: of floor x K, since E_BC sums K waypoints); probe_err_path >= the evaluation
-    probe's own out-of-sample error. below_noise_scale: statistically better but not by a practical margin, or the
-    sagitta is below the resolvable scale ("detectable but below the noise scale: no practical curvature benefit").
-    mixed: better on something and worse by a practical margin on something. Symmetric: a loss counts against the
-    spline only beyond the same practical margin used for gains; statistical-only losses are reported
-    (worse_statistical_only_on) and noted in the text but do not change the call.
-    floors: dict(to_curve, to_nearest_real, behaviour_mean, K, probe_oof).
-    Two overrides: a spline worse than the chord at the held-out ENDPOINT (probe_err_to_target) by more than the
-    probe's out-of-sample error is "negative: spline worse at held-out endpoint" whatever the path metrics say; and
-    Eq. 9 gains (behaviour_energy, circular at the steered layer) are reported but never enough for "positive": that
-    needs a practical gain on a non-Eq. 9 measure (NON_EQ9)."""
+    Measures split into INDEPENDENT readouts (held-out endpoint probe error, distance to a reference curve no arm was
+    built from, nearest-real distance) and PATH_GEOMETRY measures (probe error along the path, minimum readout
+    radius, ordering of the Eq. 9 argmax, Eq. 9 energy), which restate the geometry the arm was steered along.
+    Better/worse = beyond z SE; practical = beyond a margin (energies: min_frac_floor x unsteered real-clip floor;
+    endpoint/path error: the evaluation probe's out-of-sample error). A loss counts only beyond its margin.
+    Calls, in order:
+      negative_endpoint     "negative: spline worse at held-out endpoint" (endpoint loss beyond its margin)
+      no_curvature          "no curvature at knot scale": spline = chord = projected = reflected on every measure
+      mixed                 a practical gain and a practical loss on independent readouts
+      positive              practical gain on an independent readout and bend >= min_sagitta_ratio x noise
+      positive_unresolved   practical independent gain but bend below the noise scale
+      path_geometry_positive "path-geometry positive, independent-readout null": better on path-geometry measures
+                            only, no practical independent gain
+      negative              "negative: no curvature benefit": better on nothing
+    floors: dict(to_curve, to_nearest_real, behaviour_mean, K, probe_oof)."""
+    metrics = INDEPENDENT + tuple(q for q in PATH_GEOMETRY if periodic or q != "probe_radius_min")
+
     def g(o, q):
         r = gaps.get(f"manifold_minus_{o}", {}).get(q)
         return r if isinstance(r, dict) and r.get("se_over_pairs") else None
+
+    def gain(r, q):          # positive = spline better
+        return r["mean_over_pairs"] if q in HIGHER_IS_BETTER else -r["mean_over_pairs"]
+
     same = all(abs(r["mean_over_pairs"]) <= z * r["se_over_pairs"]
                for o in ("projected", "reflected") for q in metrics if (r := g(o, q)))
     margin = {"excess_to_curve": min_frac_floor * floors["to_curve"],
               "excess_to_nearest_real": min_frac_floor * floors["to_nearest_real"],
               "behaviour_energy": min_frac_floor * floors["behaviour_mean"] * floors["K"],
               "probe_err_path": floors["probe_oof"], "probe_err_to_target": floors["probe_oof"]}
-    better, worse, practical, worse_practical = [], [], [], []
+    better, worse, practical, worse_practical, vals = [], [], [], [], {}
     for q in metrics:
         r = g("linear", q)
         if r is None:
             continue
-        if r["mean_over_pairs"] < -z * r["se_over_pairs"]:
+        gv = gain(r, q)
+        vals[q] = gv
+        if gv > z * r["se_over_pairs"]:
             better.append(q)
-            if -r["mean_over_pairs"] >= margin[q]:
+            if q in margin and gv >= margin[q]:
                 practical.append(q)
-        elif r["mean_over_pairs"] > z * r["se_over_pairs"]:
+        elif gv < -z * r["se_over_pairs"]:
             worse.append(q)
-            if r["mean_over_pairs"] >= margin[q]:
+            if q in margin and -gv >= margin[q]:
                 worse_practical.append(q)
-    practical_non_eq9 = [q for q in practical if q in NON_EQ9]
+    indep_gain = [q for q in practical if q in INDEPENDENT]
+    indep_loss = [q for q in worse_practical if q in INDEPENDENT]
+    path_better = [q for q in better if q in PATH_GEOMETRY]
+    stat_only = [q for q in worse if q not in worse_practical]
     sag = np.array([t["sagitta"] for t in sagitta])
     ratio = np.array([t["sagitta_over_centroid_noise"] for t in sagitta])
-    noise = float(np.median(sag / ratio)) if len(sag) else float("nan")
     sag_ratio = float(np.median(ratio)) if len(sag) else float("nan")
-    geo = (f"sagitta median {float(np.median(sag)):.3g} vs centroid noise {noise:.3g} (PCA units)" if len(sag)
-           else "no held-out targets")
-    stat_only = [q for q in worse if q not in worse_practical]
-    note = f" (statistical-only losses, not counted: {stat_only})" if stat_only else ""
+    fmt = lambda qs: ", ".join(f"{SHORT[q]} {vals[q]:+.3g}" for q in qs) or "none"
+    path_part = f"spline better on path metrics ({fmt(path_better)})"
+    indep_part = ("on independent readouts: " + fmt([q for q in INDEPENDENT if q in vals])
+                  + f" (practical gain on: {[SHORT[q] for q in indep_gain] or 'none'})")
+    tail = f"{indep_part}; bend = {sag_ratio:.2g}x centroid noise"
+    if stat_only:
+        tail += f"; statistical-only losses, not counted: {[SHORT[q] for q in stat_only]}"
     if "probe_err_to_target" in worse_practical:
-        r = g("linear", "probe_err_to_target")
-        text = (f"negative: spline worse at held-out endpoint (probe error +{r['mean_over_pairs']:.3g} vs chord, "
-                f"margin {margin['probe_err_to_target']:.3g}); {geo}")
-        call = "negative"
+        call, head = "negative_endpoint", (f"negative: spline worse at held-out endpoint (margin "
+                                           f"{margin['probe_err_to_target']:.3g})")
     elif same and not better and not worse:
-        text, call = f"no curvature at knot scale: spline = chord; {geo}", "negative"
-    elif not better:
-        text = (f"negative: no curvature benefit, the chord is as good or better (spline worse on {worse}: the "
-                f"spline bends where the data do not); {geo}")
-        call = "negative"
-    elif not worse_practical and practical_non_eq9 and sag_ratio >= min_sagitta_ratio:
-        text = f"positive: spline better than chord on {practical_non_eq9} by a practical margin{note}; {geo}"
-        call = "positive"
-    elif not worse_practical:
-        text = (f"detectable but below the noise scale: no practical curvature benefit (spline better on {better} "
-                f"without a practical non-Eq. 9 gain, or sagitta/noise {sag_ratio:.2g} < {min_sagitta_ratio:g})"
-                f"{note}; {geo}")
-        call = "below_noise_scale"
+        call, head = "no_curvature", "no curvature at knot scale: spline = chord = projected = reflected"
+    elif indep_gain and indep_loss:
+        call, head = "mixed", f"mixed: practical loss on {[SHORT[q] for q in indep_loss]}"
+    elif indep_gain and sag_ratio >= min_sagitta_ratio:
+        call, head = "positive", "positive: practical gain on an independent readout"
+    elif indep_gain:
+        call, head = "positive_unresolved", "independent-readout gain with the bend below the noise scale"
+    elif path_better:
+        call, head = "path_geometry_positive", "path-geometry positive, independent-readout null"
     else:
-        text = f"mixed: spline better on {better}, worse by a practical margin on {worse_practical}{note}; {geo}"
-        call = "mixed"
+        call, head = "negative", "negative: no curvature benefit"
+    text = (f"{head}; {path_part} ... these restate the geometry steered along; {tail}" if path_better
+            else f"{head}; {tail}")
     return {"call": call, "text": text, "spline_better_than_chord_on": better, "practical_on": practical,
-            "practical_non_eq9_on": practical_non_eq9, "worse_by_practical_margin_on": worse_practical,
+            "independent_practical_gain_on": indep_gain, "worse_by_practical_margin_on": worse_practical,
             "spline_worse_than_chord_on": worse, "worse_statistical_only_on": stat_only,
-            "spline_equals_projected_reflected": bool(same),
-            "sagitta_over_noise_median": sag_ratio, "practical_margins": margin,
+            "path_geometry_better_on": path_better, "spline_equals_projected_reflected": bool(same),
+            "sagitta_over_noise_median": sag_ratio, "practical_margins": margin, "gains": vals,
             "rule": (f"{z:g} SE over (source, target) pairs; practical: energies >= {min_frac_floor:g} x real-clip "
-                     f"floor, path/endpoint error >= probe out-of-sample error, sagitta/noise >= "
-                     f"{min_sagitta_ratio:g}; positive needs a non-Eq. 9 practical gain; a loss counts only beyond "
-                     f"the same practical margin (statistical-only losses reported); endpoint worse by its margin "
-                     f"overrides to negative"),
+                     f"floor, endpoint/path error >= probe out-of-sample error; a loss counts only beyond its "
+                     f"margin; positive needs a practical INDEPENDENT gain and bend >= {min_sagitta_ratio:g}x noise"),
             "metrics": list(metrics)}
 
 

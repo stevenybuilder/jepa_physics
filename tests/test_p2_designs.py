@@ -440,43 +440,43 @@ def test_behaviour_floor_and_replace_masking():
 
 
 def test_curvature_verdict_rules():
-    sag = [{"sagitta": 0.1, "sagitta_over_centroid_noise": 0.2}]
     floors = {"to_curve": 1.0, "to_nearest_real": 1.0, "behaviour_mean": 0.1, "K": 10, "probe_oof": 5.0}
+    lo = [{"sagitta": 0.1, "sagitta_over_centroid_noise": 0.2}]
+    hi = [{"sagitta": 1.0, "sagitta_over_centroid_noise": 0.8}]
     mk = lambda m: {"mean_over_pairs": m, "se_over_pairs": 0.01}
-    zero = {q: mk(0.0) for q in ("excess_to_curve", "excess_to_nearest_real", "probe_err_path", "probe_err_to_target",
-                                 "behaviour_energy")}
-    gaps = {f"manifold_minus_{o}": dict(zero) for o in ("projected", "reflected", "linear")}
-    v = P2.curvature_verdict(gaps, sag, floors, False)
-    assert v["call"] == "negative" and v["text"].startswith("no curvature at knot scale: spline = chord")
-    assert "0.1 vs centroid noise 0.5" in v["text"]
-    gaps["manifold_minus_linear"]["excess_to_curve"] = mk(0.5)
-    assert P2.curvature_verdict(gaps, sag, floors, False)["text"].startswith("negative: no curvature benefit")
-    # statistically better (> 2 SE) but tiny: below the noise scale
-    gaps["manifold_minus_linear"]["excess_to_curve"] = mk(-0.05)
-    v = P2.curvature_verdict(gaps, sag, floors, False)
-    assert v["call"] == "below_noise_scale" and v["text"].startswith("detectable but below the noise scale")
-    # large gain but unresolvable sagitta: still below the noise scale
-    gaps["manifold_minus_linear"]["excess_to_curve"] = mk(-0.5)
-    assert P2.curvature_verdict(gaps, sag, floors, False)["call"] == "below_noise_scale"
-    # large gain and resolvable geometry: positive
-    sag_ok = [{"sagitta": 1.0, "sagitta_over_centroid_noise": 0.8}]
-    v = P2.curvature_verdict(gaps, sag_ok, floors, False)
-    assert v["call"] == "positive" and v["practical_on"] == ["excess_to_curve"]
-    # Eq. 9 gain alone is not enough for positive
-    gaps["manifold_minus_linear"]["excess_to_curve"] = mk(0.0)
-    gaps["manifold_minus_linear"]["behaviour_energy"] = mk(-1.0)
-    v = P2.curvature_verdict(gaps, sag_ok, floors, False)
-    assert v["call"] == "below_noise_scale" and v["practical_on"] == ["behaviour_energy"]
-    # worse at the held-out endpoint by more than the probe's error: negative, whatever the path says
-    gaps["manifold_minus_linear"]["excess_to_curve"] = mk(-0.5)
-    gaps["manifold_minus_linear"]["probe_err_to_target"] = mk(6.0)
-    v = P2.curvature_verdict(gaps, sag_ok, floors, False)
-    assert v["call"] == "negative" and v["text"].startswith("negative: spline worse at held-out endpoint")
-    gaps["manifold_minus_linear"]["probe_err_to_target"] = mk(1.0)       # worse within the margin: not counted
-    v = P2.curvature_verdict(gaps, sag_ok, floors, False)
-    assert v["call"] == "positive" and v["worse_statistical_only_on"] == ["probe_err_to_target"]
-    assert "statistical-only losses" in v["text"]
-    v = P2.curvature_verdict(gaps, sag, floors, False)                   # same, unresolvable sagitta
-    assert v["call"] == "below_noise_scale"
-    gaps["manifold_minus_linear"]["excess_to_nearest_real"] = mk(0.5)    # a beyond-margin non-endpoint loss: mixed
-    assert P2.curvature_verdict(gaps, sag_ok, floors, False)["call"] == "mixed"
+    qs = ("excess_to_curve", "excess_to_nearest_real", "probe_err_path", "probe_err_to_target", "behaviour_energy",
+          "probe_radius_min", "ordering_spearman")
+    gaps = {f"manifold_minus_{o}": {q: mk(0.0) for q in qs} for o in ("projected", "reflected", "linear")}
+    L = gaps["manifold_minus_linear"]
+    v = P2.curvature_verdict(gaps, lo, floors, True)
+    assert v["call"] == "no_curvature" and v["text"].startswith("no curvature at knot scale")
+    # radius and ordering better (path geometry), independent readouts null
+    L["probe_radius_min"], L["ordering_spearman"] = mk(0.25), mk(0.11)
+    v = P2.curvature_verdict(gaps, lo, floors, True)
+    assert v["call"] == "path_geometry_positive"
+    assert v["text"].startswith("path-geometry positive, independent-readout null")
+    assert "these restate the geometry steered along; on independent readouts:" in v["text"]
+    assert "min readout radius +0.25" in v["text"] and "bend = 0.2x centroid noise" in v["text"]
+    # a statistical-only independent loss is reported, not counted
+    L["excess_to_nearest_real"] = mk(0.05)
+    v = P2.curvature_verdict(gaps, lo, floors, True)
+    assert v["call"] == "path_geometry_positive" and v["worse_statistical_only_on"] == ["excess_to_nearest_real"]
+    # practical independent gain: positive only when the bend is resolvable
+    L["excess_to_curve"] = mk(-0.5)
+    assert P2.curvature_verdict(gaps, hi, floors, True)["call"] == "positive"
+    assert P2.curvature_verdict(gaps, lo, floors, True)["call"] == "positive_unresolved"
+    # an Eq. 9 gain alone is path geometry, never positive
+    L["excess_to_curve"] = mk(0.0)
+    L["probe_radius_min"], L["ordering_spearman"], L["behaviour_energy"] = mk(0.0), mk(0.0), mk(-1.0)
+    assert P2.curvature_verdict(gaps, hi, floors, True)["call"] == "path_geometry_positive"
+    # practical gain plus practical loss on independent readouts: mixed
+    L["excess_to_curve"], L["excess_to_nearest_real"] = mk(-0.5), mk(0.5)
+    assert P2.curvature_verdict(gaps, hi, floors, True)["call"] == "mixed"
+    # endpoint worse beyond its margin overrides everything
+    L["probe_err_to_target"] = mk(6.0)
+    v = P2.curvature_verdict(gaps, hi, floors, True)
+    assert v["call"] == "negative_endpoint" and v["text"].startswith("negative: spline worse at held-out endpoint")
+    # better on nothing
+    gaps2 = {f"manifold_minus_{o}": {q: mk(0.0) for q in qs} for o in ("projected", "reflected", "linear")}
+    gaps2["manifold_minus_linear"]["excess_to_curve"] = mk(0.5)
+    assert P2.curvature_verdict(gaps2, lo, floors, False)["text"].startswith("negative: no curvature benefit")
