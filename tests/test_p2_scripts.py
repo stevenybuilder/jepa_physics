@@ -131,6 +131,13 @@ def test_part2_heldout_context(tmp_path):
     assert res["context"]["steered_dataset"] == "speed" and len(ids) == len(X)
     man = res["summary"]["manifold"]["overall"]
     assert man["nearest_real_R_context"] > 0.3 and man["nearest_real_R"] > 0.3
+    pd.read_csv(ctx / "table.csv").drop(columns=["motion"]).to_csv(ctx / "table.csv", index=False)
+    run_script("run_part2.py", tmp, "direction", "--variable", "direction", "--n-clips", "6", "--K", "5",
+               "--n-controls", "2", "--no-bf16", "--context-dataset", "speed", "--nuisance-regress",
+               "--context-act-dir", str(ctx / "act"), "--context-table", str(ctx / "table.csv"),
+               "--context-split", str(ctx / "split.json"))
+    res = json.loads((tmp / "results" / "p2_steer_direction_direction_L1_scattered_ctx-speed_nuis.json").read_text())
+    assert res["nuisance_regressed"]["context"]["covariates_filled_with_primary_train_mean"] == ["motion=velocity"]
 
 
 def test_load_pair_checks_alignment(tmp_path):

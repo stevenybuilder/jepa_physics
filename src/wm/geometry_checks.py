@@ -465,30 +465,58 @@ def velocity_plane_check(X, theta_deg, speed, n_speed_bins=8, n_dir_bins=16):
 
 # ---------------------------------------------------------------- nuisance regression and alternative subspaces -----
 
-def nuisance_matrix(df, variable):
-    """Nuisance covariates for `variable` (Engels et al. 2405.14860 App. K style): every physical covariate except the
-    variable itself: speed, acceleration, motion type (one-hot), start_x, start_y, and (cos, sin) of direction when
-    direction is not the variable. Constant columns dropped. Returns (N [n, c], column names). The QA json holds
-    only a dataset summary of disk visibility, so a per-clip visible fraction is not included."""
-    cols, names = [], []
+def nuisance_columns(df, variable):
+    """Nuisance covariates for `variable` (Engels et al. 2405.14860 App. K style), by name: every physical covariate
+    except the variable itself: speed, acceleration, start_x, start_y, (cos, sin) of direction when direction is not
+    the variable, motion type (velocity vs acceleration indicator). A column the table lacks is returned as None. The QA json holds only a
+    dataset summary of disk visibility, so a per-clip visible fraction is not included."""
     th = np.radians(df["theta_degrees"].to_numpy(float))
-    cand = {"speed_mps": df["speed_mps"], "acceleration_mps2": df["acceleration_mps2"],
-            "start_x": df["start_x"] if "start_x" in df else None, "start_y": df["start_y"] if "start_y" in df else None}
+    get = lambda c: df[c].to_numpy(float) if c in df else None
     skip = {"speed": "speed_mps", "acceleration": "acceleration_mps2"}.get(variable)
-    for name, col in cand.items():
-        if col is not None and name != skip:
-            cols.append(np.asarray(col, float))
-            names.append(name)
+    cols = {c: get(c) for c in ("speed_mps", "acceleration_mps2", "start_x", "start_y") if c != skip}
     if variable != "direction":
-        cols += [np.cos(th), np.sin(th)]
-        names += ["cos_theta", "sin_theta"]
-    if "motion" in df:
-        for mtype in sorted(df["motion"].unique())[1:]:
-            cols.append((df["motion"] == mtype).to_numpy(float))
-            names.append(f"motion={mtype}")
-    N = np.stack(cols, 1)
-    keep = N.std(0) > 1e-12
-    return N[:, keep], [n for n, k in zip(names, keep) if k]
+        cols.update({"cos_theta": np.cos(th), "sin_theta": np.sin(th)})
+    cols["motion=velocity"] = (df["motion"] == "velocity").to_numpy(float) if "motion" in df else None  # vs accel.
+    return cols
+
+
+def nuisance_matrix(df, variable, names=None, fill=None):
+    """[n, c] covariate matrix. names=None: all available columns that are not constant in this table. names given
+    (the primary set's columns): exactly those, in that order; a column this table lacks is filled with fill[name]
+    (the primary train mean) and listed in `filled`. Returns (N, names, filled)."""
+    cols = nuisance_columns(df, variable)
+    n = len(df)
+    if names is None:
+        names = [c for c, v in cols.items() if v is not None and v.std() > 1e-12]
+    filled = [c for c in names if cols.get(c) is None]
+    N = np.stack([cols[c] if cols.get(c) is not None else np.full(n, fill[c]) for c in names], 1)
+    return N, list(names), filled
+
+
+def fit_nuisance(X, df, variable, train):
+    """Fit the standardiser and nuisance regression on `train` rows of one dataset (the primary). Covariates constant
+    on those rows are dropped. Returns a model for apply_nuisance and the residuals of X."""
+    N, names, _ = nuisance_matrix(df, variable)
+    keep = N[train].std(0) > 1e-12
+    N, names = N[:, keep], [c for c, k in zip(names, keep) if k]
+    X = np.asarray(X, dtype=np.float64)
+    mu, sd = X[train].mean(0), X[train].std(0) + 1e-8
+    Xs = (X - mu) / sd
+    M = np.column_stack([np.ones(len(N)), N])
+    B = np.linalg.lstsq(M[train], Xs[train], rcond=None)[0]
+    R = Xs - M @ B
+    r2 = 1 - (R[train] ** 2).sum() / (((Xs[train] - Xs[train].mean(0)) ** 2).sum())
+    model = {"mu": mu, "sd": sd, "B": B, "names": names, "variable": variable,
+             "fill": dict(zip(names, N[train].mean(0))), "r2_train": float(r2)}
+    return model, R
+
+
+def apply_nuisance(model, X, df):
+    """Residuals of another dataset (e.g. the held-out context set) in the PRIMARY coordinate system: the primary's
+    standardiser and regression coefficients, applied to this dataset's covariates. Returns (R, filled columns)."""
+    N, _, filled = nuisance_matrix(df, model["variable"], model["names"], model["fill"])
+    Xs = (np.asarray(X, dtype=np.float64) - model["mu"]) / model["sd"]
+    return Xs - np.column_stack([np.ones(len(N)), N]) @ model["B"], filled
 
 
 def regress_out(X, N, train):

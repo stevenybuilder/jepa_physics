@@ -223,8 +223,8 @@ def run(args):
     angle = "labels" if args.labels_angle else "unsupervised"
     nuisance = None
     if args.nuisance_regress:
-        N, names = gc.nuisance_matrix(d["df"], variable)
-        X_res, r2 = gc.regress_out(d["X"], N, d["is_train"])
+        nmodel, X_res = gc.fit_nuisance(d["X"], d["df"], variable, d["is_train"])
+        names, r2 = nmodel["names"], nmodel["r2_train"]
         d = {**d, "X": X_res}
         nuisance = {"covariates": names, "variance_explained_by_nuisance_train": r2,
                     "space": "train-standardised activations minus their least-squares fit on the covariates"}
@@ -245,8 +245,11 @@ def run(args):
     if args.context_dataset:
         c = load_inputs(args.context_dataset, args.layer, args.variable or args.dataset, args.context_act_dir,
                         args.context_table, args.context_split)
-        if args.nuisance_regress:           # the context set's own covariates, fit on its own train rows
-            c = {**c, "X": gc.regress_out(c["X"], gc.nuisance_matrix(c["df"], variable)[0], c["is_train"])[0]}
+        if args.nuisance_regress:   # the PRIMARY standardiser and coefficients, applied to the context covariates
+            X_c, filled = gc.apply_nuisance(nmodel, c["X"], c["df"])
+            c = {**c, "X": X_c}
+            nuisance["context"] = {"applied": "primary train standardiser + regression coefficients",
+                                   "covariates_filled_with_primary_train_mean": filled}
         assert c["X"].shape[1] == d["X"].shape[1], "primary and context activations differ in width"
         ctest = np.flatnonzero(c["role"] == "test")
         ctx["near_ctx"] = mf.NearestRealReadout(c["X"][ctest], c["y"][ctest])

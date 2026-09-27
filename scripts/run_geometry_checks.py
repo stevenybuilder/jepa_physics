@@ -147,8 +147,8 @@ def run(args):
                                           "count-weighted smoothing spline (B.1) and the chord; pick run_part2 "
                                           "--spline from this train-only check")
     if args.nuisance_regress:
-        N, names = gc.nuisance_matrix(d["df"], variable)
-        R, r2 = gc.regress_out(d["X"], N, tr)
+        nm, R = gc.fit_nuisance(d["X"], d["df"], variable, tr)
+        names, r2 = nm["names"], nm["r2_train"]
         nr, *_ = analyse(R[tr], y, periodic, d["df"][tr], args, None if args.plane == "inlp" else basis, full=False)
         out["nuisance_regressed"] = {"covariates": names, "variance_explained_by_nuisance_train": r2,
                                      "space": "train-standardised activations minus their least-squares fit on the "

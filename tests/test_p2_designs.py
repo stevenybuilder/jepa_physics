@@ -325,3 +325,25 @@ def test_single_provenance_module():
     assert common.provenance is pv.result_provenance and common.git_commit is pv.git_commit
     for block in (pv.result_provenance({"pool": "meanpool", "point": 3}), pv.provenance(seeds={"seed": 0}, layer=3)):
         assert {"commit", "dirty", "git_commit", "git_dirty_src_or_scripts", "split_sha256"} <= set(block)
+
+
+def test_nuisance_fit_on_primary_applied_to_context():
+    import pandas as pd
+    rng = np.random.default_rng(0)
+    n = 200
+    df = pd.DataFrame({"theta_degrees": rng.uniform(0, 360, n), "speed_mps": rng.uniform(1, 7, n),
+                       "acceleration_mps2": 0.0, "start_x": rng.normal(size=n), "start_y": rng.normal(size=n),
+                       "motion": np.where(np.arange(n) % 2, "velocity", "acceleration")})
+    X = rng.normal(size=(n, 10)) + np.outer(df["speed_mps"], np.ones(10))
+    train = np.arange(n) < 150
+    model, R = gc.fit_nuisance(X, df, "direction", train)
+    assert "acceleration_mps2" not in model["names"] and "speed_mps" in model["names"]   # constant in primary train
+    assert np.abs(R[train].T @ df["speed_mps"].to_numpy()[train]).max() < 1e-6          # speed regressed out
+    # context set: constant speed, no start_x column -> primary coefficients, start_x filled with the primary mean
+    ctx = df.drop(columns=["start_x"]).assign(speed_mps=2.0)
+    Xc = rng.normal(size=(n, 10))
+    Rc, filled = gc.apply_nuisance(model, Xc, ctx)
+    assert filled == ["start_x"]
+    N = np.column_stack([np.ones(n), *[np.full(n, model["fill"][c]) if c == "start_x" else
+                                        gc.nuisance_columns(ctx, "direction")[c] for c in model["names"]]])
+    np.testing.assert_allclose(Rc, (Xc - model["mu"]) / model["sd"] - N @ model["B"], atol=1e-10)
