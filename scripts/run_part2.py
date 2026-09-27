@@ -811,7 +811,7 @@ def curvature_verdict(gaps, sagitta, floors, periodic, z=2.0, min_frac_floor=0.1
     path_part = f"spline better on path metrics ({fmt(path_better)})"
     indep_part = ("on independent readouts: " + fmt([q for q in INDEPENDENT if q in vals])
                   + f" (practical gain on: {[SHORT[q] for q in indep_gain] or 'none'})")
-    tail = f"{indep_part}; bend = {sag_ratio:.2g}x centroid noise"
+    tail = f"{indep_part}; bend = {sag_ratio:.2g}x centroid noise; values are spline gains over the chord (+ = better)"
     if stat_only:
         tail += f"; statistical-only losses, not counted: {[SHORT[q] for q in stat_only]}"
     if "probe_err_to_target" in worse_practical:
