@@ -26,3 +26,14 @@ def write_fake_meanpool(root, dataset, d=32, seed=0):
     out.mkdir(parents=True, exist_ok=True)
     np.save(out / "meanpool.npy", acts)
     return out / "meanpool.npy"
+
+
+def write_fake_diskpool(root, dataset, nan_rows=(), d=32, seed=0):
+    """[N, 26, 8, d] float16 disk pool from the fake meanpool signal (+ small per-step noise); rows in
+    nan_rows are NaN at every step (disk out of frame throughout)."""
+    mp = np.load(write_fake_meanpool(root, dataset, d, seed))
+    rng = np.random.default_rng(seed + 1)
+    dp = (mp[:, :, None, :] + 0.05 * rng.standard_normal((mp.shape[0], 26, 8, d))).astype(np.float16)
+    dp[list(nan_rows)] = np.nan
+    np.save(root / dataset / "vjepa2" / "diskpool.npy", dp)
+    return root / dataset / "vjepa2" / "diskpool.npy"

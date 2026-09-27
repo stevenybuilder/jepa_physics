@@ -12,7 +12,7 @@ import numpy as np
 
 from wm.inlp import basis_path, load_basis
 from wm.metrics import radius_summary, readout_radius
-from wm.probes import (ALPHAS, RESULTS, cv_select_alpha, fit_ridge, layer_fraction, load_activations,
+from wm.probes import (ALPHAS, RESULTS, cv_select_alpha, drop_nan_clips, fit_ridge, layer_fraction, load_activations,
                        load_sweep, load_table, predict, score, split_rows, standardized_layer, targets,
                        write_json)
 
@@ -325,7 +325,9 @@ def run_steering(dataset, variable=None, point=None, pool="meanpool", act_root=N
     Y, kind, _ = targets(df, variable)
     assert kind in ("circular", "scalar"), "steering is defined for direction, speed and acceleration"
     tr, te, folds = split_rows(dataset, df)
-    Xtr, Xte = standardized_layer(load_activations(dataset, pool, model, act_root), point, tr, te)
+    acts = load_activations(dataset, pool, model, act_root)
+    tr, te, folds, n_nan = drop_nan_clips(acts, tr, te, folds)
+    Xtr, Xte = standardized_layer(acts, point, tr, te)
     off, off_info = off_target_probe(Xtr, Xte, df, tr, te, folds, kind)
     label_all = df["theta_degrees"].to_numpy(float) if kind == "circular" else Y[:, 0]
     labels = label_all[te]
@@ -351,7 +353,7 @@ def run_steering(dataset, variable=None, point=None, pool="meanpool", act_root=N
            "frac": layer_fraction(point), "alpha": probes["alpha"], "n_test": len(te),
            "layer_role": layer_role, "is_peak": point == sweep["availability"]["peak"],
            "is_onset": point == sweep["availability"]["onset"], "eval_probe": eval_report, "eval_probe_in_sample": eval_report["in_sample"],
-           "space": "train-standardised activations",
+           "space": "train-standardised activations", "all_nan_clips_excluded": n_nan,
            "arm": "paper: unit target (sin θ*, cos θ*) / true value required of every probe", **res,
            "random_nulls": nulls, "radius_matched": res_m, "off_target_probe": off_info}
     s = res["single"]

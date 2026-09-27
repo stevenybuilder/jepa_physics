@@ -80,3 +80,18 @@ def test_random_model_control_steps_2_3(tmp_path):
     av = json.loads((results / "p1a_direction_direction_meanpool.json").read_text())["availability"]
     assert "selectivity_diff_ci" in av and len(av["selectivity_diff_ci"]) == 25
     assert av["precision_onset"] is not None and "POST-HOC" in av["precision_rule"]
+
+
+def test_diskpool_all_nan_clips_are_excluded_not_imputed(tmp_path):
+    from fake_acts import write_fake_diskpool
+    from wm.probes import split_rows
+    acts, results = tmp_path / "acts", tmp_path / "results"
+    tr, te, _ = split_rows("direction")
+    nan_rows = list(tr[:7]) + list(te[:3])
+    write_fake_diskpool(acts, "direction", nan_rows)
+    run("run_step1.py", "--dataset", "direction", "--pool", "diskpool", "--act-root", str(acts), "--results", str(results))
+    out = json.loads((results / "p1a_direction_direction_diskpool.json").read_text())
+    info = out["all_nan_clips"]
+    assert info["n_all_nan_train"] == 7 and info["n_all_nan_test"] == 3 and info["per_layer_test"][12] == 3
+    assert out["n_train"] == len(tr) - 7 and out["n_test"] == len(te) - 3
+    assert len(out["test_theta"]) == len(te) - 3

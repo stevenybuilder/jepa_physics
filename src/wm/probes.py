@@ -266,6 +266,26 @@ def layer_matrix(acts, point):
     return X.astype(np.float64)
 
 
+def nan_by_layer(acts):
+    """Bool [points, N]: clip is NaN at every time step at that layer point (disk pool: disk out of
+    frame in all 8 steps). All False for meanpool."""
+    if acts.ndim == 3:
+        return np.zeros((acts.shape[1], acts.shape[0]), bool)
+    return np.stack([np.isnan(layer_matrix(acts, p)).all(axis=1) for p in range(acts.shape[1])])
+
+
+def all_nan_clips(acts):
+    """Bool [N]: NaN-at-every-step clips at any layer point; these are excluded, not imputed."""
+    return nan_by_layer(acts).any(axis=0)
+
+
+def drop_nan_clips(acts, tr, te, folds):
+    """Remove NaN-at-every-step clips (all_nan_clips) from the split rows; returns tr, te, folds, n_dropped."""
+    bad = all_nan_clips(acts)
+    k_tr, k_te = ~bad[tr], ~bad[te]
+    return tr[k_tr], te[k_te], folds[k_tr], {"train": int((~k_tr).sum()), "test": int((~k_te).sum())}
+
+
 def split_rows(dataset, df=None):
     """Row positions of train and test clips and the fold of each train row."""
     df = load_table(dataset) if df is None else df
@@ -313,6 +333,16 @@ def layer_sweep(dataset, variable, pool="meanpool", model="vjepa2", shuffled=Fal
     motion_tr, motion_te = df["motion"].to_numpy()[tr], df["motion"].to_numpy()[te]
     motions = sorted(set(motion_tr)) if len(set(motion_tr)) > 1 else []
     acts = load_activations(dataset, pool, model, act_root)
+    nan_layer = nan_by_layer(acts)
+    nan_clip = nan_layer.any(axis=0)
+    nan_info = {"n_all_nan_train": int(nan_clip[tr].sum()), "n_all_nan_test": int(nan_clip[te].sum()),
+                "per_layer_train": nan_layer[:, tr].sum(axis=1).tolist(),
+                "per_layer_test": nan_layer[:, te].sum(axis=1).tolist(),
+                "rule": "clips NaN at every time step (disk out of frame throughout) are excluded from fit and scores, not imputed"}
+    if nan_clip.any():
+        keep_tr, keep_te = ~nan_clip[tr], ~nan_clip[te]
+        tr, folds, Ytr, motion_tr = tr[keep_tr], folds[keep_tr], Ytr[keep_tr], motion_tr[keep_tr]
+        te, Yte, motion_te = te[keep_te], Yte[keep_te], motion_te[keep_te]
 
     layers, oofs, test_preds = [], [], []
     for point in range(N_POINTS):
@@ -363,7 +393,7 @@ def layer_sweep(dataset, variable, pool="meanpool", model="vjepa2", shuffled=Fal
 
     out = {"dataset": dataset, "variable": variable, "kind": kind, "pool": pool, "model": model,
            "shuffled": shuffled, "alphas": ALPHAS.tolist(), "n_train": len(tr), "n_test": len(te),
-           "layers": layers, "availability": avail}
+           "all_nan_clips": nan_info, "layers": layers, "availability": avail}
     if kind == "circular":   # (ŝ, ĉ) on test at onset, peak and final block, for fig1b
         shown = sorted({p for p in (avail["onset"], avail["peak"], LAST_BLOCK) if p is not None})
         out["test_theta"] = df["theta_degrees"].to_numpy()[te].tolist()

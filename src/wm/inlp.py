@@ -8,7 +8,7 @@ from pathlib import Path
 
 import numpy as np
 
-from wm.probes import (N_POINTS, PROJECT_ROOT, RESULTS, fit_ridge, layer_fraction, load_activations,
+from wm.probes import (N_POINTS, PROJECT_ROOT, RESULTS, drop_nan_clips, fit_ridge, layer_fraction, load_activations,
                        load_sweep, load_table, predict, result_name, split_rows, standardized_layer,
                        targets, write_json)
 
@@ -193,13 +193,15 @@ def run_inlp(dataset, variable, point=None, pool="meanpool", seeds=10, with_rand
     df = load_table(dataset)
     Y, kind, score_fn = targets(df, variable)
     tr, te, folds = split_rows(dataset, df)
-    Xtr, Xte = standardized_layer(load_activations(dataset, pool, model, act_root), point, tr, te)
+    acts = load_activations(dataset, pool, model, act_root)
+    tr, te, folds, n_nan = drop_nan_clips(acts, tr, te, folds)
+    Xtr, Xte = standardized_layer(acts, point, tr, te)
     summary, Q, W, b = inlp(Xtr, Y[tr], Xte, Y[te], folds, alpha, score_fn, kind)
     save_basis(basis_path(dataset, variable, point, pool, inlp_dir, model), Q, W, b, alpha, point, kind)
     out = {"dataset": dataset, "variable": variable, "kind": kind, "pool": pool, "model": model, "point": point,
            "frac": layer_fraction(point), "is_peak": point == sweep["availability"]["peak"],
            "is_onset": point == sweep["availability"]["onset"],
-           **summary, "sawtooth": sawtooth(summary, W)}
+           "all_nan_clips_excluded": n_nan, **summary, "sawtooth": sawtooth(summary, W)}
     if with_random:
         out["random"] = random_removal_curve(Xtr, Y[tr], Xte, Y[te], folds, alpha, score_fn,
                                              rank_schedule(summary), seeds)
@@ -216,6 +218,7 @@ def run_dims_vs_layer(dataset, variable, pool="meanpool", act_root=None, results
     Y, kind, score_fn = targets(df, variable)
     tr, te, folds = split_rows(dataset, df)
     acts = load_activations(dataset, pool, model, act_root)
+    tr, te, folds, n_nan = drop_nan_clips(acts, tr, te, folds)
     rows = []
     for point in range(N_POINTS):
         alpha = sweep["layers"][point]["alpha"]
