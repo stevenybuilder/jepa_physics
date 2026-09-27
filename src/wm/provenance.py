@@ -10,7 +10,11 @@ from pathlib import Path
 from wm.data import PROJECT_ROOT
 from wm.splits import SEED, SPLIT_PATH
 
-PAPER_LAYER = 8          # the physics paper's layer for these experiments
+PAPER_LAYER = 9          # the physics paper's "layer 8" (0-23, block outputs) = output of block 9 = our point 9
+PAPER_LAYER_ALT = 8      # our point 8 (output of block 8), run beside it in case the paper's index means the input
+LAYER_NOTE = ("paper layers are 0-23 and each probes a block's output, so the paper's layer L = our point L+1 "
+              "(point 0 = embedding, point k = output of block k, point 25 = post-LN). paper_layer = point 9 "
+              "(the paper's layer 8); paper_layer_alt = point 8.")
 
 
 def sha256_file(path):
@@ -38,7 +42,8 @@ def git_commit():
 
 
 def layer_role(dataset, layer, variable=None, model="vjepa2", results_dir=None):
-    """peak | onset | paper_layer | exploratory, from step 1's results/p1a_{dataset}_{variable}_meanpool*.json."""
+    """peak | onset | paper_layer | paper_layer_alt | exploratory, from step 1's
+    results/p1a_{dataset}_{variable}_meanpool*.json."""
     variable = variable or dataset
     name = f"p1a_{dataset}_{variable}_meanpool" + ("" if model == "vjepa2" else f"_{model}") + ".json"
     path = Path(results_dir or PROJECT_ROOT / "results") / name
@@ -48,8 +53,23 @@ def layer_role(dataset, layer, variable=None, model="vjepa2", results_dir=None):
         roles += [r for r in ("peak", "onset") if av.get(r) == layer]
     if layer == PAPER_LAYER:
         roles.append("paper_layer")
+    if layer == PAPER_LAYER_ALT:
+        roles.append("paper_layer_alt")
     return {"layer_role": roles[0] if roles else "exploratory", "all_roles": roles,
             "source": str(path) if path.exists() else f"missing: {path}"}
+
+
+def step_layers(sweep, role="all", alt=True):
+    """{point: role label} for steps 2-3. role: peak | onset | both (probes.chosen_layers), paper (point 9, plus
+    point 8 as paper_layer_alt if alt), or all (onset, peak, paper [, paper_alt]). Coinciding points are run once
+    with joined labels."""
+    from wm.probes import chosen_layers
+    out = {} if role == "paper" else dict(chosen_layers(sweep, "both" if role == "all" else role))
+    if role in ("paper", "all"):
+        extra = [(PAPER_LAYER, "paper_layer")] + ([(PAPER_LAYER_ALT, "paper_layer_alt")] if alt else [])
+        for point, name in extra:
+            out[point] = f"{out[point]}+{name}" if point in out else name
+    return out
 
 
 def provenance(split=None, seeds=None, **fields):

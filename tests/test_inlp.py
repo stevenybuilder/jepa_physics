@@ -179,3 +179,12 @@ def test_adam_sequence_logs_and_flags_untrained_rounds(monkeypatch):
     assert r2[1]["at_chance_on_train"] and not r2[0]["at_chance_on_train"] and "movement only" in s2["failed_rule"]
     assert r2[-1]["at_chance_on_train"] and not r2[-1]["failed_to_train"]   # info exhausted, but the probe moved
     assert s2["K_first"] == 1 and s2["K_patience"] == 3     # the paper's first-at-chance rule stops at the tooth
+
+
+def test_step_layers_paper_layer_is_point_9_with_alt_8():
+    from wm.provenance import PAPER_LAYER, PAPER_LAYER_ALT, step_layers
+    sweep = {"availability": {"peak": 20, "onset": 9}}
+    assert PAPER_LAYER == 9 and PAPER_LAYER_ALT == 8
+    assert step_layers(sweep, "all") == {20: "peak", 9: "onset+paper_layer", 8: "paper_layer_alt"}
+    assert step_layers(sweep, "all", alt=False) == {20: "peak", 9: "onset+paper_layer"}
+    assert step_layers(sweep, "paper", alt=False) == {9: "paper_layer"} and step_layers(sweep, "peak") == {20: "peak"}

@@ -25,7 +25,7 @@ from wm.adam_probe import fit_adam, init_linear
 from wm.probes import (ALPHAS, N_POINTS, PROJECT_ROOT, RESULTS, cv_select_alpha, drop_nan_clips, fit_ridge, layer_fraction, load_activations,
                        load_sweep, load_table, predict, result_name, split_rows, standardized_layer,
                        targets)
-from wm.provenance import PAPER_LAYER, result_provenance
+from wm.provenance import LAYER_NOTE, PAPER_LAYER, PAPER_LAYER_ALT, result_provenance
 
 INLP_DIR = PROJECT_ROOT / "artifacts" / "inlp"
 TEST_READ = ("paper protocol: the test split is scored at every round of the all-train probe sequence; this is "
@@ -328,7 +328,8 @@ def layer_data(dataset, variable, pool, model, act_root):
 
 def layer_flags(point, sweep):
     return {"frac": layer_fraction(point), "is_peak": point == sweep["availability"]["peak"],
-            "is_onset": point == sweep["availability"]["onset"], "is_paper_layer": point == PAPER_LAYER}
+            "is_onset": point == sweep["availability"]["onset"], "is_paper_layer": point == PAPER_LAYER,
+            "is_paper_layer_alt": point == PAPER_LAYER_ALT, "layer_note": LAYER_NOTE}
 
 
 def run_inlp(dataset, variable, point=None, pool="meanpool", seeds=10, with_random=True,
@@ -477,8 +478,11 @@ def adam_sequence(Xtr, Ytr, Xte, Yte, score_fn, kind, max_rounds=None, batch=Non
 
 
 def run_adam_sequence(dataset, variable, point, pool="meanpool", act_root=None, results_dir=None, model="vjepa2",
-                      batch=None, max_rounds=None, patience=3, seed=0):
-    """Adam-recipe probe sequence at one layer; writes results/p1b_{dataset}_{variable}_{pool}_L{point}_adam.json."""
+                      batch=64, max_rounds=None, patience=3, seed=0):
+    """Adam-recipe probe sequence at one layer. batch 64 (default, as the App. B parity check) or 0/None = full batch
+    (only 100 / 50 Adam steps at lr 1e-3). Writes results/p1b_{dataset}_{variable}_{pool}_L{point}_adam_b{batch}.json
+    or ..._adam_full.json."""
+    batch = batch or None
     sweep = load_sweep(dataset, variable, pool, results_dir, model)
     Y, kind, score_fn, tr, te, folds, acts, n_nan = layer_data(dataset, variable, pool, model, act_root)
     Xtr, Xte = standardized_layer(acts, point, tr, te)
@@ -486,10 +490,11 @@ def run_adam_sequence(dataset, variable, point, pool="meanpool", act_root=None, 
     out = {"dataset": dataset, "variable": variable, "kind": kind, "pool": pool, "model": model, "point": point,
            **layer_flags(point, sweep), "all_nan_clips_excluded": n_nan, **summary}
     dv = summary["sawtooth"]["dips_vs_failed"]
-    print(f"{dataset}/{variable} point {point} adam: K_first={summary['K_first']} K_patience={summary['K_patience']} "
+    tag = "full" if summary["recipe"]["full_batch"] else f"b{batch}"
+    print(f"{dataset}/{variable} point {point} adam ({tag}): K_first={summary['K_first']} K_patience={summary['K_patience']} "
           f"dips={dv['isolated_dips']} failed={dv['failed_rounds']}")
     write_result(Path(results_dir or RESULTS) / (result_name("p1b", dataset, variable, pool, model)
-                                                 + f"_L{point}_adam.json"), out, test_read=TEST_READ)
+                                                 + f"_L{point}_adam_{tag}.json"), out, test_read=TEST_READ)
     return out
 
 
