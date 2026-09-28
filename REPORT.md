@@ -19,11 +19,12 @@ per-position R² is 0.56 at block 1, 0.89 at block 5 and 0.96 at block 6, with n
 code is training-selective: the random-init network pools to 0.86–0.88 at every depth, but its mean per-position R² never
 exceeds 0.39 (best single position 0.76–0.86), the paper's "fragmented local signal that pooling adds up" regime, which V-JEPA 2 leaves within six
 blocks. On a harder rendered set (textured floor, shading, smaller disk; 392 clips, 8 directions, three render seeds) the
-per-position curve rises most between points 4 and 6 on every seed (+0.24 to +0.29) and only +0.07 ± 0.02 across
+per-position curve rises most between points 4 and 6 on every seed (+0.24 to +0.29 over two blocks; +0.09 to +0.16 per
+block where point 5 was sampled) and only +0.07 ± 0.02 across
 points 8→9, where the 90% rule fires on one seed (9) and one point earlier on the other two (8); a random-init network
 plateaus at 0.57–0.62 from point 6 on the same clips. What does replicate at the paper's depth on all three seeds is
-half-frame transfer: negative at points 7–8 (−1.0 to −1.8 at 8) and positive from point 9 (+1.4 to +1.9 jump), after
-0.69–0.73 at point 1 (§3.1). VideoMAE (pixel reconstruction) matches V-JEPA 2 on the pooled curves for all three variables.
+half-frame transfer: it falls from 0.69–0.73 at point 1 to −1.0 to −1.8 at point 8 and jumps back to about chance at
+point 9 (+1.4 to +1.9), a dip the random-init network never shows; the point-1 level returns only by point 22 (§3.1). VideoMAE (pixel reconstruction) matches V-JEPA 2 on the pooled curves for all three variables.
 **Step 2 reproduces in part.** Every variable needs tens of probes at the paper's layer, far outside a random-removal
 band. Measured four ways, that count reflects anisotropy: a whitened erasure needs one probe at every point; the code
 is rank-2 linear plus a second harmonic and a nonlinear residual (§3.2). Speed does not need fewer probes than
@@ -71,7 +72,7 @@ test does not recover the ring. This is a probe of the forecast on one stimulus 
 - **Representation.** `meanpool`, the mean over all 2,048 tokens, is used for every Part 1 result, as in the paper.
   `diskpool` (tokens the disk covers) and `timepool` (per time step) are used for controls.
 - **Data.** direction 1,500 clips (64 angles, a mix of constant-velocity and accelerating-from-rest clips); speed
-  1,536 (64 speeds × 64 directions); acceleration 1,536. The README is explicit: *"The supplied dataset is
+  1,536 (64 speeds, 24 clips each); acceleration 1,536. The README is explicit: *"The supplied dataset is
   deliberately smaller and simpler than the datasets in the paper. The aim is to reproduce the methodology and
   qualitative findings, not the paper's exact numerical results."* The stimulus is one orange disk on a flat
   background with a fixed camera. Acceleration clips all start at rest, so acceleration, mean speed and displacement
@@ -168,7 +169,8 @@ the CI. Source: `p1a_{var}_meanpool.json`.
 **Mean-pooled curve.** Direction is at 0.875 after one block, and no variable declines late. Disk-pooling changes little
 (direction peak 0.994, onset still 2[^disk]). The onset does not depend on how the CV folds are grouped (the paper's
 App. B says "5-fold grouped" without the key): direction onset is 2 [2, 2] with stratified, direction-grouped, start-grouped and
-8-sector-grouped folds (block 1 R² 0.875 / 0.847 / 0.869 / 0.828), and speed onset 1 [1, 1] with stratified and
+8-sector-grouped folds (block 1 fold-mean R² 0.875 / 0.847 / 0.869; the sector figure, 0.828, is pooled out-of-fold R²,
+since a one-sector fold makes per-fold R² meaningless), and speed onset 1 [1, 1] with stratified and
 speed-grouped folds[^gcv]. Per the paper's own C.5,
 though, the pooled curve is expected to rise early and gradually, so it is the wrong readout to test the emergence zone
 against. The per-patch test is below.
@@ -256,23 +258,28 @@ training-selective. The random-init network pools to 0.86–0.88 at every point,
 0.39 (best single position 0.76–0.86) and its cross-half R² is 0.61–0.74. That is the paper's regime of fragmented local signal that pooling adds up;
 V-JEPA 2 leaves it within six blocks on these clips. (3) On the hard set, three render seeds (fresh starts and floor texture, otherwise identical)[^seeds]. The
 per-position curve rises most between points 4 and 6 on every seed (+0.286 / +0.245 / +0.237; every position is above
-R² 0.5 from point 6 on every seed); across points 8 → 9 it rises +0.093 / +0.065 / +0.065, so the 90%-of-max onset is
+R² 0.5 from point 7 on every seed, 0.996 of them at point 6 on seed 1); across points 8 → 9 it rises +0.093 / +0.065 / +0.065, so the 90%-of-max onset is
 9 [9, 9] on seed 0 and 8 [8, 9] on seeds 1 and 2; pooled-patch onset on seed 0 is 9 [8, 9]. A random-init network on
 the same clips reaches 0.57 at point 6 and 0.60–0.62 from point 8, so the trained network leads by 0.24–0.35 from point
-6 on and not at all at points 1–4, where random matches or beats it (0.41 / 0.54 vs 0.49 / 0.52). Cross-half transfer
+6 on and not at point 4, where random is ahead (0.54 vs 0.52; at point 1 it is behind, 0.41 vs 0.49); on seed 1 the
+random curve rises 0.36 → 0.61 with a 90% onset of 7. Cross-half transfer
 is 0.69–0.73 at point 1, negative at points 7 and 8 on every seed (−1.03 to −1.84 at 8), positive at 9 on every seed
-(jump +1.50 / +1.42 / +1.92), then 0.58 ± 0.15 at 12 and 0.76 ± 0.03 at 22; at points 4–6 its sign varies by seed. The
-random network's cross-half is +0.27 at points 8–9 on seed 0 and negative at every point on seed 1, so this readout
-cannot separate trained from random. The negative
+(jump +1.50 / +1.42 / +1.92), then 0.58 ± 0.15 at 12 and 0.76 ± 0.03 at 22; the dip begins at points 4–5 (seed 1: −1.16 at 5, +0.22 at 6, −1.03 at 8, so its 5 → 6 recovery of +1.37 nearly
+matches its 8 → 9 one; seed 2: −0.43 at 5). The recovery at 9 is only to about chance (0.08 / 0.39 / 0.08); the
+point-1 level returns by point 22. The random network shows no dip: on seed 0 its cross-half rises monotonically from
+−0.72 at point 1 to +0.27 at points 8–9 (8 → 9 change −0.01), and on seed 1 it stays negative throughout (−0.21 at 9,
+8 → 9 change +0.22). So the dip-and-jump shape is training-specific; the level at point 9 is not. The negative
 values are a between-half miscalibration, not a mirror flip: at point 8 the cross-half MAE is 56° against 11° within a
 half, where a left-right mirror of 8 directions would give 90°. On the paper-layout set the per-position onset is 6 and
-cross-half transfer is already 0.81 at block 1, so the step on the hard set comes from the rendering. Caveats: per-position
+cross-half transfer is already 0.81 at block 1, so the hard set's dip comes from the rendering (each render seed changes the 7 starts and the floor texture
+together, so seed-to-seed swings cannot be assigned to either). Caveats: per-position
 features are averaged over the 8 time steps; the half-frame test is one pooled probe per half; the rendered sets sample
 points 1, 4, 6, 7, 8, 9, 10, 12, 16 and 22 only (seeds 1–2 add 2, 3 and 5), so their onsets of 4 and 6 are upper
 bounds; they reuse 7 start positions across all (θ, v) pairs; each hard set is 392 clips.
 
 **Verdict.** On a harder stimulus, across three render seeds, one part of the paper's signature replicates: half-frame
-transfer is negative at points 7–8 and positive from point 9 on every seed (paper layers 6–7 → 8). The sharp per-patch
+transfer dips to −1.0 to −1.8 at point 8 and jumps back to about chance at point 9 on every seed (paper layers 7 → 8),
+a shape the random network lacks. The sharp per-patch
 rise does not: the largest rise is at points 4 → 6 on every seed, the 90% onset is 8 on two seeds and 9 on one, and the
 random network's per-position curve also plateaus by point 6. A 5-fold refit on seed 0 gives per-fold onsets 8, 9, 9,
 8, 8 on the stored stratified folds and 9 in all five folds when whole start positions are held out (per-position
@@ -281,8 +288,9 @@ across 8 → 9 appears in 5 of 5 folds under both schemes[^hfolds].
 On the supplied clips neither part appears: the per-patch code forms by block 6 with no step at points 8 → 9, while the mean-pooled
 curve is early under every fold grouping and at the paper's clip count. What training changes on both stimulus sets is
 the per-position code from point 6 on (supplied: V-JEPA 2 0.94–0.98 against a mean of 0.39 for the random network;
-hard: 0.81–0.97 against 0.57–0.62), not pooled availability; the half-frame dip is not separable from random, whose
-transfer varies by render seed.
+hard: 0.80–0.97 against 0.57–0.62 on seed 0 and 0.52–0.61 on seed 1), not pooled availability; the half-frame dip
+and jump are training-specific too (the random network's cross-half has no dip on either seed), though its level at
+point 9 is not.
 
 **Objective axis: VideoMAE** (v1 ViT-L, `MCG-NJU/videomae-large`, pixel reconstruction; 224-px input, 1,568 tokens; the paper used the VideoMAE-v2 family)[^obj]. VideoMAE matches V-JEPA 2
 on every variable. Direction: block 1 0.886 vs 0.875, peak 0.992 (point 21) vs 0.991 (22), onset 2 for both. Speed:
@@ -927,7 +935,7 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
   not a training effect. The per-patch probes show what training does add: the random network never gets past a mean
   per-position R² of 0.39, the regime of fragmented local signal that pooling adds up, while V-JEPA 2 reaches 0.96 by
   block 6 on the supplied clips and, on a harder stimulus, forms that code with its largest rise at points 4 → 6 on every render seed and, across the paper's depth, loses
-  and recovers half-frame transfer (§3.1). So the emergence zone is a claim about the per-patch readout, which the paper's C.5 says, and a mean-pooled
+  half-frame transfer and jumps back to chance, which the random network never does (§3.1). So the emergence zone is a claim about the per-patch readout, which the paper's C.5 says, and a mean-pooled
   curve can neither confirm nor refute it. VideoMAE matches V-JEPA 2 on every pooled Part 1 measure (I did not run it
   per patch), so none of this is specific to latent prediction or shows that the variables are used to predict. The authors' OpenReview response states that "all 13 models encode motion direction
   (R²≥.43), regardless of objective", classification CNNs included, so availability is their own finding; training buys
@@ -942,13 +950,13 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
 
 ## 7. Limitations and next steps
 
-- **Stimulus.** A single disk on a flat background is nearly pixel-decodable. The half-frame dip-and-recovery at the paper's
-  depth appears only on the hard rendered set (§3.1), which has 392 clips per render seed and 8 directions, covers
+- **Stimulus.** A single disk on a flat background is nearly pixel-decodable. The half-frame dip and jump at the paper's
+  depth appear only on the hard rendered set (§3.1), which has 392 clips per render seed and 8 directions, covers
   direction only and reuses 7 start positions across all (θ, v) cells; the sharp per-position rise does not appear on
   any seed. So it is a partial reproduction on one small stimulus family, not on the supplied data.
 - **Per-patch probes.** Features are averaged over the 8 time steps at each position, so time structure within a
   position is not probed; the half-frame test is one pooled probe per half; the rendered sets were read at 10 points
-  only, so their onsets of 4 and 6 are upper bounds. VideoMAE and speed were not run per patch.
+  only (13 on hard seeds 1–2), so their onsets of 4 and 6 are upper bounds. VideoMAE and speed were not run per patch.
 - **Training dynamics.** With intermediate V-JEPA 2 checkpoints, the random-init vs final contrast becomes a curve.
   That is the natural test of when precision and the ring appear.
 - **Predictor readout is a probe; the edit overshoots.** A probe of the pooled forecast, not a rendered future;
@@ -1042,7 +1050,7 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
 [^pp]: `results/p1a_perpatch_direction_{vjepa2,vjepa2_constvel,random,vjepa2_hard,vjepa2_paper_layout}.json` (`curves.{perpos_mean_r2,pooled_mean_r2,pooled_frac_ge_0.5,cross_half_r2,meanpool_r2}`, `onsets.*`, `layers[].halves` for the cross-half MAE, `methods`, `provenance.time_averaging`); `figures/fig1g_perpatch_direction.png`, `fig1h_perpatch_heatmaps.png`; rendered-set layout (7 shared starts) in `results/session2_stimuli_validation.json` (`layout.start_rule`) and `scripts/render_hard_stimuli.py`.
 [^hfolds]: `results/p1a_perpatch_hard_folds.json` (`stratified` and `start_grouped`: per point `perpos_mean_r2` mean ± SD over folds, `cross_half_r2` per fold, `onset_per_fold`; paper-layout set alongside), cc41a6c.
 [^seeds]: `results/p1a_perpatch_hard_seeds.json` (per seed `layers[].perpos.mean_r2`, `halves.cross_r2`, `onsets`, `largest_jump`), `results/p1a_perpatch_direction_vjepa2_hard_seed{1,2}.json`, `results/p1a_perpatch_direction_random_hard{,_seed1}.json`, `figures/fig1j_perpatch_hard_seeds.png`; render seeds at 2abb3e9, extraction on the box from a frozen worktree (GPU forward 611 s), 3a8d7c7.
-[^gcv]: `results/p1a_grouped_cv.json` (`sets.{direction,speed}_{vjepa2,random}.{stratified,direction_grouped,start_grouped,speed_grouped}.{onset,onset_ci}`); `figures/fig1i_grouped_cv.png`.
+[^gcv]: `results/p1a_grouped_cv.json` (`sets.{direction,speed}_{vjepa2,random}.{stratified,direction_grouped,start_grouped,speed_grouped}.{onset,onset_ci}`; `sector_grouped` with its pooled-prediction `score`); `figures/fig1i_grouped_cv.png`.
 [^psv]: `results/p1a_paperscale_velocity_only.json` (`summary`, `models.vjepa2.n392_velocity.onset_per_seed`).
 [^raw]: `results/p1b_raw_coordinates.json` (`cells.{direction,speed}_L{8,9}.{raw,stored_zscored}.{nested_K,paper_K}`).
 [^saw]: `results/p1b_sawtooth_metrics.json` (`cells.{direction,speed}_L{8,9}.{ridge_nested,ridge_paper,adam_b64,adam_full}.stats.{r2,bacc8,acc15}`); consecutive readout angles from `sawtooth.mean_consecutive_angle_deg` in `results/p1b_direction_direction_meanpool_L{2,8,9,22}.json`; the paper's teeth read from its Fig. 23 by eye.

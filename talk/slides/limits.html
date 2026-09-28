@@ -4,7 +4,7 @@
 <div style="flex:1; display:flex; flex-direction:column; gap:16px">
 <h3 style="font-size:30px; font-weight:600; color:#C8553D">Limitations</h3>
 <ul style="font-size:26px; line-height:1.5; color:#4A5568">
-<li>One disk, one background, a fixed camera. The per-patch step shows only on the hard set: 392 clips, 8 directions, one render seed, 7 shared start positions.</li>
+<li>One disk, one background, a fixed camera. The half-frame dip shows only on the hard set: 392 clips per seed, 8 directions, three render seeds, 7 shared start positions per seed.</li>
 <li>Per-patch probes use features averaged over the 8 time steps and one pooled probe per half-frame; the rendered sets were read at 10 points, so their early onsets are upper bounds.</li>
 <li>Acceleration clips start at rest, so acceleration, mean speed and displacement are one variable.</li>
 <li>The predictor readout is a linear probe on the pooled forecast, not a rendered future; four targets sit in one 45° arc; position overshoots. The spline's matched-norm lead is a block-22 result; at the encoder output the chord does as well.</li>
@@ -24,5 +24,5 @@
 </div>
 </div>
 <p style="position:absolute; left:128px; bottom:64px; font-size:24px; color:#6a7179">Limitations · REPORT §7 · 16 / 17</p>
-<aside>The per-patch test is done: her appendix says the jump is per patch and pooled probes rise gradually, and on the hard render only the half-frame dip-and-recovery lands at her depth; the per-position rise is earlier on all three seeds. On the supplied clips the per-patch code forms by block 6 with no step. The first thing I'd add with another day is per-token probes and more render styles.</aside>
+<aside>The per-patch test is done: her appendix says the jump is per patch and pooled probes rise gradually, and on the hard render only the half-frame dip and jump land at her depth; the per-position rise is earlier on all three seeds. On the supplied clips the per-patch code forms by block 6 with no step. The first thing I'd add with another day is per-token probes and more render styles.</aside>
 </section>
