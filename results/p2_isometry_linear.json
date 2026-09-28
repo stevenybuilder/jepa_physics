@@ -1,0 +1,626 @@
+{
+ "provenance": {
+  "split_file": "/private/tmp/claude-501/-Users-stevenyang/ae13a11f-788a-4ea6-a4fa-c5d4c3df1c0e/scratchpad/wt_2look/splits/split_v1.json",
+  "split_sha256": "98e6310c40bf29e81bd8b6bf4b1ac603b89e4104d40ac1047b15dd5dc2be2df2",
+  "seeds": {
+   "bootstrap": 0
+  },
+  "commit": "33a2cbd503149f28cfc857b0db1de8d5a222654a",
+  "dirty": false,
+  "git_commit": "33a2cbd503149f28cfc857b0db1de8d5a222654a",
+  "git_dirty_src_or_scripts": false,
+  "timestamp_utc": "2026-09-28T01:52:17+00:00",
+  "layers": [
+   8,
+   12,
+   22
+  ],
+  "pool": "meanpool",
+  "k": 64
+ },
+ "method": "Goodfire A.5: Pearson r over the upper triangle of 64 x 64 pairwise distance matrices; key = activation_spline.distance.behaviour_space; activation_spline smooth = run_part2's count-weighted smoothing spline, interp = Goodfire's interpolating spline; distance geo = arc length along it, lin = chord in PCA-64 between the same vertices",
+ "caveat": "eq9_same_layer is built from the steered layer's own activations (circular, as in Goodfire's mountain-car B.1); encoder_out, predictor and concept are not. For a planar circle the chord is a monotone function of the arc (2R sin(d/2)), so Pearson geo-vs-lin gaps on a ring are small by construction; Spearman is reported beside Pearson.",
+ "layers": {
+  "8": {
+   "layer_role": "paper_layer_alt",
+   "all_roles": [
+    "paper_layer_alt"
+   ],
+   "source": "/private/tmp/claude-501/-Users-stevenyang/ae13a11f-788a-4ea6-a4fa-c5d4c3df1c0e/scratchpad/wt_2look/results/p1a_direction_direction_meanpool.json",
+   "angle_choice": {
+    "angle": "unsupervised",
+    "plane": "centroid"
+   },
+   "n_knot_clips": 720,
+   "n_probe_clips": 480,
+   "correlations": {
+    "smooth.geo.eq9_same_layer": {
+     "pearson": 0.8327131581235938,
+     "spearman": 0.8355457782897129,
+     "pearson_ci95": [
+      0.4635605028369664,
+      0.8995965335234074
+     ]
+    },
+    "smooth.geo.encoder_out": {
+     "pearson": 0.8771039424237165,
+     "spearman": 0.8770641646911097,
+     "pearson_ci95": [
+      0.47640791356499507,
+      0.9080907283308334
+     ]
+    },
+    "smooth.geo.predictor": {
+     "pearson": 0.8622182858872609,
+     "spearman": 0.8622267136640926,
+     "pearson_ci95": [
+      0.48366409638605956,
+      0.915387853231549
+     ]
+    },
+    "smooth.geo.concept": {
+     "pearson": 0.873963919302206,
+     "spearman": 0.8741811730466768,
+     "pearson_ci95": [
+      0.4988477978473357,
+      0.9143265655549768
+     ]
+    },
+    "smooth.lin.eq9_same_layer": {
+     "pearson": 0.8240610489132516,
+     "spearman": 0.8224732703018083,
+     "pearson_ci95": [
+      0.6735339104748471,
+      0.8002412757457192
+     ]
+    },
+    "smooth.lin.encoder_out": {
+     "pearson": 0.8034914301822913,
+     "spearman": 0.7891267573141003,
+     "pearson_ci95": [
+      0.6248038990378281,
+      0.8002921735172032
+     ]
+    },
+    "smooth.lin.predictor": {
+     "pearson": 0.797547260526127,
+     "spearman": 0.7840460510802922,
+     "pearson_ci95": [
+      0.6174620800372885,
+      0.7885491181960085
+     ]
+    },
+    "smooth.lin.concept": {
+     "pearson": 0.8099938140513061,
+     "spearman": 0.7975350266201889,
+     "pearson_ci95": [
+      0.657269069189215,
+      0.7938870615688327
+     ]
+    },
+    "interp.geo.eq9_same_layer": {
+     "pearson": 0.7661583088561517,
+     "spearman": 0.7762273950400678,
+     "pearson_ci95": [
+      0.12414527035556236,
+      0.8573017076730973
+     ]
+    },
+    "interp.geo.encoder_out": {
+     "pearson": 0.8017002630760008,
+     "spearman": 0.8073851876209257,
+     "pearson_ci95": [
+      0.12699615208220189,
+      0.871162129809995
+     ]
+    },
+    "interp.geo.predictor": {
+     "pearson": 0.78453264412103,
+     "spearman": 0.7906183078360698,
+     "pearson_ci95": [
+      0.13486528747665885,
+      0.8529171309367697
+     ]
+    },
+    "interp.geo.concept": {
+     "pearson": 0.7997438965731716,
+     "spearman": 0.8060148371436855,
+     "pearson_ci95": [
+      0.17889259480680056,
+      0.8628165519399379
+     ]
+    },
+    "interp.lin.eq9_same_layer": {
+     "pearson": 0.7250059337484401,
+     "spearman": 0.7511455725119422,
+     "pearson_ci95": [
+      0.5773193742267612,
+      0.6954142956567139
+     ]
+    },
+    "interp.lin.encoder_out": {
+     "pearson": 0.7136751979410406,
+     "spearman": 0.7316388140835979,
+     "pearson_ci95": [
+      0.5539795345015041,
+      0.7002070240506663
+     ]
+    },
+    "interp.lin.predictor": {
+     "pearson": 0.7139942560724584,
+     "spearman": 0.7315705519977274,
+     "pearson_ci95": [
+      0.545197344565712,
+      0.6962306492615322
+     ]
+    },
+    "interp.lin.concept": {
+     "pearson": 0.714457312695332,
+     "spearman": 0.7331292089693018,
+     "pearson_ci95": [
+      0.5644181981496716,
+      0.6884595410358227
+     ]
+    }
+   },
+   "geo_minus_lin": {
+    "smooth.eq9_same_layer": {
+     "geo_minus_lin": 0.008652109210342207,
+     "ci95": [
+      -0.2838333979928404,
+      0.16008815193374992
+     ]
+    },
+    "smooth.encoder_out": {
+     "geo_minus_lin": 0.07361251224142518,
+     "ci95": [
+      -0.2573238179674063,
+      0.17715690990150343
+     ]
+    },
+    "smooth.predictor": {
+     "geo_minus_lin": 0.0646710253611339,
+     "ci95": [
+      -0.21744629304929436,
+      0.18449010472958124
+     ]
+    },
+    "smooth.concept": {
+     "geo_minus_lin": 0.06397010525089986,
+     "ci95": [
+      -0.2504169057012557,
+      0.18038845822951763
+     ]
+    },
+    "interp.eq9_same_layer": {
+     "geo_minus_lin": 0.041152375107711525,
+     "ci95": [
+      -0.523984530928296,
+      0.20658836842472783
+     ]
+    },
+    "interp.encoder_out": {
+     "geo_minus_lin": 0.08802506513496022,
+     "ci95": [
+      -0.512297822226331,
+      0.22193733666937998
+     ]
+    },
+    "interp.predictor": {
+     "geo_minus_lin": 0.0705383880485716,
+     "ci95": [
+      -0.48970138571644944,
+      0.21962675379750493
+     ]
+    },
+    "interp.concept": {
+     "geo_minus_lin": 0.0852865838778396,
+     "ci95": [
+      -0.47866013019248177,
+      0.2181145741930037
+     ]
+    }
+   }
+  },
+  "12": {
+   "layer_role": "exploratory",
+   "all_roles": [],
+   "source": "/private/tmp/claude-501/-Users-stevenyang/ae13a11f-788a-4ea6-a4fa-c5d4c3df1c0e/scratchpad/wt_2look/results/p1a_direction_direction_meanpool.json",
+   "angle_choice": {
+    "angle": "unsupervised",
+    "plane": "centroid"
+   },
+   "n_knot_clips": 720,
+   "n_probe_clips": 480,
+   "correlations": {
+    "smooth.geo.eq9_same_layer": {
+     "pearson": 0.972216478665598,
+     "spearman": 0.9739045186691804,
+     "pearson_ci95": [
+      0.7739448652227991,
+      0.9775024500078534
+     ]
+    },
+    "smooth.geo.encoder_out": {
+     "pearson": 0.9627197599947634,
+     "spearman": 0.9629276958214855,
+     "pearson_ci95": [
+      0.7568740517390236,
+      0.97981130245572
+     ]
+    },
+    "smooth.geo.predictor": {
+     "pearson": 0.9591331452901352,
+     "spearman": 0.9594102673652308,
+     "pearson_ci95": [
+      0.7467083474308109,
+      0.9757521365115548
+     ]
+    },
+    "smooth.geo.concept": {
+     "pearson": 0.9615511264095239,
+     "spearman": 0.9619313035136907,
+     "pearson_ci95": [
+      0.7496418439920152,
+      0.9803282828639689
+     ]
+    },
+    "smooth.lin.eq9_same_layer": {
+     "pearson": 0.8809218300319687,
+     "spearman": 0.8811686699331236,
+     "pearson_ci95": [
+      0.8351902767137697,
+      0.8775050183857401
+     ]
+    },
+    "smooth.lin.encoder_out": {
+     "pearson": 0.8941001258481852,
+     "spearman": 0.8908034381161989,
+     "pearson_ci95": [
+      0.8213920989540261,
+      0.8840737995818767
+     ]
+    },
+    "smooth.lin.predictor": {
+     "pearson": 0.8971143272823262,
+     "spearman": 0.8947655067223413,
+     "pearson_ci95": [
+      0.796803890742638,
+      0.8826209059564705
+     ]
+    },
+    "smooth.lin.concept": {
+     "pearson": 0.887521491786648,
+     "spearman": 0.8830356544982145,
+     "pearson_ci95": [
+      0.833747572310925,
+      0.8795988003846477
+     ]
+    },
+    "interp.geo.eq9_same_layer": {
+     "pearson": 0.9233564839662262,
+     "spearman": 0.9252186044639703,
+     "pearson_ci95": [
+      0.14793681199501282,
+      0.9653208956970857
+     ]
+    },
+    "interp.geo.encoder_out": {
+     "pearson": 0.9159821055402868,
+     "spearman": 0.9156845839666862,
+     "pearson_ci95": [
+      0.1337828976726641,
+      0.9597219259331867
+     ]
+    },
+    "interp.geo.predictor": {
+     "pearson": 0.904573636425749,
+     "spearman": 0.9044407702319484,
+     "pearson_ci95": [
+      0.1154355770876549,
+      0.9619500425070131
+     ]
+    },
+    "interp.geo.concept": {
+     "pearson": 0.9179787450264845,
+     "spearman": 0.9179413354444207,
+     "pearson_ci95": [
+      0.17981458290336097,
+      0.968034248757169
+     ]
+    },
+    "interp.lin.eq9_same_layer": {
+     "pearson": 0.8702456341316346,
+     "spearman": 0.8629925352101372,
+     "pearson_ci95": [
+      0.8068799877474037,
+      0.8583180798974124
+     ]
+    },
+    "interp.lin.encoder_out": {
+     "pearson": 0.8763102144425337,
+     "spearman": 0.8622184329922586,
+     "pearson_ci95": [
+      0.7959757807748399,
+      0.8655363838698551
+     ]
+    },
+    "interp.lin.predictor": {
+     "pearson": 0.878403471711998,
+     "spearman": 0.8649580904858624,
+     "pearson_ci95": [
+      0.7777800648485337,
+      0.8621890950635931
+     ]
+    },
+    "interp.lin.concept": {
+     "pearson": 0.8710871682776159,
+     "spearman": 0.8569267574155408,
+     "pearson_ci95": [
+      0.8087813632754124,
+      0.8606161627362344
+     ]
+    }
+   },
+   "geo_minus_lin": {
+    "smooth.eq9_same_layer": {
+     "geo_minus_lin": 0.09129464863362935,
+     "ci95": [
+      -0.08526200770808896,
+      0.11921182822067512
+     ]
+    },
+    "smooth.encoder_out": {
+     "geo_minus_lin": 0.06861963414657823,
+     "ci95": [
+      -0.11001340188690654,
+      0.12173577786216296
+     ]
+    },
+    "smooth.predictor": {
+     "geo_minus_lin": 0.06201881800780895,
+     "ci95": [
+      -0.10263296597285097,
+      0.12968332595654267
+     ]
+    },
+    "smooth.concept": {
+     "geo_minus_lin": 0.07402963462287593,
+     "ci95": [
+      -0.11802194354058505,
+      0.11869336814561351
+     ]
+    },
+    "interp.eq9_same_layer": {
+     "geo_minus_lin": 0.05311084983459158,
+     "ci95": [
+      -0.6908047102486515,
+      0.12124476766655165
+     ]
+    },
+    "interp.encoder_out": {
+     "geo_minus_lin": 0.039671891097753154,
+     "ci95": [
+      -0.6975238571048855,
+      0.11744900131213853
+     ]
+    },
+    "interp.predictor": {
+     "geo_minus_lin": 0.026170164713751,
+     "ci95": [
+      -0.7113705053429288,
+      0.12192782166733887
+     ]
+    },
+    "interp.concept": {
+     "geo_minus_lin": 0.04689157674886857,
+     "ci95": [
+      -0.6520499633685647,
+      0.1255809554792781
+     ]
+    }
+   }
+  },
+  "22": {
+   "layer_role": "peak",
+   "all_roles": [
+    "peak"
+   ],
+   "source": "/private/tmp/claude-501/-Users-stevenyang/ae13a11f-788a-4ea6-a4fa-c5d4c3df1c0e/scratchpad/wt_2look/results/p1a_direction_direction_meanpool.json",
+   "angle_choice": {
+    "angle": "unsupervised",
+    "plane": "activation"
+   },
+   "n_knot_clips": 720,
+   "n_probe_clips": 480,
+   "correlations": {
+    "smooth.geo.eq9_same_layer": {
+     "pearson": 0.7174793350097666,
+     "spearman": 0.7299358647760138,
+     "pearson_ci95": [
+      0.5642113880911058,
+      0.8342539532759267
+     ]
+    },
+    "smooth.geo.encoder_out": {
+     "pearson": 0.7092294288882148,
+     "spearman": 0.721668927667936,
+     "pearson_ci95": [
+      0.5364109570447821,
+      0.8398012291553456
+     ]
+    },
+    "smooth.geo.predictor": {
+     "pearson": 0.6942776597757319,
+     "spearman": 0.7072149212492583,
+     "pearson_ci95": [
+      0.5393998795820878,
+      0.8181179187665066
+     ]
+    },
+    "smooth.geo.concept": {
+     "pearson": 0.7144111320569911,
+     "spearman": 0.7274492436519538,
+     "pearson_ci95": [
+      0.5547936738220796,
+      0.8342515714215872
+     ]
+    },
+    "smooth.lin.eq9_same_layer": {
+     "pearson": 0.773146430469412,
+     "spearman": 0.7597944559745061,
+     "pearson_ci95": [
+      0.6961780336847347,
+      0.7881128305132429
+     ]
+    },
+    "smooth.lin.encoder_out": {
+     "pearson": 0.7767739245111215,
+     "spearman": 0.760933134761241,
+     "pearson_ci95": [
+      0.6883151574342479,
+      0.7964142997095001
+     ]
+    },
+    "smooth.lin.predictor": {
+     "pearson": 0.7794594430849716,
+     "spearman": 0.7634681173044598,
+     "pearson_ci95": [
+      0.6821028370811034,
+      0.7846493621972511
+     ]
+    },
+    "smooth.lin.concept": {
+     "pearson": 0.7663886799043907,
+     "spearman": 0.7518021740761939,
+     "pearson_ci95": [
+      0.690683607296881,
+      0.7823035704287148
+     ]
+    },
+    "interp.geo.eq9_same_layer": {
+     "pearson": 0.6063786887813534,
+     "spearman": 0.6508196766689097,
+     "pearson_ci95": [
+      0.1352396237519748,
+      0.8076515717914247
+     ]
+    },
+    "interp.geo.encoder_out": {
+     "pearson": 0.5946716537438657,
+     "spearman": 0.6393105782697478,
+     "pearson_ci95": [
+      0.11953754979131863,
+      0.8014078816523159
+     ]
+    },
+    "interp.geo.predictor": {
+     "pearson": 0.5823155117800936,
+     "spearman": 0.6266773925825215,
+     "pearson_ci95": [
+      0.15071951101627937,
+      0.7781769972764926
+     ]
+    },
+    "interp.geo.concept": {
+     "pearson": 0.5993471942199663,
+     "spearman": 0.6456976226421599,
+     "pearson_ci95": [
+      0.14543543036965134,
+      0.8019721011782752
+     ]
+    },
+    "interp.lin.eq9_same_layer": {
+     "pearson": 0.7682943900575525,
+     "spearman": 0.7621392554753342,
+     "pearson_ci95": [
+      0.6672432578774665,
+      0.7477763848218768
+     ]
+    },
+    "interp.lin.encoder_out": {
+     "pearson": 0.769660499682091,
+     "spearman": 0.7628387540245617,
+     "pearson_ci95": [
+      0.657719187423052,
+      0.7506318202346556
+     ]
+    },
+    "interp.lin.predictor": {
+     "pearson": 0.7722631650182378,
+     "spearman": 0.7655344524864891,
+     "pearson_ci95": [
+      0.6360872829105095,
+      0.7449511496094496
+     ]
+    },
+    "interp.lin.concept": {
+     "pearson": 0.7604478175714003,
+     "spearman": 0.7529434656585131,
+     "pearson_ci95": [
+      0.6586527452312375,
+      0.7407709772527415
+     ]
+    }
+   },
+   "geo_minus_lin": {
+    "smooth.eq9_same_layer": {
+     "geo_minus_lin": -0.05566709545964543,
+     "ci95": [
+      -0.19615354492852521,
+      0.07528361715039833
+     ]
+    },
+    "smooth.encoder_out": {
+     "geo_minus_lin": -0.06754449562290665,
+     "ci95": [
+      -0.17956525282889627,
+      0.08496938017887469
+     ]
+    },
+    "smooth.predictor": {
+     "geo_minus_lin": -0.08518178330923976,
+     "ci95": [
+      -0.16429194964747348,
+      0.08825185804988395
+     ]
+    },
+    "smooth.concept": {
+     "geo_minus_lin": -0.05197754784739961,
+     "ci95": [
+      -0.2015668670913219,
+      0.07768747503852577
+     ]
+    },
+    "interp.eq9_same_layer": {
+     "geo_minus_lin": -0.16191570127619914,
+     "ci95": [
+      -0.5654464416232218,
+      0.084773892042954
+     ]
+    },
+    "interp.encoder_out": {
+     "geo_minus_lin": -0.1749888459382254,
+     "ci95": [
+      -0.6118598596896587,
+      0.08952062287445006
+     ]
+    },
+    "interp.predictor": {
+     "geo_minus_lin": -0.18994765323814422,
+     "ci95": [
+      -0.5380032634245333,
+      0.09839939998958833
+     ]
+    },
+    "interp.concept": {
+     "geo_minus_lin": -0.16110062335143405,
+     "ci95": [
+      -0.5459856754079057,
+      0.09444539564358216
+     ]
+    }
+   }
+  }
+ }
+}
