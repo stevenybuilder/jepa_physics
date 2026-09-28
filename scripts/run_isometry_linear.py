@@ -50,6 +50,49 @@ def geo_matrix(curve, n=4000):
     return np.minimum(D, total - D) if curve.periodic else D
 
 
+def path_length_matrix(curve, values, n_steps=150, chunk=256):
+    """Goodfire's geodesic (causalab scores/isometry.py _decoded_path_length_batched): for each vertex pair, the
+    short-way coordinate path cut into n_steps equal sub-intervals, decoded by the spline, lengths of the n_steps
+    straight pieces summed. Rows / columns in the order of `values`."""
+    t = curve.coord_of_value(np.asarray(values, dtype=float))
+    ia, ib = np.triu_indices(len(t), 1)
+    s = np.linspace(0.0, 1.0, n_steps + 1)
+    L = np.empty(len(ia))
+    for c in range(0, len(ia), chunk):
+        ta, tb = t[ia[c:c + chunk]], t[ib[c:c + chunk]]
+        P = curve(ta[:, None] + s[None] * curve.step(ta, tb)[:, None])          # [b, n_steps + 1, dim]
+        L[c:c + chunk] = np.linalg.norm(np.diff(P, axis=1), axis=-1).sum(1)
+    G = np.zeros((len(t), len(t)))
+    G[ia, ib] = G[ib, ia] = L
+    return G
+
+
+def goodfire_method(L, n_steps=150):
+    """Isometry as causalab compute_isometry_from_manifolds (path_mode geometric, n_interior_per_pair 0): behaviour
+    manifold = INTERPOLATING periodic spline (labels angle) through per-value centroids of the predictor's forecast in
+    its full 1024-d space (probe folds), activation manifold = the knot-fold PCA-64 spline (interpolating as theirs, and
+    the smoothing spline run_part2 steers with; angle as choose_angle_source); both distances = path_length_matrix with
+    150 sub-intervals; Pearson r over the upper triangle. Chord baseline = the stored lin (PCA-64 chord)."""
+    d = load_inputs("direction", L)
+    knot, probe = d["role"] == "knot", d["role"] == "probe"
+    y, values = d["y"], np.unique(d["y"])
+    pca = mf.fit_pca(d["X"][knot], 64)
+    cent = mf.centroids(pca.project(d["X"][knot]), y[knot])
+    choice = mf.choose_angle_source(cent["C"], cent["values"])
+    pred = np.load(PRED).astype(np.float64).mean(1)[probe]
+    beh = mf.fit_curve(mf.centroids(pred, y[probe]), True, angle="labels", spline="interp")
+    B = path_length_matrix(beh, values, n_steps)
+    out = {"angle_choice": {k: choice[k] for k in ("angle", "plane")}, "behaviour_dim": int(pred.shape[1])}
+    for sp in ("interp", "smooth"):
+        c = mf.fit_curve(cent, True, angle=choice["angle"], plane=choice["plane"], spline=sp)
+        G = path_length_matrix(c, values, n_steps)
+        P = by_value(np.linalg.norm(c.points[:, None] - c.points[None], axis=-1), c.values, values)
+        r, rho = corr(G, B)
+        rl, rhol = corr(P, B)
+        out[sp] = {"geo_pearson": r, "geo_spearman": rho, "lin_pearson": rl, "lin_spearman": rhol}
+    return out
+
+
 def by_value(G, curve_values, values):
     """Reorder a vertex-ordered matrix into sorted-value order."""
     idx = {float(v): i for i, v in enumerate(curve_values)}
@@ -155,7 +198,23 @@ def main(argv=None):
     p.add_argument("--layers", type=int, nargs="+", default=[8, 12, 22])
     p.add_argument("--n-boot", type=int, default=200)
     p.add_argument("--out", default=str(PROJECT_ROOT / "results" / "p2_isometry_linear.json"))
+    p.add_argument("--goodfire-method", action="store_true",
+                   help="only the causalab-faithful variant (goodfire_method) -> results/p2_isometry_goodfire_method.json")
     args = p.parse_args(argv)
+    if args.goodfire_method:
+        stored = json.loads((PROJECT_ROOT / "results" / "p2_isometry_linear.json").read_text())["layers"]
+        res = {"provenance": provenance(None, layers=args.layers, pool="meanpool", k=64),
+               "method": goodfire_method.__doc__, "layers": {}}
+        for L in args.layers:
+            c = stored[str(L)]["correlations"]
+            res["layers"][str(L)] = {"new": goodfire_method(L), "stored": {
+                q: c[q]["pearson"] for q in ("smooth.geo.predictor", "smooth.lin.predictor", "interp.geo.predictor",
+                                             "interp.lin.predictor")}}
+            print(L, res["layers"][str(L)]["new"], flush=True)
+        path = PROJECT_ROOT / "results" / "p2_isometry_goodfire_method.json"
+        path.write_text(json.dumps(res, indent=1))
+        print("wrote", path)
+        return
     out = {"provenance": provenance(None, seeds={"bootstrap": 0}, layers=args.layers, pool="meanpool", k=64),
            "method": ("Goodfire A.5: Pearson r over the upper triangle of 64 x 64 pairwise distance matrices; "
                       "key = activation_spline.distance.behaviour_space; activation_spline smooth = run_part2's "

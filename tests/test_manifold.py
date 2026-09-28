@@ -222,3 +222,13 @@ def test_linear_extension_continues_end_tangent():
         hi, slope = 4.0, cub.spline(4.0, 1)
         np.testing.assert_allclose(lin(np.array([4.5, 5.0])), cub(hi) + np.array([[0.5], [1.0]]) * slope)
         np.testing.assert_allclose(lin.spline(np.array([0.0, 5.0]), 1), cub.spline(np.array([0.25, 4.0]), 1))
+
+
+def test_goodfire_periodic_angle_scales_and_tests():
+    th = np.radians(np.arange(64) * 360.0 / 64)
+    ell = np.stack([4 * np.cos(th), 1.0 * np.sin(th), np.zeros(64)], 1) + 2.0
+    g = mf.goodfire_periodic_angle(ell)
+    assert not g["passes"] and g["rel_diff"] == pytest.approx(1 - 1 / 16, rel=1e-6)
+    dev = np.degrees(mf.wrap_pi(g["angle"] - th))
+    assert np.abs(dev - dev.mean()).max() < 1e-6          # variance scaling maps the ellipse back to the true angle
+    assert mf.goodfire_periodic_angle(np.stack([3 * np.cos(th), 2.5 * np.sin(th)], 1))["passes"]

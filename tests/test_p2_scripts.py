@@ -498,3 +498,30 @@ def test_summarize_p2_audit_row_and_aggregate():
     assert (row["endpoint_gap"], row["min_radius_gap"], row["delta_norm_chord"]) == (2.0, 0.3, 3.0)
     a = m.agg([row, {**row, "endpoint_gap": 4.0, "verdict": "positive"}])
     assert a["endpoint_gap_mean"] == 3.0 and a["verdict_counts"] == {"negative_endpoint": 1, "positive": 1}
+
+
+def test_angle_goodfire_row(tmp_path):
+    from wm.p2_data import load_inputs
+    fake_dataset(tmp_path, "direction")
+    spec = importlib.util.spec_from_file_location("ag", ROOT / "scripts" / "run_angle_goodfire.py")
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    d = load_inputs("direction", 1, "direction", tmp_path / "act", tmp_path / "table.csv", tmp_path / "split.json")
+    row = m.angle_row(d, seed=0, k=16)
+    assert row["goodfire_passes_periodicity_test"]
+    assert abs(row["goodfire_angle_vs_labels"]["circular_corr"]) > 0.95
+    assert row["pipeline_source"].startswith("unsupervised_angle")
+
+
+def test_isometry_path_length_matrix_circle():
+    from wm import manifold as mf
+    spec = importlib.util.spec_from_file_location("iso", ROOT / "scripts" / "run_isometry_linear.py")
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    v = np.arange(16) * 22.5
+    th = np.radians(v)
+    cent = {"C": np.stack([2 * np.cos(th), 2 * np.sin(th)], 1), "values": v, "count": np.ones(16),
+            "sd_coord": np.ones(2)}
+    G = m.path_length_matrix(mf.fit_curve(cent, True, angle="labels"), v, n_steps=150)
+    dth = np.radians(np.abs((v[:, None] - v[None] + 180) % 360 - 180))
+    np.testing.assert_allclose(G, 2 * dth, rtol=2e-3, atol=1e-9)

@@ -244,6 +244,23 @@ def unsupervised_angle(C, plane="activation"):
     return np.arctan2(P[:, 1], P[:, 0]) % TWO_PI
 
 
+def goodfire_periodic_angle(C, eigenvalue_tol=0.45, min_variance_fraction=0.1):
+    """Label-free angle as Goodfire's code computes it (causalab spline/builders.py detect_periodic_dims +
+    remap_periodic_to_angle, called from spline/train.py in PCA mode with 2 * intrinsic_dim = 2 columns): the first two
+    activation-PCA columns of the centroids C, eigenvalues = their variance across centroids (unbiased); the pair is
+    periodic iff each holds >= min_variance_fraction of the two-column total and |l1 - l2| / max < eigenvalue_tol.
+    Angle = atan2(centred PC2 / sqrt(l2), centred PC1 / sqrt(l1)) in [0, 2*pi); no centroid-plane fallback (their
+    code then uses the top PCA components with no periodic coordinate). The angle is returned whether or not the test
+    passes. Returns dict(angle, passes, eigenvalues, rel_diff)."""
+    P = np.asarray(C, dtype=float)[:, :2]
+    lam = P.var(axis=0, ddof=1)
+    rel = float(abs(lam[0] - lam[1]) / lam.max())
+    passes = bool(lam.min() >= min_variance_fraction * lam.sum() and rel < eigenvalue_tol)
+    Pc = (P - P.mean(axis=0)) / np.sqrt(lam)
+    return {"angle": np.arctan2(Pc[:, 1], Pc[:, 0]) % TWO_PI, "passes": passes, "eigenvalues": lam.tolist(),
+            "rel_diff": rel}
+
+
 def compare_angles(t_intrinsic, theta_deg):
     """How well an unsupervised angle matches the true angle.
 

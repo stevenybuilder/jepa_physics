@@ -8,7 +8,8 @@ frozen verdict rule and the existing metrics only. Runs (made beforehand with ru
      into results/p2_interp_labels/, arc seeds into results/arcs_interp/L{L}_s{s}/, plus the train-only held-out
      reconstruction (geometry_checks.heldout_reconstruction) on the labels angle -> results/p2_interp_labels_summary.json
   3. scalar extrapolation with the spline continued linearly along its end tangent (--extend linear,
-     mf.LinearExtension) into results/p2_linear_ext/            -> results/p2_extrapolation_linear_ext.json
+     mf.LinearExtension), smoothing and interpolating spline, into results/p2_linear_ext[_interp]/
+                                                                 -> results/p2_extrapolation_linear_ext.json
 
   PYTHONPATH=src python scripts/summarize_p2_audit.py [--item 1|2|3|all]
 """
@@ -123,8 +124,9 @@ def item2(seeds):
 def item3():
     runs = [("speed", 12), ("speed", 19), ("acceleration", 12), ("acceleration", 21)]
     out = {"provenance": provenance(None, seeds={"seed": 0}), "commands":
-           "run_part2.py --dataset V --layer L --holdout extrapolation --spline smooth --extend linear "
-           "--results-dir results/p2_linear_ext",
+           "run_part2.py --dataset V --layer L --holdout extrapolation --extend linear, with --spline smooth "
+           "(results/p2_linear_ext) and --spline interp (results/p2_linear_ext_interp: the code-faithful arm, "
+           "causalab spline/cubic.py _evaluate_natural = interpolating natural cubic, linear past the end knots)",
            "extension_rule": ("explicit linear continuation along the end tangent (mf.LinearExtension): "
                               "f(t_end) + (t - t_end) f'(t_end) past the last knot; not splev ext=3, which clamps "
                               "to the end value. Stored runs: splev ext=0, the end cubic piece extended"),
@@ -132,7 +134,9 @@ def item3():
                         "/ centroid noise", "runs": {}}
     for v, L in runs:
         f = f"p2_steer_{v}_{v}_L{L}_extrapolation.json"
-        out["runs"][f"{v}_L{L}"] = {"stored_cubic_ext": load(RES / f), "linear_ext": load(RES / "p2_linear_ext" / f)}
+        out["runs"][f"{v}_L{L}"] = {"stored_smoothing_cubic_ext": load(RES / f),
+                                    "smoothing_linear_ext": load(RES / "p2_linear_ext" / f),
+                                    "interp_linear_ext_goodfire_code": load(RES / "p2_linear_ext_interp" / f)}
     return out
 
 
