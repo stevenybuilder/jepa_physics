@@ -333,6 +333,19 @@ def rank_matched_null(Xte, labels, probes, eval_W, eval_b, kind, single_target, 
             "rows": rows}
 
 
+def cov_weighted_delta(X, W, b, Sigma, target, U=None):
+    """Covariance-weighted edit through one probe (W [d, m], b [m]): dx = Σ U (Wᵀ Σ U)⁻¹ (y* − ŷ(x)) per row, with
+    ŷ(x) = xW + b. U = None uses U = W, the minimum-Σ⁻¹-norm edit that makes the probe read y*
+    (x' = x + Σ W (WᵀΣW)⁻¹ (y* − ŷ)); Σ = I recovers the Euclidean minimum-norm edit (steer at n = 1). Any U [d, m]
+    with WᵀΣU invertible gives an edit in span(ΣU) after which the probe still reads y* exactly (the random null
+    draws U). target: [m] or [N, m]. Returns dx [N, d]."""
+    X = np.asarray(X, float)
+    U = W if U is None else U
+    SU = Sigma @ U
+    delta = np.asarray(target, float) - (X @ W + b)
+    return delta @ np.linalg.inv(W.T @ SU).T @ SU.T
+
+
 def grouped_folds(groups, k=5, seed=0):
     """Fold per row with identical clips (same group, e.g. frame hash) kept in one fold."""
     uniq, inv = np.unique(np.asarray(groups), return_inverse=True)
@@ -397,17 +410,19 @@ def off_target_probe(Xtr, Xte, df, tr, te, folds, kind):
 
 
 def run_steering(dataset, variable=None, point=None, pool="meanpool", act_root=None, results_dir=None,
-                 inlp_dir=None, n_draws=20, layer_role=None, model="vjepa2", strict_eval=False, n_max=None):
+                 inlp_dir=None, n_draws=20, layer_role=None, model="vjepa2", strict_eval=False, n_max=None,
+                 probes=None, out_path=None, extra=None):
     """Paper protocol: steering basis from the train probe sequence (step 2), evaluation probe fit on
     test activations (α by CV inside test), test clips steered to θ* = 90° (for scalars, the upper
     median label value) and to every label value, with the paper's unit target. Extras, labelled in
     the output: a radius-matched arm (matched_targets) and two random nulls per n (random_nulls). Every arm is
     scored at n in n_grid(K, n_max): 1..25, then 30, 40, 55, 75, 100, 140, 200 and min(K, n_max).
-    Writes results/p1c_{dataset}_L{point}.json."""
+    Writes results/p1c_{dataset}_L{point}.json. probes (a basis dict as load_basis returns) replaces the stored
+    step-2 basis; out_path replaces the output file; extra (dict) is merged into the output."""
     variable = variable or dataset
     sweep = load_sweep(dataset, variable, pool, results_dir, model)
     point = sweep["availability"]["peak"] if point is None else point
-    probes = load_basis(basis_path(dataset, variable, point, pool, inlp_dir, model))
+    probes = probes if probes is not None else load_basis(basis_path(dataset, variable, point, pool, inlp_dir, model))
     assert len(probes["W"]) > 0, "step 2 found no probe above chance at this layer"
     df = load_table(dataset)
     Y, kind, _ = targets(df, variable)
@@ -458,7 +473,7 @@ def run_steering(dataset, variable=None, point=None, pool="meanpool", act_root=N
            "protocol": "paper protocol (C.12): the evaluation probe is fit on the same test clips it steers; "
                        "strict_eval (if run) is the extra split-half version",
            "arm": "paper: unit target (sin θ*, cos θ*) / true value required of every probe", **res,
-           "random_nulls": nulls, "radius_matched": res_m, "off_target_probe": off_info}
+           "random_nulls": nulls, "radius_matched": res_m, "off_target_probe": off_info, **(extra or {})}
     s = res["single"]
     print(f"{dataset}/{variable} point {point}: K={res['K']} MAE-to-target {s[0]['mae_to_target']:.3g} -> "
           f"{s[-1]['mae_to_target']:.3g}, MAE-to-true {s[0]['mae_to_true']:.3g} -> {s[-1]['mae_to_true']:.3g}; "
@@ -466,7 +481,7 @@ def run_steering(dataset, variable=None, point=None, pool="meanpool", act_root=N
           f"{eval_report['out_of_fold']['r2_fold_mean']:.3f}")
     suffix = (("" if variable == dataset else f"_{variable}") + ("" if pool == "meanpool" else f"_{pool}")
               + ("" if model == "vjepa2" else f"_{model}"))
-    write_json(Path(results_dir or RESULTS) / f"p1c_{dataset}_L{point}{suffix}.json", out)
+    write_json(out_path or Path(results_dir or RESULTS) / f"p1c_{dataset}_L{point}{suffix}.json", out)
     return out
 
 

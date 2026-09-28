@@ -269,3 +269,50 @@ def test_rank_matched_null_weak_at_n1_equals_full_rank_null_at_K(planted_2d):
     other = rank_matched_null(X, theta, probes, eval_W, eval_b, "circular", 90.0, n_draws=20, seed=1)["rows"][-1]
     a, b = last["rank_matched"]["mae_to_target"], other["rank_matched"]["mae_to_target"]
     assert abs(a["mean"] - b["mean"]) < 3 * np.hypot(a["sd"], b["sd"]) / np.sqrt(20)
+
+
+def test_cov_weighted_rank2_edit_reads_target_is_min_mahalanobis_and_reduces_to_euclidean(world):
+    """Rank-2 covariance-weighted edit (scripts/run_step3_rank2_covweighted.py): the steering probe reads y* exactly
+    (for U = W and for a random U), Σ = I reproduces steer at n = 1, and among edits reaching y* it has the smallest
+    Σ⁻¹ norm (adding any Σ-direction the probe cannot see only grows it)."""
+    from wm.steer import cov_weighted_delta
+    X, theta, probes, _, _ = world
+    W, b = probes["W"][0], probes["b"][0]
+    d = X.shape[1]
+    rng = np.random.default_rng(1)
+    A = rng.standard_normal((d, d))
+    Sigma = A @ A.T / d + 0.1 * np.eye(d)
+    y = encode(90.0, "circular")
+    dx = cov_weighted_delta(X, W, b, Sigma, y)
+    assert np.allclose((X + dx) @ W + b, y, atol=1e-9)
+    U = np.linalg.qr(rng.standard_normal((d, 2)))[0]
+    assert np.allclose((X + cov_weighted_delta(X, W, b, Sigma, y, U)) @ W + b, y, atol=1e-9)
+    V = build_basis(probes["W"])
+    assert np.allclose(X + cov_weighted_delta(X, W, b, np.eye(d), y), steer(X, V, probes, y, 1), atol=1e-9)
+    Si = np.linalg.inv(Sigma)
+    z = rng.standard_normal(d)
+    z -= W @ np.linalg.solve(W.T @ W, W.T @ z)            # invisible to the probe: (dx + z) still reads y*
+    mnorm = lambda D: np.einsum("nd,de,ne->n", D, Si, D)
+    assert np.allclose((X + dx + z) @ W + b, y, atol=1e-9)
+    assert np.all(mnorm(dx) < mnorm(dx + z))
+
+
+def test_adam_sequence_bias_and_steering_basis():
+    """scripts/run_step3_adam_basis.py: return_bias leaves the summary and W unchanged and adds b [rounds, m]; the
+    resulting probes, as a steering basis, make every steering probe read the target at n = K."""
+    from wm.inlp import adam_sequence
+    rng = np.random.default_rng(1)
+    theta = rng.choice(np.arange(64) * 360 / 64, 1200)
+    Y = encode(theta, "circular")
+    X = copies_code(Y, 3, d=40, seed=0)
+    tr, te, _ = split(len(Y))
+    args = (X[tr], Y[tr], X[te], Y[te], partial(score, kind="circular"), "circular")
+    s0, W0 = adam_sequence(*args, max_rounds=5, batch=64)
+    s, W, b = adam_sequence(*args, max_rounds=5, batch=64, return_bias=True)
+    assert np.array_equal(W, W0) and s["rounds"] == s0["rounds"] and b.shape == (len(W), 2)
+    K = s["K_first"]
+    assert 1 <= K <= len(W)
+    probes = {"Q": build_basis(W[:K]), "W": W[:K], "b": b[:K]}
+    Wt, bt = readout_weights(probes, K)
+    Xs = steer(X[te], build_basis(probes["W"]), probes, encode(90.0, "circular"), K)
+    assert np.allclose(Xs @ Wt + bt, np.tile(encode(90.0, "circular"), K), atol=1e-8)

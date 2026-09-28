@@ -426,7 +426,7 @@ ADAM_C11 = {"lr": 1e-3, "weight_decay": 1e-4, "epochs": {"circular": 100, "scala
 
 
 def adam_sequence(Xtr, Ytr, Xte, Yte, score_fn, kind, max_rounds=None, batch=None, seed=0, patience=3,
-                  fail_move=0.25, decoupled=False, select=None):
+                  fail_move=0.25, decoupled=False, select=None, return_bias=False):
     """The probe sequence with the paper's C.11 Adam probe at every round, paper protocol (fit on all train, score
     on test). Adam is coupled L2 (torch.optim.Adam weight_decay) unless decoupled; batch=None is full batch; round k
     uses init seed seed + k − 1 (torch.nn.Linear init). Targets are standardised on the train rows for training
@@ -439,7 +439,7 @@ def adam_sequence(Xtr, Ytr, Xte, Yte, score_fn, kind, max_rounds=None, batch=Non
     ‖W_k − W_init‖ < fail_move · ‖W_1 − W_init,1‖; at_chance_on_train (train R² below the stop threshold) is reported
     separately, since a genuine information dip is at chance on train too. Runs until `patience` consecutive rounds are at chance
     on test, or max_rounds. K_first = first at-chance round − 1 (the paper's rule); K_patience = start of the
-    at-chance run − 1."""
+    at-chance run − 1. return_bias=True also returns the per-round biases b [rounds, m] (a third value)."""
     Ytr = np.asarray(Ytr, float).reshape(len(Ytr), -1)
     Yte = np.asarray(Yte, float).reshape(len(Yte), -1)
     (n, d), m = Xtr.shape, Ytr.shape[1]
@@ -455,7 +455,7 @@ def adam_sequence(Xtr, Ytr, Xte, Yte, score_fn, kind, max_rounds=None, batch=Non
 
     stop_r2 = 0.1 if kind == "circular" else 0.05
     seq = probe_sequence(Xtr, Ytr, fit, score_fn, Xte, Yte, select)
-    rows, Ws, K_first, run_start, move1 = [], [], None, None, None
+    rows, Ws, bs, K_first, run_start, move1 = [], [], [], None, None, None
     for k in range(1, max_rounds + 1):
         s, W, b, dims, Xk = next(seq)
         P = predict(Xk, W, b)
@@ -472,6 +472,7 @@ def adam_sequence(Xtr, Ytr, Xte, Yte, score_fn, kind, max_rounds=None, batch=Non
         row["at_chance_on_train"] = bool(tr_s["r2"] < stop_r2)
         rows.append(row)
         Ws.append(W)
+        bs.append(b)
         chance = at_chance(s, kind)
         if chance and K_first is None:
             K_first = k - 1
@@ -508,7 +509,7 @@ def adam_sequence(Xtr, Ytr, Xte, Yte, score_fn, kind, max_rounds=None, batch=Non
         "hypothesis": "sawtooth teeth are rounds whose Adam probe barely trained (removes ~nothing, next round "
                       "recovers); supported if dips are mostly failed rounds and failed rounds are mostly dips"}
     summary["sawtooth"] = st
-    return summary, W_arr
+    return (summary, W_arr, np.stack(bs)) if return_bias else (summary, W_arr)
 
 
 def run_adam_sequence(dataset, variable, point, pool="meanpool", act_root=None, results_dir=None, model="vjepa2",
