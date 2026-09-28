@@ -39,10 +39,12 @@ edits survive to the output, and along the point-22 path the forecast follows th
 spline and jumps along the chord (−13.4° paired, −31.3° at large shifts). This is a probe of the forecast on one
 stimulus and one 45° arc, not a rendered future.
 
-**One negative.** At held-out endpoints the paper's baseline, the chord between the raw centroids (A.9), lands closer
-than the smoothing spline: 4.7° against 9.7° at point 12 and 3.6° against 10.7° at point 22 on the headline arc (paired
-gap +4.8° ± 0.4 and +7.1° ± 0.4). The spline ties only the chord between its own smoothed knots, which was our line arm
-until the parity audit[^rawchord]. Speed and acceleration are straight, and there the spline
+**One negative.** At held-out endpoints the paper's comparison baseline, the chord between the raw centroids (A.9), run
+with our matched-support edit, lands closer than the smoothing spline: 4.7° against 9.7° at point 12 and 3.6° against
+10.7° at point 22 on the headline arc (clip-bootstrap gap +5.0° [3.9, 6.1] and +7.0° [6.0, 8.1]). The headline arc is the
+extreme case: over the 16 held-out arcs at point 12 the raw chord's lead is +1.3° ± 1.7 SD, with the spline ahead on 3
+(point-22 arcs in §4.3). The spline ties only the chord between its own smoothed knots, which was our line arm until
+the parity audit[^rawchord]. Speed and acceleration are straight, and there the spline
 adds nothing; in extrapolation our smoothing spline, continued along its end tangent as the authors' code does, trails
 the chord by 0.02–0.06, while the authors' own interpolating arm beats the chord on speed and trails it on
 acceleration[^ext].
@@ -115,7 +117,7 @@ verdict; §2 lists every deviation from the paper and what the parity audit chan
 - Part 2: the isometry verdict is set by the knot coordinate; under every label-free ordering point 22 is a tie (spline only under the basic interval in the fully faithful run), and Goodfire's own angle loses to the chord at point 12 (§4.4).
 - Part 2: at the encoder output the verdict is mixed (the spline trails the chord by 10.8° at the chord's norm and leads by 2.1° at the natural norm), and in scalar extrapolation the spline trails the chord by 0.02–0.06 (§4.5, §4.3).
 - Part 1, Step 2: the paper reads direction and speed off one velocity set and our stored counts came from two supplied sets; rerun on the same 750 constant-velocity clips under ridge, "speed needs fewer probes" holds in 7 of 8 cells under C.11's thresholds, which the paper's plotted Fig. 22 follows (direction ≈ 44, speed ≈ 28 at layer 8), and in none under the caption's, so the verdict is a stop-rule call (§3.2).
-- Part 2: our line arm joined the spline's smoothed knots; the paper's baseline is the chord between raw centroids (A.6, A.9), which sits 1.9–3.7 PCA units from the smoothed chord at the held-out targets and beats the spline at the endpoint by 4.8° and 7.1° on the headline arc, so "endpoints tie" became "the paper's chord wins the endpoint" (§4.3, §4.4).
+- Part 2: our line arm joined the spline's smoothed knots; the paper's comparison baseline is the chord between raw centroids (A.9), which sits 1.9–3.7 PCA units from the spline point at the held-out targets and beats the spline at the endpoint by 5.0° and 7.0° on the headline arc and by 1.3° averaged over the 16 point-12 arcs, so "endpoints tie" became "the paper's chord wins the endpoint" (§4.3, §4.4).
 - Part 2: Goodfire's cyclic 8B runs take the coordinate label-free, as atan2(PC2, PC1), and only its 70B cyclic configs and two 8B weekdays demo configs use the labels (§2).
 
 **Places where the paper contradicts itself**[^ptxt]. (a) The INLP stopping
@@ -661,10 +663,13 @@ because it is neither the onset, the paper's layer nor the peak.
 
 Design of the arms. Both arms edit the same PCA-64 subspace and add back each clip's identical off-subspace residual
 (matched support). The line arm of record joins the spline's own knots, which under the smoothing spline are the
-smoothed knots, not the raw centroids; the paper's A.9 baseline, the chord between the raw centroids in the PCA-64
-subspace, is run as a third arm (`linear_raw`) and reported beside it, and at a held-out target it aims at the chord
-point between the neighbouring raw centroids. The dose-matched line, the ring-occupancy, 5-NN and donor-ceiling side
-analyses, and the BF16 and rescue counts below still use the smoothed-knot chord. Goodfire's own linear baseline
+smoothed knots, not the raw centroids; the paper's A.9 comparison baseline, the chord between the raw centroids in the
+PCA-64 subspace, is run as a third arm (`linear_raw`) with the same additive, residual-kept edit and reported beside
+it, and at a held-out target it aims at the chord point between the neighbouring raw centroids (A.6's steering
+baseline, which replaces the whole activation, is the separate Goodfire linear row). Its edit is about 10% larger than
+the spline's (‖Δ‖ 8.26 vs 7.46 at point 12, 11.61 vs 10.56 at point 22) and is not dose-matched. The dose-matched
+line, the ring-occupancy, 5-NN, cosine-tangent and donor-ceiling side analyses, and the BF16 and rescue counts below
+still use the smoothed-knot chord. Goodfire's own linear baseline
 erases the residual, so it is run separately and labelled. The
 controls are a dose-matched line (rescaled to the spline's ‖Δ‖ at each waypoint), a *projected* arm (the chord walked
 with the spline's spacing), a *reflected* arm (the bend flipped), 20 endpoint-matched random curves, 20 shuffled-centroid
@@ -690,8 +695,9 @@ clip bootstrap):
 | | pt 12 spline | pt 12 line | gap [CI] | pt 22 spline | pt 22 line | gap [CI] |
 |---|---:|---:|---|---:|---:|---|
 | endpoint probe error (line = smoothed-knot chord) | 9.73° | 9.62° | +0.11 [0.05, 0.18] | 10.69° | 6.89° | +3.80 [3.36, 4.23] |
-| endpoint probe error, line = raw-centroid chord (A.9)[^rawchord] | 9.73° | 4.71° | +4.84 ± 0.43 SE | 10.69° | 3.64° | +7.07 ± 0.41 SE |
-| nearest-real agreement R | 0.196 | 0.197 | −0.0004 [−0.0018, 0.0008] | 0.175 | 0.180 | −0.005 [−0.006, −0.003] |
+| endpoint probe error, line = raw-centroid chord (A.9)[^rawchord] | 9.73° | 4.71° | +5.02 [3.94, 6.06] | 10.69° | 3.64° | +7.05 [6.03, 8.08] |
+| nearest-real agreement R (line = smoothed-knot chord) | 0.196 | 0.197 | −0.0004 [−0.0018, 0.0008] | 0.175 | 0.180 | −0.005 [−0.006, −0.003] |
+| nearest-real agreement R, line = raw-centroid chord | 0.196 | 0.185 | +0.011 [0.002, 0.020] | 0.175 | 0.165 | +0.011 [−0.001, 0.023] |
 | min readout radius along path | 0.86 | 0.61 | +0.26 [0.22, 0.29] | 0.85 | 0.61 | +0.24 [0.21, 0.27] |
 | A.7 energy on the Eq. 10 behaviour ÷ real-clip floor | 0.84 | 1.42 | | 1.01 | 1.00 | |
 | intermediate mass on the arc | 0.68 | 0.48 | | 0.65 | 0.45 | |
@@ -702,7 +708,10 @@ Source: `p2_steer_direction_direction_L{12,22}_contiguous.json`; the raw-chord r
 rerun `p2_steer_direction_direction_L{12,22}_contiguous_rawchord.json`, whose old-arm values reproduce the stored
 file to 1e-9 relative. The smoothed-knot chord sits 0.3–1.1 (point 12) and 0.8–2.1 (point 22) PCA units from the
 spline at the eight held-out targets; the raw-centroid chord sits 1.9–2.4 and 3.2–3.7, so the paper's baseline is
-further from the spline than our line arm was, and lands closer to the target. Figures:
+further from the spline than our line arm was, and lands closer to the target. Against the raw chord the spline's
+agreement with real clips at the target is higher at point 12 (+0.011), so the "independent readouts null" reading
+below is a smoothed-knot-chord result. Paired per-pair SEs (A.9's form) are 0.43 and 0.41 for the raw-chord endpoint
+gap; the table keeps the clip bootstrap used by every other row. Figures:
 `figures/fig4_waypoint_readout_direction_direction_L12_contiguous.png` (radius and Eq. 10 distance along the path) and
 `figures/fig4_path_energy_direction_direction_L12_contiguous.png`.
 
@@ -804,7 +813,8 @@ only the chord between its own smoothed knots; the interpolating version rebuild
 than the smoothing one and edits 1.4–1.6× more than the chord (hence smoothing); on scalars it adds nothing inside the
 knots and, as a smoothing spline, trails the chord by 0.02–0.06 in extrapolation even continued along its end tangent as
 the authors' code does (their own interpolating arm is mixed: better on speed, worse on acceleration). **Failure cases**: the
-point-22 endpoint on 1 of 16 arcs (+3.7°) and on the headline arc (+3.80°), and the position sheet.
+held-out endpoint against the raw-centroid chord at both points on the headline arc (+5.0°, +7.0°) and on 13 of 16
+point-12 arcs, and the position sheet.
 
 - **Cosine between the Part 1 step and the spline** (additional metric; contiguous design, same rows; the Part 1
   step is the multi-probe subspace edit x\* − x at that point)[^cos]:
