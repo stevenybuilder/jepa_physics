@@ -178,3 +178,43 @@ def test_basis_cache_keyed_by_alpha(tmp_path):
     a = basis_cache_path(tmp_path, 12, "design", "arc", "abc", 10.0)
     assert a == basis_cache_path(tmp_path, 12, "design", "arc", "abc", 10.0)
     assert a != basis_cache_path(tmp_path, 12, "design", "arc", "abc", 31.622776601683793)
+
+
+@needs_acts
+def test_layer_deltas_reproduces_plan_and_labels_angle_changes_only_splines(tmp_path):
+    """layer_deltas reproduces session-2 plan.npz at point 12; angle='labels' changes only the spline arms there
+    (point 12 is where choose_angle_source picked the unsupervised angle)."""
+    import sys
+    sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
+    from run_session2 import OUT, layer_deltas, load_plan
+    from wm.p2_data import load_inputs
+    if not (OUT / "plan.npz").exists():
+        pytest.skip("no session-2 plan")
+    arrays, info = load_plan(OUT)
+    d = load_inputs("direction", 12)
+    rows, tg = arrays["carrier_rows"][:6], arrays["targets"][:6]
+    kw = dict(holdout="contiguous", part1_mode="design", k=info["k"], spline="interp")
+    held, arms = np.asarray(info["held_values"]), info["arms"]
+    dl, m = layer_deltas(d, 12, d["y"], rows, tg, held, arms, tmp_path, **kw)
+    assert m["choice"]["angle"] == "unsupervised"
+    np.testing.assert_array_equal(dl, arrays["deltas_L12"][:6])
+    dlab, mlab = layer_deltas(d, 12, d["y"], rows, tg, held, arms, tmp_path, angle="labels", **kw)
+    assert mlab["choice"] == {"angle": "labels", "plane": "activation"}
+    for a in ("probe_qr", "radius_matched", "random_matched"):
+        np.testing.assert_array_equal(dlab[:, arms.index(a)], dl[:, arms.index(a)])
+    assert np.abs(dlab[:, arms.index("spline")] - dl[:, arms.index("spline")]).max() > 1.0
+
+
+def test_encoder_output_rescale():
+    """rescale: chord-norm and natural-norm scales put every arm at the reference norm per (carrier, target)."""
+    import sys
+    sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
+    from session2_encoder_output import rescale
+    rng = np.random.default_rng(0)
+    dl = rng.standard_normal((3, 4, 2, 5))
+    nat = rng.uniform(1, 2, (3, 2))
+    s = rescale(dl, nat, 1)
+    new = np.linalg.norm(dl, axis=-1)[:, None] * s                                   # [C, 2, A, T]
+    np.testing.assert_allclose(new[:, 0], np.broadcast_to(np.linalg.norm(dl[:, 1], axis=-1)[:, None], (3, 4, 2)))
+    np.testing.assert_allclose(new[:, 1], np.broadcast_to(nat[:, None], (3, 4, 2)))
+    np.testing.assert_allclose(s[:, 0, 1], 1.0)

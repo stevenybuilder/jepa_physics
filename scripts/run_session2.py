@@ -151,6 +151,63 @@ def part1_basis(d, rows, L, mode, holdout, out_dir):
     return st, load_basis(cache), f"INLP refit on {int(rows.sum())} clips ({mode}), alpha {alpha}, code {code}", rows
 
 
+def layer_deltas(d, L, y, carriers, tg, held, arms, out, holdout="contiguous", part1_mode="design", k=64,
+                 spline="interp", waypoints=0, angle=None):
+    """Every arm's per-clip edit delta at layer L (raw space) for carriers x targets tg -> [C, A, T, D], plus meta
+    (X, K, V, basis source, basis rows, per-probe radius, angle choice). angle: None = the session-2 rule
+    (mf.choose_angle_source); "labels" forces the labels angle in the activation plane (choose_angle_source's own
+    labels branch), i.e. monotone knot order."""
+    C, T = tg.shape
+    X = d["X"].astype(np.float64)
+    knot = (d["role"] == "knot") & ~np.isin(y, held if holdout != "none" else [])
+    st, probes, bsrc, rows_b = part1_basis(d, knot, L, part1_mode, holdout, out)
+    V = build_basis(probes["W"])
+    K = len(probes["W"])
+    op = steering_operator(V, probes, K)
+    Xc = X[carriers]
+    Zs = st.transform(Xc)
+    deltas = np.zeros((C, len(arms), T, D), np.float32)
+    # Part 1: probe-QR at N = K (unit target) and radius-matched targets
+    Wt, bt = readout_weights(probes, K)
+    rb = np.linalg.norm((st.transform(X[rows_b]) @ Wt + bt).reshape(-1, K, 2), axis=-1).mean(0)           # [K]
+    Rr = np.linalg.qr(np.random.default_rng(1000 + L).standard_normal((D, V.shape[1])))[0]
+    for j in range(T):
+        yt = encode_target(tg[:, j], "circular")                                                       # [C, 2]
+        dc = steer_delta(Zs, V, probes, yt, K, op)
+        full_t = (rb[None, :, None] * yt[:, None, :]).reshape(C, -1)
+        dc_m = steer_delta(Zs, V, probes, full_t, K, op, per_probe=True)
+        d_qr = (dc @ V.T) * st.std
+        deltas[:, arms.index("probe_qr"), j] = d_qr
+        deltas[:, arms.index("radius_matched"), j] = (dc_m @ V.T) * st.std
+        d_r = (dc @ Rr.T) * st.std
+        scale = np.linalg.norm(d_qr, axis=1) / np.maximum(np.linalg.norm(d_r, axis=1), 1e-12)
+        deltas[:, arms.index("random_matched"), j] = d_r * scale[:, None]
+    # Part 2: periodic spline and chord in raw PCA-k space, residual kept (additive, shift mode)
+    pca = mf.fit_pca(X[knot], k)
+    cent = mf.centroids(pca.project(X[knot]), y[knot])
+    choice = mf.choose_angle_source(cent["C"], cent["values"])
+    if angle == "labels":
+        choice = {"angle": "labels", "plane": "activation"}
+    curve = mf.fit_curve(cent, True, angle=choice["angle"], plane=choice["plane"], spline=spline)
+    curve_s = mf.fit_curve(cent, True, angle=choice["angle"], plane=choice["plane"], spline="smooth")
+    Z = pca.project(Xc)
+    src = y[carriers]
+    Kw = max(2, waypoints)
+    for j in range(T):
+        ta, tb = curve.coord_of_value(src), curve.coord_of_value(tg[:, j])
+        Zsp = mf.manifold_coords(Z, curve, ta, tb, Kw)
+        Zch = mf.linear_coords(Z, mf.piecewise_linear_point(curve, src), mf.piecewise_linear_point(curve, tg[:, j]), Kw)
+        deltas[:, arms.index("spline"), j] = pca.lift_delta(Zsp[:, -1] - Z)
+        deltas[:, arms.index("spline_smooth"), j] = pca.lift_delta(
+            mf.manifold_coords(Z, curve_s, curve_s.coord_of_value(src), curve_s.coord_of_value(tg[:, j]), 2)[:, -1] - Z)
+        deltas[:, arms.index("chord"), j] = pca.lift_delta(Zch[:, -1] - Z)
+        for w in range(1, Kw - 1):
+            if f"spline_wp{w}" in arms:
+                deltas[:, arms.index(f"spline_wp{w}"), j] = pca.lift_delta(Zsp[:, w] - Z)
+                deltas[:, arms.index(f"chord_wp{w}"), j] = pca.lift_delta(Zch[:, w] - Z)
+    return deltas, {"X": X, "K": K, "V": V, "bsrc": bsrc, "rows_b": rows_b, "rb": rb, "choice": choice}
+
+
 def plan(args):
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -203,51 +260,11 @@ def plan(args):
     for L in layers:
         t0 = time.time()
         d = load_inputs(DATASET, L)
-        X = d["X"].astype(np.float64)
-        knot = (d["role"] == "knot") & ~np.isin(y, held if args.holdout != "none" else [])
-        st, probes, bsrc, rows_b = part1_basis(d, knot, L, args.part1_basis, args.holdout, out)
-        V = build_basis(probes["W"])
-        K = len(probes["W"])
-        op = steering_operator(V, probes, K)
+        deltas, m = layer_deltas(d, L, y, carriers, tg, held, arms, out, args.holdout, args.part1_basis, args.k,
+                                 args.spline, args.waypoints)
+        X, K, V, bsrc, rows_b, rb, choice = (m[q] for q in ("X", "K", "V", "bsrc", "rows_b", "rb", "choice"))
         Xc = X[carriers]
-        Zs = st.transform(Xc)
-        deltas = np.zeros((C, len(arms), T, D), np.float32)
-        # Part 1: probe-QR at N = K (unit target) and radius-matched targets
-        Wt, bt = readout_weights(probes, K)
-        rb = np.linalg.norm((st.transform(X[rows_b]) @ Wt + bt).reshape(-1, K, 2), axis=-1).mean(0)       # [K]
-        Rr = np.linalg.qr(np.random.default_rng(1000 + L).standard_normal((D, V.shape[1])))[0]
-        for j in range(T):
-            yt = encode_target(tg[:, j], "circular")                                                   # [C, 2]
-            dc = steer_delta(Zs, V, probes, yt, K, op)
-            full_t = (rb[None, :, None] * yt[:, None, :]).reshape(C, -1)
-            dc_m = steer_delta(Zs, V, probes, full_t, K, op, per_probe=True)
-            d_qr = (dc @ V.T) * st.std
-            deltas[:, arms.index("probe_qr"), j] = d_qr
-            deltas[:, arms.index("radius_matched"), j] = (dc_m @ V.T) * st.std
-            d_r = (dc @ Rr.T) * st.std
-            scale = np.linalg.norm(d_qr, axis=1) / np.maximum(np.linalg.norm(d_r, axis=1), 1e-12)
-            deltas[:, arms.index("random_matched"), j] = d_r * scale[:, None]
-        # Part 2: periodic spline and chord in raw PCA-k space, residual kept (additive, shift mode)
-        pca = mf.fit_pca(X[knot], args.k)
-        cent = mf.centroids(pca.project(X[knot]), y[knot])
-        choice = mf.choose_angle_source(cent["C"], cent["values"])
-        curve = mf.fit_curve(cent, True, angle=choice["angle"], plane=choice["plane"], spline=args.spline)
-        curve_s = mf.fit_curve(cent, True, angle=choice["angle"], plane=choice["plane"], spline="smooth")
-        Z = pca.project(Xc)
         src = y[carriers]
-        Kw = max(2, args.waypoints)
-        for j in range(T):
-            ta, tb = curve.coord_of_value(src), curve.coord_of_value(tg[:, j])
-            Zsp = mf.manifold_coords(Z, curve, ta, tb, Kw)
-            Zch = mf.linear_coords(Z, mf.piecewise_linear_point(curve, src), mf.piecewise_linear_point(curve, tg[:, j]), Kw)
-            deltas[:, arms.index("spline"), j] = pca.lift_delta(Zsp[:, -1] - Z)
-            deltas[:, arms.index("spline_smooth"), j] = pca.lift_delta(
-                mf.manifold_coords(Z, curve_s, curve_s.coord_of_value(src), curve_s.coord_of_value(tg[:, j]), 2)[:, -1] - Z)
-            deltas[:, arms.index("chord"), j] = pca.lift_delta(Zch[:, -1] - Z)
-            for k in range(1, Kw - 1):
-                if f"spline_wp{k}" in arms:
-                    deltas[:, arms.index(f"spline_wp{k}"), j] = pca.lift_delta(Zsp[:, k] - Z)
-                    deltas[:, arms.index(f"chord_wp{k}"), j] = pca.lift_delta(Zch[:, k] - Z)
         arrays[f"deltas_L{L}"] = deltas
         # same-layer readout before any GPU work: a probe fit on probe clips (never built an edit) reads x + delta
         probe = d["role"] == "probe"
