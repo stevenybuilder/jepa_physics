@@ -438,7 +438,8 @@ def probe(a):
     wall = time.time() - t_all
     out = {"set": a.set, "subset": a.subset, "model": a.model, "variable": "direction", "target": "(sin theta, cos theta)",
            "n_train": len(tr), "n_test": len(te), "points": points, "curves": curves, "onsets": onsets,
-           "part1_meanpool": part1, "layers": rows,
+           ("part1_meanpool_all_clips" if a.subset else "part1_meanpool"): part1,   # Part 1 = all 1,500 clips
+           "layers": rows,
            "left_positions": "columns 0-7 of the 16x16 grid (128 positions); right = columns 8-15",
            "methods": {
                "probe": "closed-form ridge as wm.probes: train-standardised features, targets (sin, cos), alpha by fold-mean R2 on the split's 5 train folds over ALPHAS = logspace(-2, 4, 13), refit on all train, test scored once",
