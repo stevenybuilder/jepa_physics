@@ -25,8 +25,9 @@ W >= 81; A.5's shared-geodesic exclusion is then empty):
       predictor        the V-JEPA 2 predictor's own unedited forecast of tubelets 4-7 from frames 1-8
                        (artifacts/session2/native/pred_pooled_all.npy, mean over the 4 steps), PCA-64
       concept          the true angular distance |d theta| (the conceptual metric d_Z)
-  CIs: 200 bootstrap draws resampling clips within each value on both sides (PCA bases fixed); --angle goodfire_full
-      applies the same scheme (bootstrap_variants) to four activation coordinates at once.
+  CIs: 200 bootstrap draws resampling clips within each value on both sides (PCA bases fixed), raw percentile
+      intervals (biased low: centroid noise pulls the draws below the estimate); --angle goodfire_full uses the same
+      draws for four activation coordinates at once and reports bias and bias-corrected intervals (BOOT_SCHEME).
 
   python scripts/run_isometry_linear.py --layers 8 12 22
   python scripts/run_isometry_linear.py --goodfire-method --angle goodfire   # -> p2_isometry_goodfire_coord.json
@@ -220,11 +221,31 @@ def boot_chunk(L, idx, fixed, n_steps):
     return [variant_matrices(Zk[ik], yk[ik], pred[ip], yp[ip], fixed, n_steps) for ik, ip in idx]
 
 
+BOOT_SCHEME = ("paired within-value clip resampling (run_layer's draws: knot clips then probe clips per draw, PCA "
+               "bases and coordinate choices fixed, all four variants and both arms on the same draw); geo - lin "
+               "bootstrapped per draw; per statistic: point estimate, bootstrap mean, bias = mean - point, raw 95% "
+               "percentile CI, and the bias-corrected CI = the percentile CI shifted by -bias (recentred on the "
+               "full-sample estimate). Resampling clips within a value adds noise to every centroid and biases the "
+               "raw percentile interval downward (p2_isometry_linear.json: 20 of 48 intervals exclude their own "
+               "estimate). BCa not used: its jackknife acceleration would need one refit per clip under this "
+               "stratified scheme. Verdicts use the corrected geo - lin interval.")
+
+
+def boot_summary(point, draws):
+    """Point estimate, bootstrap mean, bias, raw percentile 95% CI and bias-corrected (recentred) 95% CI."""
+    lo, hi = float(np.percentile(draws, 2.5)), float(np.percentile(draws, 97.5))
+    bias = float(np.mean(draws) - point)
+    return {"point": float(point), "boot_mean": float(np.mean(draws)), "bias": bias, "ci95_percentile": [lo, hi],
+            "ci95_corrected": [lo - bias, hi - bias]}
+
+
 def bootstrap_variants(L, n_boot=200, seed=0, n_steps=150, workers=1):
-    """95% percentile CIs on geo_pearson, lin_pearson and geo - lin for the four VARIANTS, with the resampling scheme
-    of p2_isometry_linear.json (run_layer): n_boot draws resampling clips within each value, knot clips (activation
+    """95% CIs on geo_pearson, lin_pearson and the paired geo - lin for the four VARIANTS (boot_summary per statistic;
+    scheme in BOOT_SCHEME): n_boot draws of run_layer's resampling, clips within each value, knot clips (activation
     side) then probe clips (behaviour side), from default_rng(seed); PCA bases and the point estimate's coordinate
-    choices fixed; the same draw is shared by all four variants (paired). Draw indices are generated in order in
+    choices fixed; the same draw is shared by all four variants and both arms (paired). The raw percentile interval
+    is biased low by centroid noise, so each statistic also carries the bias and the interval recentred on the
+    full-sample estimate. Draw indices are generated in order in
     this process, then evaluated in `workers` processes (results do not depend on workers)."""
     Zk, yk, pred, yp = boot_inputs(L)
     cent = mf.centroids(Zk, yk)
@@ -247,7 +268,6 @@ def bootstrap_variants(L, n_boot=200, seed=0, n_steps=150, workers=1):
     boots = [None] * n_boot
     for i, part in enumerate(parts):
         boots[i::workers] = part
-    ci = lambda a: [float(np.percentile(a, 2.5)), float(np.percentile(a, 97.5))]
     res = {}
     for name in VARIANTS:
         res[name] = {}
@@ -255,10 +275,10 @@ def bootstrap_variants(L, n_boot=200, seed=0, n_steps=150, workers=1):
             g = np.array([b[name][sp]["geo_pearson"] for b in boots])
             li = np.array([b[name][sp]["lin_pearson"] for b in boots])
             pt = point[name][sp]
-            res[name][sp] = {"geo_pearson": pt["geo_pearson"], "geo_ci95": ci(g), "lin_pearson": pt["lin_pearson"],
-                             "lin_ci95": ci(li), "geo_minus_lin": pt["geo_pearson"] - pt["lin_pearson"],
-                             "geo_minus_lin_ci95": ci(g - li)}
-    return {"n_boot": n_boot, "seed": seed, "fixed_choices": {"label_free_knot_order": fixed["auto"],
+            res[name][sp] = {"geo_pearson": boot_summary(pt["geo_pearson"], g),
+                             "lin_pearson": boot_summary(pt["lin_pearson"], li),
+                             "geo_minus_lin": boot_summary(pt["geo_pearson"] - pt["lin_pearson"], g - li)}
+    return {"n_boot": n_boot, "seed": seed, "scheme": BOOT_SCHEME, "fixed_choices": {"label_free_knot_order": fixed["auto"],
             "goodfire_full_activation_branch": fixed["act_branch"], "goodfire_full_behaviour_branch":
             fixed["beh_branch"]}, "variants": res}
 
@@ -412,7 +432,7 @@ def run_goodfire_full(layers, n_boot, workers=6):
     sides, the three stored coordinates (goodfire_coord.json) for reference, and bootstrap_variants per point."""
     prev = json.loads((PROJECT_ROOT / "results" / "p2_isometry_goodfire_coord.json").read_text())["layers"]
     res = {"provenance": provenance(None, seeds={"bootstrap": 0}, layers=layers, pool="meanpool", k=64,
-                                    angle="goodfire_full", n_steps=150, n_boot=n_boot,
+                                    angle="goodfire_full", n_steps=150, n_boot=n_boot, bootstrap_scheme=BOOT_SCHEME,
                                     n_interior_per_pair=N_INTERIOR_NOTE),
            "method": goodfire_method.__doc__, "bootstrap_method": bootstrap_variants.__doc__,
            "behaviour_method": beh_pca_mode.__doc__,
@@ -426,10 +446,10 @@ def run_goodfire_full(layers, n_boot, workers=6):
         for k, r in ref.items():                             # bootstrap point estimates = the stored / direct values
             for sp in ("interp", "smooth"):
                 for q in ("geo_pearson", "lin_pearson"):
-                    assert abs(b[k][sp][q] - r[sp][q]) < 1e-8, (L, k, sp, q, b[k][sp][q], r[sp][q])
+                    assert abs(b[k][sp][q]["point"] - r[sp][q]) < 1e-8, (L, k, sp, q, b[k][sp][q], r[sp][q])
         res["layers"][str(L)] = {"goodfire_full_angle": new, **{k: prev[str(L)][k] for k in (
             "goodfire_angle", "labels_angle", "unsupervised_angle")}, "bootstrap": boots[L]}
-        print(L, json.dumps({k: {sp: [round(v[sp][q], 3) for q in ("geo_pearson", "lin_pearson")]
+        print(L, json.dumps({k: {sp: [round(v[sp][q]["point"], 3) for q in ("geo_pearson", "lin_pearson")]
                                  for sp in ("interp", "smooth")} for k, v in b.items()}), flush=True)
     g = {L: res["layers"][str(L)]["goodfire_full_angle"] for L in layers}
     res["branches"] = {str(L): v["coord_source"] for L, v in g.items()}
@@ -438,7 +458,7 @@ def run_goodfire_full(layers, n_boot, workers=6):
     res["circular_corr_with_labels"] = {str(L): {s: v[f"{s}_side"]["atan2_angle_circular_corr_with_labels"]
                                                  for s in ("activation", "behaviour")} for L, v in g.items()}
     res["geo_minus_lin_verdict"] = {str(L): {k: {sp: ("spline" if lo > 0 else "chord" if hi < 0 else "tie")
-                                                 for sp, (lo, hi) in ((sp, vv[sp]["geo_minus_lin_ci95"])
+                                                 for sp, (lo, hi) in ((sp, vv[sp]["geo_minus_lin"]["ci95_corrected"])
                                                                       for sp in ("interp", "smooth"))}
                                              for k, vv in res["layers"][str(L)]["bootstrap"]["variants"].items()}
                                     for L in layers}
