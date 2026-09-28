@@ -700,7 +700,7 @@ duplicated arc) and the four smallest radius gaps (+0.11 to +0.19); on the label
 **Donor ceiling** (point 12 / 22, same carriers). Replacing the carrier's PCA-64 coordinates with those of a real
 unseen test clip at θ\* reaches nearest-real R = 0.23 / 0.20, against 0.19 / 0.17 for both spline and line. Swapping
 the whole activation adds almost nothing to R (+0.004 / +0.001). A real clip at θ\* reaches only R ≈ 0.2 against the
-other real clips at θ\*, so this readout's ceiling is set by clip-specific variance, and the spline reaches 82% / 84%
+other real clips at θ\*, so this readout's ceiling is set by clip-specific variance, and the spline reaches 84% / 84% of the in-subspace ceiling (82% / 84% of the whole-activation donor)
 of it. The MLP evaluator reads the in-subspace donor at 25.2° / 18.5° vs 30.7° / 21.2° for the spline[^donor]
 (`figures/fig4d_donor_ceiling_direction_L12_L22.png`).
 
