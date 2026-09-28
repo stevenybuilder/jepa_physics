@@ -1,0 +1,1116 @@
+{
+ "provenance": {
+  "split_file": "/private/tmp/claude-501/-Users-stevenyang/ae13a11f-788a-4ea6-a4fa-c5d4c3df1c0e/scratchpad/wt_p2parity2/splits/split_v1.json",
+  "split_sha256": "98e6310c40bf29e81bd8b6bf4b1ac603b89e4104d40ac1047b15dd5dc2be2df2",
+  "seeds": {
+   "arcs": "1-16",
+   "reruns": [
+    4,
+    8,
+    9,
+    10
+   ]
+  },
+  "commit": "6fc68e97dd21d7fa891ca9f6f53cad5f2062cc75",
+  "dirty": true,
+  "git_commit": "6fc68e97dd21d7fa891ca9f6f53cad5f2062cc75",
+  "git_dirty_src_or_scripts": false,
+  "timestamp_utc": "2026-09-28T04:03:25+00:00"
+ },
+ "gap_note": "gaps are manifold (spline) minus linear (chord), same clip and target: 'mean' with 95% paired clip bootstrap CI (as REPORT 4.3); endpoint gap + = spline worse, min-radius gap + = spline better",
+ "commands": "run_part2.py --dataset direction --layer 22 --holdout contiguous --spline smooth --seed S --labels-angle --results-dir results/arcs/L22_sS_labels (stored arcs: same without --labels-angle; parity of the stored L22_s4 rerun at HEAD: gains equal to ~1e-12)",
+ "headline_angle_source": {
+  "12": "unsupervised_angle",
+  "22": "labels_angle"
+ },
+ "headline_L22_angle_check": {
+  "plane_used": null,
+  "orientation": null,
+  "max_dev_deg": null,
+  "circular_corr": null,
+  "max_dev_cap_deg": null,
+  "activation": {
+   "circular_corr": 0.8083256170708822,
+   "orientation": 1,
+   "offset_deg": -87.69081720130364,
+   "max_dev_deg": 87.54970270761164,
+   "mean_dev_deg": 20.45850857107562,
+   "order_preserved": false,
+   "order_frac": 0.6,
+   "order_coarse_preserved": false
+  },
+  "centroid": {
+   "circular_corr": 0.49587975631161607,
+   "orientation": 1,
+   "offset_deg": -85.1762664830944,
+   "max_dev_deg": 135.79300081093552,
+   "mean_dev_deg": 32.47797997518844,
+   "order_preserved": false,
+   "order_frac": 0.5818181818181818,
+   "order_coarse_preserved": false
+  }
+ },
+ "arcs": {
+  "12": {
+   "1": {
+    "angle_source": "unsupervised_angle",
+    "spline": "smoothing",
+    "curve_extension": "cubic",
+    "held_out": [
+     168.75,
+     208.125
+    ],
+    "endpoint_gap": -2.402980367152745,
+    "endpoint_gap_ci95": [
+     -2.7702255492037318,
+     -2.025938097268171
+    ],
+    "min_radius_gap": 0.2966579537577174,
+    "min_radius_gap_ci95": [
+     0.2665686392676738,
+     0.33021629265219615
+    ],
+    "endpoint_err_spline": 5.890754052778971,
+    "endpoint_err_chord": 8.293734419931717,
+    "delta_norm_spline": 9.79412892818988,
+    "delta_norm_chord": 7.794386174086245,
+    "sagitta_over_noise_median": 1.437451769076266,
+    "verdict": "path_geometry_positive"
+   },
+   "2": {
+    "angle_source": "unsupervised_angle",
+    "spline": "smoothing",
+    "curve_extension": "cubic",
+    "held_out": [
+     298.125,
+     337.5
+    ],
+    "endpoint_gap": -0.14991818996948178,
+    "endpoint_gap_ci95": [
+     -0.19960395772672596,
+     -0.0982584744771766
+    ],
+    "min_radius_gap": 0.2859423624676607,
+    "min_radius_gap_ci95": [
+     0.2552122143794814,
+     0.31629881517612435
+    ],
+    "endpoint_err_spline": 8.01061154398348,
+    "endpoint_err_chord": 8.160529733952961,
+    "delta_norm_spline": 8.032605284723461,
+    "delta_norm_chord": 7.790983951106405,
+    "sagitta_over_noise_median": 0.28101621524519793,
+    "verdict": "path_geometry_positive"
+   },
+   "3": {
+    "angle_source": "unsupervised_angle",
+    "spline": "smoothing",
+    "curve_extension": "cubic",
+    "held_out": [
+     286.875,
+     326.25
+    ],
+    "endpoint_gap": -0.1679160384394233,
+    "endpoint_gap_ci95": [
+     -0.20953938682696857,
+     -0.12970960006216437
+    ],
+    "min_radius_gap": 0.2843894931183761,
+    "min_radius_gap_ci95": [
+     0.24966231345051135,
+     0.32080846264419743
+    ],
+    "endpoint_err_spline": 7.05627288474954,
+    "endpoint_err_chord": 7.224188923188964,
+    "delta_norm_spline": 7.917749823462489,
+    "delta_norm_chord": 7.783574002283825,
+    "sagitta_over_noise_median": 0.11572144748922433,
+    "verdict": "path_geometry_positive"
+   },
+   "4": {
+    "angle_source": "unsupervised_angle",
+    "spline": "smoothing",
+    "curve_extension": "cubic",
+    "held_out": [
+     258.75,
+     298.125
+    ],
+    "endpoint_gap": 2.760902699538244,
+    "endpoint_gap_ci95": [
+     2.3172370122275083,
+     3.2141298886591394
+    ],
+    "min_radius_gap": 0.28768162643337,
+    "min_radius_gap_ci95": [
+     0.2575423464798476,
+     0.32052472498392603
+    ],
+    "endpoint_err_spline": 12.59535596146487,
+    "endpoint_err_chord": 9.834453261926628,
+    "delta_norm_spline": 8.39900505878507,
+    "delta_norm_chord": 7.737921246202501,
+    "sagitta_over_noise_median": 0.6318487285070833,
+    "verdict": "path_geometry_positive"
+   },
+   "5": {
+    "angle_source": "unsupervised_angle",
+    "spline": "smoothing",
+    "curve_extension": "cubic",
+    "held_out": [
+     236.25,
+     275.625
+    ],
+    "endpoint_gap": -0.8066246225307808,
+    "endpoint_gap_ci95": [
+     -0.9564136255703755,
+     -0.659012234688428
+    ],
+    "min_radius_gap": 0.2907115522534022,
+    "min_radius_gap_ci95": [
+     0.25951484137792724,
+     0.3216949465678921
+    ],
+    "endpoint_err_spline": 7.190296257834928,
+    "endpoint_err_chord": 7.9969208803657095,
+    "delta_norm_spline": 8.676221231339861,
+    "delta_norm_chord": 8.068603422376626,
+    "sagitta_over_noise_median": 0.48811470688305786,
+    "verdict": "path_geometry_positive"
+   },
+   "6": {
+    "angle_source": "unsupervised_angle",
+    "spline": "smoothing",
+    "curve_extension": "cubic",
+    "held_out": [
+     157.5,
+     196.875
+    ],
+    "endpoint_gap": -0.03166588804219598,
+    "endpoint_gap_ci95": [
+     -0.274714677695182,
+     0.21020241219449345
+    ],
+    "min_radius_gap": 0.19366493248517394,
+    "min_radius_gap_ci95": [
+     0.16430636584183056,
+     0.2232611465840485
+    ],
+    "endpoint_err_spline": 9.328704934321753,
+    "endpoint_err_chord": 9.360370822363949,
+    "delta_norm_spline": 10.177120627202548,
+    "delta_norm_chord": 7.829556314493914,
+    "sagitta_over_noise_median": 1.6410733221966385,
+    "verdict": "path_geometry_positive"
+   },
+   "7": {
+    "angle_source": "unsupervised_angle",
+    "spline": "smoothing",
+    "curve_extension": "cubic",
+    "held_out": [
+     337.5,
+     16.875
+    ],
+    "endpoint_gap": 0.856815650736567,
+    "endpoint_gap_ci95": [
+     -0.6048366590008112,
+     2.3448296625058993
+    ],
+    "min_radius_gap": 0.12585169173308228,
+    "min_radius_gap_ci95": [
+     0.08935018388084412,
+     0.16216444684940826
+    ],
+    "endpoint_err_spline": 9.06664897339922,
+    "endpoint_err_chord": 8.209833322662654,
+    "delta_norm_spline": 13.914989406245168,
+    "delta_norm_chord": 7.665152687683064,
+    "sagitta_over_noise_median": 3.7021799810562492,
+    "verdict": "path_geometry_positive"
+   },
+   "8": {
+    "angle_source": "unsupervised_angle",
+    "spline": "smoothing",
+    "curve_extension": "cubic",
+    "held_out": [
+     258.75,
+     298.125
+    ],
+    "endpoint_gap": 2.655353325972038,
+    "endpoint_gap_ci95": [
+     2.282392452236641,
+     3.0121389643467875
+    ],
+    "min_radius_gap": 0.3061930011577347,
+    "min_radius_gap_ci95": [
+     0.272409798651454,
+     0.3413994937734214
+    ],
+    "endpoint_err_spline": 11.893456421581371,
+    "endpoint_err_chord": 9.238103095609334,
+    "delta_norm_spline": 8.57828183751262,
+    "delta_norm_chord": 7.908030115551784,
+    "sagitta_over_noise_median": 0.6318487285070833,
+    "verdict": "path_geometry_positive"
+   },
+   "9": {
+    "angle_source": "unsupervised_angle",
+    "spline": "smoothing",
+    "curve_extension": "cubic",
+    "held_out": [
+     146.25,
+     185.625
+    ],
+    "endpoint_gap": 0.0202721679951637,
+    "endpoint_gap_ci95": [
+     -0.6028954118788339,
+     0.6320887068482973
+    ],
+    "min_radius_gap": 0.27672028744284655,
+    "min_radius_gap_ci95": [
+     0.24495953451515118,
+     0.31051287972868274
+    ],
+    "endpoint_err_spline": 7.012728789565969,
+    "endpoint_err_chord": 6.992456621570805,
+    "delta_norm_spline": 9.285478691557486,
+    "delta_norm_chord": 7.7538500624222495,
+    "sagitta_over_noise_median": 1.189321768806321,
+    "verdict": "path_geometry_positive"
+   },
+   "10": {
+    "angle_source": "unsupervised_angle",
+    "spline": "smoothing",
+    "curve_extension": "cubic",
+    "held_out": [
+     275.625,
+     315.0
+    ],
+    "endpoint_gap": -0.43735678514503223,
+    "endpoint_gap_ci95": [
+     -0.5879980583110705,
+     -0.2851809958129137
+    ],
+    "min_radius_gap": 0.3072672500613109,
+    "min_radius_gap_ci95": [
+     0.2716769221061822,
+     0.34686369884135426
+    ],
+    "endpoint_err_spline": 5.5006634075096414,
+    "endpoint_err_chord": 5.938020192654673,
+    "delta_norm_spline": 8.393087042389874,
+    "delta_norm_chord": 8.082876153940836,
+    "sagitta_over_noise_median": 0.2507404210464188,
+    "verdict": "path_geometry_positive"
+   },
+   "11": {
+    "angle_source": "unsupervised_angle",
+    "spline": "smoothing",
+    "curve_extension": "cubic",
+    "held_out": [
+     45.0,
+     84.375
+    ],
+    "endpoint_gap": -0.11085323157049716,
+    "endpoint_gap_ci95": [
+     -0.16830859924020042,
+     -0.04117119254090069
+    ],
+    "min_radius_gap": 0.19925195057568193,
+    "min_radius_gap_ci95": [
+     0.17304170526628587,
+     0.22741400140466766
+    ],
+    "endpoint_err_spline": 8.523446569136528,
+    "endpoint_err_chord": 8.634299800707025,
+    "delta_norm_spline": 7.899722336924417,
+    "delta_norm_chord": 7.685402158720301,
+    "sagitta_over_noise_median": 0.21016353700422463,
+    "verdict": "path_geometry_positive"
+   },
+   "12": {
+    "angle_source": "unsupervised_angle",
+    "spline": "smoothing",
+    "curve_extension": "cubic",
+    "held_out": [
+     219.375,
+     258.75
+    ],
+    "endpoint_gap": 2.0330317554821584,
+    "endpoint_gap_ci95": [
+     1.5430843804629617,
+     2.513182913888486
+    ],
+    "min_radius_gap": 0.212481375315991,
+    "min_radius_gap_ci95": [
+     0.18015569357813552,
+     0.24832639760099715
+    ],
+    "endpoint_err_spline": 9.235801357456522,
+    "endpoint_err_chord": 7.202769601974363,
+    "delta_norm_spline": 8.862905571071936,
+    "delta_norm_chord": 8.180620383840095,
+    "sagitta_over_noise_median": 0.5842673864488519,
+    "verdict": "path_geometry_positive"
+   },
+   "13": {
+    "angle_source": "unsupervised_angle",
+    "spline": "smoothing",
+    "curve_extension": "cubic",
+    "held_out": [
+     320.625,
+     0.0
+    ],
+    "endpoint_gap": -0.1841456526127022,
+    "endpoint_gap_ci95": [
+     -0.3662775808838515,
+     -0.008783236454068316
+    ],
+    "min_radius_gap": 0.28330877913058705,
+    "min_radius_gap_ci95": [
+     0.2500964931855041,
+     0.31889922480372035
+    ],
+    "endpoint_err_spline": 7.419027124520838,
+    "endpoint_err_chord": 7.60317277713354,
+    "delta_norm_spline": 8.243564769150726,
+    "delta_norm_chord": 7.714938114618505,
+    "sagitta_over_noise_median": 0.5352873352023725,
+    "verdict": "path_geometry_positive"
+   },
+   "14": {
+    "angle_source": "unsupervised_angle",
+    "spline": "smoothing",
+    "curve_extension": "cubic",
+    "held_out": [
+     50.625,
+     90.0
+    ],
+    "endpoint_gap": -0.7416339187108599,
+    "endpoint_gap_ci95": [
+     -0.8697646569527996,
+     -0.6211851654212076
+    ],
+    "min_radius_gap": 0.23653942154988883,
+    "min_radius_gap_ci95": [
+     0.207709740983586,
+     0.2674056193021324
+    ],
+    "endpoint_err_spline": 6.355624389149434,
+    "endpoint_err_chord": 7.097258307860295,
+    "delta_norm_spline": 7.901691862646058,
+    "delta_norm_chord": 7.329345647952252,
+    "sagitta_over_noise_median": 0.5227444163491739,
+    "verdict": "path_geometry_positive"
+   },
+   "15": {
+    "angle_source": "unsupervised_angle",
+    "spline": "smoothing",
+    "curve_extension": "cubic",
+    "held_out": [
+     331.875,
+     11.25
+    ],
+    "endpoint_gap": -2.3805276690850383,
+    "endpoint_gap_ci95": [
+     -3.1101224122740474,
+     -1.564682890016246
+    ],
+    "min_radius_gap": 0.28656224946930203,
+    "min_radius_gap_ci95": [
+     0.24622926133033485,
+     0.3234497222307561
+    ],
+    "endpoint_err_spline": 5.27507053880264,
+    "endpoint_err_chord": 7.655598207887678,
+    "delta_norm_spline": 13.354767815522626,
+    "delta_norm_chord": 7.848093939475672,
+    "sagitta_over_noise_median": 3.378582673426798,
+    "verdict": "path_geometry_positive"
+   },
+   "16": {
+    "angle_source": "unsupervised_angle",
+    "spline": "smoothing",
+    "curve_extension": "cubic",
+    "held_out": [
+     191.25,
+     230.625
+    ],
+    "endpoint_gap": 0.3938637069470802,
+    "endpoint_gap_ci95": [
+     0.1936140077165175,
+     0.603748180939988
+    ],
+    "min_radius_gap": 0.22895572154144186,
+    "min_radius_gap_ci95": [
+     0.1946806116911914,
+     0.2617317753706499
+    ],
+    "endpoint_err_spline": 7.533191870473577,
+    "endpoint_err_chord": 7.139328163526496,
+    "delta_norm_spline": 8.859190699590505,
+    "delta_norm_chord": 8.391529201388442,
+    "sagitta_over_noise_median": 0.516617758993845,
+    "verdict": "path_geometry_positive"
+   }
+  },
+  "22": {
+   "1": {
+    "angle_source": "labels_angle",
+    "spline": "smoothing",
+    "curve_extension": "cubic",
+    "held_out": [
+     168.75,
+     208.125
+    ],
+    "endpoint_gap": -0.8233350159472702,
+    "endpoint_gap_ci95": [
+     -1.021907025915367,
+     -0.6303438738615754
+    ],
+    "min_radius_gap": 0.23280008509399253,
+    "min_radius_gap_ci95": [
+     0.2015104602277345,
+     0.2672689754225443
+    ],
+    "endpoint_err_spline": 7.0070426321112,
+    "endpoint_err_chord": 7.83037764805847,
+    "delta_norm_spline": 10.37601091871659,
+    "delta_norm_chord": 9.85275860196303,
+    "sagitta_over_noise_median": 0.35750752984285583,
+    "verdict": "path_geometry_positive"
+   },
+   "2": {
+    "angle_source": "labels_angle",
+    "spline": "smoothing",
+    "curve_extension": "cubic",
+    "held_out": [
+     298.125,
+     337.5
+    ],
+    "endpoint_gap": 2.9858780351446517,
+    "endpoint_gap_ci95": [
+     2.520679656887685,
+     3.4555731028938865
+    ],
+    "min_radius_gap": 0.2928763999982054,
+    "min_radius_gap_ci95": [
+     0.26131132604949175,
+     0.32370554447347344
+    ],
+    "endpoint_err_spline": 8.872866890954503,
+    "endpoint_err_chord": 5.88698885580985,
+    "delta_norm_spline": 11.327275939346274,
+    "delta_norm_chord": 10.794031050974413,
+    "sagitta_over_noise_median": 0.5433635018695763,
+    "verdict": "path_geometry_positive"
+   },
+   "3": {
+    "angle_source": "labels_angle",
+    "spline": "smoothing",
+    "curve_extension": "cubic",
+    "held_out": [
+     286.875,
+     326.25
+    ],
+    "endpoint_gap": -0.22160500201147867,
+    "endpoint_gap_ci95": [
+     -0.2971712658556286,
+     -0.14496071769672625
+    ],
+    "min_radius_gap": 0.3208567449019947,
+    "min_radius_gap_ci95": [
+     0.28269234502609175,
+     0.36111230638283687
+    ],
+    "endpoint_err_spline": 4.267530856594383,
+    "endpoint_err_chord": 4.489135858605862,
+    "delta_norm_spline": 12.343706278955246,
+    "delta_norm_chord": 11.647394726304725,
+    "sagitta_over_noise_median": 0.3764160803222666,
+    "verdict": "path_geometry_positive"
+   },
+   "4": {
+    "angle_source": "unsupervised_angle",
+    "spline": "smoothing",
+    "curve_extension": "cubic",
+    "held_out": [
+     258.75,
+     298.125
+    ],
+    "endpoint_gap": 9.24730588421417,
+    "endpoint_gap_ci95": [
+     7.597506530461155,
+     10.8283236481783
+    ],
+    "min_radius_gap": 0.10993093707873917,
+    "min_radius_gap_ci95": [
+     0.08850290323009595,
+     0.13249660739896438
+    ],
+    "endpoint_err_spline": 31.372811847691718,
+    "endpoint_err_chord": 22.125505963477547,
+    "delta_norm_spline": 9.74419291301246,
+    "delta_norm_chord": 9.504440928012237,
+    "sagitta_over_noise_median": 0.28383777689648043,
+    "verdict": "negative_endpoint"
+   },
+   "5": {
+    "angle_source": "labels_angle",
+    "spline": "smoothing",
+    "curve_extension": "cubic",
+    "held_out": [
+     236.25,
+     275.625
+    ],
+    "endpoint_gap": -0.17313125174260965,
+    "endpoint_gap_ci95": [
+     -0.30136339366553966,
+     -0.0374711489840643
+    ],
+    "min_radius_gap": 0.29847468126775883,
+    "min_radius_gap_ci95": [
+     0.26204523163169724,
+     0.3318000556115262
+    ],
+    "endpoint_err_spline": 5.192790978133325,
+    "endpoint_err_chord": 5.365922229875935,
+    "delta_norm_spline": 11.998750035841946,
+    "delta_norm_chord": 11.312841689065118,
+    "sagitta_over_noise_median": 0.3559327250170766,
+    "verdict": "path_geometry_positive"
+   },
+   "6": {
+    "angle_source": "labels_angle",
+    "spline": "smoothing",
+    "curve_extension": "cubic",
+    "held_out": [
+     157.5,
+     196.875
+    ],
+    "endpoint_gap": -0.21258951090037273,
+    "endpoint_gap_ci95": [
+     -0.2846161608604558,
+     -0.1428864880179199
+    ],
+    "min_radius_gap": 0.25284098970637614,
+    "min_radius_gap_ci95": [
+     0.22222114077215388,
+     0.2828594193577566
+    ],
+    "endpoint_err_spline": 7.690660143490461,
+    "endpoint_err_chord": 7.903249654390834,
+    "delta_norm_spline": 10.03240459664814,
+    "delta_norm_chord": 9.506883943407487,
+    "sagitta_over_noise_median": 0.34712614268417874,
+    "verdict": "path_geometry_positive"
+   },
+   "7": {
+    "angle_source": "labels_angle",
+    "spline": "smoothing",
+    "curve_extension": "cubic",
+    "held_out": [
+     337.5,
+     16.875
+    ],
+    "endpoint_gap": -1.1267753941126168,
+    "endpoint_gap_ci95": [
+     -1.5019202016309279,
+     -0.7813690032211409
+    ],
+    "min_radius_gap": 0.2656782627322509,
+    "min_radius_gap_ci95": [
+     0.231730379649489,
+     0.29921678341406105
+    ],
+    "endpoint_err_spline": 6.8224390651847635,
+    "endpoint_err_chord": 7.949214459297381,
+    "delta_norm_spline": 10.715211150633541,
+    "delta_norm_chord": 10.1273135730726,
+    "sagitta_over_noise_median": 0.36916631058278976,
+    "verdict": "path_geometry_positive"
+   },
+   "8": {
+    "angle_source": "unsupervised_angle",
+    "spline": "smoothing",
+    "curve_extension": "cubic",
+    "held_out": [
+     258.75,
+     298.125
+    ],
+    "endpoint_gap": 9.916734270197402,
+    "endpoint_gap_ci95": [
+     8.317743819377668,
+     11.607933342968836
+    ],
+    "min_radius_gap": 0.10994020433613683,
+    "min_radius_gap_ci95": [
+     0.08706514765662722,
+     0.13527964317103855
+    ],
+    "endpoint_err_spline": 33.008297075855616,
+    "endpoint_err_chord": 23.091562805658214,
+    "delta_norm_spline": 9.885237069466358,
+    "delta_norm_chord": 9.716949069910969,
+    "sagitta_over_noise_median": 0.28383777689648043,
+    "verdict": "negative_endpoint"
+   },
+   "9": {
+    "angle_source": "unsupervised_angle",
+    "spline": "smoothing",
+    "curve_extension": "cubic",
+    "held_out": [
+     146.25,
+     185.625
+    ],
+    "endpoint_gap": -0.3134968699733131,
+    "endpoint_gap_ci95": [
+     -0.44770657971891337,
+     -0.1766434413506081
+    ],
+    "min_radius_gap": 0.13277606827588823,
+    "min_radius_gap_ci95": [
+     0.11273013041080587,
+     0.15495888162583243
+    ],
+    "endpoint_err_spline": 18.26038548706767,
+    "endpoint_err_chord": 18.57388235704098,
+    "delta_norm_spline": 9.363883144718683,
+    "delta_norm_chord": 9.071265589308206,
+    "sagitta_over_noise_median": 0.1956234573440253,
+    "verdict": "path_geometry_positive"
+   },
+   "10": {
+    "angle_source": "unsupervised_angle",
+    "spline": "smoothing",
+    "curve_extension": "cubic",
+    "held_out": [
+     275.625,
+     315.0
+    ],
+    "endpoint_gap": -1.5314885072099351,
+    "endpoint_gap_ci95": [
+     -1.8290153222430674,
+     -1.2471859905432807
+    ],
+    "min_radius_gap": 0.189283753687065,
+    "min_radius_gap_ci95": [
+     0.1468253407294701,
+     0.23221092194480702
+    ],
+    "endpoint_err_spline": 7.7668680338165,
+    "endpoint_err_chord": 9.298356541026436,
+    "delta_norm_spline": 11.618000503587579,
+    "delta_norm_chord": 11.382643735113872,
+    "sagitta_over_noise_median": 0.22400734992534188,
+    "verdict": "path_geometry_positive"
+   },
+   "11": {
+    "angle_source": "labels_angle",
+    "spline": "smoothing",
+    "curve_extension": "cubic",
+    "held_out": [
+     45.0,
+     84.375
+    ],
+    "endpoint_gap": -0.2238467472203259,
+    "endpoint_gap_ci95": [
+     -0.41552879859350217,
+     -0.040197927056425324
+    ],
+    "min_radius_gap": 0.2581243091773418,
+    "min_radius_gap_ci95": [
+     0.22701947674502812,
+     0.29128015653517697
+    ],
+    "endpoint_err_spline": 5.4142966710730756,
+    "endpoint_err_chord": 5.638143418293402,
+    "delta_norm_spline": 12.74712204356588,
+    "delta_norm_chord": 11.686751253300551,
+    "sagitta_over_noise_median": 0.5204906348911544,
+    "verdict": "path_geometry_positive"
+   },
+   "12": {
+    "angle_source": "labels_angle",
+    "spline": "smoothing",
+    "curve_extension": "cubic",
+    "held_out": [
+     219.375,
+     258.75
+    ],
+    "endpoint_gap": -0.40811324177319425,
+    "endpoint_gap_ci95": [
+     -0.5314320543674369,
+     -0.28272691185194954
+    ],
+    "min_radius_gap": 0.2670014364582018,
+    "min_radius_gap_ci95": [
+     0.23298920957324348,
+     0.3034350645436582
+    ],
+    "endpoint_err_spline": 5.279048585159086,
+    "endpoint_err_chord": 5.68716182693228,
+    "delta_norm_spline": 11.41663495424426,
+    "delta_norm_chord": 10.703455416837471,
+    "sagitta_over_noise_median": 0.3749637406140961,
+    "verdict": "path_geometry_positive"
+   },
+   "13": {
+    "angle_source": "labels_angle",
+    "spline": "smoothing",
+    "curve_extension": "cubic",
+    "held_out": [
+     320.625,
+     0.0
+    ],
+    "endpoint_gap": -0.33778483430147815,
+    "endpoint_gap_ci95": [
+     -0.47730374951595583,
+     -0.22100100853103016
+    ],
+    "min_radius_gap": 0.29873047166232564,
+    "min_radius_gap_ci95": [
+     0.2634673048472476,
+     0.3353456986139388
+    ],
+    "endpoint_err_spline": 6.651342557697123,
+    "endpoint_err_chord": 6.989127391998601,
+    "delta_norm_spline": 11.080820766002669,
+    "delta_norm_chord": 10.340216389371143,
+    "sagitta_over_noise_median": 0.48433343367326787,
+    "verdict": "path_geometry_positive"
+   },
+   "14": {
+    "angle_source": "labels_angle",
+    "spline": "smoothing",
+    "curve_extension": "cubic",
+    "held_out": [
+     50.625,
+     90.0
+    ],
+    "endpoint_gap": 0.7022336751735883,
+    "endpoint_gap_ci95": [
+     0.457966184410374,
+     0.9440439725308054
+    ],
+    "min_radius_gap": 0.25633763474090193,
+    "min_radius_gap_ci95": [
+     0.22442893503520264,
+     0.29058379307391147
+    ],
+    "endpoint_err_spline": 6.623663702998514,
+    "endpoint_err_chord": 5.9214300278249254,
+    "delta_norm_spline": 11.366518621550343,
+    "delta_norm_chord": 10.50515120778371,
+    "sagitta_over_noise_median": 0.49606504424248277,
+    "verdict": "path_geometry_positive"
+   },
+   "15": {
+    "angle_source": "labels_angle",
+    "spline": "smoothing",
+    "curve_extension": "cubic",
+    "held_out": [
+     331.875,
+     11.25
+    ],
+    "endpoint_gap": -1.0462353880974644,
+    "endpoint_gap_ci95": [
+     -1.3133929422679949,
+     -0.7638810728953126
+    ],
+    "min_radius_gap": 0.29360227325789257,
+    "min_radius_gap_ci95": [
+     0.2585450740913195,
+     0.3274573251339371
+    ],
+    "endpoint_err_spline": 5.8019578349089045,
+    "endpoint_err_chord": 6.848193223006368,
+    "delta_norm_spline": 11.32486766038555,
+    "delta_norm_chord": 10.508987443225365,
+    "sagitta_over_noise_median": 0.4984178823535542,
+    "verdict": "path_geometry_positive"
+   },
+   "16": {
+    "angle_source": "labels_angle",
+    "spline": "smoothing",
+    "curve_extension": "cubic",
+    "held_out": [
+     191.25,
+     230.625
+    ],
+    "endpoint_gap": 3.706631972239792,
+    "endpoint_gap_ci95": [
+     3.2015452242124662,
+     4.190613941966606
+    ],
+    "min_radius_gap": 0.2952283091283117,
+    "min_radius_gap_ci95": [
+     0.2599262772941665,
+     0.32923118343771063
+    ],
+    "endpoint_err_spline": 12.425267561859343,
+    "endpoint_err_chord": 8.718635589619554,
+    "delta_norm_spline": 11.345382806734223,
+    "delta_norm_chord": 10.642641851535203,
+    "sagitta_over_noise_median": 0.40903915883957953,
+    "verdict": "negative_endpoint"
+   }
+  }
+ },
+ "angle_source_counts": {
+  "12": {
+   "unsupervised_angle": 16,
+   "labels_angle": 0
+  },
+  "22": {
+   "unsupervised_angle": 4,
+   "labels_angle": 12
+  }
+ },
+ "L22_unsupervised_seeds": [
+  4,
+  8,
+  9,
+  10
+ ],
+ "L22_labels_reruns": {
+  "4": {
+   "original": {
+    "angle_source": "unsupervised_angle",
+    "spline": "smoothing",
+    "curve_extension": "cubic",
+    "held_out": [
+     258.75,
+     298.125
+    ],
+    "endpoint_gap": 9.24730588421417,
+    "endpoint_gap_ci95": [
+     7.597506530461155,
+     10.8283236481783
+    ],
+    "min_radius_gap": 0.10993093707873917,
+    "min_radius_gap_ci95": [
+     0.08850290323009595,
+     0.13249660739896438
+    ],
+    "endpoint_err_spline": 31.372811847691718,
+    "endpoint_err_chord": 22.125505963477547,
+    "delta_norm_spline": 9.74419291301246,
+    "delta_norm_chord": 9.504440928012237,
+    "sagitta_over_noise_median": 0.28383777689648043,
+    "verdict": "negative_endpoint"
+   },
+   "labels": {
+    "angle_source": "labels_angle",
+    "spline": "smoothing",
+    "curve_extension": "cubic",
+    "held_out": [
+     258.75,
+     298.125
+    ],
+    "endpoint_gap": 0.21482874693878826,
+    "endpoint_gap_ci95": [
+     0.09475422136376607,
+     0.32989831689358917
+    ],
+    "min_radius_gap": 0.3122866539302503,
+    "min_radius_gap_ci95": [
+     0.2769706429029851,
+     0.3488838766926725
+    ],
+    "endpoint_err_spline": 5.351076537554616,
+    "endpoint_err_chord": 5.136247790615827,
+    "delta_norm_spline": 11.753978310198136,
+    "delta_norm_chord": 11.107955908494885,
+    "sagitta_over_noise_median": 0.32071935410265906,
+    "verdict": "path_geometry_positive"
+   }
+  },
+  "8": {
+   "original": {
+    "angle_source": "unsupervised_angle",
+    "spline": "smoothing",
+    "curve_extension": "cubic",
+    "held_out": [
+     258.75,
+     298.125
+    ],
+    "endpoint_gap": 9.916734270197402,
+    "endpoint_gap_ci95": [
+     8.317743819377668,
+     11.607933342968836
+    ],
+    "min_radius_gap": 0.10994020433613683,
+    "min_radius_gap_ci95": [
+     0.08706514765662722,
+     0.13527964317103855
+    ],
+    "endpoint_err_spline": 33.008297075855616,
+    "endpoint_err_chord": 23.091562805658214,
+    "delta_norm_spline": 9.885237069466358,
+    "delta_norm_chord": 9.716949069910969,
+    "sagitta_over_noise_median": 0.28383777689648043,
+    "verdict": "negative_endpoint"
+   },
+   "labels": {
+    "angle_source": "labels_angle",
+    "spline": "smoothing",
+    "curve_extension": "cubic",
+    "held_out": [
+     258.75,
+     298.125
+    ],
+    "endpoint_gap": 0.2709273391097366,
+    "endpoint_gap_ci95": [
+     0.14889054055214468,
+     0.3975219618104274
+    ],
+    "min_radius_gap": 0.32464511116759154,
+    "min_radius_gap_ci95": [
+     0.28893299532030114,
+     0.3629018079994577
+    ],
+    "endpoint_err_spline": 5.858871977125144,
+    "endpoint_err_chord": 5.587944638015408,
+    "delta_norm_spline": 12.03478881890016,
+    "delta_norm_chord": 11.379909690453404,
+    "sagitta_over_noise_median": 0.32071935410265906,
+    "verdict": "path_geometry_positive"
+   }
+  },
+  "9": {
+   "original": {
+    "angle_source": "unsupervised_angle",
+    "spline": "smoothing",
+    "curve_extension": "cubic",
+    "held_out": [
+     146.25,
+     185.625
+    ],
+    "endpoint_gap": -0.3134968699733131,
+    "endpoint_gap_ci95": [
+     -0.44770657971891337,
+     -0.1766434413506081
+    ],
+    "min_radius_gap": 0.13277606827588823,
+    "min_radius_gap_ci95": [
+     0.11273013041080587,
+     0.15495888162583243
+    ],
+    "endpoint_err_spline": 18.26038548706767,
+    "endpoint_err_chord": 18.57388235704098,
+    "delta_norm_spline": 9.363883144718683,
+    "delta_norm_chord": 9.071265589308206,
+    "sagitta_over_noise_median": 0.1956234573440253,
+    "verdict": "path_geometry_positive"
+   },
+   "labels": {
+    "angle_source": "labels_angle",
+    "spline": "smoothing",
+    "curve_extension": "cubic",
+    "held_out": [
+     146.25,
+     185.625
+    ],
+    "endpoint_gap": -0.3609917924723434,
+    "endpoint_gap_ci95": [
+     -0.420251765392039,
+     -0.30140444806457106
+    ],
+    "min_radius_gap": 0.2629038386348302,
+    "min_radius_gap_ci95": [
+     0.23136375599347256,
+     0.2967127613412076
+    ],
+    "endpoint_err_spline": 7.103944965881773,
+    "endpoint_err_chord": 7.464936758354117,
+    "delta_norm_spline": 9.926640810913348,
+    "delta_norm_chord": 9.562274315509034,
+    "sagitta_over_noise_median": 0.24512021502870904,
+    "verdict": "path_geometry_positive"
+   }
+  },
+  "10": {
+   "original": {
+    "angle_source": "unsupervised_angle",
+    "spline": "smoothing",
+    "curve_extension": "cubic",
+    "held_out": [
+     275.625,
+     315.0
+    ],
+    "endpoint_gap": -1.5314885072099351,
+    "endpoint_gap_ci95": [
+     -1.8290153222430674,
+     -1.2471859905432807
+    ],
+    "min_radius_gap": 0.189283753687065,
+    "min_radius_gap_ci95": [
+     0.1468253407294701,
+     0.23221092194480702
+    ],
+    "endpoint_err_spline": 7.7668680338165,
+    "endpoint_err_chord": 9.298356541026436,
+    "delta_norm_spline": 11.618000503587579,
+    "delta_norm_chord": 11.382643735113872,
+    "sagitta_over_noise_median": 0.22400734992534188,
+    "verdict": "path_geometry_positive"
+   },
+   "labels": {
+    "angle_source": "labels_angle",
+    "spline": "smoothing",
+    "curve_extension": "cubic",
+    "held_out": [
+     275.625,
+     315.0
+    ],
+    "endpoint_gap": -0.2533786958706403,
+    "endpoint_gap_ci95": [
+     -0.3673369946679129,
+     -0.13985051329297912
+    ],
+    "min_radius_gap": 0.3112869346855223,
+    "min_radius_gap_ci95": [
+     0.2758700018885718,
+     0.35092746445973266
+    ],
+    "endpoint_err_spline": 4.730057505962068,
+    "endpoint_err_chord": 4.983436201832709,
+    "delta_norm_spline": 12.384608383376753,
+    "delta_norm_chord": 11.521787935641152,
+    "sagitta_over_noise_median": 0.46565194915198665,
+    "verdict": "path_geometry_positive"
+   }
+  }
+ },
+ "L22_aggregate_stored": {
+  "n_runs": 16,
+  "endpoint_gap_mean": 1.2587738796049717,
+  "endpoint_gap_sd": 3.5363889984092647,
+  "min_radius_gap_mean": 0.24215516009396146,
+  "min_radius_gap_sd": 0.06935634943006493,
+  "min_radius_gap_range": [
+   0.10993093707873917,
+   0.3208567449019947
+  ],
+  "verdict_counts": {
+   "negative_endpoint": 3,
+   "path_geometry_positive": 13
+  }
+ },
+ "L22_aggregate_all_labels": {
+  "n_runs": 16,
+  "endpoint_gap_mean": 0.16829455588479764,
+  "endpoint_gap_sd": 1.3293048808613965,
+  "min_radius_gap_mean": 0.28397963353398425,
+  "min_radius_gap_sd": 0.02753843398139378,
+  "min_radius_gap_range": [
+   0.23280008509399253,
+   0.32464511116759154
+  ],
+  "verdict_counts": {
+   "negative_endpoint": 1,
+   "path_geometry_positive": 15
+  }
+ },
+ "L22_aggregate_note": "all_labels = stored arcs with every unsupervised-angle seed replaced by its --labels-angle rerun; seeds 4 and 8 are the same arc (both kept, as in REPORT)"
+}

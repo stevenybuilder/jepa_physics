@@ -1,0 +1,668 @@
+{
+ "provenance": {
+  "split_file": "/private/tmp/claude-501/-Users-stevenyang/ae13a11f-788a-4ea6-a4fa-c5d4c3df1c0e/scratchpad/wt_p2parity2/splits/split_v1.json",
+  "split_sha256": "98e6310c40bf29e81bd8b6bf4b1ac603b89e4104d40ac1047b15dd5dc2be2df2",
+  "seeds": {
+   "arcs": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8
+   ]
+  },
+  "commit": "6fc68e97dd21d7fa891ca9f6f53cad5f2062cc75",
+  "dirty": true,
+  "git_commit": "6fc68e97dd21d7fa891ca9f6f53cad5f2062cc75",
+  "git_dirty_src_or_scripts": false,
+  "timestamp_utc": "2026-09-28T04:03:30+00:00"
+ },
+ "gap_note": "gaps are manifold (spline) minus linear (chord), same clip and target: 'mean' with 95% paired clip bootstrap CI (as REPORT 4.3); endpoint gap + = spline worse, min-radius gap + = spline better",
+ "commands": "run_part2.py --dataset direction --layer L --holdout contiguous --spline interp --labels-angle [--goodfire-baseline for the seed-0 run, as stored] [--seed S]",
+ "edit_size_note": "run_part2 does not emit a delta-over-natural-centroid-change number (that is run_session2); delta_norm = mean full-space ||x_steered - x|| at the path end, so delta_norm_spline / delta_norm_chord is the edit size relative to the chord's, whose endpoint is the kept-centroid chord point",
+ "reconstruction_note": "geometry_checks.heldout_reconstruction on train folds (as run_geometry_checks): mean PCA-unit error rebuilding held-out centroids, contiguous = mean over arc seeds 0-3; stored = unsupervised atan2 knot order (p2_geometry_direction_L*.json)",
+ "points": {
+  "12": {
+   "heldout_reconstruction": {
+    "stored_unsupervised_order": {
+     "scattered": {
+      "interp": 3.664900352634733,
+      "smooth": 2.2241554515115136,
+      "chord": 2.1396649247056843,
+      "n_seeds": 1,
+      "best": "chord"
+     },
+     "contiguous": {
+      "interp": 188.2345059299159,
+      "smooth": 2.81510861400064,
+      "chord": 2.5846517343019606,
+      "n_seeds": 4,
+      "best": "chord"
+     }
+    },
+    "labels_order": {
+     "scattered": {
+      "interp": 2.6249243724855766,
+      "smooth": 2.2888482838123303,
+      "chord": 2.1452971957205555,
+      "n_seeds": 1,
+      "best": "chord"
+     },
+     "contiguous": {
+      "interp": 6.294768218840236,
+      "smooth": 2.75746867558629,
+      "chord": 2.589728433727696,
+      "n_seeds": 4,
+      "best": "chord"
+     }
+    }
+   },
+   "seed0_stored_smoothing": {
+    "angle_source": "unsupervised_angle",
+    "spline": "smoothing",
+    "curve_extension": "cubic",
+    "held_out": [
+     303.75,
+     343.125
+    ],
+    "endpoint_gap": 0.11423880852635564,
+    "endpoint_gap_ci95": [
+     0.04944208126646339,
+     0.17580282247379553
+    ],
+    "min_radius_gap": 0.25610767665185347,
+    "min_radius_gap_ci95": [
+     0.22381198498796753,
+     0.28965956958052724
+    ],
+    "endpoint_err_spline": 9.731167946051672,
+    "endpoint_err_chord": 9.616929137525316,
+    "delta_norm_spline": 7.455242070073126,
+    "delta_norm_chord": 7.190748197449984,
+    "sagitta_over_noise_median": 0.358083406751211,
+    "verdict": "path_geometry_positive",
+    "delta_ratio_spline_over_chord": 1.0367825246219773
+   },
+   "seed0_interp_labels": {
+    "angle_source": "labels_angle",
+    "spline": "interpolating",
+    "curve_extension": "cubic",
+    "held_out": [
+     303.75,
+     343.125
+    ],
+    "endpoint_gap": 2.2984888611711356,
+    "endpoint_gap_ci95": [
+     1.8223351587967553,
+     2.7589216015528004
+    ],
+    "min_radius_gap": 0.2816150993787781,
+    "min_radius_gap_ci95": [
+     0.2458154772534437,
+     0.3208446543349993
+    ],
+    "endpoint_err_spline": 7.010045081453538,
+    "endpoint_err_chord": 4.711556220282404,
+    "delta_norm_spline": 13.056265902252212,
+    "delta_norm_chord": 8.259332090216448,
+    "sagitta_over_noise_median": 3.847724193268649,
+    "verdict": "path_geometry_positive",
+    "delta_ratio_spline_over_chord": 1.5807895553343774
+   },
+   "arcs_stored_smoothing_same_seeds": {
+    "n_runs": 8,
+    "endpoint_gap_mean": 0.33924582126402775,
+    "endpoint_gap_sd": 1.7305469060454144,
+    "min_radius_gap_mean": 0.25888657667581466,
+    "min_radius_gap_sd": 0.06418846854551294,
+    "min_radius_gap_range": [
+     0.12585169173308228,
+     0.3061930011577347
+    ],
+    "verdict_counts": {
+     "path_geometry_positive": 8
+    }
+   },
+   "arcs_interp_labels": {
+    "n_runs": 8,
+    "endpoint_gap_mean": 2.4473255253210526,
+    "endpoint_gap_sd": 2.1390447353653337,
+    "min_radius_gap_mean": 0.2648225340584558,
+    "min_radius_gap_sd": 0.05192255812519859,
+    "min_radius_gap_range": [
+     0.20026921294126995,
+     0.32037655859007735
+    ],
+    "verdict_counts": {
+     "negative_endpoint": 3,
+     "path_geometry_positive": 5
+    }
+   },
+   "arcs_interp_labels_rows": {
+    "1": {
+     "angle_source": "labels_angle",
+     "spline": "interpolating",
+     "curve_extension": "cubic",
+     "held_out": [
+      168.75,
+      208.125
+     ],
+     "endpoint_gap": 0.11273355025904334,
+     "endpoint_gap_ci95": [
+      0.03198428039383892,
+      0.19060198570277911
+     ],
+     "min_radius_gap": 0.2269056184165611,
+     "min_radius_gap_ci95": [
+      0.19563800326311384,
+      0.2605942398608093
+     ],
+     "endpoint_err_spline": 6.387597862598749,
+     "endpoint_err_chord": 6.274864312339706,
+     "delta_norm_spline": 10.55173408088379,
+     "delta_norm_chord": 8.501248941985383,
+     "sagitta_over_noise_median": 2.5702519067178544,
+     "verdict": "path_geometry_positive"
+    },
+    "2": {
+     "angle_source": "labels_angle",
+     "spline": "interpolating",
+     "curve_extension": "cubic",
+     "held_out": [
+      298.125,
+      337.5
+     ],
+     "endpoint_gap": 4.5918275330913945,
+     "endpoint_gap_ci95": [
+      3.9083324316755497,
+      5.280273590504429
+     ],
+     "min_radius_gap": 0.31433618566100613,
+     "min_radius_gap_ci95": [
+      0.28134251637671204,
+      0.3483612386166586
+     ],
+     "endpoint_err_spline": 9.773330486062605,
+     "endpoint_err_chord": 5.18150295297121,
+     "delta_norm_spline": 10.671369778486424,
+     "delta_norm_chord": 8.564627094377878,
+     "sagitta_over_noise_median": 1.9611853151684304,
+     "verdict": "negative_endpoint"
+    },
+    "3": {
+     "angle_source": "labels_angle",
+     "spline": "interpolating",
+     "curve_extension": "cubic",
+     "held_out": [
+      286.875,
+      326.25
+     ],
+     "endpoint_gap": 3.479903940158294,
+     "endpoint_gap_ci95": [
+      3.005445384800638,
+      3.9248060605231423
+     ],
+     "min_radius_gap": 0.32037655859007735,
+     "min_radius_gap_ci95": [
+      0.28291584044506596,
+      0.3599083465974556
+     ],
+     "endpoint_err_spline": 9.071862642219045,
+     "endpoint_err_chord": 5.591958702060752,
+     "delta_norm_spline": 11.270520458462016,
+     "delta_norm_chord": 8.65441314890024,
+     "sagitta_over_noise_median": 2.4630602312756706,
+     "verdict": "path_geometry_positive"
+    },
+    "4": {
+     "angle_source": "labels_angle",
+     "spline": "interpolating",
+     "curve_extension": "cubic",
+     "held_out": [
+      258.75,
+      298.125
+     ],
+     "endpoint_gap": 4.950661689254507,
+     "endpoint_gap_ci95": [
+      4.290015978832356,
+      5.574521488562526
+     ],
+     "min_radius_gap": 0.20026921294126995,
+     "min_radius_gap_ci95": [
+      0.168430366421161,
+      0.23395181381017097
+     ],
+     "endpoint_err_spline": 11.808631189310175,
+     "endpoint_err_chord": 6.857969500055667,
+     "delta_norm_spline": 10.621707834502706,
+     "delta_norm_chord": 8.28987235396572,
+     "sagitta_over_noise_median": 2.5442380404619387,
+     "verdict": "negative_endpoint"
+    },
+    "5": {
+     "angle_source": "labels_angle",
+     "spline": "interpolating",
+     "curve_extension": "cubic",
+     "held_out": [
+      236.25,
+      275.625
+     ],
+     "endpoint_gap": 0.44068387504648654,
+     "endpoint_gap_ci95": [
+      0.2013119910533263,
+      0.6955450985306129
+     ],
+     "min_radius_gap": 0.3166918819931671,
+     "min_radius_gap_ci95": [
+      0.2802054463447745,
+      0.35134563193993984
+     ],
+     "endpoint_err_spline": 6.54926436785265,
+     "endpoint_err_chord": 6.108580492806163,
+     "delta_norm_spline": 11.62146978505234,
+     "delta_norm_chord": 8.465969226813248,
+     "sagitta_over_noise_median": 2.7117205587434947,
+     "verdict": "path_geometry_positive"
+    },
+    "6": {
+     "angle_source": "labels_angle",
+     "spline": "interpolating",
+     "curve_extension": "cubic",
+     "held_out": [
+      157.5,
+      196.875
+     ],
+     "endpoint_gap": 0.9408672227405194,
+     "endpoint_gap_ci95": [
+      0.6264820211524961,
+      1.2304803020602506
+     ],
+     "min_radius_gap": 0.21941620484816138,
+     "min_radius_gap_ci95": [
+      0.18835304440048695,
+      0.25163976748598754
+     ],
+     "endpoint_err_spline": 7.982036623103674,
+     "endpoint_err_chord": 7.041169400363155,
+     "delta_norm_spline": 11.920792035544784,
+     "delta_norm_chord": 8.724284598560367,
+     "sagitta_over_noise_median": 2.4900825572049348,
+     "verdict": "path_geometry_positive"
+    },
+    "7": {
+     "angle_source": "labels_angle",
+     "spline": "interpolating",
+     "curve_extension": "cubic",
+     "held_out": [
+      337.5,
+      16.875
+     ],
+     "endpoint_gap": 0.48934005185239404,
+     "endpoint_gap_ci95": [
+      0.256212591097293,
+      0.7226858967018813
+     ],
+     "min_radius_gap": 0.2986053527999457,
+     "min_radius_gap_ci95": [
+      0.26497424879860526,
+      0.3325297792933737
+     ],
+     "endpoint_err_spline": 6.065745388261689,
+     "endpoint_err_chord": 5.5764053364092945,
+     "delta_norm_spline": 11.000991417613678,
+     "delta_norm_chord": 8.47231421743203,
+     "sagitta_over_noise_median": 2.5629098353789876,
+     "verdict": "path_geometry_positive"
+    },
+    "8": {
+     "angle_source": "labels_angle",
+     "spline": "interpolating",
+     "curve_extension": "cubic",
+     "held_out": [
+      258.75,
+      298.125
+     ],
+     "endpoint_gap": 4.572586340165784,
+     "endpoint_gap_ci95": [
+      4.0244627954484775,
+      5.148801900213986
+     ],
+     "min_radius_gap": 0.22197925721745748,
+     "min_radius_gap_ci95": [
+      0.18731305456968642,
+      0.2603161209906445
+     ],
+     "endpoint_err_spline": 10.96523288088922,
+     "endpoint_err_chord": 6.392646540723438,
+     "delta_norm_spline": 10.743941916455777,
+     "delta_norm_chord": 8.435974321856046,
+     "sagitta_over_noise_median": 2.5442380404619387,
+     "verdict": "negative_endpoint"
+    }
+   }
+  },
+  "22": {
+   "heldout_reconstruction": {
+    "stored_unsupervised_order": {
+     "scattered": {
+      "interp": 10.04500469341053,
+      "smooth": 5.08269299334501,
+      "chord": 3.8717984016422444,
+      "n_seeds": 1,
+      "best": "chord"
+     },
+     "contiguous": {
+      "interp": 71.80370580188364,
+      "smooth": 41.0308370114805,
+      "chord": 4.456717926592755,
+      "n_seeds": 4,
+      "best": "chord"
+     }
+    },
+    "labels_order": {
+     "scattered": {
+      "interp": 4.468504072227329,
+      "smooth": 3.3281875136569132,
+      "chord": 3.4698467569298623,
+      "n_seeds": 1,
+      "best": "smooth"
+     },
+     "contiguous": {
+      "interp": 6.887085323774379,
+      "smooth": 4.283916338144217,
+      "chord": 3.7546286732637855,
+      "n_seeds": 4,
+      "best": "chord"
+     }
+    }
+   },
+   "seed0_stored_smoothing": {
+    "angle_source": "labels_angle",
+    "spline": "smoothing",
+    "curve_extension": "cubic",
+    "held_out": [
+     303.75,
+     343.125
+    ],
+    "endpoint_gap": 3.8000969575786976,
+    "endpoint_gap_ci95": [
+     3.3581047047995227,
+     4.231147421321163
+    ],
+    "min_radius_gap": 0.23919215482079637,
+    "min_radius_gap_ci95": [
+     0.20708949554175532,
+     0.27457171441218503
+    ],
+    "endpoint_err_spline": 10.689682814949174,
+    "endpoint_err_chord": 6.889585857370478,
+    "delta_norm_spline": 10.5568796923969,
+    "delta_norm_chord": 10.06754723527364,
+    "sagitta_over_noise_median": 0.46652068468075353,
+    "verdict": "negative_endpoint",
+    "delta_ratio_spline_over_chord": 1.048604932829
+   },
+   "seed0_interp_labels": {
+    "angle_source": "labels_angle",
+    "spline": "interpolating",
+    "curve_extension": "cubic",
+    "held_out": [
+     303.75,
+     343.125
+    ],
+    "endpoint_gap": -0.48003514155923704,
+    "endpoint_gap_ci95": [
+     -0.6287965571037494,
+     -0.3209603611862436
+    ],
+    "min_radius_gap": 0.3017853605208117,
+    "min_radius_gap_ci95": [
+     0.2653380088352494,
+     0.34283270150648476
+    ],
+    "endpoint_err_spline": 3.16172266763728,
+    "endpoint_err_chord": 3.6417578091965166,
+    "delta_norm_spline": 16.195140194026333,
+    "delta_norm_chord": 11.610054601515747,
+    "sagitta_over_noise_median": 2.74414405671105,
+    "verdict": "path_geometry_positive",
+    "delta_ratio_spline_over_chord": 1.3949236889817884
+   },
+   "arcs_stored_smoothing_same_seeds": {
+    "n_runs": 8,
+    "endpoint_gap_mean": 2.4490602518552342,
+    "endpoint_gap_sd": 4.580367487590066,
+    "min_radius_gap_mean": 0.23542478813943182,
+    "min_radius_gap_sd": 0.08219764443905923,
+    "min_radius_gap_range": [
+     0.10993093707873917,
+     0.3208567449019947
+    ],
+    "verdict_counts": {
+     "negative_endpoint": 2,
+     "path_geometry_positive": 6
+    }
+   },
+   "arcs_interp_labels": {
+    "n_runs": 8,
+    "endpoint_gap_mean": 1.1780070365649449,
+    "endpoint_gap_sd": 1.573019304867254,
+    "min_radius_gap_mean": 0.29481867284466856,
+    "min_radius_gap_sd": 0.05370552793013279,
+    "min_radius_gap_range": [
+     0.1676870396866279,
+     0.33679406443438437
+    ],
+    "verdict_counts": {
+     "negative_endpoint": 2,
+     "path_geometry_positive": 6
+    }
+   },
+   "arcs_interp_labels_rows": {
+    "1": {
+     "angle_source": "labels_angle",
+     "spline": "interpolating",
+     "curve_extension": "cubic",
+     "held_out": [
+      168.75,
+      208.125
+     ],
+     "endpoint_gap": -0.13718127938843386,
+     "endpoint_gap_ci95": [
+      -0.2829352248740991,
+      0.008372667740162642
+     ],
+     "min_radius_gap": 0.30606065525643733,
+     "min_radius_gap_ci95": [
+      0.2710472758156202,
+      0.3450570286826119
+     ],
+     "endpoint_err_spline": 4.004644382815248,
+     "endpoint_err_chord": 4.141825662203682,
+     "delta_norm_spline": 15.803179735619599,
+     "delta_norm_chord": 11.697934392083994,
+     "sagitta_over_noise_median": 2.7189893441179613,
+     "verdict": "path_geometry_positive"
+    },
+    "2": {
+     "angle_source": "labels_angle",
+     "spline": "interpolating",
+     "curve_extension": "cubic",
+     "held_out": [
+      298.125,
+      337.5
+     ],
+     "endpoint_gap": 0.5165831203158242,
+     "endpoint_gap_ci95": [
+      0.31171912322701084,
+      0.7178492746446797
+     ],
+     "min_radius_gap": 0.3192113170468804,
+     "min_radius_gap_ci95": [
+      0.2853259627100592,
+      0.3537195570034254
+     ],
+     "endpoint_err_spline": 4.452832118613702,
+     "endpoint_err_chord": 3.936248998297877,
+     "delta_norm_spline": 14.972417671685058,
+     "delta_norm_chord": 11.845804947886405,
+     "sagitta_over_noise_median": 1.9862864775205957,
+     "verdict": "path_geometry_positive"
+    },
+    "3": {
+     "angle_source": "labels_angle",
+     "spline": "interpolating",
+     "curve_extension": "cubic",
+     "held_out": [
+      286.875,
+      326.25
+     ],
+     "endpoint_gap": 0.10323884163029406,
+     "endpoint_gap_ci95": [
+      -0.044973439519663705,
+      0.25315671971680054
+     ],
+     "min_radius_gap": 0.33679406443438437,
+     "min_radius_gap_ci95": [
+      0.2978033219119498,
+      0.3788169180133374
+     ],
+     "endpoint_err_spline": 3.9874820228754726,
+     "endpoint_err_chord": 3.8842431812451785,
+     "delta_norm_spline": 16.180896905671165,
+     "delta_norm_chord": 12.072815567494501,
+     "sagitta_over_noise_median": 2.852199559460602,
+     "verdict": "path_geometry_positive"
+    },
+    "4": {
+     "angle_source": "labels_angle",
+     "spline": "interpolating",
+     "curve_extension": "cubic",
+     "held_out": [
+      258.75,
+      298.125
+     ],
+     "endpoint_gap": 3.75888835692673,
+     "endpoint_gap_ci95": [
+      3.284898554070348,
+      4.219301752370659
+     ],
+     "min_radius_gap": 0.28634287462558106,
+     "min_radius_gap_ci95": [
+      0.25038169457516857,
+      0.32370900641009825
+     ],
+     "endpoint_err_spline": 8.400462059434071,
+     "endpoint_err_chord": 4.6415737025073405,
+     "delta_norm_spline": 14.918583554197303,
+     "delta_norm_chord": 11.36562217552406,
+     "sagitta_over_noise_median": 2.8221579973256308,
+     "verdict": "negative_endpoint"
+    },
+    "5": {
+     "angle_source": "labels_angle",
+     "spline": "interpolating",
+     "curve_extension": "cubic",
+     "held_out": [
+      236.25,
+      275.625
+     ],
+     "endpoint_gap": 0.015530952217471214,
+     "endpoint_gap_ci95": [
+      -0.10647649189923443,
+      0.13540013731321748
+     ],
+     "min_radius_gap": 0.32805043555925817,
+     "min_radius_gap_ci95": [
+      0.28952303480797964,
+      0.36408751921948723
+     ],
+     "endpoint_err_spline": 4.218050075461032,
+     "endpoint_err_chord": 4.202519123243561,
+     "delta_norm_spline": 16.385009383123684,
+     "delta_norm_chord": 11.615068712190686,
+     "sagitta_over_noise_median": 3.2130727385137727,
+     "verdict": "path_geometry_positive"
+    },
+    "6": {
+     "angle_source": "labels_angle",
+     "spline": "interpolating",
+     "curve_extension": "cubic",
+     "held_out": [
+      157.5,
+      196.875
+     ],
+     "endpoint_gap": 1.07256124577667,
+     "endpoint_gap_ci95": [
+      0.8456838962941841,
+      1.300835541408533
+     ],
+     "min_radius_gap": 0.1676870396866279,
+     "min_radius_gap_ci95": [
+      0.13333516748169058,
+      0.20112942171686712
+     ],
+     "endpoint_err_spline": 5.5407564837600125,
+     "endpoint_err_chord": 4.468195237983342,
+     "delta_norm_spline": 20.424945616954584,
+     "delta_norm_chord": 11.7692720986646,
+     "sagitta_over_noise_median": 3.4904675057596726,
+     "verdict": "path_geometry_positive"
+    },
+    "7": {
+     "angle_source": "labels_angle",
+     "spline": "interpolating",
+     "curve_extension": "cubic",
+     "held_out": [
+      337.5,
+      16.875
+     ],
+     "endpoint_gap": 0.5532416321821368,
+     "endpoint_gap_ci95": [
+      0.38172123904574023,
+      0.7149082090429466
+     ],
+     "min_radius_gap": 0.31274041825869436,
+     "min_radius_gap_ci95": [
+      0.2780372885165036,
+      0.34632237188965953
+     ],
+     "endpoint_err_spline": 5.119739706903984,
+     "endpoint_err_chord": 4.5664980747218475,
+     "delta_norm_spline": 16.072068442561953,
+     "delta_norm_chord": 11.100138176202117,
+     "sagitta_over_noise_median": 3.367578411580221,
+     "verdict": "path_geometry_positive"
+    },
+    "8": {
+     "angle_source": "labels_angle",
+     "spline": "interpolating",
+     "curve_extension": "cubic",
+     "held_out": [
+      258.75,
+      298.125
+     ],
+     "endpoint_gap": 3.5411934228588646,
+     "endpoint_gap_ci95": [
+      3.046521842488803,
+      4.03612517848134
+     ],
+     "min_radius_gap": 0.30166257788948486,
+     "min_radius_gap_ci95": [
+      0.265643353284221,
+      0.3407131886165097
+     ],
+     "endpoint_err_spline": 8.83736335383568,
+     "endpoint_err_chord": 5.2961699309768155,
+     "delta_norm_spline": 15.115048493170784,
+     "delta_norm_chord": 11.601363109892148,
+     "sagitta_over_noise_median": 2.8221579973256308,
+     "verdict": "negative_endpoint"
+    }
+   }
+  }
+ }
+}

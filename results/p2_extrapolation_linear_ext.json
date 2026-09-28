@@ -1,0 +1,291 @@
+{
+ "provenance": {
+  "split_file": "/private/tmp/claude-501/-Users-stevenyang/ae13a11f-788a-4ea6-a4fa-c5d4c3df1c0e/scratchpad/wt_p2parity2/splits/split_v1.json",
+  "split_sha256": "98e6310c40bf29e81bd8b6bf4b1ac603b89e4104d40ac1047b15dd5dc2be2df2",
+  "seeds": {
+   "seed": 0
+  },
+  "commit": "6fc68e97dd21d7fa891ca9f6f53cad5f2062cc75",
+  "dirty": true,
+  "git_commit": "6fc68e97dd21d7fa891ca9f6f53cad5f2062cc75",
+  "git_dirty_src_or_scripts": false,
+  "timestamp_utc": "2026-09-28T04:04:57+00:00"
+ },
+ "commands": "run_part2.py --dataset V --layer L --holdout extrapolation --extend linear, with --spline smooth (results/p2_linear_ext) and --spline interp (results/p2_linear_ext_interp: the code-faithful arm, causalab spline/cubic.py _evaluate_natural = interpolating natural cubic, linear past the end knots)",
+ "extension_rule": "explicit linear continuation along the end tangent (mf.LinearExtension): f(t_end) + (t - t_end) f'(t_end) past the last knot; not splev ext=3, which clamps to the end value. Stored runs: splev ext=0, the end cubic piece extended",
+ "bend_note": "sagitta_over_noise_median = verdict's median over targets of spline-vs-chord target distance / centroid noise",
+ "runs": {
+  "speed_L12": {
+   "stored_smoothing_cubic_ext": {
+    "angle_source": "value",
+    "spline": "smoothing",
+    "curve_extension": "cubic",
+    "held_out": [
+     3.583333333333333,
+     4.0
+    ],
+    "endpoint_gap": 3.066114720527155,
+    "endpoint_gap_ci95": [
+     2.800939949062391,
+     3.3128634364328016
+    ],
+    "min_radius_gap": null,
+    "min_radius_gap_ci95": null,
+    "endpoint_err_spline": 3.223715090522333,
+    "endpoint_err_chord": 0.15760036999517807,
+    "delta_norm_spline": 24.965984395419582,
+    "delta_norm_chord": 7.298235594797812,
+    "sagitta_over_noise_median": 5.159656797417122,
+    "verdict": "negative_endpoint"
+   },
+   "smoothing_linear_ext": {
+    "angle_source": "value",
+    "spline": "smoothing",
+    "curve_extension": "linear",
+    "held_out": [
+     3.583333333333333,
+     4.0
+    ],
+    "endpoint_gap": 0.03785433141582941,
+    "endpoint_gap_ci95": [
+     0.013984705156721745,
+     0.06165174993902227
+    ],
+    "min_radius_gap": null,
+    "min_radius_gap_ci95": null,
+    "endpoint_err_spline": 0.19545470141102494,
+    "endpoint_err_chord": 0.15760036999519556,
+    "delta_norm_spline": 8.267459254692893,
+    "delta_norm_chord": 7.29823559479775,
+    "sagitta_over_noise_median": 0.5409160488802744,
+    "verdict": "path_geometry_positive"
+   },
+   "interp_linear_ext_goodfire_code": {
+    "angle_source": "value",
+    "spline": "interpolating",
+    "curve_extension": "linear",
+    "held_out": [
+     3.583333333333333,
+     4.0
+    ],
+    "endpoint_gap": -0.06425342736061858,
+    "endpoint_gap_ci95": [
+     -0.06872527852171884,
+     -0.05960212921015129
+    ],
+    "min_radius_gap": null,
+    "min_radius_gap_ci95": null,
+    "endpoint_err_spline": 0.20700985983081366,
+    "endpoint_err_chord": 0.2712632871914323,
+    "delta_norm_spline": 23.35470001150098,
+    "delta_norm_chord": 15.046822619882123,
+    "sagitta_over_noise_median": 3.994240806661776,
+    "verdict": "negative"
+   }
+  },
+  "speed_L19": {
+   "stored_smoothing_cubic_ext": {
+    "angle_source": "value",
+    "spline": "smoothing",
+    "curve_extension": "cubic",
+    "held_out": [
+     3.583333333333333,
+     4.0
+    ],
+    "endpoint_gap": 0.26441131563293346,
+    "endpoint_gap_ci95": [
+     0.24334137271699746,
+     0.2841851378370015
+    ],
+    "min_radius_gap": null,
+    "min_radius_gap_ci95": null,
+    "endpoint_err_spline": 0.4901281279812005,
+    "endpoint_err_chord": 0.22571681234826704,
+    "delta_norm_spline": 7.48401364120533,
+    "delta_norm_chord": 6.469794819073236,
+    "sagitta_over_noise_median": 0.8322154978408777,
+    "verdict": "negative_endpoint"
+   },
+   "smoothing_linear_ext": {
+    "angle_source": "value",
+    "spline": "smoothing",
+    "curve_extension": "linear",
+    "held_out": [
+     3.583333333333333,
+     4.0
+    ],
+    "endpoint_gap": 0.021180838515932818,
+    "endpoint_gap_ci95": [
+     0.019858418540239644,
+     0.022464661207983877
+    ],
+    "min_radius_gap": null,
+    "min_radius_gap_ci95": null,
+    "endpoint_err_spline": 0.24689765086419801,
+    "endpoint_err_chord": 0.2257168123482652,
+    "delta_norm_spline": 6.517618731501877,
+    "delta_norm_chord": 6.469794819073205,
+    "sagitta_over_noise_median": 0.11681140454392892,
+    "verdict": "path_geometry_positive"
+   },
+   "interp_linear_ext_goodfire_code": {
+    "angle_source": "value",
+    "spline": "interpolating",
+    "curve_extension": "linear",
+    "held_out": [
+     3.583333333333333,
+     4.0
+    ],
+    "endpoint_gap": -0.022971770896646166,
+    "endpoint_gap_ci95": [
+     -0.024435615636268677,
+     -0.021503890156829967
+    ],
+    "min_radius_gap": null,
+    "min_radius_gap_ci95": null,
+    "endpoint_err_spline": 0.22025705858358488,
+    "endpoint_err_chord": 0.24322882948023103,
+    "delta_norm_spline": 20.150976128714337,
+    "delta_norm_chord": 13.483533768400875,
+    "sagitta_over_noise_median": 3.7614897236473066,
+    "verdict": "path_geometry_positive"
+   }
+  },
+  "acceleration_L12": {
+   "stored_smoothing_cubic_ext": {
+    "angle_source": "value",
+    "spline": "smoothing",
+    "curve_extension": "cubic",
+    "held_out": [
+     8.916666666666668,
+     10.0
+    ],
+    "endpoint_gap": 0.9881527248887365,
+    "endpoint_gap_ci95": [
+     0.9073478536798079,
+     1.0650099718722958
+    ],
+    "min_radius_gap": null,
+    "min_radius_gap_ci95": null,
+    "endpoint_err_spline": 1.6620182198607296,
+    "endpoint_err_chord": 0.6738654949719933,
+    "delta_norm_spline": 11.586198252957104,
+    "delta_norm_chord": 5.9077945910019904,
+    "sagitta_over_noise_median": 2.2025891125140213,
+    "verdict": "negative_endpoint"
+   },
+   "smoothing_linear_ext": {
+    "angle_source": "value",
+    "spline": "smoothing",
+    "curve_extension": "linear",
+    "held_out": [
+     8.916666666666668,
+     10.0
+    ],
+    "endpoint_gap": 0.06481843298954672,
+    "endpoint_gap_ci95": [
+     0.06015611342770416,
+     0.06947375533491756
+    ],
+    "min_radius_gap": null,
+    "min_radius_gap_ci95": null,
+    "endpoint_err_spline": 0.7386839279615472,
+    "endpoint_err_chord": 0.6738654949720004,
+    "delta_norm_spline": 6.147459017050934,
+    "delta_norm_chord": 5.9077945910020135,
+    "sagitta_over_noise_median": 0.23971650645311265,
+    "verdict": "path_geometry_positive"
+   },
+   "interp_linear_ext_goodfire_code": {
+    "angle_source": "value",
+    "spline": "interpolating",
+    "curve_extension": "linear",
+    "held_out": [
+     8.916666666666668,
+     10.0
+    ],
+    "endpoint_gap": 0.06569591790147361,
+    "endpoint_gap_ci95": [
+     0.04525566601042603,
+     0.08479591511820218
+    ],
+    "min_radius_gap": null,
+    "min_radius_gap_ci95": null,
+    "endpoint_err_spline": 0.41346727234735625,
+    "endpoint_err_chord": 0.34777135444588264,
+    "delta_norm_spline": 19.291762334972248,
+    "delta_norm_chord": 13.8290152248646,
+    "sagitta_over_noise_median": 3.221955072111242,
+    "verdict": "negative"
+   }
+  },
+  "acceleration_L21": {
+   "stored_smoothing_cubic_ext": {
+    "angle_source": "value",
+    "spline": "smoothing",
+    "curve_extension": "cubic",
+    "held_out": [
+     8.916666666666668,
+     10.0
+    ],
+    "endpoint_gap": 0.1331899270974066,
+    "endpoint_gap_ci95": [
+     0.12276726679662822,
+     0.14307289163170306
+    ],
+    "min_radius_gap": null,
+    "min_radius_gap_ci95": null,
+    "endpoint_err_spline": 0.8724671668060621,
+    "endpoint_err_chord": 0.7392772397086554,
+    "delta_norm_spline": 5.787007185707036,
+    "delta_norm_chord": 5.210426546180383,
+    "sagitta_over_noise_median": 0.3894832018288912,
+    "verdict": "path_geometry_positive"
+   },
+   "smoothing_linear_ext": {
+    "angle_source": "value",
+    "spline": "smoothing",
+    "curve_extension": "linear",
+    "held_out": [
+     8.916666666666668,
+     10.0
+    ],
+    "endpoint_gap": 0.021686500962107544,
+    "endpoint_gap_ci95": [
+     0.020328239635593645,
+     0.02304357899837373
+    ],
+    "min_radius_gap": null,
+    "min_radius_gap_ci95": null,
+    "endpoint_err_spline": 0.7609637406707804,
+    "endpoint_err_chord": 0.7392772397086729,
+    "delta_norm_spline": 5.254222757430248,
+    "delta_norm_chord": 5.210426546180397,
+    "sagitta_over_noise_median": 0.05897804786967437,
+    "verdict": "path_geometry_positive"
+   },
+   "interp_linear_ext_goodfire_code": {
+    "angle_source": "value",
+    "spline": "interpolating",
+    "curve_extension": "linear",
+    "held_out": [
+     8.916666666666668,
+     10.0
+    ],
+    "endpoint_gap": 0.312381892334105,
+    "endpoint_gap_ci95": [
+     0.29311275409268045,
+     0.3317193990239831
+    ],
+    "min_radius_gap": null,
+    "min_radius_gap_ci95": null,
+    "endpoint_err_spline": 1.0212366085273035,
+    "endpoint_err_chord": 0.7088547161931985,
+    "delta_norm_spline": 21.929700540550172,
+    "delta_norm_chord": 14.626909976784367,
+    "sagitta_over_noise_median": 3.908540062418951,
+    "verdict": "negative_endpoint"
+   }
+  }
+ }
+}
