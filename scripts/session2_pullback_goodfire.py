@@ -275,7 +275,8 @@ def prep(n_pairs=36):
 
 
 # ================================================================ run (box, GPU)
-def run(n_pairs=8, max_evals=48, chunk=16, smoke=0):
+def run(n_pairs=8, max_evals=48, chunk=16, smoke=0, root=None):
+    """root: directory holding prep.npz and receiving pair_*.npz / run_info.json (default PB)."""
     import torch
     from wm.extract import load_model, pick_device, preprocess, set_precision
     from wm.predictor_readout import edited_prediction, pool_steps, predict_future
@@ -287,7 +288,8 @@ def run(n_pairs=8, max_evals=48, chunk=16, smoke=0):
         p_.requires_grad_(False)
     pf = predict_future.__wrapped__
     enc = model.encoder
-    z = np.load(PB / "prep.npz")
+    pb = PB if root is None else Path(root)
+    z = np.load(pb / "prep.npz")
     f32 = lambda a: torch.as_tensor(np.asarray(a), dtype=torch.float32, device=device)  # noqa: E731
     Wt, bt, Ut, kappa = f32(z["W"]), f32(z["b"]), f32(z["U"]), float(z["kappa"])
     comp = f32(z["components"][:K_OPT])                                            # [32, D]
@@ -295,7 +297,7 @@ def run(n_pairs=8, max_evals=48, chunk=16, smoke=0):
     df = load_table("direction")
     jobs = [(t, n) for t in range(K) for n in range(N_CAR)]
     for i in range(min(n_pairs, len(z["src"]))):
-        f = PB / f"pair_{i:02d}.npz"
+        f = pb / f"pair_{i:02d}.npz"
         if f.exists() and not smoke:
             continue
         t0 = time.time()
@@ -373,7 +375,7 @@ def run(n_pairs=8, max_evals=48, chunk=16, smoke=0):
         if smoke:
             f.unlink()
             return
-    (PB / "run_info.json").write_text(json.dumps({"gpu": torch.cuda.get_device_name(0), "torch": torch.__version__,
+    (pb / "run_info.json").write_text(json.dumps({"gpu": torch.cuda.get_device_name(0), "torch": torch.__version__,
                                                   "autocast": "bf16 (optimisation only; final forecasts fp32)",
                                                   "chunk": chunk, "max_evals_per_pair": max_evals, **LBFGS}, indent=1))
 
@@ -540,6 +542,7 @@ if __name__ == "__main__":
     a = sys.argv[1]
     if a == "run":
         run(n_pairs=int(sys.argv[2]) if len(sys.argv) > 2 else 8, max_evals=int(sys.argv[3]) if len(sys.argv) > 3 else 48,
-            chunk=int(sys.argv[4]) if len(sys.argv) > 4 else 16, smoke=int(sys.argv[5]) if len(sys.argv) > 5 else 0)
+            chunk=int(sys.argv[4]) if len(sys.argv) > 4 else 16, smoke=int(sys.argv[5]) if len(sys.argv) > 5 else 0,
+            root=sys.argv[6] if len(sys.argv) > 6 else None)
     else:
         {"prep": prep, "score": score}[a]()
