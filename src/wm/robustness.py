@@ -29,30 +29,55 @@ def value_grouped_folds(values, n_folds=5, seed=0):
     return random_folds(len(values), n_folds, seed, groups=values)
 
 
-def direction_bin(theta_deg):
-    """8-way 45° bin, edges at 0, 45, ..., 315 (the 64 directions fall 8 per bin)."""
-    return (np.floor(np.mod(np.asarray(theta_deg, float), 360.0) / 45.0).astype(int)) % N_BINS
+DIR_STEP = 360.0 / 64                  # label spacing of the 64-direction sets (5.625 deg)
+DIR_EDGE0 = 22.5 - DIR_STEP / 2        # 19.6875: bin edges at 19.6875 + 45 k, the label midpoints nearest 22.5 + 45 k
+
+
+def direction_bin(theta_deg, edge0=DIR_EDGE0):
+    """8-way 45 deg bin with edges at edge0 + 45 k. Default edges sit at label midpoints (half a 5.625 deg step from
+    22.5 + 45 k, which are themselves labels), so no label lies on an edge; bin 0 = [-25.3125, 19.6875) holds the 8
+    labels -22.5 ... 16.875, centred 2.8 deg from 0 (an even count per bin cannot centre exactly on a label)."""
+    return (np.floor(np.mod(np.asarray(theta_deg, float) - edge0 + 45.0, 360.0) / 45.0).astype(int)) % N_BINS
 
 
 def equal_count_edges(values, n_bins=N_BINS):
-    """Inner edges (n_bins − 1) of equal-count bins of `values` (label quantiles; label-only, no features)."""
-    return np.quantile(np.asarray(values, float), np.linspace(0, 1, n_bins + 1)[1:-1])
+    """Inner edges (n_bins − 1) of equal-count bins of `values` (label quantiles; label-only, no features), each
+    moved to the midpoint between the two adjacent distinct label values around it, so no label sits on an edge."""
+    values = np.asarray(values, float)
+    q = np.quantile(values, np.linspace(0, 1, n_bins + 1)[1:-1])
+    u = np.unique(values)
+    mids = (u[:-1] + u[1:]) / 2
+    return mids[np.clip(np.searchsorted(u, q, side="right") - 1, 0, len(mids) - 1)]
 
 
-def binned_score(kind, edges=None):
+def theta_lookup(Y, theta_deg):
+    """Map rows (sin, cos) of Y back to their theta_degrees label (keys rounded to 9 d.p.), so the true bin comes from
+    the label itself, not from atan2(sin, cos)."""
+    table = {tuple(np.round(y, 9)): float(t) for y, t in zip(np.asarray(Y, float), np.asarray(theta_deg, float))}
+    return lambda Yq: np.array([table[tuple(np.round(y, 9))] for y in np.asarray(Yq, float)])
+
+
+def binned_score(kind, edges=None, theta_of=None):
     """score_fn: wm.probes.score plus 'bacc8', the fraction of clips whose prediction lands in the true value's bin.
-    circular: 45° bins of atan2(sin, cos); scalar: bins cut at `edges` (equal_count_edges of the train labels)."""
+    circular: direction_bin (edges at label midpoints) of the true theta_degrees label (theta_of, from theta_lookup;
+    atan2 of Y only if None) vs of atan2(sin, cos) of the prediction; scalar: bins cut at `edges` (equal_count_edges)."""
     def fn(Y, P):
         Y, P = np.asarray(Y, float).reshape(len(Y), -1), np.asarray(P, float).reshape(len(P), -1)
         out = score(Y, P, kind)
         if kind == "circular":
-            bt = direction_bin(np.degrees(np.arctan2(Y[:, 0], Y[:, 1])))
+            bt = direction_bin(theta_of(Y) if theta_of is not None else np.degrees(np.arctan2(Y[:, 0], Y[:, 1])))
             bp = direction_bin(np.degrees(np.arctan2(P[:, 0], P[:, 1])))
         else:
             bt, bp = np.digitize(Y[:, 0], edges), np.digitize(P[:, 0], edges)
         out["bacc8"] = float(np.mean(bt == bp))
         return out
     return fn
+
+
+def sector_folds(theta_deg, n_folds=5, seed=0):
+    """Fold per row with whole contiguous 45 deg direction sectors held out (the 8 direction_bin sectors, dealt
+    round-robin to the folds: 2, 2, 2, 1, 1 sectors per fold)."""
+    return value_grouped_folds(direction_bin(theta_deg), n_folds, seed)
 
 
 def decay_stats(values):

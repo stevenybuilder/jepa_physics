@@ -31,13 +31,13 @@ from wm.probes import (ALPHAS, LAST_BLOCK, RESULTS, availability, bootstrap_onse
                        drop_nan_clips, fit_ridge, layer_fraction, layer_matrix, load_activations, split_rows,
                        standardized_layer, targets, write_json)
 from wm.robustness import (binned_score, decay_stats, equal_count_edges, in_sample_and_oof, run_rounds,  # noqa: E402
-                           start_cells, value_grouped_folds)
+                           sector_folds, start_cells, theta_lookup, value_grouped_folds)
 from wm.splits import load_split  # noqa: E402
 from wm.steer import evaluate, grouped_folds, random_nulls, rank_matched_null  # noqa: E402
 from wm.support import layer_cv  # noqa: E402
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--items", nargs="+", type=int, default=[1, 2, 3, 4], choices=[1, 2, 3, 4])
+parser.add_argument("--items", nargs="+", type=int, default=[1, 2, 3, 4], choices=[1, 2, 3, 4, 5])
 parser.add_argument("--results", type=Path, default=RESULTS)
 parser.add_argument("--figures", type=Path, default=PROJECT_ROOT / "figures")
 parser.add_argument("--n-boot", type=int, default=200)
@@ -125,7 +125,11 @@ def figure1(out):
     style = {"stratified": ("#2a78d6", "-", "stratified (stored)"),
              "direction_grouped": ("#eb6834", "--", "direction-grouped"),
              "start_grouped": ("#1baf7a", ":", "start-cell-grouped"),
-             "speed_grouped": ("#eb6834", "--", "speed-grouped")}
+             "speed_grouped": ("#eb6834", "--", "speed-grouped"),
+             "sector_grouped": ("#8b5cf6", "-.", "45° sector-grouped")}
+    out = {**out, "sets": {k: dict(v) for k, v in out["sets"].items()}}   # plotting copy; the caller's dict is untouched
+    for key, res in out.get("sector_grouped", {}).get("sets", {}).items():
+        out["sets"][key]["sector_grouped"] = res
     fig, axes = plt.subplots(1, 3, figsize=(14, 3.8), sharey=False)
     x = np.array([layer_fraction(p) for p in range(LAST_BLOCK + 1)])
     panels = [("direction_vjepa2", "direction_random", "direction set: direction (random-init faint)"),
@@ -145,15 +149,16 @@ def figure1(out):
         ax.set_ylabel("5-fold CV R²")
         ax.legend(fontsize=7, frameon=False)
     ax = axes[2]
-    names = [n for n in ("stratified", "direction_grouped", "start_grouped")]
+    names = [n for n in ("stratified", "direction_grouped", "start_grouped", "sector_grouped")
+             if n in out["sets"]["direction_vjepa2"]]
     for i, key in enumerate(("direction_vjepa2", "direction_random")):
         for j, n in enumerate(names):
             r = out["sets"][key][n]
             ci = r["onset_ci"] or [r["onset"], r["onset"]]
-            xpos = i * 4 + j
+            xpos = i * 5 + j
             ax.errorbar(xpos, r["onset"], yerr=[[r["onset"] - ci[0]], [ci[1] - r["onset"]]], fmt="o",
                         color=style[n][0], capsize=3)
-    ax.set_xticks([1, 5])
+    ax.set_xticks([1.5, 6.5])
     ax.set_xticklabels(["V-JEPA 2", "random-init"])
     ax.set_ylabel("direction onset point [95% CI]")
     ax.set_title("direction onset by fold scheme", fontsize=10)
@@ -218,8 +223,12 @@ def stats(rounds, keys):
 def item3():
     out = {"item": "Sawtooth metric (paper Fig. 4c 'probe accuracy', C.10)",
            "metrics": {"r2": "mean per-column R2 (as stored)",
-                       "bacc8": "8-way binned accuracy: direction 45 deg bins (edges 0, 45, ..., 315) of atan2(sin, "
-                                "cos); speed 8 equal-count bins cut at train-label quantiles",
+                       "bacc8": "8-way binned accuracy (v2 bins, wm.robustness): direction 45 deg bins with edges at "
+                                "19.6875 + 45 k (label midpoints; 8 labels per bin), true bin from theta_degrees, "
+                                "predicted bin from atan2(sin, cos); speed 8 equal-count bins with edges at the "
+                                "midpoints between adjacent train-label values. No label sits on an edge. v1 (edges "
+                                "0, 45, ... on labels; quantile speed edges on labels) kept in "
+                                "p1b_sawtooth_metrics_v1_edgebins.json",
                        "acc15": "direction only: within-15 deg accuracy, the stored direction metric"},
            "statistics": "per metric, as wm.inlp.sawtooth: lag-1 autocorrelation of per-round drops (negative = "
                          "sawtooth) and isolated dips (fall > 0.05 and recover > 0.05 next round), over the same "
@@ -232,7 +241,8 @@ def item3():
            "cells": {}}
     for dataset in ("direction", "speed"):
         df, Y, kind, _, tr, te, folds, acts = data(dataset, dataset)
-        fn = binned_score(kind, None if kind == "circular" else equal_count_edges(Y[tr, 0]))
+        fn = binned_score(kind, None if kind == "circular" else equal_count_edges(Y[tr, 0]),
+                          theta_lookup(Y, df["theta_degrees"].to_numpy(float)) if kind == "circular" else None)
         keys = ["r2", "bacc8"] + (["acc15"] if kind == "circular" else [])
         for point in (8, 9):
             Xtr, Xte = standardized_layer(acts, point, tr, te)
@@ -343,5 +353,48 @@ def item4():
     write_json(R / f"p1c_{dataset}_evalprobe_recipe.json", out)
 
 
+# ------------------------------------------------------------------ item 5
+
+def item5():
+    """Sector-grouped folds: direction layer curve with whole 45 deg sectors held out, appended to p1a_grouped_cv.json
+    under 'sector_grouped' (existing keys rewritten byte-identically; no write_json, so the stored provenance stays)."""
+    import subprocess
+    path = R / "p1a_grouped_cv.json"
+    text = path.read_text()
+    out = json.loads(text)
+    assert json.dumps(out, indent=1) == text, "stored file does not round-trip; refusing to rewrite it"
+    sec = {"scheme": "whole contiguous 45 deg direction sectors held out: the 8 wm.robustness.direction_bin sectors "
+                     "(edges at 19.6875 + 45 k, 8 directions each) dealt round-robin to 5 folds (2, 2, 2, 1, 1 "
+                     "sectors per fold, seed 0); outer split, onset rule and bootstrap as the other schemes. "
+                     "curve / onset use the fold-mean R2 as the stored rows; pooled_oof_r2_curve is the R2 of all "
+                     "out-of-fold predictions together (the bootstrap CI's statistic), reported because a fold "
+                     "holding one 45 deg sector has little target variance of its own, which depresses its R2",
+           "sets": {}}
+    for model in ("vjepa2", "random"):
+        df, Y, kind, score_fn, tr, te, folds, acts = data("direction", "direction", model)
+        f = sector_folds(df["theta_degrees"].to_numpy()[tr])
+        get = lru_cache(maxsize=1)(lambda p: layer_matrix(acts, p))
+        rows, oofs = layer_cv(get, Y, tr, f, score_fn, points=range(26))
+        curve = [r["cv_mean"] for r in rows]
+        av = availability(curve[:LAST_BLOCK + 1])
+        ci, n_none = bootstrap_onset(Y[tr], oofs[:LAST_BLOCK + 1], score_fn, args.n_boot, 0)
+        pooled = [score_fn(Y[tr], o)["r2"] for o in oofs]   # a 1-sector fold has little sin/cos variance of its own
+        sec["sets"][f"direction_{model}"] = {
+            "pooled_oof_r2_curve": pooled, "pooled_block1_r2": pooled[1], "pooled_block8_r2": pooled[8],
+            "pooled_onset": availability(pooled[:LAST_BLOCK + 1])["onset"],
+            "cv_mae_curve": [r["cv_mae_mean"] for r in rows],
+            "block1_r2": curve[1], "block8_r2": curve[8], "onset": av["onset"], "onset_ci": ci,
+            "onset_boot_draws_without_onset": n_none, "peak": av["peak"], "peak_score": av["peak_score"],
+            "units_intact": units_intact("direction", df, tr, f), "fold_sizes": np.bincount(f).tolist(),
+            "curve": curve, "curve_sd": [r["cv_sd"] for r in rows], "alpha": [r["alpha"] for r in rows]}
+        print(f"direction/{model}/sector_grouped: block1 {curve[1]:.3f} block8 {curve[8]:.3f} onset {av['onset']} {ci}")
+    sec["provenance"] = {"commit": subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True,
+                                                  cwd=PROJECT_ROOT).stdout.strip(),
+                         "timestamp_utc": __import__("time").strftime("%Y-%m-%dT%H:%M:%SZ", __import__("time").gmtime())}
+    out["sector_grouped"] = sec
+    path.write_text(json.dumps(out, indent=1, default=lambda o: o.item() if hasattr(o, "item") else str(o)))
+    figure1(out)
+
+
 for item in args.items:
-    {1: item1, 2: item2, 3: item3, 4: item4}[item]()
+    {1: item1, 2: item2, 3: item3, 4: item4, 5: item5}[item]()

@@ -18,9 +18,36 @@ def test_value_grouped_folds_hold_out_whole_values():
 
 
 def test_direction_bin_and_edges():
-    assert direction_bin([0, 44.9, 45, 359, -1]).tolist() == [0, 0, 1, 7, 7]
+    assert direction_bin([0, -22.5, 16.875, 19.7, 22.5, 359]).tolist() == [0, 0, 0, 1, 1, 0]
     e = equal_count_edges(np.arange(80.0))
     assert len(e) == 7 and np.all(np.bincount(np.digitize(np.arange(80.0), e)) == 10)
+
+
+def test_no_label_on_an_edge_and_true_labels_keep_their_bin():
+    """Regression (edge-bin bug): on the real label grids no label sits on a bin edge, bins hold equal label counts,
+    and a label's bin is the same whether taken from theta_degrees or from atan2 of its (sin, cos)."""
+    from wm.robustness import DIR_EDGE0, theta_lookup
+    th = np.repeat(np.arange(64) * 5.625, 24)
+    edges = DIR_EDGE0 + 45.0 * np.arange(8)
+    assert np.min(np.abs((th[:, None] - edges + 180) % 360 - 180)) > 1.0
+    Y = np.stack([np.sin(np.radians(th)), np.cos(np.radians(th))], 1)
+    b = direction_bin(th)
+    assert np.all(np.bincount(b) == 192) and np.array_equal(b, direction_bin(np.degrees(np.arctan2(Y[:, 0], Y[:, 1]))))
+    assert np.array_equal(theta_lookup(Y, th)(Y[::-7]), th[::-7])
+    assert binned_score("circular", theta_of=theta_lookup(Y, th))(Y, Y)["bacc8"] == 1.0
+    for v in (np.linspace(0.25, 4.0, 64), np.linspace(0.25, 10.0, 64)):
+        v = np.repeat(v, 24)
+        e = equal_count_edges(v)
+        assert not np.isin(e, v).any() and np.all(np.bincount(np.digitize(v, e)) == 192)
+        assert np.all(np.diff(np.digitize(np.unique(v), e)) >= 0)
+
+
+def test_sector_folds_hold_out_whole_45deg_sectors():
+    from wm.robustness import sector_folds
+    th = np.repeat(np.arange(64) * 5.625, 3)
+    f = sector_folds(th)
+    assert sorted(np.bincount(f) // 24) == [1, 1, 2, 2, 2]
+    assert all(len(set(f[direction_bin(th) == s])) == 1 for s in range(8))
 
 
 def test_binned_score_perfect_and_scalar():

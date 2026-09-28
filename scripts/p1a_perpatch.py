@@ -474,6 +474,144 @@ def probe(a):
         print(f"  onset {name}: {o['onset']} {o['ci95']} | max {o['max']:.3f} | jump {o['largest_jump']:.3f} {o['from_point']}->{o['to_point']}")
 
 
+# ================================================================ folds (CPU + GPU): 5-fold refit on the train clips
+
+def ridge_dual_predict(Xfit, Yfit, Xev, alpha):
+    """fit_ridge(Xfit, Yfit, alpha) then predict Xev, via the n x n kernel (n < d here): identical to the primal
+    solve (XcᵀXc + αI)⁻¹ XcᵀYc, one small eigh."""
+    xm, ym = Xfit.mean(axis=0), Yfit.mean(axis=0)
+    Xc = Xfit - xm
+    mu, V = np.linalg.eigh(Xc @ Xc.T)
+    return (Xev - xm) @ Xc.T @ V @ ((V.T @ (Yfit - ym)) / (mu + alpha)[:, None]) + ym
+
+
+def _perpos_fold(task):
+    """One (point, position, outer fold k): fit rows = train clips outside fold k, standardised on them; alpha by
+    fold-mean R2 over the remaining 4 folds (wm.paperscale.dual_cv = wm.probes.cv_select_alpha, dual solver); refit on
+    all fit rows; predict fold k."""
+    from wm.paperscale import dual_cv
+    from wm.probes import ALPHAS, Standardizer
+    pi, pos, k = task
+    if "mm" not in _G:
+        _G["mm"] = np.load(_G["memmap"], mmap_mode="r")
+    tr, Ytr, folds, score_fn = (_G[x] for x in ("tr", "Ytr", "folds", "score_fn"))
+    Xp = np.asarray(_G["mm"][tr, pi, pos], np.float64)
+    fit, ev = folds != k, folds == k
+    st = Standardizer().fit(Xp[fit])
+    Xf, Xe = st.transform(Xp[fit]), st.transform(Xp[ev])
+    cv = dual_cv(Xf, Ytr[fit], folds[fit], score_fn, ALPHAS)
+    return pi, pos, k, cv["alpha"], ridge_dual_predict(Xf, Ytr[fit], Xe, cv["alpha"]).astype(np.float32)
+
+
+def fold_curves(points, Yev, pp, pool, LL, LR, RR, RL, Pm):
+    """Per-point metrics of one outer fold from its predictions (lists over points; pp/pool [m, 256, 2], halves
+    [m, 128, 2], Pm [m, 2]) and the onsets (90%-of-max rule over the sampled points) of each curve."""
+    c = {"meanpool_r2": [r2_pooled(Yev, x[:, None, :]) for x in Pm],
+         "perpos_mean_r2": [float(r2_per_pos(Yev, x).mean()) for x in pp],
+         "pooled_mean_r2": [float(r2_per_pos(Yev, x).mean()) for x in pool],
+         "cross_half_r2": [(r2_pooled(Yev, a) + r2_pooled(Yev, b)) / 2 for a, b in zip(LR, RL)],
+         "within_half_r2": [(r2_pooled(Yev, a) + r2_pooled(Yev, b)) / 2 for a, b in zip(LL, RR)]}
+    on = {k: (None if onset_of(v) is None else points[onset_of(v)]) for k, v in c.items()}
+    return c, on
+
+
+def probe_folds(a):
+    import multiprocessing as mp
+    from threadpoolctl import threadpool_limits
+    from wm.probes import ALPHAS, Standardizer, cv_select_alpha, fit_ridge, predict, split_rows, targets
+    from wm.provenance import sha256_file
+
+    path = Path(a.results_dir) / "p1a_perpatch_hard_folds.json"
+    out = json.loads(path.read_text()) if path.exists() else {
+        "design": ("5-fold refit on each set's train clips (splits/split_<set>.json folds): per outer fold k, fit on "
+                   "the other 4 folds, alpha re-chosen by fold-mean R2 over those 4 folds (per position for perpos; by "
+                   "clip for pooled / halves), score fold k; the stored test clips are not used. Probes, "
+                   "standardisation and metrics as the probe stage (per-position R2 = mean over sin, cos columns)"),
+        "onset_rule": "first SAMPLED point with the fold's metric >= 90% of its max over the sampled points",
+        "sets": {}}
+    for name in a.sets:
+        mmp = str(Path(a.memmap_dir) / f"{name}_vjepa2.npy")
+        side = json.loads(Path(mmp).with_suffix(".json").read_text())
+        assert side["complete"]
+        points = side["points"]
+        mm = np.load(mmp, mmap_mode="r")
+        df = table(name)
+        assert [int(i) for i in df["id"]] == side["ids"]
+        split_file = PROJECT_ROOT / SETS[name][1]
+        Y, kind, score_fn = targets(df, "direction")
+        tr, te, folds = split_rows("direction", df, split_file)
+        Ytr = Y[tr]
+        ks = np.unique(folds)
+        left = np.array([p for p in range(NPOS) if p % GRID < GRID // 2])
+        right = np.array([p for p in range(NPOS) if p % GRID >= GRID // 2])
+        t0 = time.time()
+        _G.clear()
+        _G.update(memmap=mmp, tr=tr, Ytr=Ytr, folds=folds, score_fn=score_fn)
+        pool = mp.get_context("fork").Pool(a.workers, initializer=_init_worker)
+        pending = pool.map_async(_perpos_fold, [(pi, pos, k) for pi in range(len(points)) for pos in range(NPOS)
+                                                for k in ks], chunksize=8)
+        store = {k: {x: [] for x in ("Pm", "pool", "LL", "LR", "RR", "RL")} for k in ks}
+        alphas = {k: {"meanpool": [], "pooled": [], "left": [], "right": []} for k in ks}
+        with threadpool_limits(a.parent_threads):
+            for pi, point in enumerate(points):
+                X = np.ascontiguousarray(mm[tr, pi]).astype(np.float32)             # [n_train, 256, 1024]
+                Xm = X.mean(axis=1).astype(np.float64)
+                for k in ks:
+                    fit, ev = folds != k, folds == k
+                    st = Standardizer().fit(Xm[fit])
+                    cvm = cv_select_alpha(st.transform(Xm[fit]), Ytr[fit], folds[fit], ALPHAS, score_fn)
+                    W, b = fit_ridge(st.transform(Xm[fit]), Ytr[fit], cvm["alpha"])
+                    store[k]["Pm"].append(predict(st.transform(Xm[ev]), W, b))
+                    al, _, pr = pooled_probe(X[fit], Ytr[fit], folds[fit], {"ev": X[ev]}, score_fn, ALPHAS)
+                    aL, _, prL = pooled_probe(X[fit][:, left], Ytr[fit], folds[fit],
+                                              {"L": X[ev][:, left], "R": X[ev][:, right]}, score_fn, ALPHAS)
+                    aR, _, prR = pooled_probe(X[fit][:, right], Ytr[fit], folds[fit],
+                                              {"R": X[ev][:, right], "L": X[ev][:, left]}, score_fn, ALPHAS)
+                    store[k]["pool"].append(pr["ev"])
+                    store[k]["LL"].append(prL["L"]), store[k]["LR"].append(prL["R"])
+                    store[k]["RR"].append(prR["R"]), store[k]["RL"].append(prR["L"])
+                    for key, v in (("meanpool", cvm["alpha"]), ("pooled", al), ("left", aL), ("right", aR)):
+                        alphas[k][key].append(v)
+                print(f"{name} point {point}: meanpool/pooled/halves x {len(ks)} folds ({time.time() - t0:.0f}s)",
+                      flush=True)
+                del X
+        res = pending.get()
+        pool.close()
+        pool.join()
+        print(f"{name}: per-position probes done ({time.time() - t0:.0f}s)", flush=True)
+        per_fold = []
+        for k in ks:
+            ev = folds == k
+            pp = []
+            for pi in range(len(points)):
+                r = sorted([x for x in res if x[0] == pi and x[2] == k], key=lambda x: x[1])
+                assert [x[1] for x in r] == list(range(NPOS))
+                pp.append(np.stack([x[4] for x in r], axis=1))
+            c, on = fold_curves(points, Ytr[ev], pp, store[k]["pool"], store[k]["LL"], store[k]["LR"],
+                                store[k]["RR"], store[k]["RL"], store[k]["Pm"])
+            pp_alpha = np.array([[x[3] for x in res if x[0] == pi and x[2] == k] for pi in range(len(points))])
+            per_fold.append({"fold": int(k), "n_fit": int((~ev).sum()), "n_eval": int(ev.sum()), "curves": c,
+                             "onsets": on, "alpha": {**alphas[k], "perpos_median": np.median(pp_alpha, 1).tolist()}})
+        summ = {}
+        for m in per_fold[0]["curves"]:
+            arr = np.array([f["curves"][m] for f in per_fold])
+            ons = [f["onsets"][m] for f in per_fold]
+            summ[m] = {"mean": arr.mean(0).tolist(), "sd": arr.std(0, ddof=1).tolist(), "onset_per_fold": ons,
+                       "onset_of_fold_mean_curve": None if onset_of(arr.mean(0)) is None else points[onset_of(arr.mean(0))]}
+        out["sets"][name] = {"points": points, "n_train": len(tr), "fold_sizes": np.bincount(folds).tolist(),
+                             "per_fold": per_fold, "summary": summ, "wall_seconds": time.time() - t0,
+                             "provenance": {"split_file": SETS[name][1], "split_sha256": sha256_file(split_file),
+                                            "memmap": mmp, "commit": a.commit, "workers": a.workers,
+                                            "parent_threads": a.parent_threads,
+                                            "timestamp_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}}
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(out, indent=1))
+        print(f"wrote {path} [{name}] ({time.time() - t0:.0f}s)")
+        for m, v in summ.items():
+            print(f"  {m}: onsets {v['onset_per_fold']} | " + " ".join(f"{p}:{mu:.3f}±{sd:.3f}" for p, mu, sd in
+                                                                     zip(points, v["mean"], v["sd"])))
+
+
 # ================================================================ figures (Mac)
 
 def figures(a):
@@ -547,7 +685,9 @@ def figures(a):
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("stage", choices=("extract", "probe", "figures"))
+    ap.add_argument("stage", choices=("extract", "probe", "folds", "figures"))
+    ap.add_argument("--sets", nargs="+", default=["hard"], choices=tuple(SETS))
+    ap.add_argument("--memmap-dir", default="/workspace/wm/artifacts/perpatch")
     ap.add_argument("--set", default="direction", choices=tuple(SETS))
     ap.add_argument("--model", default="vjepa2", choices=("vjepa2", "random"))
     ap.add_argument("--points", type=int, nargs="*", default=None)
@@ -560,4 +700,4 @@ if __name__ == "__main__":
     ap.add_argument("--subset", default=None, choices=(None, "constvel"))
     ap.add_argument("--results-dir", default=str(RESULTS))
     a = ap.parse_args()
-    {"extract": extract, "probe": probe, "figures": figures}[a.stage](a)
+    {"extract": extract, "probe": probe, "folds": probe_folds, "figures": figures}[a.stage](a)
