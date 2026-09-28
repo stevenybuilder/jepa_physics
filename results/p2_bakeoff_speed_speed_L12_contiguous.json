@@ -1,0 +1,121 @@
+{
+ "dataset": "speed",
+ "variable": "speed",
+ "layer": 12,
+ "holdout": {
+  "design": "contiguous",
+  "seed": 0,
+  "block_start_index": 47,
+  "block_first_value": 3.0476190476190474,
+  "block_last_value": 3.464285714285714,
+  "held_out_values": [
+   3.0476190476190474,
+   3.1071428571428568,
+   3.1666666666666665,
+   3.226190476190476,
+   3.2857142857142856,
+   3.345238095238095,
+   3.4047619047619047,
+   3.464285714285714
+  ]
+ },
+ "layer_role": "exploratory",
+ "all_roles": [],
+ "source": "/workspace/wmh/results/p1a_speed_speed_meanpool.json",
+ "provenance": {
+  "split_file": "/workspace/wmh/splits/split_v1.json",
+  "split_sha256": "98e6310c40bf29e81bd8b6bf4b1ac603b89e4104d40ac1047b15dd5dc2be2df2",
+  "seeds": {
+   "seed": 0
+  },
+  "commit": "af127521c8f5d2ce473ecf87a07169b87669401a",
+  "dirty": true,
+  "git_commit": "af127521c8f5d2ce473ecf87a07169b87669401a",
+  "git_dirty_src_or_scripts": true,
+  "timestamp_utc": "2026-09-28T18:22:23+00:00",
+  "layer": 12,
+  "pool": "meanpool",
+  "holdout": "contiguous",
+  "spline": "smooth",
+  "k": 64
+ },
+ "spline": "smoothing",
+ "k": 64,
+ "probe_basis": {
+  "rows": "knot folds at kept values only",
+  "n_rows": 647,
+  "alpha": 31.622776601683793,
+  "n_probes": 41,
+  "folds": [
+   0,
+   1,
+   2
+  ]
+ },
+ "norm_matching": "every arm's edit rescaled per clip to the spline arm's ||delta|| ('matched'); 'unmatched' = each arm's own norm",
+ "evaluators": {
+  "probe": "ridge on probe folds (shares filter geometry with probe_qr)",
+  "mlp": "one-hidden-layer MLP (64) on probe folds"
+ },
+ "arms": {
+  "spline": {
+   "nominal_rank": 64,
+   "effective_rank": 1.229107574197103,
+   "mean_norm_unmatched": 5.5637863439016515,
+   "err_probe_matched": 0.1629312537259649,
+   "err_mlp_matched": 0.5252785404252883,
+   "err_probe_unmatched": 0.1629312537259649,
+   "err_mlp_unmatched": 0.5252785404252883
+  },
+  "chord": {
+   "nominal_rank": 64,
+   "effective_rank": 1.2250040859907538,
+   "mean_norm_unmatched": 5.3431938279519215,
+   "err_probe_matched": 0.15482347022340823,
+   "err_mlp_matched": 0.521024256420391,
+   "err_probe_unmatched": 0.13259888821243593,
+   "err_mlp_unmatched": 0.5068665824432773
+  },
+  "centroid_transport": {
+   "nominal_rank": 1024,
+   "effective_rank": 1.5439895337651357,
+   "mean_norm_unmatched": 6.075565137707301,
+   "err_probe_matched": 0.16315732409208233,
+   "err_mlp_matched": 0.570904106175433,
+   "err_probe_unmatched": 0.10582612482549063,
+   "err_mlp_unmatched": 0.5530817577430475
+  },
+  "snap": {
+   "nominal_rank": 1024,
+   "effective_rank": 3.359052313931404,
+   "mean_norm_unmatched": 12.014325679712796,
+   "err_probe_matched": 0.43080600900360494,
+   "err_mlp_matched": 0.47713615052668246,
+   "err_probe_unmatched": 0.037750934326519325,
+   "err_mlp_unmatched": 0.41463045673187415
+  },
+  "probe_qr": {
+   "nominal_rank": 41,
+   "effective_rank": 1.0645544852849893,
+   "mean_norm_unmatched": 9.766594618445042,
+   "err_probe_matched": 0.4331853222910001,
+   "err_mlp_matched": 0.6009268457001689,
+   "err_probe_unmatched": 0.08494448712025605,
+   "err_mlp_unmatched": 0.5486613222730802
+  },
+  "chord_raw": {
+   "nominal_rank": 64,
+   "effective_rank": 1.5244171155126187,
+   "mean_norm_unmatched": 5.999016909299077,
+   "err_probe_matched": 0.1616583927762145,
+   "err_mlp_matched": 0.5462070968654281,
+   "err_probe_unmatched": 0.1041589368855575,
+   "err_mlp_unmatched": 0.5264601690026574
+  }
+ },
+ "unsteered_err": {
+  "probe": 1.2427026261843934,
+  "mlp": 1.3202183574497224
+ },
+ "n_steered": 384
+}

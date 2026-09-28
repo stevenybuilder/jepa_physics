@@ -171,6 +171,47 @@ def test_part2_heldout_context(tmp_path):
     assert res["nuisance_regressed"]["context"]["covariates_filled_with_primary_train_mean"] == ["motion=velocity"]
 
 
+@pytest.mark.parametrize("seed", [0, 11])   # seed 11: the held-out block starts on a grid angle (45 degrees)
+def test_part2_context_sparse_values(tmp_path, seed):
+    """Context set with 8 of the 64 angles (as the hard render): no crash; the context nearest-real readout is
+    reported only for targets with real context clips, and still reaches the summary, the gaps and the floors."""
+    tmp = fake_dataset(tmp_path, "direction")
+    ctx = tmp_path / "ctx"
+    ctx.mkdir()
+    fake_dataset(ctx, "direction")
+    df = pd.read_csv(ctx / "table.csv")
+    keep = np.isclose(df["theta_degrees"].to_numpy() % 45, 0)
+    X = np.load(ctx / "act" / "meanpool.npy")[keep]
+    np.save(ctx / "act" / "meanpool.npy", X)
+    (ctx / "act" / "ids.json").write_text(json.dumps(df["id"][keep].tolist()))
+    df[keep].to_csv(ctx / "table.csv", index=False)
+    run_script("run_part2.py", tmp, "direction", "--variable", "direction", "--n-clips", "6", "--K", "5",
+               "--n-controls", "2", "--no-bf16", "--holdout", "contiguous", "--seed", str(seed),
+               "--context-dataset", "direction", "--context-name", "hard",
+               "--context-act-dir", str(ctx / "act"), "--context-table", str(ctx / "table.csv"),
+               "--context-split", str(ctx / "split.json"))
+    res = json.loads((tmp / "results" / "p2_steer_direction_direction_L1_contiguous_ctx-hard.json").read_text())
+    on_grid = [r for r in res["rows"] if r["target"] % 45 == 0]
+    assert on_grid and all(r["nearest_real_R_context"] is not None for r in on_grid)
+    assert all(r["nearest_real_R_context"] is None for r in res["rows"] if r["target"] % 45 != 0)
+    man = res["summary"]["manifold"]["overall"]
+    assert man["nearest_real_R_context"] is not None and man["probe_ctx_err_to_target"] is not None
+    gap = res["gaps"]["manifold_minus_linear"]["nearest_real_R_context"]
+    assert gap["n_rows_with_readout"] == len([r for r in on_grid if r["arm"] == "manifold"])
+    c = res["context"]
+    assert c["steered_act_dir"] == str(ctx / "act") and c["nearest_real_R_context_targets"] == [45.0 if seed else 315.0]
+    assert c["readout_floors"]["probe_ctx_mae_unsteered"] >= 0 and "verdict_primary_probe" in res
+    assert c["steered_split_sha256"] and {"call_under_mean_floor", "call_under_median_floor"} <= set(
+        res["verdict"]["margin_floors"]) and "on-grid" in res["verdict"]["margin_note"]
+    assert "err_to_target_ctx" in res["waypoint_readout"]["manifold"][-1]
+    spec = importlib.util.spec_from_file_location("replot", ROOT / "scripts" / "replot_part2_context.py")
+    rp = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(rp)
+    out, figs = rp.refresh(tmp / "results" / "p2_steer_direction_direction_L1_contiguous_ctx-hard.json",
+                           tmp / "figures", ctx / "table.csv", ctx / "split.json")
+    assert out["regenerated"] and all(f.exists() for f in figs)
+
+
 def test_load_pair_checks_alignment(tmp_path):
     from wm.p2_data import load_pair
     tmp = fake_dataset(tmp_path, "direction")

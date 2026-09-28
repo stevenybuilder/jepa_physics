@@ -33,7 +33,7 @@ import numpy as np
 from wm import geometry_checks as gc
 from wm import manifold as mf
 from wm.data import PROJECT_ROOT
-from wm.p2_data import load_inputs
+from wm.p2_data import default_act_dir, load_inputs
 from wm.provenance import layer_role, provenance
 
 MAIN_ARMS = ("manifold", "linear", "linear_dose_matched", "projected", "reflected", "linear_raw")
@@ -50,6 +50,7 @@ BEHAVIOUR_ENERGY_METRICS = ("behaviour_energy", "behaviour_energy_mean", "behavi
 PAIR_SE_METRICS = ("behaviour_energy", "behaviour_energy_rel_floor", "behaviour_entropy_mean")
 NOT_COMPARABLE = ("not comparable: on-curve by construction (residual replaced, so Eq. 9 gives a sharp distribution "
                   "that no real clip has); compare replace arms on probe readouts and nearest-real only")
+CONTEXT_METRICS = ("nearest_real_R_context", "probe_ctx_err_to_target", "probe_ctx_err_to_true", "probe_ctx_err_path")
 TAUS = (0.25, 0.5, 1.0, 2.0)
 RANKED = {"nearest_real_R": True, "probe_err_to_target": False, "excess_to_curve": False,
           "excess_to_nearest_real": False, "behaviour_energy": False}   # metric -> higher is better
@@ -75,7 +76,7 @@ def shift_of(source, target, periodic):
 
 
 def build(d, k, angle, design="scattered", seed=0, n_controls=20, spline="interp", behaviour_mode="spline",
-          subspace="pca", basis=None, angle_max_dev=None, extend="cubic"):
+          subspace="pca", basis=None, angle_max_dev=None, extend="cubic", aim="coord"):
     """PCA, centroids and all curves from the knot clips at kept values (the held-out design decides which).
     angle: "unsupervised" (choose plane automatically, fall back to labels if the ring is not found) or "labels".
     extend: scalars beyond the end knots, "cubic" (end piece extended) or "linear" (end tangent)."""
@@ -92,6 +93,7 @@ def build(d, k, angle, design="scattered", seed=0, n_controls=20, spline="interp
         choice = mf.choose_angle_source(cent["C"], cent["values"], max_dev_deg=angle_max_dev)
         angle, plane = choice["angle"], choice["plane"]
     curve = mf.fit_curve(cent, d["periodic"], angle=angle, plane=plane, spline=spline, extend=extend)
+    curve.aim = aim   # held-out aim on a periodic curve: "coord" (legacy) or "arc" (issue #213)
     # full-space centroids (in the curve's knot order): only Goodfire's whole-activation linear baseline uses them
     full_C = np.array([d["X"][knot & (d["y"] == v)].mean(0) for v in curve.values])
     full_curve = mf.Curve(spline=None, values=curve.values, coords=curve.coords, points=full_C,
@@ -219,8 +221,15 @@ def evaluate(W, x, src, tgt, m, ctx):
            "_wp_err": wp_err, "_wp_radius": wp_radius, "_wp_bc": bc, "_wp_entropy": ent, "_wp_mid": mid,
            "_aligned": aligned,
            "_dose": dn, "_energy": np.stack([e["to_curve"], e["to_nearest_real"]], -1), "_delta_end": xs - x}
-    if ctx.get("near_ctx") is not None:
-        out["nearest_real_R_context"] = ctx["near_ctx"].score(xs, x, tgt)
+    if ctx.get("near_ctx") is not None:   # NaN at targets with no real context clip (e.g. the 8-angle hard render)
+        has = np.isclose(ctx["near_ctx"].values_real, tgt).any()
+        out["nearest_real_R_context"] = ctx["near_ctx"].score(xs, x, tgt) if has else np.full(n, np.nan)
+    if ctx.get("probe_ctx") is not None:  # probe fit on the context set's own probe folds (render-calibrated)
+        pc = ctx["probe_ctx"].predict(W.reshape(n * K, -1)).reshape(n, K)
+        out["probe_ctx_err_to_target"] = mf.value_error(pc[:, -1], tgt, periodic)
+        out["probe_ctx_err_to_true"] = mf.value_error(pc[:, -1], src, periodic)
+        out["_wp_err_ctx"] = mf.value_error(pc, tgt, periodic)
+        out["probe_ctx_err_path"] = out["_wp_err_ctx"].mean(1)
     return out
 
 
@@ -241,7 +250,8 @@ def bf16_steering_energy(d, d_steer, args, angle, picks):
     db = {**d, "X": gc.bf16_round(d["X"])}
     Xs = gc.bf16_round(d_steer["X"])
     mb = build(db, args.k, angle, args.holdout, args.seed, n_controls=0, spline=args.spline, behaviour_mode=args.behaviour,
-               subspace=args.plane, basis=args.basis_matrix, angle_max_dev=args.angle_max_dev, extend=args.extend)
+               subspace=args.plane, basis=args.basis_matrix, angle_max_dev=args.angle_max_dev, extend=args.extend,
+               aim=args.aim)
     acc = {a: {"excess_to_curve": [], "excess_to_nearest_real": []} for a in ("manifold", "linear")}
     for tgt, pick in picks.items():
         x, src = Xs[pick].astype(float), d_steer["y"][pick]
@@ -299,7 +309,7 @@ def run(args):
                               "probe folds and the held-out values; favours the inlp subspace)"}
     args.basis_matrix = basis
     m = build(d, args.k, angle, args.holdout, args.seed, args.n_controls, args.spline, args.behaviour, args.plane,
-              basis, args.angle_max_dev, args.extend)
+              basis, args.angle_max_dev, args.extend, args.aim)
     probe_rows = d["role"] == "probe"
     probe = mf.ProbeReadout(d["X"][probe_rows], d["y"][probe_rows], periodic)
     test = np.flatnonzero(d["role"] == "test")
@@ -317,6 +327,8 @@ def run(args):
         assert c["X"].shape[1] == d["X"].shape[1], "primary and context activations differ in width"
         ctest = np.flatnonzero(c["role"] == "test")
         ctx["near_ctx"] = mf.NearestRealReadout(c["X"][ctest], c["y"][ctest])
+        cprobe = c["role"] == "probe"
+        ctx["probe_ctx"] = mf.ProbeReadout(c["X"][cprobe], c["y"][cprobe], periodic)
         d_steer = c
     arms = (MAIN_ARMS + (("manifold_transport",) if periodic else ()) + ("goodfire_manifold",)
             + (("goodfire_linear",) if args.goodfire_baseline else ()))
@@ -331,10 +343,11 @@ def run(args):
     heat = {a: [0.0, 0] for a in arms}
 
     rows, shared = [], {a: [] for a in arms}
-    per_arm = {a: {q: [] for q in (*METRICS, "nearest_real_R_context", "_dose", "_energy", *WAYPOINT_SERIES, "shift",
+    per_arm = {a: {q: [] for q in (*METRICS, *CONTEXT_METRICS, "_wp_err_ctx", "_dose", "_energy", *WAYPOINT_SERIES, "shift",
                                    "_target", "_id", "_src")} for a in arms}
-    ctrl = {kind: [{q: [] for q in RANKED} for _ in m["controls"][kind]] for kind in CONTROLS}
-    ctrl_ref = {q: [] for q in RANKED}         # the spline arm on the same clip subset as the control draws
+    ranked = {**RANKED, **({"probe_ctx_err_to_target": False} if args.context_dataset else {})}
+    ctrl = {kind: [{q: [] for q in ranked} for _ in m["controls"][kind]] for kind in CONTROLS}
+    ctrl_ref = {q: [] for q in ranked}         # the spline arm on the same clip subset as the control draws
     for tgt, pick in picks.items():
         x, src = d_steer["X"][pick].astype(float), d_steer["y"][pick]
         Z, resid = m["pca"].project(x), m["pca"].complement(x)
@@ -365,19 +378,19 @@ def run(args):
                              "target": float(tgt), "shift": float(shift[j]),
                              **{q: (None if arm in REPLACE_ARMS and q in BEHAVIOUR_ENERGY_METRICS
                                     else float(ev[q][j])) for q in METRICS},
-                             **({"nearest_real_R_context": float(ev["nearest_real_R_context"][j])}
-                                if "nearest_real_R_context" in ev else {})})
+                             **{q: (float(ev[q][j]) if np.isfinite(ev[q][j]) else None)
+                                for q in CONTEXT_METRICS if q in ev}})
         sub = slice(0, args.n_control_clips)
         Zs_sub = Zarms["manifold"][sub]
         ev = evaluate(Ws["manifold"][sub], x[sub], src[sub], tgt, m, ctx)
-        for q in RANKED:
+        for q in ranked:
             ctrl_ref[q].append(ev[q])
         for kind in CONTROLS:
             for i, cv in enumerate(m["controls"][kind]):
                 Zc = (mf.endpoint_matched_random(Zs_sub, cv) if kind == "random_endpoint_matched"
                       else curve_coords(cv, Z[sub], src[sub], tgt, args.K))
                 ev = evaluate(compose(m["pca"], Zc, resid[sub]), x[sub], src[sub], tgt, m, ctx)
-                for q in RANKED:
+                for q in ranked:
                     ctrl[kind][i][q].append(ev[q])
     cat = {a: {q: np.concatenate(v) for q, v in qs.items() if v} for a, qs in per_arm.items()}
 
@@ -401,9 +414,21 @@ def run(args):
                                           "receive the edit; steered and nearest-real clips are test",
                                "development": "no design choice may be made on this output's test read",
                                "untouched": "test is read here: anything chosen after this read is exploratory"},
-           "context": ({"steered_dataset": args.context_dataset, "spline_built_on": args.dataset,
+           "context": ({"steered_dataset": args.context_dataset, "name": args.context_name or args.context_dataset,
+                        "spline_built_on": args.dataset,
+                        "steered_act_dir": str(args.context_act_dir or default_act_dir(args.context_dataset)),
+                        "steered_table": args.context_table, "steered_split": args.context_split,
+                        "steered_table_sha256": _sha256(args.context_table),
+                        "steered_split_sha256": _sha256(args.context_split),
                         "readouts": "probe and nearest_real from the primary dataset; nearest_real_R_context from "
-                                    "real context-dataset test clips at the target value"}
+                                    "real context-dataset test clips at the target value; probe_ctx_* from a probe "
+                                    "fit on the context set's own probe folds (3-4), disjoint from the steered test "
+                                    "clips",
+                        "nearest_real_R_context_targets": [t for t in picks
+                                                           if np.isclose(ctx["near_ctx"].values_real, t).any()],
+                        "readout_floors": context_floors(d, d_steer, probe, ctx, m["held"], periodic),
+                        "verdict_readout": "probe_ctx (endpoint and path error, margin = its unsteered context-test "
+                                           "error); the primary-probe verdict is verdict_primary_probe"}
                        if args.context_dataset else None),
            "n_knot_clips": int(m["knot"].sum()), "n_probe_clips": int(probe_rows.sum()), "n_test_clips": len(test),
            "n_steered_per_target": {str(t): len(p) for t, p in picks.items()},
@@ -411,7 +436,7 @@ def run(args):
            "deviations_from_goodfire": {
                "additive_path": "main arms are additive (x + curve(t_k) - curve(t_src)); Goodfire A.6 replaces the "
                                 "PCA-64 part with the curve point and keeps the complement. That is run as "
-                                "goodfire_manifold under --goodfire-baseline.",
+                                "goodfire_manifold (always run; --goodfire-baseline adds goodfire_linear).",
                "matched_linear": "Goodfire's linear arm replaces the whole activation with a full-space chord point; "
                                  "the main linear arm edits the same PCA-k subspace as the spline and keeps the "
                                  "residual (goodfire_linear reproduces theirs).",
@@ -447,7 +472,7 @@ def run(args):
            "delta_norm_per_waypoint": {a: cat[a]["_dose"].mean(0).tolist() for a in arms},
            "rescue_harm": rescue_harm(cat, arms),
            "controls": {kind: {q: band([np.concatenate(dr[q]).mean() for dr in ctrl[kind]],
-                                       np.concatenate(ctrl_ref[q]).mean(), hb) for q, hb in RANKED.items()}
+                                       np.concatenate(ctrl_ref[q]).mean(), hb) for q, hb in ranked.items()}
                         for kind in CONTROLS if m["controls"][kind]},
            "summary": mask_replace(summarise(rows, periodic, [a for a in arms if a != "goodfire_linear"])),
            "summary_notes": [
@@ -475,12 +500,14 @@ def run(args):
                         "waypoint index with the Eq. 9 argmax value's offset along that arc; argmax_on_arc = fraction "
                         "of waypoints whose argmax lies on the arc, endpoints included"),
            "rows": rows}
-    out["verdict"] = curvature_verdict(out["gaps"], m["sagitta"],
-                                       {"to_curve": energy_floor["to_curve"],
-                                        "to_nearest_real": energy_floor["to_nearest_real"],
-                                        "behaviour_mean": ctx["floor"]["mean"], "K": args.K,
-                                        "probe_oof": out["probe_test_error"]}, periodic)
+    vfloors = {"to_curve": energy_floor["to_curve"], "to_nearest_real": energy_floor["to_nearest_real"],
+               "behaviour_mean": ctx["floor"]["mean"], "K": args.K, "probe_oof": out["probe_test_error"]}
+    out["verdict"] = curvature_verdict(out["gaps"], m["sagitta"], vfloors, periodic)
+    if args.context_dataset:   # endpoint/path error read by the context-calibrated probe, its own floor as margin
+        out["verdict_primary_probe"] = out["verdict"]
+        out["verdict"] = context_verdict(out, periodic)
     out["summary_notes"].insert(0, "verdict: " + out["verdict"]["text"])
+    out["held_out_aim"] = args.aim
     out["controls_note"] = (f"{args.n_controls} draws each, on the first {args.n_control_clips} steered clips per "
                             "target (the spline value in each band is on the same clips); spline_rank = 1 + number "
                             "of draws better than the spline arm (1 = spline best); band = 5-95% of the draws' means")
@@ -510,7 +537,7 @@ def run(args):
 
     tag = f"{args.dataset}_{args.variable or args.dataset}_L{args.layer}_{args.holdout}"
     if args.context_dataset:
-        tag += f"_ctx-{args.context_dataset}"
+        tag += f"_ctx-{args.context_name or args.context_dataset}"
     tag += ("" if args.plane == "pca" else f"_{args.plane}") + ("_nuis" if nuisance else "")
     Path(args.results_dir).mkdir(parents=True, exist_ok=True)
     Path(args.figures_dir).mkdir(parents=True, exist_ok=True)
@@ -521,9 +548,34 @@ def run(args):
     plot_energy({a: cat[a]["_energy"] for a in main}, {a: cat[a]["shift"] for a in main},
                 Path(args.figures_dir) / f"fig4_path_energy_{tag}.png", tag, energy_floor, verdict)
     plot_waypoints(out["waypoint_readout"], Path(args.figures_dir) / f"fig4_waypoint_readout_{tag}.png", tag,
-                   periodic, main, ctx["floor"]["mean"], verdict)
+                   periodic, main, ctx["floor"]["mean"], verdict, context=bool(args.context_dataset))
     plot_value_heatmap(out["value_heatmap"], Path(args.figures_dir) / f"fig4_value_heatmap_{tag}.png", tag, periodic)
     return out
+
+
+def _sha256(path):
+    import hashlib
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest() if path else None
+
+
+def context_verdict(out, periodic):
+    """Context runs: the curvature verdict with endpoint/path error read by the render-matched probe
+    (probe_ctx_*), under two margins, its unsteered context-test error mean (the call) and median."""
+    cg = {k: {**v, "probe_err_to_target": v.get("probe_ctx_err_to_target"),
+              "probe_err_path": v.get("probe_ctx_err_path")} for k, v in out["gaps"].items()}
+    base = {"to_curve": out["energy_floor"]["to_curve"], "to_nearest_real": out["energy_floor"]["to_nearest_real"],
+            "behaviour_mean": out["behaviour_floor"]["mean"], "K": out["K"], "probe_oof": None}
+    fl = out["context"]["readout_floors"]
+    v = {q: curvature_verdict(cg, out["sagitta_per_target"], {**base, "probe_oof": fl[f"probe_ctx_{q}_unsteered"]},
+                              periodic) for q in ("mae", "median")}
+    return {**v["mae"], "margin_floors": {
+        "mean_floor": fl["probe_ctx_mae_unsteered"], "median_floor": fl["probe_ctx_median_unsteered"],
+        "call_under_mean_floor": v["mae"]["call"], "call_under_median_floor": v["median"]["call"],
+        "text_under_median_floor": v["median"]["text"]},
+        "margin_note": ("endpoint/path margin = the render-matched probe's error on UNSTEERED context test clips, "
+                        "an on-grid estimate: those clips sit only at the context set's own values (8 angles for the "
+                        "hard render), while held-out targets may lie between them; the call above uses the mean "
+                        "floor, margin_floors gives the call under the median floor too")}
 
 
 def waypoint_summary(cat, arms, periodic, n_bins=4):
@@ -542,6 +594,8 @@ def waypoint_summary(cat, arms, periodic, n_bins=4):
                 continue
             b = {"shift_lo": float(lo), "shift_hi": float(hi), "n": int(sel.sum()),
                  "err_to_target": cat[a]["_wp_err"][sel].mean(0).tolist()}
+            if "_wp_err_ctx" in cat[a]:   # context runs: the render-matched probe's error at every waypoint
+                b["err_to_target_ctx"] = cat[a]["_wp_err_ctx"][sel].mean(0).tolist()
             if a in REPLACE_ARMS:
                 b["bhattacharyya"] = b["entropy"] = b["intermediate_mass"] = NOT_COMPARABLE
             else:
@@ -555,7 +609,7 @@ def waypoint_summary(cat, arms, periodic, n_bins=4):
     return out
 
 
-def plot_waypoints(wp, path, tag, periodic, arms, floor=None, verdict=None):
+def plot_waypoints(wp, path, tag, periodic, arms, floor=None, verdict=None, context=False):
     """Largest-shift bin: probe readout radius (direction) or error, and behaviour distance, along the path.
     Replace arms are left out of the behaviour panel (not comparable); the circularity caveat is printed on it."""
     fig, axes = plt.subplots(1, 2, figsize=(9, 3.8))
@@ -563,15 +617,22 @@ def plot_waypoints(wp, path, tag, periodic, arms, floor=None, verdict=None):
         b = wp[a][-1]
         frac = np.linspace(0, 1, len(b["err_to_target"]))
         style = "-" if a in ("manifold", "linear") else ":"
-        axes[0].plot(frac, b["radius"] if periodic else b["err_to_target"], style, label=a)
+        y0 = (b["err_to_target_ctx"] if "err_to_target_ctx" in b
+              else b["radius"] if periodic else b["err_to_target"])
+        axes[0].plot(frac, y0, style, label=a)
         if a not in REPLACE_ARMS:
             axes[1].plot(frac, b["bhattacharyya"], style, label=a)
     axes[1].text(0.02, 0.98, "caveat: at the steered layer Eq. 9 is a distance-to-centroid\nfunction of the edited "
                  "activation (partly circular);\ninformative after propagation. Replace arms omitted.",
                  transform=axes[1].transAxes, va="top", fontsize=6, color="0.35")
     b = wp[arms[0]][-1]
-    axes[0].set(xlabel="fraction of path", ylabel="probe readout radius" if periodic else "probe error to target",
-                title=f"Evaluation probe, shift {b['shift_lo']:.0f}-{b['shift_hi']:.0f}")
+    shift = f"shift {b['shift_lo']:.0f}-{b['shift_hi']:.0f}"
+    if "err_to_target_ctx" in b:
+        axes[0].set(xlabel="fraction of path", ylabel="probe error to target", title=f"Render-matched probe, {shift}")
+    else:
+        axes[0].set(xlabel="fraction of path", ylabel="probe readout radius" if periodic else "probe error to target",
+                    title=(f"Primary probe (NOT render-matched), {shift}" if context
+                           else f"Evaluation probe, {shift}"))
     if floor is not None:
         axes[1].axhline(floor, color="0.4", lw=0.8, ls="-.", label="unsteered real clips (floor)")
         axes[1].legend(fontsize=6, loc="lower right")
@@ -582,6 +643,35 @@ def plot_waypoints(wp, path, tag, periodic, arms, floor=None, verdict=None):
     fig.tight_layout()
     fig.savefig(path, dpi=150)
     plt.close(fig)
+
+
+def context_floors(d, c, probe, ctx, targets, periodic):
+    """Readouts on UNSTEERED context test clips: each probe's error against their true value, and per nearest-real
+    readout the distance of those clips to the real target mean (d_before) vs the real target clips' own spread
+    (d_real_at_target); R_real = 1 - d_real/d_before is what arriving among real target clips would score."""
+    t = c["role"] == "test"
+    Xt, yt = c["X"][t], c["y"][t]
+    e_p = mf.value_error(probe.predict(Xt), yt, periodic)
+    e_c = mf.value_error(ctx["probe_ctx"].predict(Xt), yt, periodic)
+    out = {"probe_primary_mae_unsteered": float(e_p.mean()), "probe_primary_median_unsteered": float(np.median(e_p)),
+           "probe_ctx_mae_unsteered": float(e_c.mean()), "probe_ctx_median_unsteered": float(np.median(e_c)),
+           "probe_primary_mae_primary_test": float(np.mean(mf.value_error(
+               probe.predict(d["X"][d["role"] == "test"]), d["y"][d["role"] == "test"], periodic))),
+           "n_ctx_probe_clips": int((c["role"] == "probe").sum()), "n_unsteered": int(t.sum()), "nearest_real": {}}
+    for name, near in (("primary", ctx["near"]), ("context", ctx["near_ctx"])):
+        per = []
+        for tv in targets:
+            rows = np.isclose(near.values_real, tv)
+            if not rows.any():
+                continue
+            mu = near.X_real[rows].mean(0)
+            db = np.linalg.norm(Xt[~np.isclose(yt, tv)] - mu, axis=1).mean()
+            dr = np.linalg.norm(near.X_real[rows] - mu, axis=1).mean()
+            per.append({"target": float(tv), "d_before": float(db), "d_real_at_target": float(dr),
+                        "R_real": float(1 - dr / db)})
+        out["nearest_real"][name] = {"per_target": per, "R_real_mean": (float(np.mean([p["R_real"] for p in per]))
+                                                                        if per else None)}
+    return out
 
 
 def behaviour_floor(bm, X_real, values_real):
@@ -679,6 +769,7 @@ def paired_gaps(cat, others, periodic, seed=0):
     metrics = [q for q in (*RANKED, "probe_err_path", "probe_radius_min", "delta_norm", "behaviour_energy_rel_floor",
                            "behaviour_entropy_mean", "intermediate_mass", "ordering_spearman", "argmax_on_arc")
                if not (q == "probe_radius_min" and not periodic)]
+    metrics += [q for q in CONTEXT_METRICS if q in cat["manifold"] and np.isfinite(cat["manifold"][q]).any()]
     s, tgt, ids, srcv = (cat["manifold"][q] for q in ("shift", "_target", "_id", "_src"))
     pair_keys = np.unique(np.stack([srcv, tgt], 1), axis=0, return_inverse=True)[1].ravel()
     edges = shift_bins(periodic)
@@ -693,17 +784,20 @@ def paired_gaps(cat, others, periodic, seed=0):
                 res[q] = NOT_COMPARABLE
                 continue
             diff = cat["manifold"][q] - cat[o][q]
-            per_t = np.array([diff[tgt == t].mean() for t in np.unique(tgt)])
-            per_p = np.bincount(pair_keys, weights=diff) / np.bincount(pair_keys)
-            res[q] = {**paired_bootstrap(diff, ids, seed=seed),
+            ok = np.isfinite(diff)          # context readouts are NaN at targets without real context clips
+            diff, s_, t_, i_, pk = diff[ok], s[ok], tgt[ok], ids[ok], pair_keys[ok]
+            per_t = np.array([diff[t_ == t].mean() for t in np.unique(t_)])
+            cnt = np.bincount(pk)
+            per_p = (np.bincount(pk, weights=diff)[cnt > 0] / cnt[cnt > 0])
+            res[q] = {**paired_bootstrap(diff, i_, seed=seed), "n_rows_with_readout": int(ok.sum()),
                       "mean_over_targets": float(per_t.mean()),
                       "se_over_targets": float(per_t.std(ddof=1) / np.sqrt(len(per_t))) if len(per_t) > 1 else None,
                       "mean_over_pairs": float(per_p.mean()), "n_pairs": int(len(per_p)),
                       "se_over_pairs": float(per_p.std(ddof=1) / np.sqrt(len(per_p))) if len(per_p) > 1 else None,
                       "by_shift": [{"shift_lo": float(lo), "shift_hi": float(hi),
-                                    **paired_bootstrap(diff[(s >= lo) & (s < hi)], ids[(s >= lo) & (s < hi)],
+                                    **paired_bootstrap(diff[(s_ >= lo) & (s_ < hi)], i_[(s_ >= lo) & (s_ < hi)],
                                                        seed=seed)}
-                                   for lo, hi in zip(edges[:-1], edges[1:]) if ((s >= lo) & (s < hi)).any()]}
+                                   for lo, hi in zip(edges[:-1], edges[1:]) if ((s_ >= lo) & (s_ < hi)).any()]}
     return out
 
 
@@ -736,7 +830,7 @@ def summarise(rows, periodic, arms, n_bins=5):
         edges = np.quantile(shifts, np.linspace(0, 1, n_bins + 1))
         edges[-1] += 1e-9
     out = {}
-    metrics = METRICS + (("nearest_real_R_context",) if "nearest_real_R_context" in rows[0] else ())
+    metrics = METRICS + tuple(q for q in CONTEXT_METRICS if any(r.get(q) is not None for r in rows))
     for arm in arms:
         R = [r for r in rows if r["arm"] == arm]
         s = np.array([r["shift"] for r in R])
@@ -745,9 +839,9 @@ def summarise(rows, periodic, arms, n_bins=5):
             sel = [r for r, v in zip(R, s) if lo <= v < hi]
             if not sel:
                 continue
-            mean = lambda q: _mean_or_none([r[q] for r in sel])
+            mean = lambda q: _mean_or_none([r.get(q) for r in sel])
             bins.append({"shift_lo": float(lo), "shift_hi": float(hi), "n": len(sel), **{q: mean(q) for q in metrics}})
-        out[arm] = {"overall": {q: _mean_or_none([r[q] for r in R]) for q in metrics}, "by_shift": bins,
+        out[arm] = {"overall": {q: _mean_or_none([r.get(q) for r in R]) for q in metrics}, "by_shift": bins,
                     "over_pairs": {q: pair_mean_se(R, q) for q in PAIR_SE_METRICS}}
     return out
 
@@ -880,11 +974,12 @@ def plot_gap(summary, path, tag, periodic, arms, verdict=None):
         b = summary[arm]["by_shift"]
         mid = [(x["shift_lo"] + x["shift_hi"]) / 2 for x in b]
         style = "-" if arm in ("manifold", "linear") else ":"
-        axes[0].plot(mid, [x["probe_err_to_target"] for x in b], style, marker="o", label=arm)
+        q = "probe_ctx_err_to_target" if b and b[0].get("probe_ctx_err_to_target") is not None else "probe_err_to_target"
+        axes[0].plot(mid, [x[q] for x in b], style, marker="o", label=arm)
         axes[1].plot(mid, [x["nearest_real_R"] for x in b], style, marker="o", label=arm)
     unit = "degrees" if periodic else "label units"
     axes[0].set(xlabel=f"shift |source - target| ({unit})", ylabel=f"probe error to target ({unit})",
-                title="Evaluation probe")
+                title="Render-matched probe" if q == "probe_ctx_err_to_target" else "Evaluation probe")
     axes[1].set(xlabel=f"shift ({unit})", ylabel="R = 1 - D(steered)/D(unsteered)", title="Agreement with real clips")
     axes[1].axhline(0, color="0.7", lw=0.8)
     _annotate(fig, verdict)
@@ -935,6 +1030,8 @@ def parse(argv=None):
     p.add_argument("--spline", default="interp", choices=("interp", "smooth"),
                    help="interpolating (Goodfire A.3) or count-weighted smoothing spline (B.1); choose from the "
                         "geometry check's heldout_reconstruction")
+    p.add_argument("--aim", default="coord", choices=("coord", "arc"),
+                   help="periodic held-out targets: coord (legacy linear interpolation of knot coordinates in value order) or arc (value fraction of arc length between the value-neighbour knots, issue #213)")
     p.add_argument("--extend", default="cubic", choices=("cubic", "linear"),
                    help="scalar spline beyond the end knots: extend the end cubic piece (default) or continue "
                         "linearly along the end tangent (mf.LinearExtension)")
@@ -955,6 +1052,7 @@ def parse(argv=None):
     p.add_argument("--context-dataset", default=None, choices=("direction", "speed", "acceleration"),
                    help="held-out context: steer this dataset's test clips with the spline built on --dataset")
     p.add_argument("--context-act-dir", default=None)
+    p.add_argument("--context-name", default=None, help="output tag for the context set (default: --context-dataset)")
     p.add_argument("--context-table", default=None)
     p.add_argument("--context-split", default=None)
     p.add_argument("--seed", type=int, default=0)

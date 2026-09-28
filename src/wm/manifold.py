@@ -111,6 +111,7 @@ class Curve:
     periodic: bool
     coord_source: str       # "value", "unsupervised_angle" or "labels_angle" (callers may retag, e.g. "goodfire_pca_angle")
     kind: str = "interpolating"   # or "smoothing" (count-weighted, Goodfire B.1); points are then the smoothed knots
+    aim: str = "coord"            # periodic held-out values: "coord" (legacy) or "arc" (value_neighbours; issue #213)
 
     def __call__(self, t):
         return self.spline(np.asarray(t, dtype=float))
@@ -154,10 +155,51 @@ class Curve:
         xv, tc = self.values[order].astype(float), self.coords[order].astype(float)
         if not self.periodic:
             return interp_extrap(v, xv, tc)
+        if self.aim == "arc":
+            return self._coord_by_arc(v)
         tc = np.unwrap(np.append(tc, tc[0]))            # continuous around the loop, either orientation
         xv = np.append(xv, xv[0] + 360.0)
         x = (np.asarray(v, dtype=float) - xv[0]) % 360.0 + xv[0]
         return np.interp(x, xv, tc) % TWO_PI
+
+    def value_neighbours(self, v):
+        """Periodic curves: for each value (degrees) the knot indices a, b of its VALUE neighbours (the kept values
+        just below and just above it round the circle) and its fraction f in [0, 1) between them; a knot value
+        gives a == b, f == 0. The knots' positions in angle order play no part, so a knot order that is not
+        monotone in the value (label-free angle, issue #213) cannot put foreign knots between a and b."""
+        v = np.atleast_1d(np.asarray(v, dtype=float))
+        kv = self.values.astype(float)
+        below = (v[:, None] - kv[None, :]) % 360.0                     # [n, m] distance down to each knot value
+        above = (kv[None, :] - v[:, None]) % 360.0
+        a = np.argmin(below, axis=1)
+        exact = np.isclose(below[np.arange(len(v)), a], 0.0, atol=1e-9) | np.isclose(below[np.arange(len(v)), a],
+                                                                                        360.0, atol=1e-9)
+        b = np.argmin(np.where(above > 1e-9, above, np.inf), axis=1)
+        db, da = below[np.arange(len(v)), a], above[np.arange(len(v)), b]
+        f = np.where(exact, 0.0, db / np.where(exact, 1.0, db + da))
+        return a, np.where(exact, a, b), f
+
+    def _coord_by_arc(self, v, n=2000):
+        """Issue #213 aim: the coordinate at arc-length fraction f (the value's fraction between its value
+        neighbours a, b) along the fitted curve from knot a to knot b, walked the short way in angle order.
+        Equals the knot's coordinate at a knot value."""
+        v_arr = np.asarray(v, dtype=float)
+        a, b, f = self.value_neighbours(v_arr.ravel())
+        out = np.empty(len(f))
+        cache = {}
+        for i, (ia, ib, fi) in enumerate(zip(a, b, f)):
+            if ia == ib or fi == 0.0:
+                out[i] = self.coords[ia]
+                continue
+            if (ia, ib) not in cache:
+                ta = float(self.coords[ia])
+                t = ta + np.linspace(0.0, 1.0, n + 1) * float(wrap_pi(self.coords[ib] - ta))
+                s = np.concatenate([[0.0], np.cumsum(np.linalg.norm(np.diff(self(t), axis=0), axis=1))])
+                cache[(ia, ib)] = (t, s)
+            t, s = cache[(ia, ib)]
+            out[i] = np.interp(fi * s[-1], s, t)
+        out = out % TWO_PI
+        return out.reshape(v_arr.shape) if v_arr.ndim else float(out[0])
 
 
 def interp_extrap(x, xp, fp):
@@ -483,7 +525,7 @@ def raw_knot_curve(curve, cent):
     idx = {float(v): i for i, v in enumerate(cent["values"])}
     C = np.asarray(cent["C"])[[idx[float(v)] for v in curve.values]]
     return Curve(spline=None, values=curve.values, coords=curve.coords, points=C, periodic=curve.periodic,
-                 coord_source=curve.coord_source, kind="raw_knots")
+                 coord_source=curve.coord_source, kind="raw_knots", aim=curve.aim)
 
 
 # ---------------------------------------------------------------- 4. steering paths -------------------------------
@@ -617,7 +659,17 @@ def steer_to_value(x, pca, curve, target_value, K=2, source_value=None, mode="sh
 
 
 def piecewise_linear_point(curve, v):
-    """The point at value v on the polyline through the knots (the 'line' that the spline is compared with)."""
+    """The point at value v on the polyline through the knots (the 'line' that the spline is compared with).
+    Periodic with curve.aim == "arc" (issue #213): the chord between the value's two VALUE-neighbouring knots at its
+    value fraction, (1 - f) P_a + f P_b (A.9's chord between c_a and c_b). Identical to the legacy coordinate-order
+    polyline whenever the knot order is monotone in the value; when it is not (label-free angle) the legacy polyline
+    runs through foreign knots. aim == "coord" keeps the legacy polyline byte for byte."""
+    if curve.periodic and curve.aim == "arc":
+        v_arr = np.asarray(v, dtype=float)
+        a, b, f = curve.value_neighbours(v_arr.ravel())
+        P = np.asarray(curve.points, dtype=float)
+        out = (1.0 - f)[:, None] * P[a] + f[:, None] * P[b]
+        return out.reshape(v_arr.shape + (P.shape[1],))
     t = curve.coord_of_value(v)
     if curve.periodic:
         P = np.vstack([curve.points, curve.points[:1]])

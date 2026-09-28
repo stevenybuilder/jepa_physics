@@ -1,0 +1,1338 @@
+{
+ "what": "Independent validation of the Part 2 spline construction, visualisation and evaluation (direction, point 12 unless noted). Estimators as REPORT 4.3: per run gaps.manifold_minus_{arm}.{metric}.mean with its clip-bootstrap ci95; across arcs mean +/- SD, spline-ahead count, CIs excluding zero.",
+ "code": {
+  "fix": "src/wm/manifold.py Curve.aim ('coord' legacy default, 'arc' = issue #213 fix), Curve.value_neighbours, Curve._coord_by_arc; piecewise_linear_point uses the value-neighbour chord only when aim == 'arc' (aim='coord' is the legacy path byte for byte); scripts/run_part2.py --aim {coord,arc}, recorded as held_out_aim",
+  "tests": "tests/test_manifold.py::test_value_neighbour_chord_on_nonmonotone_ring, ::test_arc_aim_fraction_along_fitted_curve",
+  "stored_files_from_ungated_code": "none in results/ (the ungated chord ran only in scratch box dirs coord_L12_s{1..16}; the landed results/arcs_rawchord_fixed/ files use aim='arc', whose code path the gating did not change: reruns arcg_L12_s{4,7} are identical to 0.0)"
+ },
+ "checks": {
+  "construction": {
+   "periodic_parameterisation_wrap": {
+    "pass": true,
+    "ours": "splrep(per=1) on knots + first knot repeated at t0+2pi; evaluation wraps (t-t0) mod 2pi; interp arm CubicSpline bc=periodic",
+    "goodfire": "CubicSpline1D bc=periodic, period 2pi (A.3)"
+   },
+   "knot_ordering": {
+    "pass": false,
+    "ours": "knots in order of the label-free atan2 angle; accepted if |Fisher-Lee| >= 0.9 and 45-deg block order holds; neighbour swaps allowed",
+    "effect": "8/16 point-12 arcs (1,4,5,7,8,9,11,13) have 1-3 foreign knots between a held-out target's value neighbours in angle order; the legacy polyline chord is misaimed by up to 2.27-3.81 PCA units (centroid noise 2.45); 0/16 at point 22 on labels",
+    "goodfire": "every concept is a knot, so held-out aiming never arises"
+   },
+   "smoothing_parameter_s_equals_m": {
+    "pass": true,
+    "ours": "FITPACK splrep, w = sqrt(count)/sd_c (1/SE), s = m per coordinate (expected chi2)",
+    "loko_err_mean_by_s_over_m": {
+     "L12": {
+      "0.0": 10.968,
+      "0.25": 4.102,
+      "0.5": 3.381,
+      "1.0": 3.103,
+      "2.0": 3.556,
+      "4.0": 4.005,
+      "8.0": 4.384
+     },
+     "L22": {
+      "0.0": 8.483,
+      "0.25": 6.297,
+      "0.5": 5.369,
+      "1.0": 4.823,
+      "2.0": 5.493,
+      "4.0": 7.094,
+      "8.0": 8.901
+     }
+    },
+    "loko_chi2_per_coord": {
+     "L12": {
+      "0.0": 161.568,
+      "0.25": 3.533,
+      "0.5": 2.019,
+      "1.0": 1.441,
+      "2.0": 1.52,
+      "4.0": 1.71,
+      "8.0": 1.929
+     },
+     "L22": {
+      "0.0": 17.489,
+      "0.25": 4.277,
+      "0.5": 2.51,
+      "1.0": 1.695,
+      "2.0": 1.715,
+      "4.0": 2.013,
+      "8.0": 2.395
+     }
+    },
+    "fit_chi2_per_coord_L12": {
+     "0.0": 0.0,
+     "0.25": 0.25,
+     "0.5": 0.5,
+     "1.0": 0.972,
+     "2.0": 1.395,
+     "4.0": 1.618,
+     "8.0": 1.834
+    },
+    "loko_argmin_counts": {
+     "L12": {
+      "1.0": 17
+     },
+     "L22": {
+      "1.0": 13,
+      "2.0": 3,
+      "0.5": 1
+     }
+    },
+    "heldout_block_rebuild_err_by_s": {
+     "L12": {
+      "0.0": 45.788,
+      "0.25": 9.624,
+      "0.5": 6.014,
+      "1.0": 4.469,
+      "2.0": 4.387,
+      "4.0": 4.784,
+      "8.0": 5.335
+     },
+     "L22": {
+      "0.0": 15.347,
+      "0.25": 9.581,
+      "0.5": 7.191,
+      "1.0": 5.823,
+      "2.0": 6.775,
+      "4.0": 8.459,
+      "8.0": 10.379
+     }
+    },
+    "note": "leave-one-knot-out on the kept centroids picks s = m on 17/17 point-12 arcs; s = m is the noise-calibrated choice and not over- or under-smoothing on this grid"
+   },
+   "smoothing_spline_invariance": {
+    "pass": false,
+    "finding": "FITPACK's adaptive knot placement makes the s = m fit depend on the arbitrary zero and orientation of the atan2 angle; rotating/reflecting the coordinate moves held-out targets by up to (x centroid noise):",
+    "held_target_move_over_noise_max": {
+     "0": 4.53,
+     "7": 10.81,
+     "12": 0.97,
+     "4": 0.87
+    },
+    "interpolating_spline_move": {
+     "0": 1.3191101347864633e-11,
+     "7": 1.1325225791863285e-12,
+     "12": 1.449646138058208e-14,
+     "4": 4.6358408666558605e-14
+    },
+    "consequence": "identical code and data on the Mac (Accelerate SVD signs) and the box (OpenBLAS) give different splines: legacy-code spline endpoint error on seed 7 is 9.07 deg (stored) vs 52.82 deg (box); other affected arcs move by up to 1.1 deg; the raw chord is identical to 1e-9 on both",
+    "standard_practice": "a Reinsch penalised smoothing spline with a knot at every site (Goodfire CubicSpline1D smoothness lambda; scipy make_smoothing_spline) is shift-invariant; choose lambda by GCV / leave-one-knot-out"
+   },
+   "interpolating_alternative": {
+    "pass": true,
+    "finding": "correctly rejected: LOKO error 10.97 vs 3.10 (s=m) at point 12; dense curve reaches 116.8 PCA units from the knots (ring radius ~6)",
+    "goodfire": "A.3 interpolates every centroid (smoothness 0) but has no held-out values and far less centroid noise"
+   },
+   "cyclic_coordinate": {
+    "pass": true,
+    "caveat": "label-free at point 12 (16/16 arcs), labels fallback at point 22 (12/16 arcs); the check uses labels to accept, never to place knots; its tolerance of fine-order swaps is what creates the #213 case"
+   },
+   "held_out_aim_coord_of_value": {
+    "pass": false,
+    "finding": "coord_of_value already interpolates the coordinate between the VALUE neighbours the short way; the defect was the chords (piecewise_linear_point walked the angle-order polyline through foreign knots) and a coordinate rule that is not an arc-length fraction. Fixed under aim='arc'. Spline target moves coord->arc by 0.47 PCA units (affected) / 0.59 (clean) at point 12"
+   },
+   "scalar_extrapolation": {
+    "pass": true,
+    "ours": "end-tangent linear continuation (LinearExtension); authors'-code arm reported beside it",
+    "goodfire": "no extrapolation"
+   }
+  },
+  "visualisation": {
+   "old_p2_ring_figure_misrepresents": true,
+   "cause": "it plots the INTERPOLATING spline (run_geometry_checks fit_curve default) on all 1,200 train clips in label-free angle order with 6 of 63 neighbour swaps and two knots 0.0098 deg apart: the interpolant must pass two separated centroids at almost the same parameter and overshoots to 16.7 PCA units (point 22 recipe: 215) against a ring of radius ~6.7. The steering curve is the smoothing spline on knot folds with the block held out; it stays within 6.3 and never loops. At point 22 the top-2 centroid PC plane is one ring axis plus the cos 2theta fold and draws the fitted ring as a figure 8; the new figures use the ring (cos/sin regression) plane, 68% / 61% of centroid variance at points 12 / 22",
+   "new_figures": [
+    "figures/fig_ring_fitted_L12.png",
+    "figures/fig_ring_fitted_L22.png"
+   ]
+  },
+  "evaluation": {
+   "held_out_logic": {
+    "pass": true,
+    "note": "PCA, centroids and spline use knot folds 0-2 at kept values only; probe/MLP/reference on folds 3-4; steered carriers are test clips whose value != target; nearest-real target means from test clips at the target (never the carrier). Source coordinate is the carrier's true value (oracle), not Goodfire's c_a start"
+   },
+   "probe_readout": {
+    "pass": true,
+    "caveat": "a linear (sin, cos) probe reads a chord point between symmetric neighbours at the mid angle: the chord's inward sagitta only lowers the radius, so endpoint probe error cannot reward curvature, only aim; curvature shows only in radius/path metrics"
+   },
+   "nearest_real_readout": {
+    "pass": true,
+    "caveat": "ceiling ~0.23 (donor), so gaps of +/-0.01 are small; the readout is still Euclidean-to-centroid at the steered layer"
+   },
+   "mlp_predictor_readouts": {
+    "pass": true,
+    "note": "disjoint probe clips / the model's own forward (4.4-4.5); not re-run here"
+   },
+   "controls": {
+    "pass": true,
+    "note": "endpoint-matched random (20), shuffled centroids (20), dose-matched line, projected, reflected; control draws use the first 16 clips per target"
+   },
+   "ci_conventions": {
+    "pass": false,
+    "issue": "per-run clip bootstrap is sound, but across arcs only mean +/- SD is given: arcs share knots/probe folds, seeds 4 and 8 are the same arc, and one pathological arc (seed 7, +41 deg after the fix on the box) dominates the mean; report median and a sign test / bootstrap over distinct arcs"
+   },
+   "verdict_margins": {
+    "pass": false,
+    "issue": "endpoint losses count only beyond the probe's out-of-sample error (~3.9 deg), so a +2.4 deg mean loss against the A.9 raw chord never triggers 'negative_endpoint'; and the verdict compares with the smoothed-knot chord, not the A.9 raw chord. Rule was frozen before the arc sweep (8d3cac8) but is post hoc"
+   }
+  }
+ },
+ "arcs_point12_raw_chord": {
+  "per_arc": [
+   {
+    "seed": 1,
+    "affected_213": true,
+    "before_stored_mac": {
+     "endpoint_gap_raw": -1.6469,
+     "endpoint_gap_raw_ci95": [
+      -2.4329,
+      -0.9415
+     ],
+     "nearest_real_gap_raw": -0.0179,
+     "nearest_real_gap_raw_ci95": [
+      -0.0266,
+      -0.0095
+     ],
+     "endpoint_gap_smoothed_chord": -2.403,
+     "verdict": "path_geometry_positive"
+    },
+    "before_box_legacy": {
+     "endpoint_gap_raw": -1.6587,
+     "endpoint_gap_raw_ci95": [
+      -2.4459,
+      -0.9551
+     ],
+     "nearest_real_gap_raw": -0.0168,
+     "nearest_real_gap_raw_ci95": [
+      -0.0254,
+      -0.0085
+     ],
+     "endpoint_gap_smoothed_chord": -2.4443,
+     "verdict": "path_geometry_positive"
+    },
+    "after_box_arc_aim": {
+     "endpoint_gap_raw": 2.0895,
+     "endpoint_gap_raw_ci95": [
+      1.2537,
+      2.8858
+     ],
+     "nearest_real_gap_raw": -0.0163,
+     "nearest_real_gap_raw_ci95": [
+      -0.0236,
+      -0.009
+     ],
+     "endpoint_gap_smoothed_chord": -0.1554,
+     "verdict": "path_geometry_positive"
+    },
+    "aim_geometry_L12": {
+     "max_foreign_knots_between_value_neighbours": 1,
+     "legacy_raw_chord_misaim_max_pca": 2.271
+    }
+   },
+   {
+    "seed": 2,
+    "affected_213": false,
+    "before_stored_mac": {
+     "endpoint_gap_raw": 2.8291,
+     "endpoint_gap_raw_ci95": [
+      2.0985,
+      3.6156
+     ],
+     "nearest_real_gap_raw": 0.0098,
+     "nearest_real_gap_raw_ci95": [
+      0.0015,
+      0.0178
+     ],
+     "endpoint_gap_smoothed_chord": -0.1499,
+     "verdict": "path_geometry_positive"
+    },
+    "before_box_legacy": {
+     "endpoint_gap_raw": 2.5954,
+     "endpoint_gap_raw_ci95": [
+      1.8757,
+      3.3617
+     ],
+     "nearest_real_gap_raw": 0.0156,
+     "nearest_real_gap_raw_ci95": [
+      0.0077,
+      0.0232
+     ],
+     "endpoint_gap_smoothed_chord": -0.1867,
+     "verdict": "path_geometry_positive"
+    },
+    "after_box_arc_aim": {
+     "endpoint_gap_raw": 2.8995,
+     "endpoint_gap_raw_ci95": [
+      2.1318,
+      3.7112
+     ],
+     "nearest_real_gap_raw": 0.0155,
+     "nearest_real_gap_raw_ci95": [
+      0.0075,
+      0.023
+     ],
+     "endpoint_gap_smoothed_chord": 0.1173,
+     "verdict": "path_geometry_positive"
+    },
+    "aim_geometry_L12": {
+     "max_foreign_knots_between_value_neighbours": 0,
+     "legacy_raw_chord_misaim_max_pca": 0.0
+    }
+   },
+   {
+    "seed": 3,
+    "affected_213": false,
+    "before_stored_mac": {
+     "endpoint_gap_raw": 1.4643,
+     "endpoint_gap_raw_ci95": [
+      0.6151,
+      2.2967
+     ],
+     "nearest_real_gap_raw": -0.0021,
+     "nearest_real_gap_raw_ci95": [
+      -0.0116,
+      0.0071
+     ],
+     "endpoint_gap_smoothed_chord": -0.1679,
+     "verdict": "path_geometry_positive"
+    },
+    "before_box_legacy": {
+     "endpoint_gap_raw": 1.7834,
+     "endpoint_gap_raw_ci95": [
+      0.9091,
+      2.6914
+     ],
+     "nearest_real_gap_raw": -0.0002,
+     "nearest_real_gap_raw_ci95": [
+      -0.0096,
+      0.0087
+     ],
+     "endpoint_gap_smoothed_chord": -0.038,
+     "verdict": "path_geometry_positive"
+    },
+    "after_box_arc_aim": {
+     "endpoint_gap_raw": 1.7659,
+     "endpoint_gap_raw_ci95": [
+      0.9056,
+      2.6611
+     ],
+     "nearest_real_gap_raw": -0.0001,
+     "nearest_real_gap_raw_ci95": [
+      -0.0095,
+      0.0089
+     ],
+     "endpoint_gap_smoothed_chord": -0.0555,
+     "verdict": "path_geometry_positive"
+    },
+    "aim_geometry_L12": {
+     "max_foreign_knots_between_value_neighbours": 0,
+     "legacy_raw_chord_misaim_max_pca": 0.0
+    }
+   },
+   {
+    "seed": 4,
+    "affected_213": true,
+    "before_stored_mac": {
+     "endpoint_gap_raw": 3.9679,
+     "endpoint_gap_raw_ci95": [
+      3.1129,
+      4.8119
+     ],
+     "nearest_real_gap_raw": -0.0049,
+     "nearest_real_gap_raw_ci95": [
+      -0.0164,
+      0.0068
+     ],
+     "endpoint_gap_smoothed_chord": 2.7609,
+     "verdict": "path_geometry_positive"
+    },
+    "before_box_legacy": {
+     "endpoint_gap_raw": 3.7579,
+     "endpoint_gap_raw_ci95": [
+      2.924,
+      4.6145
+     ],
+     "nearest_real_gap_raw": -0.0048,
+     "nearest_real_gap_raw_ci95": [
+      -0.0155,
+      0.0066
+     ],
+     "endpoint_gap_smoothed_chord": 1.8704,
+     "verdict": "path_geometry_positive"
+    },
+    "after_box_arc_aim": {
+     "endpoint_gap_raw": 6.0542,
+     "endpoint_gap_raw_ci95": [
+      4.9588,
+      7.0947
+     ],
+     "nearest_real_gap_raw": -0.0042,
+     "nearest_real_gap_raw_ci95": [
+      -0.0146,
+      0.0073
+     ],
+     "endpoint_gap_smoothed_chord": 3.6104,
+     "verdict": "path_geometry_positive"
+    },
+    "aim_geometry_L12": {
+     "max_foreign_knots_between_value_neighbours": 3,
+     "legacy_raw_chord_misaim_max_pca": 2.884
+    }
+   },
+   {
+    "seed": 5,
+    "affected_213": true,
+    "before_stored_mac": {
+     "endpoint_gap_raw": 0.1684,
+     "endpoint_gap_raw_ci95": [
+      -0.4362,
+      0.7445
+     ],
+     "nearest_real_gap_raw": 0.0068,
+     "nearest_real_gap_raw_ci95": [
+      -0.0033,
+      0.016
+     ],
+     "endpoint_gap_smoothed_chord": -0.8066,
+     "verdict": "path_geometry_positive"
+    },
+    "before_box_legacy": {
+     "endpoint_gap_raw": 0.7564,
+     "endpoint_gap_raw_ci95": [
+      0.1564,
+      1.3307
+     ],
+     "nearest_real_gap_raw": 0.0177,
+     "nearest_real_gap_raw_ci95": [
+      0.0074,
+      0.027
+     ],
+     "endpoint_gap_smoothed_chord": -0.901,
+     "verdict": "path_geometry_positive"
+    },
+    "after_box_arc_aim": {
+     "endpoint_gap_raw": 2.1142,
+     "endpoint_gap_raw_ci95": [
+      1.4952,
+      2.7075
+     ],
+     "nearest_real_gap_raw": 0.0071,
+     "nearest_real_gap_raw_ci95": [
+      -0.0034,
+      0.0169
+     ],
+     "endpoint_gap_smoothed_chord": -0.5348,
+     "verdict": "path_geometry_positive"
+    },
+    "aim_geometry_L12": {
+     "max_foreign_knots_between_value_neighbours": 1,
+     "legacy_raw_chord_misaim_max_pca": 2.727
+    }
+   },
+   {
+    "seed": 6,
+    "affected_213": false,
+    "before_stored_mac": {
+     "endpoint_gap_raw": 2.2875,
+     "endpoint_gap_raw_ci95": [
+      1.6304,
+      2.9846
+     ],
+     "nearest_real_gap_raw": -0.0242,
+     "nearest_real_gap_raw_ci95": [
+      -0.0343,
+      -0.0139
+     ],
+     "endpoint_gap_smoothed_chord": -0.0317,
+     "verdict": "path_geometry_positive"
+    },
+    "before_box_legacy": {
+     "endpoint_gap_raw": 2.416,
+     "endpoint_gap_raw_ci95": [
+      1.6749,
+      3.1455
+     ],
+     "nearest_real_gap_raw": -0.0213,
+     "nearest_real_gap_raw_ci95": [
+      -0.0308,
+      -0.0108
+     ],
+     "endpoint_gap_smoothed_chord": -0.0892,
+     "verdict": "path_geometry_positive"
+    },
+    "after_box_arc_aim": {
+     "endpoint_gap_raw": 3.4468,
+     "endpoint_gap_raw_ci95": [
+      2.7252,
+      4.1679
+     ],
+     "nearest_real_gap_raw": -0.0185,
+     "nearest_real_gap_raw_ci95": [
+      -0.028,
+      -0.0082
+     ],
+     "endpoint_gap_smoothed_chord": 0.9416,
+     "verdict": "path_geometry_positive"
+    },
+    "aim_geometry_L12": {
+     "max_foreign_knots_between_value_neighbours": 0,
+     "legacy_raw_chord_misaim_max_pca": 0.0
+    }
+   },
+   {
+    "seed": 7,
+    "affected_213": true,
+    "before_stored_mac": {
+     "endpoint_gap_raw": -1.4325,
+     "endpoint_gap_raw_ci95": [
+      -3.0372,
+      0.2684
+     ],
+     "nearest_real_gap_raw": -0.2009,
+     "nearest_real_gap_raw_ci95": [
+      -0.2242,
+      -0.1783
+     ],
+     "endpoint_gap_smoothed_chord": 0.8568,
+     "verdict": "path_geometry_positive"
+    },
+    "before_box_legacy": {
+     "endpoint_gap_raw": 42.325,
+     "endpoint_gap_raw_ci95": [
+      37.2466,
+      47.9036
+     ],
+     "nearest_real_gap_raw": -0.3064,
+     "nearest_real_gap_raw_ci95": [
+      -0.3284,
+      -0.2839
+     ],
+     "endpoint_gap_smoothed_chord": 43.5483,
+     "verdict": "negative_endpoint"
+    },
+    "after_box_arc_aim": {
+     "endpoint_gap_raw": 40.9723,
+     "endpoint_gap_raw_ci95": [
+      35.8474,
+      46.754
+     ],
+     "nearest_real_gap_raw": -0.2775,
+     "nearest_real_gap_raw_ci95": [
+      -0.3002,
+      -0.255
+     ],
+     "endpoint_gap_smoothed_chord": 37.809,
+     "verdict": "negative_endpoint"
+    },
+    "aim_geometry_L12": {
+     "max_foreign_knots_between_value_neighbours": 1,
+     "legacy_raw_chord_misaim_max_pca": 3.279
+    }
+   },
+   {
+    "seed": 8,
+    "affected_213": true,
+    "before_stored_mac": {
+     "endpoint_gap_raw": 3.9563,
+     "endpoint_gap_raw_ci95": [
+      3.2899,
+      4.6213
+     ],
+     "nearest_real_gap_raw": -0.0014,
+     "nearest_real_gap_raw_ci95": [
+      -0.0145,
+      0.0102
+     ],
+     "endpoint_gap_smoothed_chord": 2.6554,
+     "verdict": "path_geometry_positive"
+    },
+    "before_box_legacy": {
+     "endpoint_gap_raw": 3.7707,
+     "endpoint_gap_raw_ci95": [
+      3.0361,
+      4.4347
+     ],
+     "nearest_real_gap_raw": -0.0017,
+     "nearest_real_gap_raw_ci95": [
+      -0.014,
+      0.0096
+     ],
+     "endpoint_gap_smoothed_chord": 1.9445,
+     "verdict": "path_geometry_positive"
+    },
+    "after_box_arc_aim": {
+     "endpoint_gap_raw": 5.8193,
+     "endpoint_gap_raw_ci95": [
+      5.0061,
+      6.6195
+     ],
+     "nearest_real_gap_raw": 0.0003,
+     "nearest_real_gap_raw_ci95": [
+      -0.0127,
+      0.0117
+     ],
+     "endpoint_gap_smoothed_chord": 3.622,
+     "verdict": "path_geometry_positive"
+    },
+    "aim_geometry_L12": {
+     "max_foreign_knots_between_value_neighbours": 3,
+     "legacy_raw_chord_misaim_max_pca": 2.884
+    }
+   },
+   {
+    "seed": 9,
+    "affected_213": true,
+    "before_stored_mac": {
+     "endpoint_gap_raw": 0.7943,
+     "endpoint_gap_raw_ci95": [
+      0.1189,
+      1.4989
+     ],
+     "nearest_real_gap_raw": -0.0024,
+     "nearest_real_gap_raw_ci95": [
+      -0.0143,
+      0.0095
+     ],
+     "endpoint_gap_smoothed_chord": 0.0203,
+     "verdict": "path_geometry_positive"
+    },
+    "before_box_legacy": {
+     "endpoint_gap_raw": 1.2443,
+     "endpoint_gap_raw_ci95": [
+      0.5537,
+      1.9575
+     ],
+     "nearest_real_gap_raw": -0.0115,
+     "nearest_real_gap_raw_ci95": [
+      -0.0237,
+      0.0012
+     ],
+     "endpoint_gap_smoothed_chord": 0.5905,
+     "verdict": "path_geometry_positive"
+    },
+    "after_box_arc_aim": {
+     "endpoint_gap_raw": 2.221,
+     "endpoint_gap_raw_ci95": [
+      1.543,
+      2.9404
+     ],
+     "nearest_real_gap_raw": -0.0132,
+     "nearest_real_gap_raw_ci95": [
+      -0.0265,
+      0.0003
+     ],
+     "endpoint_gap_smoothed_chord": 0.7693,
+     "verdict": "path_geometry_positive"
+    },
+    "aim_geometry_L12": {
+     "max_foreign_knots_between_value_neighbours": 1,
+     "legacy_raw_chord_misaim_max_pca": 2.401
+    }
+   },
+   {
+    "seed": 10,
+    "affected_213": false,
+    "before_stored_mac": {
+     "endpoint_gap_raw": 0.5147,
+     "endpoint_gap_raw_ci95": [
+      -0.0531,
+      1.0956
+     ],
+     "nearest_real_gap_raw": 0.0137,
+     "nearest_real_gap_raw_ci95": [
+      0.0052,
+      0.0218
+     ],
+     "endpoint_gap_smoothed_chord": -0.4374,
+     "verdict": "path_geometry_positive"
+    },
+    "before_box_legacy": {
+     "endpoint_gap_raw": 0.6834,
+     "endpoint_gap_raw_ci95": [
+      0.0793,
+      1.3688
+     ],
+     "nearest_real_gap_raw": 0.0137,
+     "nearest_real_gap_raw_ci95": [
+      0.0054,
+      0.0215
+     ],
+     "endpoint_gap_smoothed_chord": -0.3392,
+     "verdict": "path_geometry_positive"
+    },
+    "after_box_arc_aim": {
+     "endpoint_gap_raw": 0.6418,
+     "endpoint_gap_raw_ci95": [
+      0.056,
+      1.2912
+     ],
+     "nearest_real_gap_raw": 0.0139,
+     "nearest_real_gap_raw_ci95": [
+      0.0055,
+      0.0217
+     ],
+     "endpoint_gap_smoothed_chord": -0.3808,
+     "verdict": "path_geometry_positive"
+    },
+    "aim_geometry_L12": {
+     "max_foreign_knots_between_value_neighbours": 0,
+     "legacy_raw_chord_misaim_max_pca": 0.0
+    }
+   },
+   {
+    "seed": 11,
+    "affected_213": true,
+    "before_stored_mac": {
+     "endpoint_gap_raw": 0.6696,
+     "endpoint_gap_raw_ci95": [
+      0.0305,
+      1.2703
+     ],
+     "nearest_real_gap_raw": 0.0141,
+     "nearest_real_gap_raw_ci95": [
+      0.0043,
+      0.0239
+     ],
+     "endpoint_gap_smoothed_chord": -0.1109,
+     "verdict": "path_geometry_positive"
+    },
+    "before_box_legacy": {
+     "endpoint_gap_raw": -0.4467,
+     "endpoint_gap_raw_ci95": [
+      -1.1707,
+      0.2788
+     ],
+     "nearest_real_gap_raw": 0.0157,
+     "nearest_real_gap_raw_ci95": [
+      0.0063,
+      0.0258
+     ],
+     "endpoint_gap_smoothed_chord": -0.2586,
+     "verdict": "path_geometry_positive"
+    },
+    "after_box_arc_aim": {
+     "endpoint_gap_raw": 2.5495,
+     "endpoint_gap_raw_ci95": [
+      1.9445,
+      3.1637
+     ],
+     "nearest_real_gap_raw": 0.0159,
+     "nearest_real_gap_raw_ci95": [
+      0.0063,
+      0.0258
+     ],
+     "endpoint_gap_smoothed_chord": -0.3598,
+     "verdict": "path_geometry_positive"
+    },
+    "aim_geometry_L12": {
+     "max_foreign_knots_between_value_neighbours": 2,
+     "legacy_raw_chord_misaim_max_pca": 3.603
+    }
+   },
+   {
+    "seed": 12,
+    "affected_213": false,
+    "before_stored_mac": {
+     "endpoint_gap_raw": 3.7633,
+     "endpoint_gap_raw_ci95": [
+      2.983,
+      4.6364
+     ],
+     "nearest_real_gap_raw": 0.0158,
+     "nearest_real_gap_raw_ci95": [
+      0.0074,
+      0.0244
+     ],
+     "endpoint_gap_smoothed_chord": 2.033,
+     "verdict": "path_geometry_positive"
+    },
+    "before_box_legacy": {
+     "endpoint_gap_raw": 0.4229,
+     "endpoint_gap_raw_ci95": [
+      -0.1198,
+      0.9446
+     ],
+     "nearest_real_gap_raw": 0.0191,
+     "nearest_real_gap_raw_ci95": [
+      0.0103,
+      0.0286
+     ],
+     "endpoint_gap_smoothed_chord": -0.5188,
+     "verdict": "path_geometry_positive"
+    },
+    "after_box_arc_aim": {
+     "endpoint_gap_raw": 0.5787,
+     "endpoint_gap_raw_ci95": [
+      0.0584,
+      1.0984
+     ],
+     "nearest_real_gap_raw": 0.019,
+     "nearest_real_gap_raw_ci95": [
+      0.0102,
+      0.0284
+     ],
+     "endpoint_gap_smoothed_chord": -0.363,
+     "verdict": "path_geometry_positive"
+    },
+    "aim_geometry_L12": {
+     "max_foreign_knots_between_value_neighbours": 0,
+     "legacy_raw_chord_misaim_max_pca": 0.0
+    }
+   },
+   {
+    "seed": 13,
+    "affected_213": true,
+    "before_stored_mac": {
+     "endpoint_gap_raw": 0.5017,
+     "endpoint_gap_raw_ci95": [
+      -0.0604,
+      1.0493
+     ],
+     "nearest_real_gap_raw": 0.0055,
+     "nearest_real_gap_raw_ci95": [
+      -0.0042,
+      0.0151
+     ],
+     "endpoint_gap_smoothed_chord": -0.1841,
+     "verdict": "path_geometry_positive"
+    },
+    "before_box_legacy": {
+     "endpoint_gap_raw": 0.5017,
+     "endpoint_gap_raw_ci95": [
+      -0.0604,
+      1.0493
+     ],
+     "nearest_real_gap_raw": 0.0055,
+     "nearest_real_gap_raw_ci95": [
+      -0.0042,
+      0.0151
+     ],
+     "endpoint_gap_smoothed_chord": -0.1841,
+     "verdict": "path_geometry_positive"
+    },
+    "after_box_arc_aim": {
+     "endpoint_gap_raw": 2.6413,
+     "endpoint_gap_raw_ci95": [
+      1.8832,
+      3.3561
+     ],
+     "nearest_real_gap_raw": 0.0089,
+     "nearest_real_gap_raw_ci95": [
+      -0.0005,
+      0.0175
+     ],
+     "endpoint_gap_smoothed_chord": -0.3036,
+     "verdict": "path_geometry_positive"
+    },
+    "aim_geometry_L12": {
+     "max_foreign_knots_between_value_neighbours": 1,
+     "legacy_raw_chord_misaim_max_pca": 3.813
+    }
+   },
+   {
+    "seed": 14,
+    "affected_213": false,
+    "before_stored_mac": {
+     "endpoint_gap_raw": 1.0848,
+     "endpoint_gap_raw_ci95": [
+      0.5512,
+      1.6286
+     ],
+     "nearest_real_gap_raw": 0.0017,
+     "nearest_real_gap_raw_ci95": [
+      -0.0075,
+      0.0108
+     ],
+     "endpoint_gap_smoothed_chord": -0.7416,
+     "verdict": "path_geometry_positive"
+    },
+    "before_box_legacy": {
+     "endpoint_gap_raw": 1.5874,
+     "endpoint_gap_raw_ci95": [
+      0.9152,
+      2.2802
+     ],
+     "nearest_real_gap_raw": 0.0029,
+     "nearest_real_gap_raw_ci95": [
+      -0.0061,
+      0.0121
+     ],
+     "endpoint_gap_smoothed_chord": -0.6661,
+     "verdict": "path_geometry_positive"
+    },
+    "after_box_arc_aim": {
+     "endpoint_gap_raw": 1.1509,
+     "endpoint_gap_raw_ci95": [
+      0.6279,
+      1.6781
+     ],
+     "nearest_real_gap_raw": 0.0037,
+     "nearest_real_gap_raw_ci95": [
+      -0.0052,
+      0.0127
+     ],
+     "endpoint_gap_smoothed_chord": -1.1026,
+     "verdict": "path_geometry_positive"
+    },
+    "aim_geometry_L12": {
+     "max_foreign_knots_between_value_neighbours": 0,
+     "legacy_raw_chord_misaim_max_pca": 0.0
+    }
+   },
+   {
+    "seed": 15,
+    "affected_213": false,
+    "before_stored_mac": {
+     "endpoint_gap_raw": -0.2792,
+     "endpoint_gap_raw_ci95": [
+      -1.0305,
+      0.5525
+     ],
+     "nearest_real_gap_raw": -0.1451,
+     "nearest_real_gap_raw_ci95": [
+      -0.1607,
+      -0.1294
+     ],
+     "endpoint_gap_smoothed_chord": -2.3805,
+     "verdict": "path_geometry_positive"
+    },
+    "before_box_legacy": {
+     "endpoint_gap_raw": -0.6914,
+     "endpoint_gap_raw_ci95": [
+      -1.3687,
+      0.0244
+     ],
+     "nearest_real_gap_raw": -0.1173,
+     "nearest_real_gap_raw_ci95": [
+      -0.1304,
+      -0.103
+     ],
+     "endpoint_gap_smoothed_chord": -2.5238,
+     "verdict": "path_geometry_positive"
+    },
+    "after_box_arc_aim": {
+     "endpoint_gap_raw": 0.3441,
+     "endpoint_gap_raw_ci95": [
+      -0.4204,
+      1.1513
+     ],
+     "nearest_real_gap_raw": -0.0858,
+     "nearest_real_gap_raw_ci95": [
+      -0.0985,
+      -0.0721
+     ],
+     "endpoint_gap_smoothed_chord": -1.4883,
+     "verdict": "path_geometry_positive"
+    },
+    "aim_geometry_L12": {
+     "max_foreign_knots_between_value_neighbours": 0,
+     "legacy_raw_chord_misaim_max_pca": 0.0
+    }
+   },
+   {
+    "seed": 16,
+    "affected_213": false,
+    "before_stored_mac": {
+     "endpoint_gap_raw": 2.4613,
+     "endpoint_gap_raw_ci95": [
+      1.9063,
+      3.0412
+     ],
+     "nearest_real_gap_raw": -0.0034,
+     "nearest_real_gap_raw_ci95": [
+      -0.0136,
+      0.007
+     ],
+     "endpoint_gap_smoothed_chord": 0.3939,
+     "verdict": "path_geometry_positive"
+    },
+    "before_box_legacy": {
+     "endpoint_gap_raw": 2.0139,
+     "endpoint_gap_raw_ci95": [
+      1.4588,
+      2.6031
+     ],
+     "nearest_real_gap_raw": 0.0083,
+     "nearest_real_gap_raw_ci95": [
+      -0.0009,
+      0.0181
+     ],
+     "endpoint_gap_smoothed_chord": -0.3889,
+     "verdict": "path_geometry_positive"
+    },
+    "after_box_arc_aim": {
+     "endpoint_gap_raw": 1.7842,
+     "endpoint_gap_raw_ci95": [
+      1.2218,
+      2.3662
+     ],
+     "nearest_real_gap_raw": 0.0081,
+     "nearest_real_gap_raw_ci95": [
+      -0.0013,
+      0.0178
+     ],
+     "endpoint_gap_smoothed_chord": -0.6186,
+     "verdict": "path_geometry_positive"
+    },
+    "aim_geometry_L12": {
+     "max_foreign_knots_between_value_neighbours": 0,
+     "legacy_raw_chord_misaim_max_pca": 0.0
+    }
+   }
+  ],
+  "means": {
+   "before_all16_stored": {
+    "linear_raw.probe_err_to_target": {
+     "mean": 1.319,
+     "sd": 1.7664,
+     "n": 16,
+     "spline_ahead": 3,
+     "ci_above_zero": 10,
+     "ci_below_zero": 1
+    },
+    "linear_raw.nearest_real_R": {
+     "mean": -0.0209,
+     "sd": 0.0612,
+     "n": 16,
+     "spline_ahead": 7,
+     "ci_above_zero": 4,
+     "ci_below_zero": 4
+    },
+    "linear.probe_err_to_target": {
+     "mean": 0.0817,
+     "sd": 1.4724,
+     "n": 16,
+     "spline_ahead": 10,
+     "ci_above_zero": 4,
+     "ci_below_zero": 9
+    },
+    "linear.nearest_real_R": {
+     "mean": -0.0286,
+     "sd": 0.0627,
+     "n": 16,
+     "spline_ahead": 3,
+     "ci_above_zero": 1,
+     "ci_below_zero": 12
+    }
+   },
+   "after_clean8_stored_plus_affected8_fixed": {
+    "linear_raw.probe_err_to_target": {
+     "mean": 4.9117,
+     "sd": 9.7557,
+     "n": 16,
+     "spline_ahead": 1,
+     "ci_above_zero": 14,
+     "ci_below_zero": 0
+    },
+    "linear_raw.nearest_real_R": {
+     "mean": -0.0258,
+     "sd": 0.0772,
+     "n": 16,
+     "spline_ahead": 8,
+     "ci_above_zero": 4,
+     "ci_below_zero": 4
+    },
+    "linear.probe_err_to_target": {
+     "mean": 2.6859,
+     "sd": 9.4943,
+     "n": 16,
+     "spline_ahead": 10,
+     "ci_above_zero": 6,
+     "ci_below_zero": 8
+    },
+    "linear.nearest_real_R": {
+     "mean": -0.0323,
+     "sd": 0.0768,
+     "n": 16,
+     "spline_ahead": 3,
+     "ci_above_zero": 1,
+     "ci_below_zero": 12
+    }
+   },
+   "after_all16_arc_aim": {
+    "linear_raw.probe_err_to_target": {
+     "mean": 4.8171,
+     "sd": 9.7775,
+     "n": 16,
+     "spline_ahead": 0,
+     "ci_above_zero": 15,
+     "ci_below_zero": 0
+    },
+    "linear_raw.nearest_real_R": {
+     "mean": -0.0202,
+     "sd": 0.073,
+     "n": 16,
+     "spline_ahead": 9,
+     "ci_above_zero": 4,
+     "ci_below_zero": 4
+    },
+    "linear.probe_err_to_target": {
+     "mean": 2.5942,
+     "sd": 9.5013,
+     "n": 16,
+     "spline_ahead": 10,
+     "ci_above_zero": 6,
+     "ci_below_zero": 8
+    },
+    "linear.nearest_real_R": {
+     "mean": -0.0269,
+     "sd": 0.0726,
+     "n": 16,
+     "spline_ahead": 3,
+     "ci_above_zero": 2,
+     "ci_below_zero": 11
+    }
+   },
+   "before_all16_box_legacy": {
+    "linear_raw.probe_err_to_target": {
+     "mean": 3.8163,
+     "sd": 10.3778,
+     "n": 16,
+     "spline_ahead": 3,
+     "ci_above_zero": 11,
+     "ci_below_zero": 1
+    },
+    "linear_raw.nearest_real_R": {
+     "mean": -0.0238,
+     "sd": 0.082,
+     "n": 16,
+     "spline_ahead": 8,
+     "ci_above_zero": 5,
+     "ci_below_zero": 4
+    },
+    "linear.probe_err_to_target": {
+     "mean": 2.4634,
+     "sd": 11.019,
+     "n": 16,
+     "spline_ahead": 12,
+     "ci_above_zero": 3,
+     "ci_below_zero": 10
+    },
+    "linear.nearest_real_R": {
+     "mean": -0.0315,
+     "sd": 0.0833,
+     "n": 16,
+     "spline_ahead": 5,
+     "ci_above_zero": 3,
+     "ci_below_zero": 10
+    }
+   },
+   "before_box_legacy_excl_seed7": {
+    "linear_raw.probe_err_to_target": {
+     "mean": 1.2491,
+     "sd": 1.5518,
+     "n": 15,
+     "spline_ahead": 3,
+     "ci_above_zero": 10,
+     "ci_below_zero": 1
+    },
+    "linear_raw.nearest_real_R": {
+     "mean": -0.005,
+     "sd": 0.0335,
+     "n": 15,
+     "spline_ahead": 8,
+     "ci_above_zero": 5,
+     "ci_below_zero": 3
+    },
+    "linear.probe_err_to_target": {
+     "mean": -0.2756,
+     "sd": 1.218,
+     "n": 15,
+     "spline_ahead": 12,
+     "ci_above_zero": 2,
+     "ci_below_zero": 10
+    },
+    "linear.nearest_real_R": {
+     "mean": -0.0121,
+     "sd": 0.0309,
+     "n": 15,
+     "spline_ahead": 5,
+     "ci_above_zero": 3,
+     "ci_below_zero": 9
+    }
+   },
+   "after_box_arc_excl_seed7": {
+    "linear_raw.probe_err_to_target": {
+     "mean": 2.4067,
+     "sd": 1.683,
+     "n": 15,
+     "spline_ahead": 0,
+     "ci_above_zero": 14,
+     "ci_below_zero": 0
+    },
+    "linear_raw.nearest_real_R": {
+     "mean": -0.003,
+     "sd": 0.0257,
+     "n": 15,
+     "spline_ahead": 9,
+     "ci_above_zero": 4,
+     "ci_below_zero": 3
+    },
+    "linear.probe_err_to_target": {
+     "mean": 0.2465,
+     "sd": 1.4967,
+     "n": 15,
+     "spline_ahead": 10,
+     "ci_above_zero": 5,
+     "ci_below_zero": 8
+    },
+    "linear.nearest_real_R": {
+     "mean": -0.0096,
+     "sd": 0.0229,
+     "n": 15,
+     "spline_ahead": 3,
+     "ci_above_zero": 2,
+     "ci_below_zero": 10
+    }
+   },
+   "before_stored_excl_seed7": {
+    "linear_raw.probe_err_to_target": {
+     "mean": 1.5025,
+     "sd": 1.6632,
+     "n": 15,
+     "spline_ahead": 2,
+     "ci_above_zero": 10,
+     "ci_below_zero": 1
+    },
+    "linear_raw.nearest_real_R": {
+     "mean": -0.0089,
+     "sd": 0.0393,
+     "n": 15,
+     "spline_ahead": 7,
+     "ci_above_zero": 4,
+     "ci_below_zero": 3
+    },
+    "linear.probe_err_to_target": {
+     "mean": 0.03,
+     "sd": 1.509,
+     "n": 15,
+     "spline_ahead": 10,
+     "ci_above_zero": 4,
+     "ci_below_zero": 9
+    },
+    "linear.nearest_real_R": {
+     "mean": -0.0157,
+     "sd": 0.0372,
+     "n": 15,
+     "spline_ahead": 3,
+     "ci_above_zero": 1,
+     "ci_below_zero": 11
+    }
+   },
+   "stored_clean8": {
+    "linear_raw.probe_err_to_target": {
+     "mean": 1.7657,
+     "sd": 1.319,
+     "n": 8,
+     "spline_ahead": 1,
+     "ci_above_zero": 6,
+     "ci_below_zero": 0
+    },
+    "linear_raw.nearest_real_R": {
+     "mean": -0.0167,
+     "sd": 0.0534,
+     "n": 8,
+     "spline_ahead": 4,
+     "ci_above_zero": 3,
+     "ci_below_zero": 2
+    },
+    "linear.probe_err_to_target": {
+     "mean": -0.1853,
+     "sd": 1.2232,
+     "n": 8,
+     "spline_ahead": 6,
+     "ci_above_zero": 2,
+     "ci_below_zero": 5
+    },
+    "linear.nearest_real_R": {
+     "mean": -0.0254,
+     "sd": 0.0499,
+     "n": 8,
+     "spline_ahead": 1,
+     "ci_above_zero": 0,
+     "ci_below_zero": 7
+    }
+   },
+   "stored_affected8": {
+    "linear_raw.probe_err_to_target": {
+     "mean": 0.8724,
+     "sd": 2.119,
+     "n": 8,
+     "spline_ahead": 2,
+     "ci_above_zero": 4,
+     "ci_below_zero": 1
+    },
+    "linear_raw.nearest_real_R": {
+     "mean": -0.0252,
+     "sd": 0.0717,
+     "n": 8,
+     "spline_ahead": 3,
+     "ci_above_zero": 1,
+     "ci_below_zero": 2
+    },
+    "linear.probe_err_to_target": {
+     "mean": 0.3486,
+     "sd": 1.7282,
+     "n": 8,
+     "spline_ahead": 4,
+     "ci_above_zero": 2,
+     "ci_below_zero": 4
+    },
+    "linear.nearest_real_R": {
+     "mean": -0.0317,
+     "sd": 0.0768,
+     "n": 8,
+     "spline_ahead": 2,
+     "ci_above_zero": 1,
+     "ci_below_zero": 5
+    }
+   },
+   "fixed_affected8": {
+    "linear_raw.probe_err_to_target": {
+     "mean": 8.0577,
+     "sd": 13.4009,
+     "n": 8,
+     "spline_ahead": 0,
+     "ci_above_zero": 8,
+     "ci_below_zero": 0
+    },
+    "linear_raw.nearest_real_R": {
+     "mean": -0.0349,
+     "sd": 0.0987,
+     "n": 8,
+     "spline_ahead": 4,
+     "ci_above_zero": 1,
+     "ci_below_zero": 2
+    },
+    "linear.probe_err_to_target": {
+     "mean": 5.5571,
+     "sd": 13.1461,
+     "n": 8,
+     "spline_ahead": 4,
+     "ci_above_zero": 4,
+     "ci_below_zero": 3
+    },
+    "linear.nearest_real_R": {
+     "mean": -0.0391,
+     "sd": 0.1002,
+     "n": 8,
+     "spline_ahead": 2,
+     "ci_above_zero": 1,
+     "ci_below_zero": 5
+    }
+   }
+  },
+  "headline_numbers": {
+   "published_before_stored_mac": "endpoint +1.32 +/- 1.77 (spline ahead 3/16), nearest-real -0.021 +/- 0.061",
+   "requested_after_clean8_stored_plus_affected8_fixed": "endpoint +4.91 +/- 9.76 (ahead 1/16, 14 CIs > 0), nearest-real -0.026 +/- 0.077; without seed 7: +2.51 +/- 1.70 (n=15), nearest-real -0.01 +/- 0.04",
+   "same_box_before_legacy_vs_after_arc_excl_seed7": "endpoint +1.25 +/- 1.55 (ahead 3/15) -> +2.41 +/- 1.68 (ahead 0/15, 14 CIs > 0); nearest-real -0.005 +/- 0.034 -> -0.003 +/- 0.026 (ahead 8/15 -> 9/15)",
+   "seed7": "box spline fails at targets 0-17 deg under legacy and fixed aim alike (52.8 deg endpoint error) while the Mac fit is fine (9.1 deg): the invariance defect, not the aim fix"
+  }
+ },
+ "commands": {
+  "box": "cd /workspace/wm_splineval && PYTHONPATH=src nice -n 10 python scripts/run_part2.py --dataset direction --variable direction --holdout contiguous --spline smooth --layer 12 --seed S --aim {arc|coord} --results-dir results/{arc|coordg}_L12_sS",
+  "geometry": "PYTHONPATH=src python sv_geom.py (LOKO / aim diagnostics), sv_figdata.py (figure data); invariance: sv_inv.py 0 7 12 4 (Mac)",
+  "figure": ".venv/bin/python scripts/plot_ring_fitted.py"
+ }
+}

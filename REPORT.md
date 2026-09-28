@@ -607,6 +607,22 @@ label-free recovery here is my extension, the centroid-plane fallback, and it wo
   p ≥ 0.23), and the curvature of ring-plus-fold reaches only −0.47 (p = 0.07) at point 22, with the wrong sign. With an axis ratio this close to one the spline's advantage is spread around the ring, not concentrated
   near the minor axis. PCA is the right first tool here: it finds the ring's plane, but its top-2 plane is not always
   the ring's plane.
+- **Ring or distorted loop? The harmonics** (Kantamneni & Tegmark's FFT over values, arXiv 2502.00873;
+  `figures/fig_fft_harmonics.png`)[^fft]. At every point: PCA-64 on train clips, the 64 direction centroids, an FFT
+  of each coordinate along θ, power summed over coordinates and given as a share of the non-constant power. A ring is
+  all k = 1; an ellipse or a saddle fold adds k = 2; a dent or a kink adds k ≥ 3. Controls: the random-init encoder
+  and a label-shuffle floor (centroid noise only). At point 12 the shares of k = 1 / 2 / 3 / ≥ 4 are
+  0.70 / 0.19 / 0.010 / 0.10, at point 22 0.63 / 0.22 / 0.008 / 0.14. k = 2 is 0.06–0.11 at points 2–7 and 0.19–0.32
+  from point 8 on (largest at point 15); k = 3 is at most 0.012 at every point from 1 on. The k ≥ 4 share is no more
+  than noise alone gives: shuffled-label centroids carry 0.14 of the real power at point 12 (0.16 at point 22), 91% of
+  it at k ≥ 4. The random-init encoder has the fundamental (0.48–0.68) and no second harmonic (k = 2 ≈ 0.03 at every
+  point from 1 on). So the loop is a ring plus one k = 2 term, the ellipse and the saddle fold of the bullet above,
+  and nothing at k = 3: a distorted ring of one specific, symmetric kind, and the k = 2 term is what training adds (the
+  same picture as the §3.2 DFT). Two cautions. The clip bootstrap's percentile interval excludes the point estimate
+  for k = 1 at every point (point 12: [0.63, 0.66] against 0.70), because resampled centroids are noisier and their
+  extra power lands at high k, so the intervals measure noise sensitivity, not uncertainty in the share. And the test
+  cannot call a scalar straight: an exactly straight, evenly sampled line is a sawtooth under a periodic FFT (k = 1 /
+  2 / 3 = 0.61 / 0.15 / 0.07), and speed at point 12 reads 0.52 / 0.13 / 0.10.
 - **Curvature vs noise.** Over any knot gap up to 45° the chord and the arc differ by less than a quarter of centroid
   noise (the contiguous design's own knot gap is 50.6°, where the sagitta reaches 0.45 of noise). Held-out centroids on the contiguous 45° arc are rebuilt best by the chord at every direction layer (point
   12: chord 2.59, smoothing spline 2.76).
@@ -634,6 +650,24 @@ label-free recovery here is my extension, the centroid-plane fallback, and it wo
   chord's midpoint collapses (probe radius 0.14 vs 0.99 at the source at point 12) and reads no consistent angle
   (circular SD 110° probe, 140° MLP). The endpoints are identical by construction (MLP error 26° at point 12)[^tr]
   (`figures/fig4e_two_route_direction_L12_L22.png`).
+- **Two routes, held out** (`figures/fig_two_route_heldout.png`)[^trh]. The test above builds its spline on all 64
+  values. Here it runs on the 16 held-out arcs of §4.3: PCA-64, centroids and spline are fit without the arc, the
+  readouts on disjoint probe-fold clips, carriers are test clips, and the mean is over arcs with a bootstrap CI over
+  arcs. The target h is a held-out value and the source its antipode h − 180°, so the two spline routes enter the held
+  arc from opposite sides. On the probe readout each route puts 0.95–0.97 of its interior waypoints' mass on its own
+  half-ring (point 12: via +90° 0.96 [0.95, 0.97], via −90° 0.95 [0.94, 0.97]; point 22: 0.96 / 0.97), in order
+  (Spearman 0.98–0.99 at point 12, 1.00 at point 22), and keeps a minimum readout radius of 0.73 / 0.77 from a start of
+  1.00 (point 22: 0.79 / 0.81). The chord's radius falls to 0.08 [0.08, 0.09] (point 22: 0.07), and each of its halves
+  carries 0.32–0.45 of that mass. The independent MLP agrees (0.84–0.87 for the spline routes). The endpoint does not
+  favour the spline: 10.7° [6.3, 17.8] against 8.5° for the smoothed-knot chord and 6.6° for the raw chord at point 12
+  (spline − raw chord +4.1° [0.1, 10.5]), and 6.3° against 6.2° and 4.0° at point 22 (+2.4° [1.2, 3.7]). With the held
+  arc between two kept endpoints instead (source h − 90°, target h + 90°), the route that crosses the held arc reads
+  the held value at its midpoint to 15.2° [12.6, 18.3] at point 12 and 8.6° [6.9, 10.4] at point 22, against 10.7° and
+  6.9° for the route over kept values (a difference of arc means, about 4.5° and 1.7°, not a paired interval). So the
+  long-way-round result survives holding out the target: either spline route walks its own half of the ring into an
+  unseen value, the chord collapses through the centre, and crossing unseen values costs a few degrees at the
+  midpoint. The endpoint loss to the raw chord (§4.3) carries over. Point 12 runs on the label-free angle, including
+  the 8 misaimed arcs of §4.3; point 22 on the labels.
 - **The speed axis does not rotate with direction (cylinder).** A speed probe fit within 22.5° direction bins predicts
   held-out speed worse than one global axis (R² 0.863 vs 0.979 at point 12; 0.921 vs 0.983 at point 22). The local
   axes do tilt more than same-size random bins (|cos| to global 0.69 vs 0.91; 0.56 vs 0.90), so there is a shared axis
@@ -807,11 +841,37 @@ subspace the edit acts on, the spline midpoint is no closer to real clips than t
 at point 12, CIs split 4 above / 9 below) and at point 22 it is farther (+0.030, 17/17 arcs); in full space the stored
 5-NN excess is +0.22 / +0.17 for the spline at points 22 / 12 (CI above zero in 17 / 7 of 17 runs; point-22 figures in this paragraph use the all-labels arc set,
 `results/p2_shift_dependence_labels22.json`, `results/p2_ring_occupancy_L22_labels22.json`). So "the chord cuts
-through the ring" holds in the ring plane only, and so does Goodfire's activation-side density premise (its §3.4: e^{−E} "small where they are sparse (off M_h)") here. For speed and
+through the ring" holds in the ring plane only among the unwhitened spaces (whitened direction subspaces: next paragraph), and so does Goodfire's activation-side density premise (its §3.4: e^{−E} "small where they are sparse (off M_h)") here. For speed and
 acceleration all arms coincide with the chord inside the knots; in extrapolation, continued along its end tangent, the
 smoothing spline trails the chord by 0.02–0.06 with the CI clear of zero on all four (all "path_geometry_positive"), and the authors'-code arm beats its
 chord on speed and trails it on acceleration. Extending the end cubic piece past the last knot instead, my choice and
 not the method's, gives large extrapolation losses.
+
+**Local density where direction is read** (`figures/fig_local_density.png`)[^dens]. The paragraph above finds the
+hollow in the ring plane and not in unwhitened 64-D. Is that because unwhitened distances are dominated by variance
+that a direction reader ignores? Design (a density readout in the spirit of Goodfire's Eq. 6, which the paper defines
+but does not measure; spline and smoothed-knot chord on all 64 values from knot clips, so a question about where
+midpoints land, not a held-out steering test): for every test clip and shifts of 90°, 135° and 180° in both senses,
+each midpoint's mean distance to its 5 nearest train clips is divided by the same distance for real test clips at the
+midpoint angle (1 = as dense as real clips there), in five spaces: full, PCA-64, a whitened (sin, cos) plane
+(LEACE-style: the plane any linear direction reader uses, with every direction of the data at unit variance), a
+within-value-whitened 8-D discriminant subspace, and the chart plane. At 180° at point 12 the chord midpoint sits at
+8.89× the real clips' 5-NN distance in the whitened plane against 0.92× for the spline (paired log-ratio gap +2.27
+[2.23, 2.31]; 100% of chord midpoints and 4.5% of spline midpoints beyond the real clips' 95th percentile), and at
+2.57× against 1.17× in the 8-D discriminant subspace; in PCA-64 and full space the gap is small, 1.17× against 1.09×
+and 1.14× against 1.08×. The gap grows with shift (whitened plane: 1.55× / 4.36× / 8.89× for the chord at 90° /
+135° / 180°, the spline 0.92–1.03×) and survives a reference set disjoint from the spline's knots (probe folds only:
+5.92× against 0.91×). At point 22 the whitened spaces agree (plane 10.76× against 1.40×; 8-D 3.3× against 1.70×),
+while in PCA-64 and full space the sign flips (the spline midpoint sparser by 0.06 in log ratio) and the chart plane
+ties (1.21× against 1.25×, CI across zero). Point 8 gives the same whitened-space result (5.41× against 1.08×), but
+this run builds every spline on the label-free angle, which fails at point 8 (§4.1), so its other numbers are not
+read. Local intrinsic dimension (Levina–Bickel, k = 10, held-out clips) is 12.9 in full space and 10.8 in PCA-64 at
+point 12 (7.2 / 6.7 at point 22) and 1.93–2.05 in the whitened plane at all three points: in the reader's plane the
+cloud is locally a filled 2-D band, not a thin curve, which fits a ring radius that grows with speed (§4.1). Reading:
+once the variance a direction reader ignores is whitened away, the chord's midpoint at large shifts lies far outside
+the data and the spline's lies among it, at points 12 and 22; in unwhitened space that variance swamps the
+difference, consistent with the null 5-NN results above (those are held-out arcs, so the match is not exact). This is a density statement about all-value paths; the
+held-out endpoint verdict does not move.
 
 ### 4.4 Controls and the comparison with Part 1
 
@@ -849,6 +909,80 @@ knots and, as a smoothing spline, trails the chord by 0.02–0.06 in extrapolati
 the authors' code does (their own interpolating arm is mixed: better on speed, worse on acceleration). **Failure cases**: the
 held-out endpoint against the raw-centroid chord at both points on the headline arc (+5.0°, +7.0°) and on 13 of 16
 point-12 arcs, and the position sheet.
+
+- **Conceptor steering (COAST, arXiv 2605.17144): the subspace-steering comparison**[^coast]. A conceptor
+  C = R (R + α⁻² I)⁻¹, with R the covariance of a condition's mean-centred states, is an ellipsoidal soft projection
+  onto that condition's principal directions; COAST steers with C_steer = C_target AND NOT C_source, applied as a gate
+  h' = h [(1 − β) I + β C_steer]. I fit it in the spline's PCA-64 coordinates, on the headline arc and its 384 steers
+  (the spline and raw chord recomputed there reproduce the stored endpoints to 1e-13 relative), with target and source
+  conditions made of knot clips weighted as the raw chord interpolates, the aperture by COAST's own Stage-2 rule
+  (A.10.2) and each clip's off-subspace residual kept. Arms: `coast_a`, the gate on uncentred coordinates (COAST gates
+  the raw hidden state), β from 0 to 1 along the path; the same stopped at β = 0.3; the gate on PCA-centred coordinates;
+  `coast_b`, an update aimed at the target, z' = z + s C_steer (μ_target − z), which is my variant, not COAST's; and
+  `coast_b` rescaled to the raw chord's norm. Nulls replace C_steer with a random orthogonal projector of rank
+  round(tr C) (20 draws, 16 clips per target). Unsteered error 88.9° / 88.7°; readouts as in §4.3; Δ speed and Δ start
+  from ridge probes on the probe folds (start position in metres, unlike the px of the next bullet):
+
+| Arm | endpoint error, pt 12 [95% CI] | pt 22 | ‖Δ‖ ÷ raw chord, 12 / 22 | ring-plane share of ‖Δ‖², 12 / 22 | Δ speed (m/s), 12 / 22 | Δ start (m), 12 / 22 |
+|---|---|---|---|---|---|---|
+| spline | 9.7° [8.9, 10.6] | 10.7° [9.7, 11.7] | 0.90 / 0.91 | 0.64 / 0.60 | 0.19 / 0.26 | 0.18 / 0.20 |
+| raw chord (A.9) | 4.7° [4.3, 5.2] | 3.6° [3.3, 4.1] | 1 / 1 | 0.59 / 0.60 | 0.49 / 0.49 | 0.39 / 0.40 |
+| COAST gate, uncentred | 165.0° [163.8, 166.1] | 41.8° [38.9, 44.5] | 22.1 / 10.2 | 0.09 / 0.01 | 15.2 / 1.87 | 5.21 / 10.50 |
+| same, stopped at β = 0.3 | 114.4° [108.4, 120.3] | 85.7° [78.6, 92.9] | 6.6 / 3.1 | 0.09 / 0.01 | 4.57 / 0.56 | 1.56 / 3.15 |
+| COAST gate, centred | 142.2° [137.6, 146.9] | 127.5° [123.6, 131.7] | 1.27 / 1.15 | 0.32 / 0.31 | 1.65 / 1.47 | 1.39 / 1.32 |
+| aimed (mine) | 87.8° [80.5, 95.4] | 80.2° [72.3, 88.3] | 0.11 / 0.42 | 0.12 / 0.14 | 0.20 / 0.47 | 0.07 / 0.35 |
+| aimed, at the raw chord's norm | 77.5° [69.4, 85.3] | 69.7° [61.3, 77.5] | 1 / 1 | 0.12 / 0.14 | 1.69 / 1.19 | 0.62 / 0.90 |
+
+  No conceptor arm steers direction here. The best, the uncentred gate at point 22, stops 41.8° from the target with
+  an edit 10× the raw chord's, 1% of it in the ring plane, that moves the start-position readout by 10.5 m (test
+  starts lie 1.51 m from their centroid on average); at point 12 the same gate overshoots to 165°, worse than
+  unsteered and worse than all 20 random projectors of its rank on the same clips (165.8° against 153.7°), while at
+  point 22 it beats all 20 (44.3° against 70.7°). The aimed update barely moves the readout at its own dose
+  (0.11× the chord's norm at point 12) and reaches 70–78° at the chord's; it beats 19 and 20 of 20 random projectors
+  (85.4° against 85.8°, 78.2° against 83.0°), so the conceptor carries a little direction information, not much.
+  The selection rule already flags the mismatch: COAST keeps an aperture whose mean source–target overlap lies in
+  [0.85, 0.95], and here the overlap is 0.40–0.50 at point 12 and 0.50–0.62 at point 22 over α ∈ {0.1, …, 10}, so no
+  aperture qualifies and the closest is used (α = 0.1 and 0.5). COAST's pseudoinverse AND is not a valid conceptor
+  (eigenvalues outside [0, 1]) for 96–100% of (kept value, target) pairs at every aperture, and for 87% / 90% of the
+  steered pairs at the chosen one, so I used Jaeger's range-intersection AND; the resulting C_steer has trace 0.66 of
+  64 at point 12 and 4.7 at point 22. Why it fails on a ring: a conceptor describes the shape of a condition's cloud
+  after centring, not where the cloud sits, and direction is carried by where each value's centroid sits on the ring,
+  while neighbouring values have clouds of nearly the same shape (§4.1: the ring is occupied along its whole length).
+  C_target AND NOT C_source therefore keeps little (the trace above), and what it keeps is spread the direction
+  readout ignores: 1–14% of each conceptor edit lies in the ring plane (31–32% for the centred gate) against 59–64%
+  for the spline and chord. COAST's own setting, success and failure rollouts as differently shaped spreads in an
+  overlapping region, is the case the AND-NOT isolates; a cyclic variable whose values are translated copies of one
+  cloud is the case it cannot represent. Caveats: one arc per point (the 16-arc aggregate was not run), the aimed
+  arm is mine, and COAST's final choice among in-band apertures uses rollouts that do not exist here (no aperture was
+  in band anyway). This is a negative for conceptor steering of a ring code at these two points, not for COAST on
+  its own task (`figures/fig_conceptor_direction_L{12,22}.png`).
+- **Off-target: speed and start position** (Bao et al., arXiv 2608.23526: an edit should leave the quantities it does
+  not target on their level set)[^offt]. The headline run's steered states are regenerated (edit norms match the
+  stored ones to 1e-12 relative at point 12 and 1.7e-6 at point 22) and read by a speed probe fit on speed-set train
+  clips and a start-position probe fit on direction-set train clips. The off-target change is |readout(edited) −
+  readout(unedited)| per steer, with a clip-bootstrap CI, and in parentheses its ratio to the natural spread (the
+  pooled within-label SD of the unedited readout: 0.140 / 0.169 m/s and 7.2 / 5.2 px at points 12 / 22):
+
+| Arm | pt 12: Δ speed (m/s) | pt 12: Δ start (px) | pt 22: Δ speed (m/s) | pt 22: Δ start (px) |
+|---|---|---|---|---|
+| spline | 0.187 [0.173, 0.203] (1.33) | 6.9 [6.3, 7.4] (0.95) | 0.309 [0.289, 0.331] (1.83) | 6.1 [5.6, 6.6] (1.17) |
+| chord between smoothed knots | 0.184 [0.169, 0.199] (1.31) | 6.2 [5.7, 6.7] (0.86) | 0.298 [0.278, 0.319] (1.76) | 4.6 [4.1, 5.0] (0.88) |
+| chord between raw centroids (A.9) | 0.431 [0.397, 0.468] (3.07) | 12.1 [11.2, 13.1] (1.68) | 0.451 [0.416, 0.490] (2.67) | 12.9 [12.0, 13.8] (2.48) |
+| Part 1 probe-QR at the spline's norm | 0.124 [0.112, 0.136] (0.88) | 7.3 [6.8, 7.9] (1.02) | 0.172 [0.156, 0.190] (1.02) | 20.6 [19.0, 22.1] (3.95) |
+| random smooth curve (20 draws) | 0.544 [0.491, 0.594] (3.88) | 51.6 [47.5, 55.2] (7.14) | 0.687 [0.628, 0.741] (4.07) | 45.2 [41.7, 48.7] (8.68) |
+
+  The spline and the chord between its smoothed knots leak alike into speed (1.33 against 1.31 natural spreads at
+  point 12, 1.83 against 1.76 at point 22; the intervals overlap, though these are not paired tests), and into position
+  alike at point 12 (0.95 against 0.86); at point 22 the spline moves position more (1.17 [1.07, 1.27] against
+  0.88 [0.79, 0.96]). The paper's raw-centroid chord, which wins the held-out endpoint (§4.3), leaks more: 2.3× the
+  spline's speed change at point 12 and 1.5× at point 22, with a signed shift of +0.30 / +0.31 m/s (the edited clip
+  reads faster), and 1.8–2.1× its position change. So the raw chord's endpoint lead comes with a larger change in the
+  variables it should leave alone; the endpoint verdict does not move, but the lead is not free. The conceptor run's
+  own probes (previous bullet) give the same ordering. Part 1's probe-QR edit at the spline's norm leaks least into
+  speed (0.88 / 1.02) but moves the start position by 3.95 spreads at point 22 (5.61 at its own norm). Scale: the
+  transferred speed probe is itself 0.56 / 0.44 m/s off on unedited direction test clips (r 0.97 / 0.98), and every
+  change above except the random curve's is smaller than that, so the ratios to natural spread, not the m/s, carry
+  the comparison.
 
 - **Cosine between the Part 1 step and the spline** (additional metric; contiguous design, same rows; the Part 1
   step is the multi-probe subspace edit x\* − x at that point)[^cos]:
@@ -972,6 +1106,39 @@ half of that lead was dose, and a route effect remains. The gain is angle-only: 
 chord's (−0.003 [−0.04, 0.03]) and position is 3.6 px worse [2.5, 4.7]; at the natural norm R is 0.155 lower [0.06,
 0.26] and position ties (+0.4 px [−1.2, 2.1]). The smoothing spline trails the chord by 12° at both norms.
 
+*Twin-difference edit*[^twd]. Does an edit built from the model's own counterfactuals beat the curve arms? This is
+Liu et al.'s (2608.15156) counterfactual-minus-factual carrier in simplified form, with no learned affine map. I rendered 128 knot clips (2 per source value, disjoint from the carriers and from the 480
+probe clips) at every held-out target and took the point-22 activation difference, twin minus clip, over the 1,008
+pairs. Each carrier's edit is the mean difference of the 4 pairs at its target whose source angle is nearest its own,
+either as is ("full") or projected on the top r singular vectors of all 1,008 differences (r = 1, 2, 4, 8 hold 40%,
+58%, 73% and 86% of their energy). It is then rescaled and added exactly as in the norm-matched rerun: same 200 carriers × 4
+targets, probes and comparison edits, and the unscaled chord re-forwarded here matches the session-2 cache exactly. Forecast
+direction error to target / R dir (unedited 92.1°):
+
+| Edit | at the chord's norm | at the natural norm |
+|---|---|---|
+| twin difference, rank 1 | 59.5° / 0.29 | 43.1° / 0.48 |
+| twin difference, rank 2 | 55.0° / 0.35 | 34.9° / 0.56 |
+| twin difference, rank 4 | 50.2° / 0.47 | 30.4° / 0.82 |
+| twin difference, rank 8 | 43.2° / 0.49 | 30.0° / 0.83 |
+| twin difference, full | 41.3° / 0.51 | 28.7° / 0.86 |
+| interpolating spline | 19.5° / 0.68 | 12.3° / 1.21 |
+| probe-QR | 23.2° / 0.64 | 18.8° / 1.04 |
+| chord | 27.2° / 0.68 | 25.7° / 1.37 |
+
+The best twin arm (full) trails the best comparison arm, the interpolating spline, by 21.8° [17.8, 25.9] at the
+chord's norm and 16.4° [13.9, 19.0] at the natural norm (paired over carriers), with R dir lower by 0.17 [0.14, 0.20]
+and 0.35 [0.24, 0.46]. The comparison arm was picked post hoc as the lowest error of three, which can only favour it. The error falls with rank at both norms, so rank truncation
+is not the cause. The twin edit is better on position (2.8 px [1.8, 3.7] and 3.5 px [2.4, 4.8] closer to the twin's
+true disk than the spline). Read at the encoder output (the full edited clip propagated to point 25, as in the next paragraph), it ties the spline on
+direction: 25.0° vs 23.9° (+1.1° [−0.02, 2.3]) and 16.1° vs 16.8° (−0.8° [−1.7, 0.2]). It also ties on nearest-real R (+0.004
+[−0.009, 0.017]; −0.003 [−0.021, 0.016]), and it moves the activation furthest along the twin's own point-25 change
+(R 0.31 vs 0.19, +0.12 [0.10, 0.13]; 0.48 vs 0.28, +0.20 [0.18, 0.22]). So the edit made of real counterfactual
+differences is the most twin-like at the encoder output and the worst structured edit in the forecast. At a fixed norm the forecast's direction readout
+responds to the direction content the curve edits isolate, not to the full activation change a re-render
+causes. A negative for this baseline, on one fit set (seed 0, 2 clips per value) at point 22 only
+(`figures/fig_twin_difference.png`).
+
 **At the encoder output**[^enc]. Point 25 is the final LayerNorm, whose tokens are the predictor's input and the site
 Goodfire §5 steers in its world-model experiment. The same 200 carriers × 4 targets and six arms, with the edit added
 to every post-LN context token, the same predictor-native probes, and each arm at its own norm, at the chord's norm
@@ -1068,6 +1235,44 @@ centroids use all clips (`data_separation` in both files); a leak here would fav
 (closer to the spline by 0.07, 19 of 20, from a zero-edit start of 0.61). So neither our angle-only test nor an unconverged run of Goodfire's
 recipe recovers the ring from the forecast; both find a route off it, and neither is a test the paper would count as
 complete. A negative, as run, on both protocols.
+
+**Speed through the predictor (GPU session 3)**[^s3]. Does the direction picture hold for a straight variable? The design:
+128 test carriers from the speed set (constant velocity, 0.25–4 m/s) × 4 targets in the contiguous held-out block of
+the point-19 speed run (3.05–3.46 m/s). Each carrier was re-rendered at every target as a pixel twin (disk IoU 0.984). The arms are the
+smoothing spline, the chord between smoothed knots, the raw-centroid chord, and a null that aims the spline at the far
+end of the range (0.25 m/s). Edits were made at point 22 (own norm, the chord's norm, the natural twin change) and point 12 (own, natural). Readouts are fit
+on the predictor's own unedited forecasts of the 490 probe clips: a direct speed probe (test MAE 0.18 m/s, R² 0.955)
+and a displacement readout from per-step position probes (MAE 0.56 m/s, R² 0.55). The twin's own context reads 0.22
+m/s from the target with R = 0.93 [0.83, 1.02] on the direct probe (unedited 1.25 m/s), the analogue of the direction
+twin's 0.96. Direct readout, error to target (m/s) / R speed:
+
+| Arm | pt 22 own (0.30–0.42× twin change) | pt 22 at the chord's norm | pt 22 natural norm | pt 12 own (0.37–0.44×) | pt 12 natural norm |
+|---|---|---|---|---|---|
+| spline | 0.31 / 0.62 | 0.32 / 0.61 | 1.29 / 3.00 | 1.08 / 0.13 | 0.91 / 0.57 |
+| chord (smoothed knots) | 0.32 / 0.62 | 0.32 / 0.62 | 1.34 / 3.21 | 1.08 / 0.13 | 0.92 / 0.70 |
+| raw-centroid chord | 0.33 / 0.65 | 0.42 / 0.47 | 0.79 / 1.90 | 1.08 / 0.13 | 0.90 / 0.39 |
+| null (aimed at 0.25 m/s) | 3.17 / −0.67 | 1.71 / −0.25 | 3.07 / −0.92 | 1.65 / −0.21 | 1.60 / −0.21 |
+
+At point 22 at their own norms the structured arms move the forecast's speed code 62–65% of the way, and the null lands on its own
+aim (0.27 m/s from 0.25; null − chord +2.85 m/s [2.81, 2.90]), so the edit is target-specific. Scaled up to the natural twin change
+(3.2× the spline's own norm) every arm overshoots (R 1.9–3.2) and lands farther from the target: the twin's change
+carries more than speed. The route does not matter. Spline − chord is −0.005 m/s [−0.007, −0.004] at their own norms,
++0.002 [−0.00002, 0.003] at the chord's norm and −0.05 [−0.08, −0.03] at the natural norm, where both overshoot. The
+raw chord's differences follow its dose: it is 0.10 m/s [0.08, 0.12] worse than the spline at the chord's norm and 0.50 [0.42, 0.58] better at the
+natural norm, where it overshoots less. The forecast's disk positions do not follow. On the displacement readout R is 0.05
+[−0.02, 0.11] (spline, own norm) against the twin's 0.48 [0.21, 0.78], though that readout is weak itself. The edited forecast sits 19.6 px from
+the twin's true disk, against 20.7 px unedited and 7.2 px for the twin's own forecast. Off target, the forecast direction moves
+7.6° [5.4, 10.1] at the spline's own norm, about what re-rendering the clip at another speed does (8.5° [7.4, 9.7] for the twin), and
+18–26° at the natural norm. At point 12 the edits' own norms reach the forecast with R 0.13 (1.08 m/s off vs 1.25),
+the direction session's wash-out. At the natural norm R rises to 0.57 [0.48, 0.66] for the spline (chord 0.70 [0.57, 0.85],
+raw chord 0.39; displacement readout 0.42 [0.28, 0.59]), so for speed the point-12 wash-out is partly a matter of
+dose. Direction at point 12 was not rerun at the natural norm. Its one high-dose point-12 edit, the label-free interpolating
+spline at 7.2× the twin change, read 77.9°, but that edit was misaimed. Through the encoder (full clip, own norm, a speed probe refit at every later point) point-12
+edits keep R 0.90 at point 12, 0.44 two blocks later and 0.13 at point 25. Point-22 edits keep 0.57 at point 25 (0.42 m/s
+from target, against 1.27 unedited and 0.10 for the twin). So speed behaves as direction does in where edits survive
+at their own norms, and the spline adds nothing over the chord, as the straight geometry predicts (§4.1). The forecast's
+speed code moves, but the forecast disk does not move faster, so this is a probe-level change in the forecast and not a
+faster predicted disk (`figures/fig_session3_speed.png`).
 
 **Time-reversed clips** (the forward-trained probe read on reversed clips)[^trev]. From point 1 on, the direction probe
 reads θ + 180° on the reversed clip: the error to θ + 180° is 20.5° at point 1 and 5.7–10.3° from point 2 on, with

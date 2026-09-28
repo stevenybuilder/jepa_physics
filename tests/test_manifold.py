@@ -232,3 +232,71 @@ def test_goodfire_periodic_angle_scales_and_tests():
     dev = np.degrees(mf.wrap_pi(g["angle"] - th))
     assert np.abs(dev - dev.mean()).max() < 1e-6          # variance scaling maps the ellipse back to the true angle
     assert mf.goodfire_periodic_angle(np.stack([3 * np.cos(th), 2.5 * np.sin(th)], 1))["passes"]
+
+
+def _jumbled_ring():
+    """Issue #213 case: 16 knots on a unit ring, values 0..337.5 in 22.5 steps, block 90-157.5 held out. The knot at
+    180 (the block's upper value neighbour) sits at angle 220 deg, beyond the 191 deg knot of value 202.5, so the
+    knot order in angle is not monotone in value across the block."""
+    vals = np.arange(16) * 22.5
+    keep = ~((vals >= 90) & (vals <= 157.5))
+    ang = np.radians(vals.copy())
+    ang[vals == 180.0] = np.radians(220.0)
+    ang[vals == 202.5] = np.radians(191.0)
+    C = np.stack([np.cos(ang), np.sin(ang), 0.1 * np.cos(2 * ang)], 1)[keep]
+    curve = mf.Curve(spline=None, values=vals[keep], coords=ang[keep], points=C, periodic=True,
+                     coord_source="unsupervised_angle", aim="arc")
+    order = np.argsort(curve.coords)
+    t = np.append(curve.coords[order], curve.coords[order][0] + 2 * np.pi)
+    from scipy.interpolate import CubicSpline
+    curve.spline = CubicSpline(t, np.vstack([C[order], C[order][:1]]), bc_type="periodic")
+    curve.values, curve.coords, curve.points = curve.values[order], curve.coords[order], C[order]
+    return curve
+
+
+def test_value_neighbour_chord_on_nonmonotone_ring():
+    curve = _jumbled_ring()
+    idx = {float(v): i for i, v in enumerate(curve.values)}
+    a, b, f = curve.value_neighbours([146.25, 67.5, 90.0])
+    assert (curve.values[a[0]], curve.values[b[0]]) == (67.5, 180.0) and f[0] == pytest.approx(78.75 / 112.5)
+    assert a[1] == b[1] == idx[67.5] and f[1] == 0.0                          # a knot value is its own neighbour
+    p = mf.piecewise_linear_point(curve, 146.25)
+    want = (1 - 0.7) * curve.points[idx[67.5]] + 0.7 * curve.points[idx[180.0]]
+    np.testing.assert_allclose(p, want, atol=1e-12)                           # A.9 chord between value neighbours
+    # the legacy coordinate-order polyline would have run through the foreign 202.5 knot (angle 191 < 200)
+    legacy = mf.Curve(spline=curve.spline, values=curve.values, coords=curve.coords, points=curve.points,
+                      periodic=True, coord_source="x", aim="coord")
+    t = legacy.coord_of_value(146.25)
+    assert 67.5 < np.degrees(t) < 191.0     # in angle order its polyline segment is 67.5 -> the foreign 202.5 knot
+    P = np.vstack([curve.points, curve.points[:1]])
+    tc = np.append(curve.coords, curve.coords[0] + 2 * np.pi)
+    old = np.array([np.interp((t - tc[0]) % (2 * np.pi) + tc[0], tc, P[:, j]) for j in range(3)])
+    assert np.linalg.norm(old - want) > 0.25                                  # the legacy polyline was misaimed
+    np.testing.assert_array_equal(mf.piecewise_linear_point(legacy, 146.25), old)  # aim='coord' = legacy path
+    np.testing.assert_allclose(mf.piecewise_linear_point(curve, curve.values), curve.points, atol=1e-12)
+
+
+def test_arc_aim_fraction_along_fitted_curve():
+    curve = _jumbled_ring()
+    idx = {float(v): i for i, v in enumerate(curve.values)}
+    ta, tb = curve.coords[idx[67.5]], curve.coords[idx[180.0]]
+    for v in (90.0, 112.5, 146.25, 157.5):
+        f = (v - 67.5) / 112.5
+        t = curve.coord_of_value(v)
+        assert 0 < mf.wrap_pi(t - ta) < mf.wrap_pi(tb - ta)                  # between the value neighbours
+        assert mf.arc_length(curve, ta, t, n=4000) / mf.arc_length(curve, ta, tb, n=4000) == pytest.approx(f, abs=2e-3)
+    np.testing.assert_allclose(curve.coord_of_value(curve.values), curve.coords % (2 * np.pi), atol=1e-12)
+    # monotone ring: the chord fix reproduces the legacy coordinate-order polyline exactly
+    X, theta, _ = ring_data(1)
+    pca = mf.fit_pca(X, 8)
+    cent = mf.centroids(pca.project(X), theta)
+    keep = ~mf.heldout_mask(cent["values"], periodic=True)
+    c2 = mf.fit_curve(cent, periodic=True, keep=keep, angle="labels")
+    held = cent["values"][~keep]
+    t = c2.coord_of_value(held)
+    P = np.vstack([c2.points, c2.points[:1]])
+    tc = np.append(c2.coords, c2.coords[0] + 2 * np.pi)
+    tt = (t - tc[0]) % (2 * np.pi) + tc[0]
+    legacy = np.stack([np.interp(tt, tc, P[:, j]) for j in range(P.shape[1])], -1)
+    c2.aim = "arc"
+    np.testing.assert_allclose(mf.piecewise_linear_point(c2, held), legacy, atol=1e-10)

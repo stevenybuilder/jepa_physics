@@ -246,7 +246,11 @@
     }
    }
   },
-  "verdict_readout": "probe_ctx (endpoint and path error, margin = its unsteered context-test error); the primary-probe verdict is verdict_primary_probe"
+  "verdict_readout": "probe_ctx (endpoint and path error, margin = its unsteered context-test error); the primary-probe verdict is verdict_primary_probe",
+  "steered_table_sha256": "b0ce4ffa63941ade292da7a45734961092e5aaaf8532c0573165c8f6b16a1edc",
+  "steered_table_repo_copy": "results/ctx_hard_inputs/hard_table.csv",
+  "steered_split_sha256": "b897bc940a95259177efef8071bde16b3ef121d77408d25c7f8c54bb1cf60519",
+  "steered_split_repo_copy": "results/ctx_hard_inputs/split_hard_direction.json"
  },
  "n_knot_clips": 632,
  "n_probe_clips": 480,
@@ -151877,7 +151881,15 @@
    "probe_radius_min",
    "ordering_spearman",
    "behaviour_energy"
-  ]
+  ],
+  "margin_floors": {
+   "mean_floor": 4.03177192354504,
+   "median_floor": 3.565673828125,
+   "call_under_mean_floor": "path_geometry_positive",
+   "call_under_median_floor": "negative_endpoint",
+   "text_under_median_floor": "negative: spline worse at held-out endpoint (margin 3.57); spline better on path metrics (ordering +0.111, Eq. 9 energy +1.3) ... these restate the geometry steered along; on independent readouts: endpoint error -3.9, distance to curve -0.0102, nearest-real distance -0.0234 (practical gain on: none); bend = 0.47x centroid noise; values are spline gains over the chord (+ = better); statistical-only losses, not counted: ['min readout radius']"
+  },
+  "margin_note": "endpoint/path margin = the render-matched probe's error on UNSTEERED context test clips, an on-grid estimate: those clips sit only at the context set's own values (8 angles for the hard render), while held-out targets may lie between them; the call above uses the mean floor, margin_floors gives the call under the median floor too"
  },
  "verdict_primary_probe": {
   "call": "path_geometry_positive",
@@ -152411,5 +152423,10 @@
    "order_frac": 0.5818181818181818,
    "order_coarse_preserved": false
   }
+ },
+ "regenerated": {
+  "by": "scripts/replot_part2_context.py",
+  "utc": "2026-09-28T18:54:07+00:00",
+  "what": "verdict margin_floors + margin_note, context sha256s, gap and waypoint figures; no steering rerun (rows, summary and gaps are the original run's)"
  }
 }

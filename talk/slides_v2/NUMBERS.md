@@ -24,7 +24,14 @@ Every number shown on a slide, with the file and key it was read from. Numbers i
 | p2-compare | 4.7° (chord) | same file → arms.chord_raw.err_probe_unmatched (4.7116); matches REPORT §1 |
 | p2-compare | 9.7° (spline) | same file → arms.spline.err_probe_unmatched (9.7312); matches REPORT §1 |
 | p2-compare | 0.16 m/s | results/p1c_direction_L9.json → single[n=5].off_target.mean_abs_change (0.160) |
-| p2-compare | conceptor column, geodesic path energy | pending: results/arcs_conceptor/*/p2_conceptor_direction_L12.json; geodesic file name to be confirmed (endpoint pinned by construction) |
+| p2-compare | conceptor endpoint 165°, radius 0.70, speed 15 m/s | results/p2_conceptor_direction_L12.json arms.coast_a.{endpoint_err_deg.mean 165.03, probe_radius_min 0.699, off_target.abs_change_speed_mps.mean 15.24}; chord/spline radius arms.{linear_raw,manifold}.probe_radius_min 0.629 / 0.862 |
+| p2-compare | off-target speed 0.12 / 0.43 / 0.19 m/s | results/p2_offtarget_direction_L12.json arms.{probe_qr,chord_raw,spline}.speed.mean 0.121 / 0.431 / 0.187; natural_spread.speed_mps 0.140 |
+| p2-compare | notes: block-22 conceptor 41.8° [38.9, 44.5]; AND invalid 96% | results/p2_conceptor_direction_L22.json arms.coast_a.endpoint_err_deg; L12 aperture.pinv_AND_invalid_frac_by_alpha["0.1"] 0.964 |
+| vs-paper | 4.7° vs 9.7°, 3.6° vs 10.7°; chord lead 1.3 / 2.3 over 16 arcs; 7/8 vs 0/8 stop-rule cells; 18 probes | same sources as p2-compare, p2-radius, p1-anisotropy and REPORT §3.2 (results/p1b_sameclip_direction_vs_speed.json) |
+| p2-clock | slope 1.00/step at every speed; odometer 0.38 / 1.00 / 1.63 | results/p5_clock_test.json (see slide notes for keys) |
+| p2-shapes | sheet 2.9° vs 1-D ring 6.9° at point 22; speed leakage 0.03 m/s | results/p5_velocity_sheet.json |
+| p2-repair | attn −45%, MLP −40% blocks 13–16; 9% left at 24 (edit at 12); 68% (edit at 22); MLP 0.00 after 22 | results/p5_repair_attribution_L12.json attribution_summary, full.*.none.per_site |
+| p2-generalise | −0.03° L12, +3.8° L22; raw chord ahead 4.3° / 4.8° | results/p2_steer_direction_direction_L{12,22}_contiguous_ctx-hard.json gaps.manifold_minus_linear{,_raw}.probe_ctx_err_to_target |
 | p2-readuse | 0.976 | results/p1a_perpatch_direction_vjepa2.json → curves.perpos_mean_r2 at point 14 (0.9763) |
 | p2-readuse | 0.939 | same file → curves.perpos_mean_r2 at point 24 (0.9390) |
 | p2-readuse | 11.3° | results/session2_predictor_native_readout.json → per_layer.22.spline.dir_err_to_target.mean (11.3174) |
