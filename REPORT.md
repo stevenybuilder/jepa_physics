@@ -117,7 +117,7 @@ test does not recover the ring. This is a probe of the forecast on one stimulus 
 | Part 2: Eq. 10 temperature | τ = 0.5 on a LayerNorm'd 64-d latent (B.1) | τ = 0.5 in raw PCA-64 units | absolute energies not comparable; τ 0.25–2 keeps the point-12 ordering (`tau_sensitivity` in `p2_steer_direction_direction_L12_contiguous.json`) |
 | Part 2: behaviour manifold | smoothing spline through 128 bin centroids (B.1) | interpolating spline through the 64 per-value centroids in the Hellinger tangent plane (A.4), F over 128 bins | circular at the steered layer either way (§4.2) |
 | Part 2: carriers | 16 fixed base prompts per task, one set for every pair (A.6) | 48 test clips per target, each steered from its own value | Goodfire starts every carrier at the centroid c_a whatever the carrier's own value (A.6); ours starts each carrier at its true value (an oracle source) and averages over sources |
-| Part 2: pullback (A.8–A.9) | one path per (source, target) pair shared by 16 carriers; replace top-32 PCs, residual and other PCs held; L-BFGS, chord init, K = 20 free; squared-Hellinger target on M_y; no norm term for the cyclic task; closest-point residual and intrinsic R² | one path per carrier; additive edit in PCA-64; Adam, zero init, 8 free waypoints; 1 − cos loss on the forecast angle; hard cap 1.2× natural change; equal-t distances | every difference favours an off-ring route, so the reverse test's negative is ours, not theirs; rerun with their recipe in progress (§4.5) |
+| Part 2: pullback (A.8–A.9, C.3) | one path per (source, target) pair, loss averaged over 16 carriers (A.8); replace the top-32 PCs, other PCs and residual held; L-BFGS; path = natural cubic through 10 free control vectors evaluated at K = 20, chord init (A.8), 20 free points with kNN-graph init in the causalab config, K = 30 all free with 30 pairs for the world model (C.3); squared-Hellinger target on M_y; norm regulariser off for weekdays only (5·10⁻⁴ months, 10⁻³ age); scored by closest-point residual and intrinsic R² (A.9), and for the world model by mean distance to M_h (C.3: chord 2.22, geometric 0.20, pullback 0.29) | one path per carrier; additive edit in PCA-64; Adam, zero init, 8 free waypoints; 1 − cos loss on the forecast angle; hard cap 1.2× natural change; equal-t distances | the per-carrier path and the additive edit plausibly favour an off-ring route; the cap and the on-ring zero start work against one; optimiser and waypoint count have no stated direction; so the negative is not a clean test of their method; rerun with their recipe in progress (§4.5) |
 
 **Places where the paper contradicts itself**[^ptxt]. (a) The INLP stopping
 threshold for direction is R² < 0.1 in C.11 and R² < 0.3 in the Fig. 22 caption: each `p1b` file has both (`K`,
@@ -137,7 +137,9 @@ the weekdays and months 8B configs, the paper's cyclic runs, do inherit that mod
 age configs `parameter`). The only text-vs-config gap is the 70B weekdays and months configs, which set `parameter`,
 the labels, for a model the paper's one-dimensional experiments do not report (A.2: 8B layer 28 "for all tasks").
 A.6 says K = 50 waypoints, which the weekdays/months 8B and alphabet_8b_n3 configs use, where alphabet/age 8B use
-150/250, the 70B configs 100–150 and the grid/cylinder configs 20.
+150/250, the 70B configs 100–150 and the grid/cylinder configs 20. A.8 parameterises the pullback path as a natural
+cubic through 10 free control vectors, while C.3 says that "following the language-model setup, all K + 1 waypoints
+(including endpoints) are free parameters", with K = 30.
 
 **Probe-recipe parity** (point = CV-peak layer; pooled out-of-fold R², targets standardised for Adam[^recipe]):
 ridge vs Adam (C.11 recipe) is 0.9905 vs 0.9858 for direction, 0.9940 vs 0.9882 for speed and 0.9925 vs 0.9871 for
@@ -633,9 +635,9 @@ clip bootstrap):
 | nearest-real agreement R | 0.196 | 0.197 | −0.0004 [−0.0018, 0.0008] | 0.175 | 0.180 | −0.005 [−0.006, −0.003] |
 | min readout radius along path | 0.86 | 0.61 | +0.26 [0.22, 0.29] | 0.85 | 0.61 | +0.24 [0.21, 0.27] |
 | Eq. 9 energy ÷ real-clip floor | 0.84 | 1.42 | | 1.01 | 1.00 | |
-| intermediate mass on the arc | 0.68 | 0.48 | | 0.66 | 0.45 | |
+| intermediate mass on the arc | 0.68 | 0.48 | | 0.65 | 0.45 | |
 | waypoint ordering (Spearman) | 0.90 | 0.79 | | 0.76 | 0.67 | |
-| reflected arm: radius / energy / ordering | 0.54 / 1.64 / 0.52 | | | 0.51 / 1.12 / 0.50 | | |
+| reflected arm: radius / energy / ordering | 0.53 / 1.64 / 0.52 | | | 0.51 / 1.12 / 0.50 | | |
 
 Source: `p2_steer_direction_direction_L{12,22}_contiguous.json`. Figures:
 `figures/fig4_waypoint_readout_direction_direction_L12_contiguous.png` (radius and Eq. 9 distance along the path) and
@@ -911,9 +913,10 @@ norm cap, with 28% of each edit in the ring plane and forecast radius ≈ 5 (une
 in the ring plane (1.35 vs 1.75), slightly closer to the chord in full space (+0.04 [0.02, 0.06]). With an angle-only
 objective the predictor can be steered along an off-ring route, so the reverse direction is not recovered here. This
 objective is weaker than Goodfire's full pullback objective, which also penalises leaving real behaviour, and the
-protocol differs from A.8 in four ways that all favour an off-ring route: one path per clip instead of one path shared
-by 16 carriers at the same source value, an additive edit instead of a replacement of the top PCs, 64 PCs instead of
-32, and a hard norm cap where Goodfire uses no norm term for its cyclic task. The full-space comparison is at equal t,
+protocol differs from A.8 in four ways: one path per clip instead of one path shared by 16 carriers at the same source
+value, an additive edit instead of a replacement of the top PCs, 64 PCs instead of 32, and a hard norm cap where
+Goodfire uses no norm term for weekdays (a small one for months and age). The first two plausibly favour an off-ring
+route; the cap and the on-ring zero start work against one, so the departures do not all point the same way. The full-space comparison is at equal t,
 not A.9's closest-point residual. A rerun with Goodfire's recipe is in progress. A negative, as run.
 
 **Time-reversed clips** (the forward-trained probe read on reversed clips)[^trev]. From point 1 on, the direction probe
