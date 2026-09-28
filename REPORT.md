@@ -6,69 +6,36 @@ Paper claims are stated qualitatively and attributed to the paper.
 
 ## 1. Summary
 
-The README asks for a small-scale reproduction of Joseph et al. (arXiv 2602.07050): layer-wise probes, iterative
-nullspace probing, and multi-probe subspace steering for direction, speed and acceleration in the frozen V-JEPA 2
-ViT-L/16 encoder. It also asks for an open-ended Goodfire spline-steering extension (arXiv 2605.05115) that takes care
-over the circular structure of direction and over what counts as a held-out steering evaluation. **Step 1 reproduces
-in part, and which part depends on the readout.** Mean-pooled probes read all three variables from block 1 with no
-late decline, and a random-init ViT-L and random nonlinear features of the disk trajectory do nearly as well. That
-holds under every fold grouping and at the paper's clip count, so it is not a sample-size effect. But the paper's own
-App. C.5 puts the sharp step in per-patch probes and says mean-pooled probes rise gradually, so the pooled curve was
-the wrong comparison. Per patch, three things hold. On the supplied clips the per-patch code is early as well: mean
-per-position R² is 0.56 at block 1, 0.89 at block 5 and 0.96 at block 6, with no step at the paper's transition. That
-code is training-selective: the random-init network pools to 0.86–0.88 at every depth, but its mean per-position R² never
-exceeds 0.39 (best single position 0.76–0.86), the paper's "fragmented local signal that pooling adds up" regime, which V-JEPA 2 leaves within six
-blocks. On a harder rendered set (textured floor, shading, smaller disk; 392 clips, 8 directions, three render seeds) the
-per-position curve rises most between points 4 and 6 on every seed (+0.24 to +0.29 over two blocks; +0.09 to +0.16 per
-block where point 5 was sampled) and only +0.07 ± 0.02 across
-points 8→9, where the 90% rule fires on one seed (9) and one point earlier on the other two (8); a random-init network
-sits at 0.52–0.62 from point 6 on the same clips (two render seeds). What does replicate at the paper's depth on all three seeds is
-the half-frame jump: transfer falls from 0.69–0.73 at point 1 to −1.0 to −1.8 at point 8 and jumps back to about chance
-at point 9 (+1.4 to +1.9), a shape the random-init network never shows. The paper's stronger claim, that transfer
-appears only after the zone, does not hold: it is 0.7 at point 1 and regains that level only by point 22 (§3.1). VideoMAE (pixel reconstruction) matches V-JEPA 2 on the pooled curves for all three variables.
-**Step 2 reproduces in part.** Every variable needs tens of probes at the paper's layer, far outside a random-removal
-band. Measured four ways, that count reflects anisotropy: a whitened erasure needs one probe at every point; the code
-is rank-2 linear plus a second harmonic and a nonlinear residual (§3.2). Speed does not need fewer probes than
-direction (in raw coordinates and under one common R² stop too, except the paper protocol at point 8), and the ridge curves have no sawtooth. Under the paper's literal Adam
-recipe both variables' curves are jagged and K roughly doubles, with no direction-specific sawtooth. **Step 3
-reproduces in shape and, with the paper's own steering basis, in count** (one probe fails, a few probes reach the
-target, MAE-to-true rises): with a ridge basis 3–5 probes reach 10°; with C.11's Adam probe sequence, the basis C.12
-steers along, it takes 18, where the paper reports ≈ 12° at about 20. Against a random orthonormal basis of fixed rank
-2K the ridge basis wins from N = 5 under a near-unregularised evaluation probe (α = 1e-3, or the C.11 Adam recipe; C.12
-gives no recipe) and from N = 14 under my CV-chosen one; the Adam basis reaches the rank-matched floor only
-intermittently from N = 12 to 25 and the rank-2K floor only from N = 30. Against a
-rank-matched random basis the ridge basis first beats all 20 draws at N = 2–7 (by variable and layer); at N = 1 it
-separates from neither. "One probe fails" is the edit, not the subspace: one probe's 2-D subspace steers to 3.2° once
-the edit is weighted by the activation covariance (3.6–5.2° under the other evaluation probes), though a random 2-D
-subspace weighted the same way reaches 9.6–12.0° (p = 0.14–0.33), so what the learned subspace buys is specificity
-(off-target speed change 0.03 against 13 m/s, edit norm 20 against 111), not target error. The same curve appears in
-an untrained network, and at the onset layer the learned basis never beats the rank-2K random basis for N ≤ 20. Rerunning Parts 1
-and 2 (Part 2: the contiguous steering runs) at the paper's literal 70/30 split changes no qualitative verdict. **Part 2.** Direction lies on a ring.
-My centroid-plane angle recovers it without labels at point 12 but not at point 22; Goodfire's own label-free angle
-fails its periodicity test at points 8 and 12 and passes at 22, where it sits up to 50° from θ on all 64 centroids
-(38–97° on the passing held-out arcs); its sequential tasks use
-the ordinal index, as A.3 says, and only its 70B cyclic configs take the coordinate from the labels[^src].
-The ring is an ellipse, not a circle: axis ratio 0.68–0.89 in its own plane from point 8 on (0.74 / 0.87 / 0.74 at
-points 8 / 12 / 22), bent out of that plane by a cos 2θ saddle that holds 20–34% of the centroid variance. Held-out
-clips occupy the ring along its whole length and leave it hollow in its plane. At held-out direction values the spline path stays on the ring and the straight path cuts across the
-hollow: the minimum readout radius is higher for the spline by +0.26 ± 0.05 at point 12 and +0.28 ± 0.03 at point 22
-(mean ± SD over 16 runs covering 15 distinct held-out 45° arcs; point 22 on the labels angle[^src]), and it is higher on
-every arc. The endpoint error ties at point 12 (+0.08° ± 1.47) and at point 22 (+0.17° ± 1.33; 1 of 16 runs flagged
-"negative_endpoint"). Endpoint readouts that did not build the edit (nearest-real-clip agreement, an MLP on disjoint
-clips) do not separate the two; the labels of the real clips nearest the path midpoint do. The spline's advantage over
-the chord is in the ring plane and in the forecast, not in distance to real clips in the full subspace, where the chord
-is as close at point 12 and closer at point 22. Speed and acceleration are straight, and there the spline adds nothing; in extrapolation, continued along its end
-tangent as the authors' code does, it trails the chord by 0.02–0.07 with the CI clear of zero on all four runs[^ext].
-**Beyond the steered layer (GPU session 2).** Edits at points ≤ 12 wash out within a few blocks and barely reach the
-predictor's forecast. Point-22 edits survive to the output with little target specificity. Probes fit on the
-predictor's own forecasts show point-22 edits moving the forecast to 11.3–44.2° of the held-out target (the smoothing spline is the 44.2°;
-unedited 92.1°[^nat]), position overshooting. At a common edit norm the interpolating spline still beats the chord (19.5° vs 27.2° at
-the chord's norm, 12.3° vs 25.7° at the natural one), in forecast angle only. That is a point-22 result. At the encoder
-output (the final LayerNorm, the predictor's input and the site Goodfire steers) edits reach the forecast too (chord
-12.5°, interpolating spline 15.7°), but at the chord's norm the spline trails the chord by 10.8° and at the natural norm
-it leads by only 2.1°[^enc]. Along the point-22 path the forecast follows the
-intermediate directions along the spline and jumps along the chord (−13.4° paired, −31.3° at large shifts). The reverse
-test does not recover the ring. This is a probe of the forecast on one stimulus and one 45° arc, not a rendered future.
+The README asks for a small-scale reproduction of Joseph et al. (arXiv 2602.07050) in the frozen V-JEPA 2 ViT-L/16
+encoder, for direction, speed and acceleration, and an open-ended Goodfire spline-steering extension (arXiv 2605.05115).
+
+**Three defended claims.** (1) The per-patch code is training-selective: on the supplied clips V-JEPA 2's mean
+per-position R² is 0.96 at block 6, while the random-init network pools to 0.86–0.88 at every depth but its mean
+per-position R² never exceeds 0.39; on a harder rendered set the half-frame jump replicates at the paper's depth on all
+three seeds, a shape the random-init network never shows. (2) Every variable needs tens of probes at the paper's layer,
+far outside a random-removal band, and Step 3 reproduces in shape and, with C.11's Adam probe sequence, the basis C.12
+steers along, in count: it takes 18 to reach 10°, where the paper reports ≈ 12° at about 20. (3) Direction lies on a
+ring, and at held-out direction values the spline path stays on the ring while the straight path cuts across the hollow:
+the minimum readout radius is higher for the spline on every arc (point 22 on the labels angle[^src]).
+
+**Three disagreements with the paper.** (1) On the harder set transfer does not appear only after the zone: it is 0.7 at
+point 1, and the per-position curve rises most between points 4 and 6 on every seed (§3.1). (2) Speed does not need
+fewer probes than direction (except the paper protocol at point 8), and neither the ridge curves nor the paper's literal
+Adam recipe give a direction-specific sawtooth. (3) "One probe fails" is the edit, not the subspace: one probe's 2-D
+subspace steers to 3.2° once the edit is weighted by the activation covariance, though a random 2-D subspace weighted
+the same way reaches 9.6–12.0°, so what the learned subspace buys is specificity, not target error.
+
+**One new thing.** Edits at points ≤ 12 wash out within a few blocks and barely reach the predictor's forecast; point-22
+edits survive to the output, and along the point-22 path the forecast follows the intermediate directions along the
+spline and jumps along the chord (−13.4° paired, −31.3° at large shifts). This is a probe of the forecast on one
+stimulus and one 45° arc, not a rendered future.
+
+**One negative.** The endpoint error ties at points 12 and 22. Speed and acceleration are straight, and there the spline
+adds nothing; in extrapolation, continued along its end tangent as the authors' code does, it trails the chord by
+0.02–0.07[^ext].
+
+Rerunning Parts 1 and 2 (Part 2: the contiguous steering runs) at the paper's literal 70/30 split changes no qualitative
+verdict; §2 lists every deviation from the paper and what the parity audit changed.
 
 ## 2. Setup
 
@@ -124,6 +91,15 @@ test does not recover the ring. This is a probe of the forecast on one stimulus 
 | Part 2: behaviour manifold | smoothing spline through 128 bin centroids (B.1) | interpolating spline through the 64 per-value centroids in the Hellinger tangent plane (A.4), F over 128 bins | circular at the steered layer either way (§4.2) |
 | Part 2: carriers | 16 fixed base prompts per task, one set for every pair (A.6) | 48 test clips per target, each steered from its own value | Goodfire starts every carrier at the centroid c_a whatever the carrier's own value (A.6); ours starts each carrier at its true value (an oracle source) and averages over sources |
 | Part 2: pullback (A.8–A.9, C.3) | one path per (source, target) pair, loss averaged over 16 carriers (A.8); replace the top-32 PCs, other PCs and residual held; L-BFGS; path = natural cubic through 10 free control vectors evaluated at K = 20, chord init (A.8), 20 free points with kNN-graph init in the causalab config, K = 30 all free with 30 pairs for the world model (C.3); squared-Hellinger target on M_y; norm regulariser off for weekdays only (5·10⁻⁴ months, 10⁻³ age); scored by closest-point residual and intrinsic R² (A.9), and for the world model by mean distance to M_h (C.3: chord 2.22, geometric 0.20, pullback 0.29) | one path per carrier; additive edit in PCA-64; Adam, zero init, 8 free waypoints; 1 − cos loss on the forecast angle; hard cap 1.2× natural change; equal-t distances | rerun with their recipe (8 pairs, 32 evaluations per pair, unconverged): the path sits 0.6 natural units from both references, chord and spline tie, the chord itself is 0.21 from the spline; neither protocol recovers the ring (§4.5) |
+
+**What the parity audit changed.** A paper-first audit of our own methods moved six verdicts:
+
+- Part 1, emergence zone: read per patch on the hard render across three seeds, the largest rise is at points 4 → 6 on every seed, and the half-frame dip-and-jump at points 8 → 9 (paper layers 7 → 8) is training-specific (§3.1).
+- Part 1, Step 3: with the paper's own Adam steering basis the probe count reproduces, 18 probes to 10° against the paper's about 20 (§3.3).
+- Part 1: a covariance-weighted edit in one probe's 2-D subspace steers to 3–5° (§3.3, §6).
+- Part 2: the isometry verdict is set by the knot coordinate, and under every label-free ordering point 22 is a tie (§4.4).
+- Part 2: at the encoder output the verdict is mixed (the spline trails the chord by 10.8° at the chord's norm and leads by 2.1° at the natural norm), and in scalar extrapolation the spline trails the chord by 0.02–0.07 (§4.5, §4.3).
+- Part 2: Goodfire's cyclic 8B runs take the coordinate label-free, as atan2(PC2, PC1), and only its 70B cyclic configs use the labels (§2).
 
 **Places where the paper contradicts itself**[^ptxt]. (a) The INLP stopping
 threshold for direction is R² < 0.1 in C.11 and R² < 0.3 in the Fig. 22 caption: each `p1b` file has both (`K`,
@@ -228,8 +204,8 @@ is 0.125 R²[^obj].
 | 392 constant-velocity clips, 64 directions | 392 | 0.823 → 0.972 | 2 [2, 2] | 0.847 → 0.863 | 1 |
 
 At 150 clips or fewer V-JEPA's direction onset moves later, to point 4–9, and the rise over the early blocks becomes
-selective (the random network stays flat). I first read this as the explanation for the missing emergence zone and
-withdraw that reading: at the paper's own clip count the onset comes back to point 2, both for 392 constant-velocity
+selective (the random network stays flat). This does not explain the missing emergence zone:
+at the paper's own clip count the onset comes back to point 2, both for 392 constant-velocity
 clips drawn from the supplied set (2 [2, 2] in every seed[^psv]) and for the rendered paper-layout set of 392 clips
 (2 [2, 3], below). The late onsets in the small rows come from having few clips per fit, 76–150 against the paper's
 392. Speed stays at onset 1 for V-JEPA in every condition. The random network's speed onset becomes unstable
@@ -349,8 +325,8 @@ and `p1b_*_random_L{pt}.json`.
   speed and acceleration the MAE rule (MAE > 0.9× the mean predictor's) fires first, at round R² 0.15–0.20 at every
   V-JEPA point under both protocols, while direction runs on to R² just under 0.1 (0.094 at the lowest). The scalar counts are therefore taken
   at a looser point than direction's. The same asymmetry means the speed and acceleration counts at Fig. 22's R² < 0.1
-  (`K_loose`) are floors at every V-JEPA point except nested acceleration at onset, not only for VideoMAE as I
-  wrote earlier (footnote [^fig22]). Rerun with one R² rule for all variables[^stop], which variable needs more probes
+  (`K_loose`) are floors at every V-JEPA point except nested acceleration at onset, as in the VideoMAE
+  files (footnote [^fig22]). Rerun with one R² rule for all variables[^stop], which variable needs more probes
   depends on the rule and the protocol. Nested, the scalars need more: direction / speed / acceleration 37 / 47 / 48 at
   point 9 and 40 / 60 / 61 at point 8 at R² < 0.1, and 45 / 55 / 62 and 52 / 83 / 76 at R² < 0.05. Under the paper
   protocol direction and speed are about equal at point 9 (46 vs 50; 58 vs 59), and at point 8 direction needs more
@@ -368,7 +344,7 @@ and `p1b_*_random_L{pt}.json`.
   protocol (−0.24 at point 2, −0.06 at point 8, 0.27 at point 9, 0.19 at point 22). The paper's Fig. 23 teeth are about
   65 points deep by eye; here successive probes' readouts are 9–15° apart under ridge (mean consecutive readout angle,
   points 2–22), where a sin/cos pairing would put them near 90°[^saw].
-- **Sawtooth on metrics both variables share** (8-bin accuracy and R², points 8 and 9)[^saw]. On 8-bin accuracy (bin edges at label midpoints, so no label sits on an edge; an earlier edge-on-label binning is
+- **Sawtooth on metrics both variables share** (8-bin accuracy and R², points 8 and 9)[^saw]. On 8-bin accuracy (bin edges at label midpoints, so no label sits on an edge; an edge-on-label binning is
   kept beside it) the drop autocorrelation under nested ridge is positive for both variables (direction 0.54 / 0.55,
   speed 0.66 / 0.73 at points 8 / 9); under the Adam recipe it is negative for both (direction −0.30 to −0.39, speed
   −0.38 to −0.47), and Adam's isolated dips number 0–3 per run for speed against 0–1 for direction (one, at point 9,
@@ -547,8 +523,8 @@ label-free recovery here is my extension, the centroid-plane fallback, and it wo
   principal angles to the top-2 PCs of the clip activations are 5.6° and 73.2°, so only one axis is shared: the ring is
   dominant among centroids, not among clips. On the labels knot order, held-out centroids on the contiguous arc are
   rebuilt with mean error 6.3 by the interpolating spline, 2.76 by the smoothing spline and 2.59 by the chord at point
-  12, and 6.9 / 4.3 / 3.75 at point 22[^interp]; a larger interpolating error I reported earlier came from the knot order
-  of the label-free angle, which is not monotone in θ, and is withdrawn. Steered on the labels angle, the interpolating
+  12, and 6.9 / 4.3 / 3.75 at point 22[^interp]; on the knot order of the label-free angle, which is not monotone in θ,
+  the interpolating error is larger. Steered on the labels angle, the interpolating
   spline keeps the path result (radius gap +0.28 on the headline arc at point 12, +0.30 at point 22), but its endpoint
   is worse at point 12 (+2.30° on the headline arc; +2.45° ± 2.14 over 8 arcs, 3 of 8 "negative_endpoint") and mixed at
   point 22 (−0.48° on the headline arc; +1.18° ± 1.57, 2 of 8), with an edit 1.4–1.6× the chord's on the headline
@@ -732,8 +708,8 @@ at point 12, CIs split 4 above / 9 below) and at point 22 it is farther (+0.030,
 through the ring" holds in the ring plane only, and so does Goodfire's low-density-region premise here. For speed and
 acceleration all arms coincide with the chord inside the knots; in extrapolation, continued along its end tangent, the
 smoothing spline trails the chord by 0.02–0.07 with the CI clear of zero on all four (all "path_geometry_positive"), and the authors'-code arm beats its
-chord on speed and trails it on acceleration. The large extrapolation losses I reported earlier came from extending the
-end cubic piece past the last knot, my choice, not the method's.
+chord on speed and trails it on acceleration. Extending the end cubic piece past the last knot instead, my choice and
+not the method's, gives large extrapolation losses.
 
 ### 4.4 Controls and the comparison with Part 1
 
@@ -813,7 +789,7 @@ point-22 endpoint on 1 of 16 arcs (+3.7°) and on the headline arc (+3.80°), an
   tie at 22; the fully faithful run, chord at 12, tie at 8, and at 22 tie under two intervals and spline under the
   basic one. So the isometry verdict is set by the knot coordinate, not by the curve: only the labels ordering makes
   the spline near-isometric, and under every label-free ordering the point-22 test is a tie, with the sign of any
-  lead depending on the interval method. The point-22 reversal is neither confirmed nor withdrawn; it is undecidable
+  lead depending on the interval method. The point-22 reversal is undecidable
   without labels.
 
 ### 4.5 Beyond the steered layer (GPU session 2)
@@ -954,7 +930,7 @@ protocol differs from A.8 in four ways: one path per clip instead of one path sh
 value, an additive edit instead of a replacement of the top PCs, 64 PCs instead of 32, and a hard norm cap where
 Goodfire's released weekdays config uses no norm term (months and age do not run pullback in the released configs at all; only the alphabet config carries A.8's term). The first two plausibly favour an off-ring
 route; the cap and the on-ring zero start work against one, so the departures do not all point the same way. The full-space comparison is at equal t,
-not A.9's closest-point residual; rescored by closest point, the old paths sit 1.19 natural units from both references
+not A.9's closest-point residual; rescored by closest point, these paths sit 1.19 natural units from both references
 (the chord itself is 0.18 from the spline). *With Goodfire's recipe*[^pbg]: 8 pairs at 135–180°, one path per pair
 shared by 16 carriers, the top-32 PCs replaced with the rest held, 20 free waypoints from a chord start, L-BFGS with
 strong Wolfe, a squared-Hellinger target on the predictor-native direction readout (turned into a distribution by a
