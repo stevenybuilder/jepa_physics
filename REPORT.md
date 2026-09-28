@@ -101,7 +101,7 @@ verdict; §2 lists every deviation from the paper and what the parity audit chan
 | Objective axis | VideoMAE-v2 family | VideoMAE v1 ViT-L (`MCG-NJU/videomae-large`), 224² | "not the objective" is shown for v1 only |
 | Part 2: steering site | Goodfire: last-token residual stream (A.2); encoder output for the world model (§5) | mean-pool over 2,048 tokens at point L | the edited vector is not one the model consumes; §4.1–§4.4 read it with probes, §4.5 adds the edit to every token |
 | Part 2: PCA-64 fit set | all prompts in the task (A.3) | knot clips (folds 0–2) at the kept values only | held-out values never shape the subspace; the plane can differ from an all-clip fit (point 22, §4.1) |
-| Part 2: spline | interpolating, through the centroids exactly (A.3); √count-weighted smoothing spline for the world model (B.1) | smoothing spline with weight √count / sd_c per knot and coordinate and s = number of knots (both my choices; B.1 gives no smoothing value); interpolating run beside it | interpolating rebuilds held-out centroids worse and its edit is 1.4–1.6× the chord's (§4.1) |
+| Part 2: spline | interpolating, through the centroids exactly (A.3); √count-weighted smoothing spline for the world model (B.1) | smoothing spline with weight √count / sd_c per knot and coordinate and s = number of knots (both my choices; B.1 gives no smoothing value), fit by FITPACK `splrep`, which chooses its own knot subset per coordinate (a regression spline), where the authors' code uses a Reinsch penalty with a knot at every centroid and one λ; interpolating run beside it | interpolating rebuilds held-out centroids worse and its edit is 1.4–1.6× the chord's (§4.1) |
 | Part 2: direction coordinate | unsupervised atan2(PC2, PC1) (A.3; the weekdays/months 8B configs inherit `intrinsic_mode: pca`); ordinal index for the sequential tasks (A.3; alphabet/age configs `parameter`); the labels only in the 70B cyclic configs | our centroid-plane atan2 at point 12; labels at points 2, 8 and 22 | label-free only at point 12, and only through our fallback (§4.1) |
 | Part 2: manifold arm | replace the PCA-64 part with the curve point (A.6) | additive, x + γ(t) − γ(t_src), residual kept | theirs run as a labelled arm (§4.4) |
 | Part 2: base pair of arms | manifold vs whole-activation chord replacement (A.6) | spline vs chord in the same PCA-64 subspace (matched support, additive; causalab ships the same support as its non-default `linear_subspace` mode, in replacement form) | their default linear arm erases the residual; run separately and labelled (§4.4) |
@@ -668,8 +668,14 @@ Design of the arms. Both arms edit the same PCA-64 subspace and add back each cl
 (matched support). The line arm of record joins the spline's own knots, which under the smoothing spline are the
 smoothed knots, not the raw centroids; the paper's A.9 comparison baseline, the chord between the raw centroids in the
 PCA-64 subspace, is run as a third arm (`linear_raw`) with the same additive, residual-kept edit and reported beside
-it, and at a held-out target it aims at the chord point between the neighbouring raw centroids (A.6's steering
-baseline, which replaces the whole activation, is the separate Goodfire linear row). Its edit is about 10% larger than
+it, and at a held-out target it aims at the chord point between the raw centroids that neighbour the target's
+coordinate in the knot order. That order is the label order at point 22 (labels angle) and on the headline arc, but on
+8 of the 16 point-12 arcs the label-free angle is not monotone across the held-out block, so the target coordinate falls
+among knots of other labels and every arm, spline and both chords alike, is aimed off the chord between the value
+neighbours by up to 2.3–3.8 PCA units (arc paragraph in §4.3) (A.6's steering
+baseline, which replaces the whole activation, is the separate Goodfire linear row). Exact 180° steps take whichever
+sign floating-point rounding gives, where the authors' code always takes −π; endpoints are identical and only path
+metrics on about one row in 63 differ. Its edit is about 10% larger than
 the spline's (‖Δ‖ 8.26 vs 7.46 at point 12, 11.61 vs 10.56 at point 22) and is not dose-matched. The dose-matched
 line, the ring-occupancy, 5-NN, cosine-tangent and donor-ceiling side analyses, and the BF16 and rescue counts below
 still use the smoothed-knot chord. Goodfire's own linear baseline
@@ -732,7 +738,8 @@ across the 16 runs of the paired gap (spline − line, `gaps.manifold_minus_line
 | endpoint gap, duplicate arc counted once | −0.09° ± 1.35 | +0.16° ± 1.38 |
 | verdict "negative_endpoint" | 0 / 16 | 1 / 16 |
 
-The path result holds on every arc at both points, and against the smoothed-knot chord the endpoint ties at both
+The path result holds on every arc at both points (with the point-12 knot-order caveat below, which moves every arm's
+target alike), and against the smoothed-knot chord the endpoint ties at both
 (the raw-centroid chord over the arcs is in the paragraph after the donor ceiling). At point 22 the one
 "negative_endpoint" run is 191.25°–230.625° (+3.7°) and the other 15 are within ±3°, so the single-arc +3.80° above is
 not typical. On the label-free angle the four rerun arcs had the two largest endpoint losses (+9.2° and +9.9°, the
@@ -757,6 +764,14 @@ chord the spline loses the endpoint on average at both points, modestly, and the
 largest of the 17 runs at point 12, and its +7.0° is second at point 22 to seed 16 (+8.28°). Radius, ordering and A.7 energy do not change with the choice of chord; the raw
 chord sits further off the reference curve and further from real clips than the smoothed chord did, and its edit is
 about 10% larger. The rerun reproduces the stored arms' summary means to 5e-10 relative on every arc but one (L12 seed 9, 1.3e-5).
+One caveat found by the last audit: on 8 of the 16 point-12 arcs (seeds 1, 4, 5, 7, 8, 9, 11, 13) the label-free
+centroid-plane angle is not monotone across the held-out block, so `coord_of_value` places the held-out target among
+knots of other labels (seed 4: the 298.125° target lands between the 315° and 309° centroids) and every arm is aimed off
+the chord between the true value neighbours by 2.3–3.8 PCA units. All arms' endpoint errors are larger there (spline
+8.7° vs 7.3°, raw chord 7.8° vs 5.5°). On the 8 clean arcs (seeds 2, 3, 6, 10, 12, 14, 15, 16) the raw-chord gap is
++1.77° ± 1.32 (1 of 8 favours the spline) and on the 8 affected arcs +0.87° ± 2.12 (2 of 8); the smoothed-knot gaps are
+−0.19 ± 1.22 and +0.35 ± 1.73. The headline arc and every point-22 arc (labels angle, monotone) are clean, so the
+verdict does not move, and the misaimed arcs were not rerun.
 
 **All designs, endpoint probe error, spline vs line** (source `p2_steer_{var}_{var}_L{pt}_{design}.json`; extrapolation
 column from `p2_extrapolation_linear_ext.json`[^ext]: the smoothing spline continued linearly along its end tangent, and
@@ -802,7 +817,7 @@ not the method's, gives large extrapolation losses.
   Unmatched random curves have endpoint error 87.9°. **BF16**: the winner on both energy metrics is unchanged.
   **Dose-matched line**: endpoint 9.41°, energy 1.40, radius 0.61, so the line's deficit is not a matter of dose.
 - **Goodfire's own linear baseline** (the whole activation replaced by a chord point). Nearest-real R is 0.625 and
-  endpoint error 1.52°, against 0.547 for Goodfire's manifold arm and 0.196 for our additive arms. Erasing the residual
+  endpoint error 1.52°, against 0.547 for Goodfire's manifold arm (run on our smoothing spline with the same held-out target coordinates) and 0.196 for our additive arms. Erasing the residual
   makes the activation look much more like the target centroid, so Goodfire's comparison mixes "residual erased" with
   "curved vs straight".
 - **Bake-off at matched edit norm** (all arms rescaled per clip to the spline's ‖Δ‖; errors from the linear probe /
