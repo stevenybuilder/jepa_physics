@@ -215,16 +215,18 @@ def selectivity_onset(Y, oofs_model, oofs_random, score_fn, n_boot=200, seed=0):
     return (hits[0] if hits else None), cis
 
 
-def oof_path(results_dir, name):
-    """Out-of-fold predictions of a step-1 sweep (artifacts/oof, next to results/), for post-hoc onsets."""
+def oof_path(results_dir, name, oof_dir=None):
+    """Out-of-fold predictions of a step-1 sweep (artifacts/oof, next to results/; oof_dir overrides), for post-hoc onsets."""
+    if oof_dir is not None:
+        return Path(oof_dir) / f"{name}.npz"
     return Path(results_dir or RESULTS).resolve().parent / "artifacts" / "oof" / f"{name}.npz"
 
 
-def patch_selectivity(dataset, variable, pool, results_dir=None, n_boot=200, seed=0):
+def patch_selectivity(dataset, variable, pool, results_dir=None, n_boot=200, seed=0, oof_dir=None):
     """Add the selectivity onset to the V-JEPA step-1 file once both it and the random-init sweep have
     saved out-of-fold predictions (either order). No-op if either is missing."""
     names = {m: result_name("p1a", dataset, variable, pool, m) for m in ("vjepa2", "random")}
-    paths = {m: oof_path(results_dir, n) for m, n in names.items()}
+    paths = {m: oof_path(results_dir, n, oof_dir) for m, n in names.items()}
     js = Path(results_dir or RESULTS) / (names["vjepa2"] + ".json")
     if not (all(p.exists() for p in paths.values()) and js.exists()):
         return None
@@ -243,12 +245,12 @@ def patch_selectivity(dataset, variable, pool, results_dir=None, n_boot=200, see
 
 # ---------------------------------------------------------------- data plumbing
 
-def load_activations(dataset, pool="meanpool", model="vjepa2", act_root=None):
+def load_activations(dataset, pool="meanpool", model="vjepa2", act_root=None, table=None):
     """Memory-mapped activations [N, 26, d] (meanpool) or [N, 26, 8, d] (time/disk pools), in
     manifest id order (checked against ids.json when extract.merge wrote one)."""
     folder = Path(act_root or ACT_ROOT) / dataset / model
     acts = np.load(folder / f"{pool}.npy", mmap_mode="r")
-    ids = load_table(dataset)["id"].tolist()
+    ids = (load_table(dataset) if table is None else table)["id"].tolist()
     if (folder / "ids.json").exists():
         assert json.loads((folder / "ids.json").read_text()) == ids, "activations not in manifest order"
     assert acts.shape[0] == len(ids) and acts.shape[1] == N_POINTS, acts.shape
@@ -286,10 +288,10 @@ def drop_nan_clips(acts, tr, te, folds):
     return tr[k_tr], te[k_te], folds[k_tr], {"train": int((~k_tr).sum()), "test": int((~k_te).sum())}
 
 
-def split_rows(dataset, df=None):
-    """Row positions of train and test clips and the fold of each train row."""
+def split_rows(dataset, df=None, split_path=None):
+    """Row positions of train and test clips and the fold of each train row (split_path overrides the split file)."""
     df = load_table(dataset) if df is None else df
-    split = load_split(dataset)
+    split = load_split(dataset, split_path)
     pos = {int(i): r for r, i in enumerate(df["id"])}
     tr = np.array([pos[i] for i in split["train_ids"]])
     te = np.array([pos[i] for i in split["test_ids"]])
@@ -321,22 +323,22 @@ def write_json(path, obj):
 # ---------------------------------------------------------------- the sweep
 
 def layer_sweep(dataset, variable, pool="meanpool", model="vjepa2", shuffled=False,
-                act_root=None, results_dir=None, n_boot=200, seed=0):
+                act_root=None, results_dir=None, n_boot=200, seed=0, data_root=None, split_path=None, oof_dir=None):
     """Probe every layer point; write results/p1a_{dataset}_{variable}_{pool}[_shuffled].json.
 
     Per point: standardise on train, pick α on the 5 folds, report fold mean ± SD, then refit on all
     of train and score test once. shuffled=True permutes the train labels (seed 0) and runs the
     identical pipeline; test labels stay true, so its test score is the chance level.
     """
-    df = load_table(dataset)
+    df = load_table(dataset, root=data_root)
     Y, kind, score_fn = targets(df, variable)
-    tr, te, folds = split_rows(dataset, df)
+    tr, te, folds = split_rows(dataset, df, split_path)
     Ytr, Yte = Y[tr], Y[te]
     if shuffled:
         Ytr = np.random.default_rng(seed).permutation(Ytr)
     motion_tr, motion_te = df["motion"].to_numpy()[tr], df["motion"].to_numpy()[te]
     motions = sorted(set(motion_tr)) if len(set(motion_tr)) > 1 else []
-    acts = load_activations(dataset, pool, model, act_root)
+    acts = load_activations(dataset, pool, model, act_root, table=df)
     nan_layer = nan_by_layer(acts)
     nan_clip = nan_layer.any(axis=0)
     nan_info = {"n_all_nan_train": int(nan_clip[tr].sum()), "n_all_nan_test": int(nan_clip[te].sum()),
@@ -406,11 +408,11 @@ def layer_sweep(dataset, variable, pool="meanpool", model="vjepa2", shuffled=Fal
     name = result_name("p1a", dataset, variable, pool, model, shuffled)
     path = Path(results_dir or RESULTS) / (name + ".json")
     write_json(path, out)
-    op = oof_path(results_dir, name)
+    op = oof_path(results_dir, name, oof_dir)
     op.parent.mkdir(parents=True, exist_ok=True)
     np.savez(op, Y=Ytr, oof=np.stack(oofs))
     if not shuffled and model in ("vjepa2", "random"):
-        patch_selectivity(dataset, variable, pool, results_dir, n_boot, seed)
+        patch_selectivity(dataset, variable, pool, results_dir, n_boot, seed, oof_dir)
         if model == "vjepa2":
             out = json.loads(path.read_text())
     return out

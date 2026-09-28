@@ -32,7 +32,7 @@ HOST="${HOST:-}"
 PORT="${PORT:-22}"
 PY_LOCAL="$REPO/.venv/bin/python"
 SSH=(ssh -p "$PORT" -o StrictHostKeyChecking=accept-new "root@$HOST")
-RSYNC=(rsync -az --info=stats1 -e "ssh -p $PORT -o StrictHostKeyChecking=accept-new")
+RSYNC=(rsync -az --stats -e "ssh -p $PORT -o StrictHostKeyChecking=accept-new")
 
 need_host() { [[ -n "$HOST" ]] || { echo "set HOST and PORT"; exit 1; }; }
 

@@ -18,8 +18,12 @@ parser.add_argument("--model", default="vjepa2", choices=["vjepa2", "random", "v
 parser.add_argument("--shuffled", action="store_true", help="control: permute train labels")
 parser.add_argument("--act-root", type=Path, default=None)
 parser.add_argument("--results", type=Path, default=None)
+parser.add_argument("--data-root", type=Path, default=None, help="manifest root override (e.g. artifacts/stimuli/hard)")
+parser.add_argument("--split", type=Path, default=None, help="split file override (e.g. splits/split_hard.json)")
+parser.add_argument("--oof-dir", type=Path, default=None, help="out-of-fold predictions dir override")
 args = parser.parse_args()
 
 for dataset in [args.dataset] if args.dataset else VARIABLES:
     for variable in [args.variable] if args.variable else VARIABLES[dataset]:
-        layer_sweep(dataset, variable, args.pool, args.model, args.shuffled, args.act_root, args.results)
+        layer_sweep(dataset, variable, args.pool, args.model, args.shuffled, args.act_root, args.results,
+                    data_root=args.data_root, split_path=args.split, oof_dir=args.oof_dir)

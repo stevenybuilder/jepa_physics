@@ -10,6 +10,7 @@ absolute) and WM_TEST_SIZE (test fraction used by make_split).
 import json
 import os
 from collections import Counter
+from pathlib import Path
 
 import numpy as np
 from sklearn.model_selection import StratifiedKFold, StratifiedShuffleSplit
@@ -71,14 +72,14 @@ def make_split(df, hashes):
     }
 
 
-def load_split(dataset):
-    return json.loads(SPLIT_PATH.read_text())[dataset]
+def load_split(dataset, path=None):
+    return json.loads((SPLIT_PATH if path is None else Path(path)).read_text())[dataset]
 
 
-def validate_split(dataset, split=None):
-    """Raise AssertionError if the split breaks any rule of the protocol."""
+def validate_split(dataset, split=None, df=None):
+    """Raise AssertionError if the split breaks any rule of the protocol (df: a load_table(root=...) override)."""
     s = split if split is not None else load_split(dataset)
-    df = load_table(dataset)
+    df = load_table(dataset) if df is None else df
     train, test = set(s["train_ids"]), set(s["test_ids"])
     manifest = set(int(i) for i in df["id"])
 
