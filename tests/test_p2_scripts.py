@@ -602,7 +602,15 @@ def test_isometry_goodfire_angle_matches_periodic_angle():
     ch = m.angle_choice(cent, "goodfire")
     np.testing.assert_allclose(ch["goodfire"]["angle"], mf.goodfire_periodic_angle(cent["C"])["angle"])
     c = m.act_curve(cent, ch, "interp")
-    assert c.coord_source == "labels_angle"          # periodic_cubic's tag for any supplied angle
+    assert c.coord_source == "goodfire_pca_angle"
     np.testing.assert_allclose(np.sort(c.coords), np.sort(ch["goodfire"]["angle"]))
     np.testing.assert_allclose(m.path_length_matrix(c, v)[0, 8], m.path_length_matrix(c, v)[8, 0])
     assert abs(mf.compare_angles(ch["goodfire"]["angle"], v)["circular_corr"]) > 0.99
+    ch = m.angle_choice(cent, "goodfire_full")        # PC variances 4.5 vs 0.5: rel_diff 0.89 fails causalab's test
+    assert ch["branch"] == "pc1_fallback" and not ch["goodfire"]["passes"]
+    c = m.act_curve(cent, ch, "interp")
+    assert not c.periodic and c.coord_source == "pc1_fallback"
+    np.testing.assert_allclose(np.sort(c.coords), np.sort(cent["C"][:, 0]))
+    rnd = {**cent, "C": np.stack([1.2 * np.cos(th), np.sin(th), 0 * th], 1)}
+    assert m.angle_choice(rnd, "goodfire_full")["branch"] == "goodfire_pca_angle"
+    assert m.act_curve(rnd, m.angle_choice(rnd, "goodfire_full"), "smooth").periodic

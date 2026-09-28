@@ -14,7 +14,9 @@ W >= 81; A.5's shared-geodesic exclusion is then empty):
       (choose_angle_source), the true direction with --angle labels (causalab's alphabet / age 8B and all 70B runners,
       intrinsic_mode: parameter), or Goodfire's own label-free coordinate with --angle goodfire (--goodfire-method
       only; mf.goodfire_periodic_angle on all 64 knot centroids, what the weekdays / months 8B runners get by
-      inheriting intrinsic_mode: pca). d_geo = arc length along the spline (short way round); d_lin = Euclidean distance
+      inheriting intrinsic_mode: pca, kept even when the periodicity test fails), or causalab's full pca-mode rule
+      with --angle goodfire_full (that angle when the test passes, else PC1 with a natural cubic and a non-periodic
+      path, causalab spline/train.py; the same rule on the behaviour side, spline/belief_fit.py). d_geo = arc length along the spline (short way round); d_lin = Euclidean distance
       between the same vertex points in PCA-64.
   behaviour side (probe folds 3-4, disjoint clips), each a periodic smoothing spline through per-value centroids
       with the true angle as coordinate, distances = arc length:
@@ -23,13 +25,17 @@ W >= 81; A.5's shared-geodesic exclusion is then empty):
       predictor        the V-JEPA 2 predictor's own unedited forecast of tubelets 4-7 from frames 1-8
                        (artifacts/session2/native/pred_pooled_all.npy, mean over the 4 steps), PCA-64
       concept          the true angular distance |d theta| (the conceptual metric d_Z)
-  CIs: 200 bootstrap draws resampling clips within each value on both sides (PCA bases fixed).
+  CIs: 200 bootstrap draws resampling clips within each value on both sides (PCA bases fixed); --angle goodfire_full
+      applies the same scheme (bootstrap_variants) to four activation coordinates at once.
 
   python scripts/run_isometry_linear.py --layers 8 12 22
   python scripts/run_isometry_linear.py --goodfire-method --angle goodfire   # -> p2_isometry_goodfire_coord.json
+  python scripts/run_isometry_linear.py --goodfire-method --angle goodfire_full   # -> p2_isometry_goodfire_full.json
 """
 import argparse
 import json
+from concurrent.futures import ProcessPoolExecutor
+from dataclasses import replace
 from pathlib import Path
 
 import numpy as np
@@ -78,24 +84,183 @@ def angle_choice(cent, angle="auto"):
     "labels" = the true direction (causalab's alphabet / age 8B and 70B runners, intrinsic_mode: parameter; weekdays /
     months 8B inherit intrinsic_mode: pca); "goodfire" = mf.goodfire_periodic_angle on these centroids (causalab
     spline/builders.py remap_periodic_to_angle: atan2 of PC1/PC2 each divided by sqrt(variance)), kept whether or not
-    their periodicity test passes. Returns the choose_angle_source dict, {"angle": "labels", "plane": "activation"},
-    or {"angle": "goodfire", "plane": "activation", "goodfire": goodfire_periodic_angle dict}."""
+    their periodicity test passes; "goodfire_full" = causalab's pca-mode rule (pca_mode_branch): that angle when the
+    test passes, else PC1 with a natural cubic. Returns the choose_angle_source dict, {"angle": "labels", "plane":
+    "activation"}, or {"angle": "goodfire" | "goodfire_full", "plane": "activation", "goodfire":
+    goodfire_periodic_angle dict, "branch": "goodfire_pca_angle" | "pc1_fallback"}."""
     if angle == "labels":
         return {"angle": "labels", "plane": "activation"}
-    if angle == "goodfire":
-        return {"angle": "goodfire", "plane": "activation", "goodfire": mf.goodfire_periodic_angle(cent["C"])}
+    if angle in ("goodfire", "goodfire_full"):
+        g = mf.goodfire_periodic_angle(cent["C"])
+        branch = "goodfire_pca_angle" if angle == "goodfire" else pca_mode_branch(g)
+        return {"angle": angle, "plane": "activation", "goodfire": g, "branch": branch}
     if angle != "auto":
-        raise ValueError(f"angle must be 'auto', 'labels' or 'goodfire', not {angle!r}")
+        raise ValueError(f"angle must be 'auto', 'labels', 'goodfire' or 'goodfire_full', not {angle!r}")
     return mf.choose_angle_source(cent["C"], cent["values"])
 
 
+def pca_mode_branch(g):
+    """causalab pca-mode branch for a goodfire_periodic_angle result (spline/train.py and belief_fit.py: periodic
+    pair detected -> remap to angle, else the top intrinsic_dim = 1 PCA component, no periodic dims)."""
+    return "goodfire_pca_angle" if g["passes"] else "pc1_fallback"
+
+
+def pca_mode_curve(C, Cpca, values, branch, smooth=None):
+    """causalab pca-mode spline through the points C [m, d], coordinate from the same centroids in that side's PCA
+    basis Cpca [m, >=2]: branch "goodfire_pca_angle" = periodic cubic at goodfire_periodic_angle(Cpca) (recomputed on
+    these centroids), "pc1_fallback" = natural cubic at Cpca[:, 0], non-periodic (so the geodesic path is the direct
+    coordinate path, not the short way round). coord_source is set to the branch."""
+    if branch == "goodfire_pca_angle":
+        c = mf.periodic_cubic(C, values, angle=mf.goodfire_periodic_angle(Cpca)["angle"], smooth=smooth)
+    elif branch == "pc1_fallback":
+        c = mf.natural_cubic(C, Cpca[:, 0], values=np.asarray(values, dtype=float), smooth=smooth)
+    else:
+        raise ValueError(branch)
+    return replace(c, coord_source=branch)
+
+
 def act_curve(cent, choice, spline):
-    """Periodic spline through cent with choice's coordinate; "goodfire" passes its per-centroid angle (computed on
-    these same centroids) straight to periodic_cubic."""
-    if choice["angle"] != "goodfire":
+    """Activation spline through cent with choice's coordinate; "goodfire" / "goodfire_full" go through
+    pca_mode_curve with choice["branch"] (angle recomputed on these same centroids; "goodfire" is always the periodic
+    angle branch, coord_source "goodfire_pca_angle")."""
+    if choice["angle"] not in ("goodfire", "goodfire_full"):
         return mf.fit_curve(cent, True, angle=choice["angle"], plane=choice["plane"], spline=spline)
     smooth = {"count": cent["count"], "sd": cent["sd_coord"]} if spline == "smooth" else None
-    return mf.periodic_cubic(cent["C"], cent["values"], angle=choice["goodfire"]["angle"], smooth=smooth)
+    return pca_mode_curve(cent["C"], cent["C"], cent["values"], choice["branch"], smooth=smooth)
+
+
+def span_coords(C):
+    """C [m, d] in an orthonormal basis of its own affine span (m - 1 columns): an exact isometry of the centroids,
+    and of any spline through them (a cubic spline is linear in its knot values), so path lengths are unchanged and
+    1024-d splines cost what 63-d ones do."""
+    Cc = C - C.mean(axis=0)
+    _, _, Vt = np.linalg.svd(Cc, full_matrices=False)
+    return Cc @ Vt[:len(C) - 1].T
+
+
+def beh_pca_mode(pred, yp, bp=None, branch=None, span=False):
+    """causalab pca-mode behaviour manifold (belief_fit.fit_belief_tps_pca with the PCA of output_manifold/main.py,
+    fit on per-example sqrt p): here PCA-64 fit on the per-clip predictor forecasts of the probe clips (continuous
+    1024-d vectors, not distributions, so no square root), per-value centroids projected into it, periodicity test on
+    their PC1/PC2, then the interpolating pca_mode_curve through the full 1024-d centroids. bp / branch: fixed from the
+    point estimate in bootstrap draws; span: fit the spline through span_coords of the centroids (same distances).
+    Returns (curve, bp, goodfire_periodic_angle dict, PCA coords of centroids)."""
+    bc = mf.centroids(pred, yp)
+    bp = mf.fit_pca(pred, 64) if bp is None else bp
+    bC = bp.project(bc["C"])
+    g = mf.goodfire_periodic_angle(bC)
+    branch = pca_mode_branch(g) if branch is None else branch
+    return pca_mode_curve(span_coords(bc["C"]) if span else bc["C"], bC, bc["values"], branch), bp, g, bC
+
+
+def circ_lin_corr(x, theta_deg):
+    """Circular-linear correlation (Mardia) of a linear coordinate x with the angle theta, in [0, 1]."""
+    th = np.radians(np.asarray(theta_deg, dtype=float))
+    rc, rs, cs = (np.corrcoef(x, np.cos(th))[0, 1], np.corrcoef(x, np.sin(th))[0, 1],
+                  np.corrcoef(np.cos(th), np.sin(th))[0, 1])
+    return float(np.sqrt((rc ** 2 + rs ** 2 - 2 * rc * rs * cs) / (1 - cs ** 2)))
+
+
+def side_record(g, Cpca, values):
+    """Periodicity test and coordinate-vs-labels summary for one side (activation or behaviour)."""
+    rec = {"branch": pca_mode_branch(g), "passes": g["passes"], "rel_diff": g["rel_diff"],
+           "eigenvalues_pc1_pc2": g["eigenvalues"],
+           "atan2_angle_circular_corr_with_labels": mf.compare_angles(g["angle"], values)["circular_corr"],
+           "pc1_circular_linear_corr_with_labels": circ_lin_corr(Cpca[:, 0], values)}
+    rec["coordinate_used"] = ("sqrtvar_atan2_angle" if g["passes"] else "pc1")
+    return rec
+
+
+VARIANTS = ("labels", "label_free_knot_order", "goodfire", "goodfire_full")
+
+
+def variant_matrices(Zk, yk, pred, yp, fixed, n_steps=150):
+    """Geodesic / chord vs behaviour-geodesic Pearson r for the four activation coordinates on one (re)sample.
+    fixed: point-estimate choices held fixed in bootstrap draws (label-free plane, goodfire_full branches, behaviour
+    PCA basis); per-centroid angles are recomputed on the sample. Behaviour: labels-angle interpolating spline in the
+    full 1024-d forecast space for labels / label_free_knot_order / goodfire (goodfire_method), the pca-mode
+    behaviour manifold (beh_pca_mode) for goodfire_full; both behaviour splines through span_coords (exact)."""
+    cent = mf.centroids(Zk, yk)
+    values = cent["values"]
+    cb = mf.centroids(pred, yp)
+    B_lab = path_length_matrix(mf.fit_curve({**cb, "C": span_coords(cb["C"])}, True, angle="labels", spline="interp"),
+                               values, n_steps)
+    B_full = path_length_matrix(beh_pca_mode(pred, yp, fixed["bp"], fixed["beh_branch"], span=True)[0], values,
+                                n_steps)
+    choices = {"labels": {"angle": "labels", "plane": "activation"}, "label_free_knot_order": fixed["auto"],
+               "goodfire": {"angle": "goodfire", "branch": "goodfire_pca_angle"},
+               "goodfire_full": {"angle": "goodfire_full", "branch": fixed["act_branch"]}}
+    out = {}
+    for name, ch in choices.items():
+        B = B_full if name == "goodfire_full" else B_lab
+        out[name] = {}
+        for sp in ("interp", "smooth"):
+            c = act_curve(cent, ch, sp)
+            G = path_length_matrix(c, values, n_steps)
+            P = by_value(np.linalg.norm(c.points[:, None] - c.points[None], axis=-1), c.values, values)
+            out[name][sp] = {"geo_pearson": corr(G, B)[0], "lin_pearson": corr(P, B)[0]}
+    return out
+
+
+def boot_inputs(L):
+    """Knot-fold PCA-64 activations and probe-fold predictor forecasts with their labels (goodfire_method's inputs)."""
+    d = load_inputs("direction", L)
+    knot, probe = d["role"] == "knot", d["role"] == "probe"
+    pca = mf.fit_pca(d["X"][knot], 64)
+    return pca.project(d["X"][knot]), d["y"][knot], np.load(PRED).astype(np.float64).mean(1)[probe], d["y"][probe]
+
+
+def resample_idx(y, rng):
+    """Row indices of resample(Z, y, rng) (same rng calls, same order)."""
+    return np.concatenate([rng.choice(np.flatnonzero(y == v), (y == v).sum()) for v in np.unique(y)])
+
+
+def boot_chunk(L, idx, fixed, n_steps):
+    Zk, yk, pred, yp = boot_inputs(L)
+    return [variant_matrices(Zk[ik], yk[ik], pred[ip], yp[ip], fixed, n_steps) for ik, ip in idx]
+
+
+def bootstrap_variants(L, n_boot=200, seed=0, n_steps=150, workers=1):
+    """95% percentile CIs on geo_pearson, lin_pearson and geo - lin for the four VARIANTS, with the resampling scheme
+    of p2_isometry_linear.json (run_layer): n_boot draws resampling clips within each value, knot clips (activation
+    side) then probe clips (behaviour side), from default_rng(seed); PCA bases and the point estimate's coordinate
+    choices fixed; the same draw is shared by all four variants (paired). Draw indices are generated in order in
+    this process, then evaluated in `workers` processes (results do not depend on workers)."""
+    Zk, yk, pred, yp = boot_inputs(L)
+    cent = mf.centroids(Zk, yk)
+    auto = mf.choose_angle_source(cent["C"], cent["values"])
+    _, bp, gb, _ = beh_pca_mode(pred, yp)
+    fixed = {"auto": {k: auto[k] for k in ("angle", "plane")}, "bp": bp, "beh_branch": pca_mode_branch(gb),
+             "act_branch": pca_mode_branch(mf.goodfire_periodic_angle(cent["C"]))}
+    point = variant_matrices(Zk, yk, pred, yp, fixed, n_steps)
+    rng = np.random.default_rng(seed)
+    idx = []
+    for _ in range(n_boot):
+        ik = resample_idx(yk, rng)
+        idx.append((ik, resample_idx(yp, rng)))
+    chunks = [idx[i::workers] for i in range(workers)]
+    if workers == 1:
+        parts = [boot_chunk(L, idx, fixed, n_steps)]
+    else:
+        with ProcessPoolExecutor(workers) as ex:
+            parts = list(ex.map(boot_chunk, [L] * workers, chunks, [fixed] * workers, [n_steps] * workers))
+    boots = [None] * n_boot
+    for i, part in enumerate(parts):
+        boots[i::workers] = part
+    ci = lambda a: [float(np.percentile(a, 2.5)), float(np.percentile(a, 97.5))]
+    res = {}
+    for name in VARIANTS:
+        res[name] = {}
+        for sp in ("interp", "smooth"):
+            g = np.array([b[name][sp]["geo_pearson"] for b in boots])
+            li = np.array([b[name][sp]["lin_pearson"] for b in boots])
+            pt = point[name][sp]
+            res[name][sp] = {"geo_pearson": pt["geo_pearson"], "geo_ci95": ci(g), "lin_pearson": pt["lin_pearson"],
+                             "lin_ci95": ci(li), "geo_minus_lin": pt["geo_pearson"] - pt["lin_pearson"],
+                             "geo_minus_lin_ci95": ci(g - li)}
+    return {"n_boot": n_boot, "seed": seed, "fixed_choices": {"label_free_knot_order": fixed["auto"],
+            "goodfire_full_activation_branch": fixed["act_branch"], "goodfire_full_behaviour_branch":
+            fixed["beh_branch"]}, "variants": res}
 
 
 def goodfire_method(L, n_steps=150, angle="auto"):
@@ -104,7 +269,9 @@ def goodfire_method(L, n_steps=150, angle="auto"):
     centroids of the predictor's forecast in its full 1024-d space (probe folds), activation manifold = the knot-fold
     PCA-64 spline (interpolating as theirs, and the smoothing spline run_part2 steers with; coordinate from
     angle_choice: "auto" = choose_angle_source, "labels" = true direction as causalab's parameter-mode runners,
-    "goodfire" = goodfire_periodic_angle on all 64 knot centroids as their pca-mode runners); both distances =
+    "goodfire" = goodfire_periodic_angle on all 64 knot centroids as their pca-mode runners, "goodfire_full" = their
+    full pca-mode rule on both sides: that angle if the periodicity test passes else PC1 natural cubic, and the
+    behaviour manifold from beh_pca_mode instead of the labels-angle spline); both distances =
     path_length_matrix with 150 sub-intervals; Pearson r over the upper triangle. Chord baseline = PCA-64 chord between
     the same spline vertices, recomputed here."""
     d = load_inputs("direction", L)
@@ -114,10 +281,17 @@ def goodfire_method(L, n_steps=150, angle="auto"):
     cent = mf.centroids(pca.project(d["X"][knot]), y[knot])
     choice = angle_choice(cent, angle)
     pred = np.load(PRED).astype(np.float64).mean(1)[probe]
-    beh = mf.fit_curve(mf.centroids(pred, y[probe]), True, angle="labels", spline="interp")
+    if angle == "goodfire_full":
+        beh, _, gb, bC = beh_pca_mode(pred, y[probe])
+    else:
+        beh = mf.fit_curve(mf.centroids(pred, y[probe]), True, angle="labels", spline="interp")
     B = path_length_matrix(beh, values, n_steps)
     out = {"angle_choice": {k: choice[k] for k in ("angle", "plane")}, "behaviour_dim": int(pred.shape[1])}
-    if angle == "goodfire":
+    if angle == "goodfire_full":
+        out["activation_side"] = side_record(choice["goodfire"], cent["C"], cent["values"])
+        out["behaviour_side"] = side_record(gb, bC, values)
+        out["coord_source"] = {"activation": choice["branch"], "behaviour": beh.coord_source}
+    if angle in ("goodfire", "goodfire_full"):
         g = choice["goodfire"]
         out["goodfire_periodicity_test"] = {"passes": g["passes"], "rel_diff": g["rel_diff"],
                                             "eigenvalues_pc1_pc2": g["eigenvalues"], "n_centroids": len(values)}
@@ -233,6 +407,46 @@ def run_layer(L, n_boot, seed=0, angle="auto"):
             "geo_minus_lin": diffs}
 
 
+def run_goodfire_full(layers, n_boot, workers=6):
+    """--angle goodfire_full -> results/p2_isometry_goodfire_full.json: goodfire_method with the pca-mode rule on both
+    sides, the three stored coordinates (goodfire_coord.json) for reference, and bootstrap_variants per point."""
+    prev = json.loads((PROJECT_ROOT / "results" / "p2_isometry_goodfire_coord.json").read_text())["layers"]
+    res = {"provenance": provenance(None, seeds={"bootstrap": 0}, layers=layers, pool="meanpool", k=64,
+                                    angle="goodfire_full", n_steps=150, n_boot=n_boot,
+                                    n_interior_per_pair=N_INTERIOR_NOTE),
+           "method": goodfire_method.__doc__, "bootstrap_method": bootstrap_variants.__doc__,
+           "behaviour_method": beh_pca_mode.__doc__,
+           "angle_source": "causalab_pca_mode_goodfire_angle_or_pc1_fallback_both_sides", "layers": {}}
+    boots = {L: bootstrap_variants(L, n_boot, workers=workers) for L in layers}
+    for L in layers:
+        new = goodfire_method(L, angle="goodfire_full")
+        b = boots[L]["variants"]
+        ref = {"goodfire_full": new, "goodfire": prev[str(L)]["goodfire_angle"], "labels": prev[str(L)]["labels_angle"],
+               "label_free_knot_order": prev[str(L)]["unsupervised_angle"]}
+        for k, r in ref.items():                             # bootstrap point estimates = the stored / direct values
+            for sp in ("interp", "smooth"):
+                for q in ("geo_pearson", "lin_pearson"):
+                    assert abs(b[k][sp][q] - r[sp][q]) < 1e-8, (L, k, sp, q, b[k][sp][q], r[sp][q])
+        res["layers"][str(L)] = {"goodfire_full_angle": new, **{k: prev[str(L)][k] for k in (
+            "goodfire_angle", "labels_angle", "unsupervised_angle")}, "bootstrap": boots[L]}
+        print(L, json.dumps({k: {sp: [round(v[sp][q], 3) for q in ("geo_pearson", "lin_pearson")]
+                                 for sp in ("interp", "smooth")} for k, v in b.items()}), flush=True)
+    g = {L: res["layers"][str(L)]["goodfire_full_angle"] for L in layers}
+    res["branches"] = {str(L): v["coord_source"] for L, v in g.items()}
+    res["periodicity_test_passes"] = {str(L): {s: v[f"{s}_side"]["passes"] for s in ("activation", "behaviour")}
+                                      for L, v in g.items()}
+    res["circular_corr_with_labels"] = {str(L): {s: v[f"{s}_side"]["atan2_angle_circular_corr_with_labels"]
+                                                 for s in ("activation", "behaviour")} for L, v in g.items()}
+    res["geo_minus_lin_verdict"] = {str(L): {k: {sp: ("spline" if lo > 0 else "chord" if hi < 0 else "tie")
+                                                 for sp, (lo, hi) in ((sp, vv[sp]["geo_minus_lin_ci95"])
+                                                                      for sp in ("interp", "smooth"))}
+                                             for k, vv in res["layers"][str(L)]["bootstrap"]["variants"].items()}
+                                    for L in layers}
+    path = PROJECT_ROOT / "results" / "p2_isometry_goodfire_full.json"
+    path.write_text(json.dumps(res, indent=1))
+    print("wrote", path)
+
+
 def main(argv=None):
     p = argparse.ArgumentParser()
     p.add_argument("--layers", type=int, nargs="+", default=[8, 12, 22])
@@ -240,14 +454,19 @@ def main(argv=None):
     p.add_argument("--out", default=str(PROJECT_ROOT / "results" / "p2_isometry_linear.json"))
     p.add_argument("--goodfire-method", action="store_true",
                    help="only the causalab-faithful variant (goodfire_method) -> results/p2_isometry_goodfire_method.json")
-    p.add_argument("--angle", default="auto", choices=("auto", "labels", "goodfire"),
+    p.add_argument("--angle", default="auto", choices=("auto", "labels", "goodfire", "goodfire_full"),
                    help="activation-spline coordinate: auto = choose_angle_source (unsupervised angle), labels = true "
                         "direction (intrinsic_mode: parameter, alphabet / age 8B and 70B runners), goodfire = "
                         "goodfire_periodic_angle on all 64 knot centroids (intrinsic_mode: pca, weekdays / months 8B; "
-                        "--goodfire-method only)")
+                        "--goodfire-method only), goodfire_full = causalab's pca-mode rule on both sides (PC1 "
+                        "fallback when the periodicity test fails) + bootstrap CIs for four coordinates "
+                        "(--goodfire-method only)")
     args = p.parse_args(argv)
-    if args.angle == "goodfire" and not args.goodfire_method:
-        p.error("--angle goodfire needs --goodfire-method")
+    if args.angle in ("goodfire", "goodfire_full") and not args.goodfire_method:
+        p.error(f"--angle {args.angle} needs --goodfire-method")
+    if args.angle == "goodfire_full":
+        run_goodfire_full(args.layers, args.n_boot)
+        return
     if args.angle == "goodfire":
         lab = json.loads((PROJECT_ROOT / "results" / "p2_isometry_goodfire_labels.json").read_text())["layers"]
         uns = json.loads((PROJECT_ROOT / "results" / "p2_isometry_goodfire_method.json").read_text())["layers"]

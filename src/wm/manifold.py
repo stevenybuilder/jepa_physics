@@ -109,7 +109,7 @@ class Curve:
     coords: np.ndarray
     points: np.ndarray
     periodic: bool
-    coord_source: str       # "value", "unsupervised_angle" or "labels_angle"
+    coord_source: str       # "value", "unsupervised_angle" or "labels_angle" (callers may retag, e.g. "goodfire_pca_angle")
     kind: str = "interpolating"   # or "smoothing" (count-weighted, Goodfire B.1); points are then the smoothed knots
 
     def __call__(self, t):
