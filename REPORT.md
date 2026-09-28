@@ -26,8 +26,9 @@ fixed rank 2K the learned basis is indistinguishable until N ≈ 5; against a ra
 all 20 draws at N = 2–7 (by variable and layer); at N = 1 it separates from neither. The same curve appears in an
 untrained network, and at the onset layer the learned basis never beats the rank-2K random basis for N ≤ 20. Rerunning
 Parts 1 and 2 at the paper's literal 70/30 split changes no qualitative verdict. **Part 2.** Direction lies on a ring
-that is recovered without labels at mid depth. Held-out clips occupy the ring along its whole length and leave it hollow
-in its plane. At held-out direction values the spline path stays on the ring and the straight path cuts across the
+that is recovered without labels at mid depth. The ring is an ellipse, not a circle: axis ratio 0.74–0.87 in its own
+plane from point 8 on, bent out of that plane by a cos 2θ saddle that holds 20–34% of the centroid variance. Held-out
+clips occupy the ring along its whole length and leave it hollow in its plane. At held-out direction values the spline path stays on the ring and the straight path cuts across the
 hollow: the minimum readout radius is higher for the spline by +0.26 ± 0.05 at point 12 and +0.24 ± 0.07 at point 22
 (mean ± SD over 16 runs covering 15 distinct held-out 45° arcs), and it is higher on every arc. The endpoint error ties
 at point 12 (+0.08° ± 1.47) and slightly favours the line at point 22 (+1.26° ± 3.54; 3 of 16 runs flagged
@@ -329,6 +330,25 @@ sign of −1 is an orientation flip, which is allowed.
   dominant among centroids, not among clips. The interpolating spline through all 64 centroids overshoots (visible loops
   in the figure; held-out reconstruction error on the contiguous arc 188 vs 2.8 for the smoothing spline), so all
   steering uses the count-weighted smoothing spline, which I chose on train folds.
+- **Circle, ellipse or bent line?** (`p2_ellipse_direction.json`, `figures/fig4g_ellipse_direction.png`). An ellipse.
+  In the plane of the ring's own cos θ / sin θ component the axis ratio b/a is 0.74 / 0.87 / 0.74 at points 8 / 12 / 22
+  by a direct conic fit, 0.74 / 0.82 / 0.72 from the full-space rank-2 chart, and 0.76 / 0.76 / 0.66 from the 2θ
+  distortion of the label-free atan2 angle. Points 2–4 are much flatter (0.38–0.43) and point 10 is nearly round
+  (0.89). Geometric residual in centroid-noise units at points 8 / 12 / 22: ellipse 0.92 / 1.15 / 1.11, circle 1.22 /
+  1.55 / 1.36, smoothing spline 0.92–0.97 (about 1 by construction). So the ellipse sits at the noise floor and the
+  circle does not. The ring is also bent out of its plane: a third centroid axis follows cos 2θ (a saddle) and holds
+  0.28 / 0.20 / 0.24 of the centroid variance at 8 / 12 / 22, growing to 0.34 at point 14. At points 14–20 and 24 the
+  saddle axis outranks the ring's minor axis, so a top-2 PC plane there is one ring axis plus the fold and shows a bent
+  line; the ring itself is not one, and estimates made in that plane (eigenvalue ratio 0.91 at points 14–16 against
+  0.66–0.77 in the ring plane) mislead. Planted controls in real point-12 activations recover a circle as 0.99, an
+  ellipse of ratio 0.5 as 0.51, and a circle with a saddle of bend 1.2 as 0.99 in the ring plane but 0.84 by top-2
+  eigenvalues. The random-init encoder's direction code is a cleaner ring: fold share ≤ 0.03, b/a 0.89–0.95 at every point.
+  Local curvature does not predict where the spline beats the chord: Spearman ρ between the ellipse curvature at the
+  arc midpoint and the spline-minus-chord minimum-radius gap over the 15 distinct arcs is 0.05 (p = 0.85) at point 12
+  and −0.05 (p = 0.86) at point 22; the smoothing-spline curvature and the stored sagitta do no better (|ρ| ≤ 0.33, all
+  p ≥ 0.23), and the curvature of ring-plus-fold reaches only −0.47 (p = 0.07) at point 22, with the wrong sign. With an axis ratio this close to one the spline's advantage is spread around the ring, not concentrated
+  near the minor axis. PCA is the right first tool here: it finds the ring's plane, but its top-2 plane is not always
+  the ring's plane.
 - **Curvature vs noise.** Over any knot gap up to 45° the chord and the arc differ by less than a quarter of centroid
   noise. Held-out centroids on the contiguous 45° arc are rebuilt best by the chord at every direction layer (point
   12: chord 2.58, smoothing spline 2.82).
@@ -713,7 +733,7 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
   $0.198/h): $0.512 to the end of session 2 (the run itself $0.311); $1.19 over 6.00 billed hours as of 22:44 ET, box
   still running, including the native-readout extraction (0.09 h, $0.018), the norm-matched rerun (0.137 h, $0.027),
   the along-path forward (0.34 h, $0.067) and the reverse test (0.365 h, $0.072); $0.006 egress[^cost]. No other box's cost is recorded.
-- **Tests.** `pytest --collect-only` collects 173 tests at the commit of this report.
+- **Tests.** `pytest --collect-only` collects 179 tests at the commit of this report.
 
 [^gpu]: `artifacts/gpu_session1.json`.
 [^ptxt]: Line numbers in `refs/physics_paper.txt` (text of arXiv 2602.07050): (a) 1211 vs 1172; (b) 1207 vs 1243 and 1266; (c) 1245–1246; (d) 430–431 vs 1256 and 1269. Our numbers: `p1b_*` (`K`, `K_loose`), `results/split70/COMPARISON.md`, `p1c_direction_L9_strict.json` (`strict_eval`), `p1c_direction_L9.json`.
