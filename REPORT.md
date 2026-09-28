@@ -638,14 +638,15 @@ line cuts across the ring's interior in the chart plane. The reflected arm is wo
 which way the path bends. All of §4.1–§4.4 edits the pooled vector and reads it at the same point with probes and
 distances, with no forward pass through the rest of the network; whether the model uses the edit is tested in §4.5. The radius gap grows with angular shift: at
 point 12 it is −0.003 below 30°, then +0.05, +0.12, +0.25, +0.43 and +0.62 per 30° bin up to 180°, CI above zero in
-17/17 runs from 90° on (16/17 at 60–90°; point 22: +0.01 to +0.58); endpoint error and nearest-real agreement show no
+17/17 runs from 90° on (16/17 at 60–90°; point 22: +0.02 to +0.66, 17/17 from 30°); endpoint error and nearest-real agreement show no
 trend with shift[^p2b]. A readout that uses neither a probe nor the spline also separates the paths along the route:
-the labels of the 10 real clips nearest the midpoint (PCA-64) are 16° / 20° (points 12 / 22) closer to the intermediate
-direction for the spline than for the chord, 38° / 44° closer at shifts ≥ 120°, and agree with each other more
-(resultant +0.12 / +0.10), on 17/17 arcs at both points. The empty interior is a ring-plane fact, though. In the 64-D
+the labels of the 10 real clips nearest the midpoint (PCA-64) are 16° / 21° (points 12 / 22) closer to the intermediate
+direction for the spline than for the chord, 38° / 45° closer at shifts ≥ 120°, and agree with each other more
+(resultant +0.12 / +0.11), on 17/17 arcs at both points. The empty interior is a ring-plane fact, though. In the 64-D
 subspace the edit acts on, the spline midpoint is no closer to real clips than the chord's (5-NN distance ratio +0.007
-at point 12, CIs split 4 above / 9 below) and at point 22 it is farther (+0.037, 17/17 arcs); in full space the stored
-5-NN excess is +0.28 / +0.17 for the spline at points 22 / 12 (CI above zero in 17 / 7 of 17 runs). So "the chord cuts
+at point 12, CIs split 4 above / 9 below) and at point 22 it is farther (+0.030, 17/17 arcs); in full space the stored
+5-NN excess is +0.22 / +0.17 for the spline at points 22 / 12 (CI above zero in 17 / 7 of 17 runs; point-22 figures in this paragraph use the all-labels arc set,
+`results/p2_shift_dependence_labels22.json`, `results/p2_ring_occupancy_L22_labels22.json`). So "the chord cuts
 through the ring" holds in the ring plane only, and so does Goodfire's low-density-region premise here. For speed and
 acceleration all arms coincide with the chord, extrapolation included: continued along its end tangent the smoothing
 spline trails the chord by 0.02–0.07 on all four (all "path_geometry_positive"), and the authors'-code arm beats its
