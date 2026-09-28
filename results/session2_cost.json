@@ -9,9 +9,9 @@
  "cost_start_to_session2_done_usd": 0.512,
  "session2_run_hours": 1.573,
  "session2_run_cost_usd": 0.311,
- "as_of_utc": "2026-09-28T01:17:47+00:00",
- "billed_hours_so_far": 4.552,
- "cost_so_far_usd": 0.9,
+ "as_of_utc": "2026-09-28T02:44:24+00:00",
+ "billed_hours_so_far": 5.996,
+ "cost_so_far_usd": 1.186,
  "inet_up_cost_per_gb": 0.00390625,
  "pull_bytes": 1530820377,
  "pull_egress_usd": 0.006,
@@ -41,6 +41,30 @@
    "cost_usd": 0.0271,
    "dph_total": 0.19777777777777777,
    "note": "200 carriers x 4 targets x 6 arms x 2 norm conditions = 9600 edited predictor passes at point 22, batch 16, RTX 4060 Ti; scoring on the Mac (CPU)"
+  },
+  {
+   "run": "predictor_along_path (scripts/session2_along_path.py forward)",
+   "window_utc": [
+    "2026-09-28T02:00:09+00:00",
+    "2026-09-28T02:20:45+00:00"
+   ],
+   "gpu_seconds_forward": 1223.8,
+   "hours": 0.34,
+   "cost_usd": 0.0672,
+   "dph_total": 0.19777777777777777,
+   "note": "200 carriers x 4 targets x 4 arms x 8 waypoints = 25600 edited predictor passes at point 22, batch 16, RTX 4060 Ti; scoring on the Mac (CPU)"
+  },
+  {
+   "run": "reverse_path (scripts/session2_along_path.py reverse 100; plus a 5-step smoke)",
+   "window_utc": [
+    "2026-09-28T02:22:08+00:00",
+    "2026-09-28T02:43:44+00:00"
+   ],
+   "gpu_seconds_optimise": 1284.9,
+   "hours": 0.365,
+   "cost_usd": 0.0722,
+   "dph_total": 0.19777777777777777,
+   "note": "20 carriers x 2 targets x 8 waypoints, Adam 100 steps with gradients through blocks 23-24 + predictor (bf16 autocast), fp32 re-score; ~30 s smoke included"
   }
  ]
 }
