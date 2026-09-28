@@ -75,7 +75,7 @@ verdict; §2 lists every deviation from the paper and what the parity audit chan
 | INLP K | probes until test at chance | nested K (held-out folds), paper-protocol K beside it | both below |
 | Steering basis length | until R² < 0.1 on train | ridge: all-train sequence cut at nested K; Adam refit (§3.3): K = 84 by C.11's stop rule read on the test clips | ridge length never chosen on test; the Adam length is, which touches N = K and the rank-2K null only |
 | Steering solve (C.12 l.1235 "least squares") | c* via least squares such that all probes predict θ* | minimum-change c* = c + A⁺(y* − ŷ) in the full rank-2K basis at every N | a literal minimum-norm solve in V_K would also erase the clip's other 2K − 2N coordinates; the two coincide when V is built from the first N probes; the erase reading was not run |
-| INLP recipe | Adam lr 1e-3, wd 1e-4 | ridge; literal Adam sequence run once at points 8 and 9 | curves jagged and K ≈ 2× under Adam; no direction-specific sawtooth (§3.2) |
+| INLP recipe | Adam lr 1e-3, wd 1e-4 | ridge; literal Adam sequence run once at points 8 and 9 | curves jagged and K 1.1–2.4× (≈ 2× except direction at point 8) under Adam; no direction-specific sawtooth (§3.2) |
 | INLP coordinates | no normalisation stated (C.11), raw features implied | train-z-scored features | raw centred coordinates raise nested K 1.4–1.6×; direction vs speed equal at point 9, not at 8 (§3.2) |
 | INLP stop rule | R² or MAE rule, whichever fires (C.11) | the same rules, with C.11's undefined "random baseline" for speed read as the fit-set mean predictor (a shuffled-prediction reading would leave speed to its R² rule alone; at nested point 8 that gives speed 83 against direction's 80 dimensions) | the MAE rule stops speed and acceleration at R² 0.13–0.20, direction runs to R² just under 0.1 (§3.2) |
 | Onset | "one-third depth", no numeric rule | first sampled point at ≥ 90% of the maximum, 200-draw clip bootstrap | per-patch curves reported beside the pooled ones (§3.1) |
@@ -297,7 +297,7 @@ cross-half curve on seed 0, along with curves whose inflection sits at the first
 curve with a negative fitted rise, so it does not separate a trained encoder from an untrained one[^sig].
 On the supplied clips neither part appears: the per-patch code forms by block 6 with no step at points 8 → 9, while the mean-pooled
 curve is early under every fold grouping and at the paper's clip count. What training changes on both stimulus sets is
-the per-position code from point 6 on (supplied: V-JEPA 2 0.94–0.98 against 0.22–0.39 for the random network;
+the per-position code from point 6 on (supplied: V-JEPA 2 0.94–0.98 against 0.22–0.38 for the random network;
 hard: 0.80–0.97 against 0.57–0.62 on seed 0 and 0.52–0.61 on seed 1), not pooled availability; the half-frame dip
 and jump are training-specific too (the random network's cross-half has no dip on either seed), though its level at
 point 9 is not.
