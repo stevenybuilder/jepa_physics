@@ -45,15 +45,18 @@ def fit_logistic4(x, y, x0_bounds=(0.0, float(LAST_BLOCK)), k_max=50.0):
             "k_at_bound": bool(np.isclose(p[2], k_max, rtol=1e-3))}
 
 
-def criterion(x, y, chance=0.0, r2_min=0.9, depth_max=0.5, pp_min=0.15):
+def criterion(x, y, chance=0.0, r2_min=0.9, depth_max=0.5, pp_min=0.15, first_point=0):
     """Fit + the three tests. 'peak_above_chance' (the rebuttal's wording: peak >= 15 pp above chance) uses the
     observed maximum; 'rise_fit' (fitted curve at the last sampled point minus at the first: hi - lo is not used, it
     is unidentified when the step falls between two samples) and 'rise_obs' (max - min over sampled points) are
-    reported beside it, and 'rise_ge_15pp' tests the fitted rise. inflection_bracket = the sampled points on either
+    reported beside it, and 'rise_ge_15pp' tests the fitted rise. first_point: the point at depth 0; the fit is
+    restricted to points >= first_point, x0 to [first_point, 24], and depth = (x0 - first_point) / (24 - first_point)
+    (first_point = 1: the paper's layers 0-23 = our points 1-24, patch embedding excluded). inflection_bracket = the sampled points on either
     side of x0: when the rise is a step between two samples, x0 is only localised to that gap."""
-    f = fit_logistic4(x, y)
-    y = np.asarray(y, float)
-    frac = f["x0"] / LAST_BLOCK
+    keep = np.asarray(x, float) >= first_point
+    x, y = np.asarray(x, float)[keep], np.asarray(y, float)[keep]
+    f = fit_logistic4(x, y, x0_bounds=(float(first_point), float(LAST_BLOCK)))
+    frac = (f["x0"] - first_point) / (LAST_BLOCK - first_point)
     peak = float(y.max() - chance)
     xs = np.sort(np.asarray(x, float))
     rise_fit = float(logistic4(xs[-1], f["lo"], f["hi"], f["k"], f["x0"])

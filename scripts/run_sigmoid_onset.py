@@ -49,65 +49,88 @@ for key, name in perpatch.items():
                                               "x": d["points"], "y": d["curves"][metric],
                                               "stored_onset90": d["onsets"][metric]["onset"]}
 
-rows = {}
-for key, c in curves.items():
-    res = criterion(c["x"], c["y"])
-    res["onset90_point"] = onset90(c["x"], c["y"])       # recomputed on the sampled points
-    res["onset90_frac"] = res["onset90_point"] / LAST_BLOCK
-    res["onset90_stored"] = c["stored_onset90"]            # as stored (None = the stored rule found no onset)
-    res["within_1_point_of_paper_depth"] = abs(res["inflection_point"] - PAPER_POINT) <= 1.0
-    rows[key] = {"file": c["file"], "metric": c["metric"], "points": c["x"], "curve": [round(v, 4) for v in c["y"]],
-                 **res}
-
-# fold bootstrap: per-fold 4PL fits, and a 2000-draw bootstrap over folds (resample the 5 fold curves with
-# replacement, average, refit)
 folds = load("p1a_perpatch_hard_folds.json")
-rng = np.random.default_rng(SEED)
-boot = {}
-for scheme, block in (("random_folds", folds["sets"]), ("start_grouped_folds", folds["folds_start_grouped"])):
-    for set_name, s in block.items():
-        x = s["points"]
-        for metric in ("perpos_mean_r2", "cross_half_r2", "meanpool_r2"):
-            F = np.array([f["curves"][metric] for f in s["per_fold"]])
-            per_fold = [fit_logistic4(x, y) for y in F]
-            idx = np.sort(rng.integers(0, len(F), size=(N_BOOT, len(F))), axis=1)
-            cache = {}                                  # a resample's mean curve depends only on its fold multiset
-            for ii in map(tuple, idx):
-                if ii not in cache:
-                    cache[ii] = fit_logistic4(x, F[list(ii)].mean(axis=0))["x0"]
-            draws = np.array([cache[ii] for ii in map(tuple, idx)])
-            mean_fit = criterion(x, F.mean(axis=0))
-            boot[f"{scheme}/{set_name}/{metric}"] = {
-                "points": x, "n_folds": len(F),
-                "per_fold_inflection_point": [round(f["x0"], 3) for f in per_fold],
-                "per_fold_fit_r2": [round(f["r2"], 3) for f in per_fold],
-                "per_fold_onset90": [f["onsets"][metric] for f in s["per_fold"]],
-                "fold_mean_curve": {k: mean_fit[k] for k in ("inflection_point", "inflection_frac", "fit_r2",
-                                                             "rise_fit_pp", "peak_above_chance_pp", "pass",
-                                                             "accept_rebuttal_rule")},
-                "boot_inflection_point": {"median": float(np.median(draws)),
-                                          "ci95": [float(np.percentile(draws, 2.5)), float(np.percentile(draws, 97.5))],
-                                          "sd": float(draws.std(ddof=1))},
-                "boot_inflection_frac_ci95": [float(np.percentile(draws, 2.5)) / LAST_BLOCK,
-                                              float(np.percentile(draws, 97.5)) / LAST_BLOCK]}
+
+
+def run(first):
+    """All curve fits and fold bootstraps with depth 0 at point `first` (points < first dropped)."""
+    denom = LAST_BLOCK - first
+    rows = {}
+    for key, c in curves.items():
+        xk = [p for p in c["x"] if p >= first]
+        yk = [v for p, v in zip(c["x"], c["y"]) if p >= first]
+        res = criterion(c["x"], c["y"], first_point=first)
+        res["onset90_point"] = onset90(xk, yk)       # recomputed on the fitted points
+        res["onset90_frac"] = (res["onset90_point"] - first) / denom
+        res["onset90_stored"] = c["stored_onset90"]            # as stored (None = the stored rule found no onset)
+        res["within_1_point_of_paper_depth"] = abs(res["inflection_point"] - PAPER_POINT) <= 1.0
+        rows[key] = {"file": c["file"], "metric": c["metric"], "points": xk, "curve": [round(v, 4) for v in yk],
+                     **res}
+
+    # fold bootstrap: per-fold 4PL fits, and a 2000-draw bootstrap over folds (resample the 5 fold curves with
+    # replacement, average, refit)
+    rng = np.random.default_rng(SEED)
+    boot = {}
+    for scheme, block in (("random_folds", folds["sets"]), ("start_grouped_folds", folds["folds_start_grouped"])):
+        for set_name, s in block.items():
+            x = s["points"]
+            assert min(x) >= first
+            for metric in ("perpos_mean_r2", "cross_half_r2", "meanpool_r2"):
+                F = np.array([f["curves"][metric] for f in s["per_fold"]])
+                per_fold = [fit_logistic4(x, y, (float(first), float(LAST_BLOCK))) for y in F]
+                idx = np.sort(rng.integers(0, len(F), size=(N_BOOT, len(F))), axis=1)
+                cache = {}                                  # a resample's mean curve depends only on its fold multiset
+                for ii in map(tuple, idx):
+                    if ii not in cache:
+                        cache[ii] = fit_logistic4(x, F[list(ii)].mean(axis=0), (float(first), float(LAST_BLOCK)))["x0"]
+                draws = np.array([cache[ii] for ii in map(tuple, idx)])
+                mean_fit = criterion(x, F.mean(axis=0), first_point=first)
+                boot[f"{scheme}/{set_name}/{metric}"] = {
+                    "points": x, "n_folds": len(F),
+                    "per_fold_inflection_point": [round(f["x0"], 3) for f in per_fold],
+                    "per_fold_fit_r2": [round(f["r2"], 3) for f in per_fold],
+                    "per_fold_onset90": [f["onsets"][metric] for f in s["per_fold"]],
+                    "fold_mean_curve": {k: mean_fit[k] for k in ("inflection_point", "inflection_frac", "fit_r2",
+                                                                 "rise_fit_pp", "peak_above_chance_pp", "pass",
+                                                                 "accept_rebuttal_rule")},
+                    "boot_inflection_point": {"median": float(np.median(draws)),
+                                              "ci95": [float(np.percentile(draws, 2.5)), float(np.percentile(draws, 97.5))],
+                                              "sd": float(draws.std(ddof=1))},
+                    "boot_inflection_frac_ci95": [(float(np.percentile(draws, 2.5)) - first) / denom,
+                                                  (float(np.percentile(draws, 97.5)) - first) / denom]}
+
+    return rows, boot
+
+
+rows, boot = run(1)
+rows0, boot0 = run(0)
 
 out = {"criterion": {
-    "source": "sonia_joseph.md l.153-154 (summary of the paper authors' OpenReview rebuttal, "
-              "https://openreview.net/forum?id=aijGVmEG9Y; the thread itself was not re-read here)",
+    "source": "our own summary file sonia_joseph.md l.153-154 (a summary of the paper authors' OpenReview rebuttal, "
+              "https://openreview.net/forum?id=aijGVmEG9Y; the rebuttal itself was not re-read here)",
     "quote": "Asked to define \"transition point\", the rebuttal introduced a sigmoid criterion: R² > 0.9, inflection "
              "≤ 50% depth, peak ≥ 15 pp above chance",
-    "applied_as": "4-parameter logistic y = lo + (hi - lo) / (1 + exp(-k (x - x0))) in layer index x (points 0..24, "
-                  "post-LN point excluded), k > 0, x0 bounded to [0, 24], least squares with multi-start; fit R² on "
-                  "the sampled points; depth fraction = x0 / 24; chance = R² 0 (every curve here is an R² curve); "
-                  "peak = observed max over sampled points. accept_rebuttal_rule uses 'peak >= 15 pp above chance' as "
-                  "the source words it; accept_rise_variant replaces it with fitted rise (hi - lo) >= 15 pp",
+    "reading": {"r2": "'R² > 0.9' applied to the R² of the 4-parameter logistic fit to the layer curve (not to the "
+                      "probe score)",
+                "peak": "'peak ≥ 15 pp above chance' read as the observed max of the curve over sampled points minus "
+                        "R² 0 (chance for every R² curve here); accept_rise_variant replaces it with the fitted rise "
+                        "(fitted curve at the last sampled point minus at the first) >= 15 pp",
+                "depth": "the paper's layers 0-23 are our points 1-24 (point 0 = patch embedding, not a paper layer; "
+                         "post-LN point 25 excluded); headline fits use points 1-24 only, depth = (point - 1) / 23, "
+                         "x0 bounded to [1, 24]"},
+    "applied_as": "4-parameter logistic y = lo + (hi - lo) / (1 + exp(-k (x - x0))) in layer index x, k > 0; profile "
+                  "grid then least-squares refinement (wm.sigmoid_onset.fit_logistic4); fit R² on the sampled points",
     "paper_depth": f"the paper's transition at about one third depth = its layer 8 = our point {PAPER_POINT} "
-                   f"(frac {PAPER_POINT / LAST_BLOCK:.3f}); within_1_point_of_paper_depth = |x0 - {PAPER_POINT}| <= 1",
-    "onset90": "stored rule: first sampled point with the curve >= 90% of its max over sampled points"},
+                   f"(depth {(PAPER_POINT - 1) / 23:.3f}); within_1_point_of_paper_depth = |x0 - {PAPER_POINT}| <= 1",
+    "onset90": "first sampled point (of those fitted) with the curve >= 90% of its max over them; onset90_stored = the "
+               "stored onset (computed with point 0 where sampled)"},
     "curves": rows, "fold_bootstrap": {"rule": f"{N_BOOT} draws, rng seed {SEED}: resample the 5 fold curves with "
                                                 "replacement, average, refit the 4PL; per-fold fits beside it. Only "
                                                 "126 distinct resamples exist for 5 folds, so the CI is coarse",
                                         "rows": boot},
+    "with_point0": {"rule": "superseded first pass, kept for comparison: point 0 (patch embedding, R2 ~ 0) included, "
+                            "depth = point / 24, x0 bounded to [0, 24]; point 0 pins the supplied-set inflections at 0",
+                    "curves": rows0, "fold_bootstrap": {"rows": boot0}},
     "input_sha256": files}
 write_json(RESULTS / "p1a_sigmoid_onset.json", out)
 print(f"{'curve':58s} {'x0':>6s} {'frac':>5s} {'R2':>6s} {'rise':>6s} {'peak':>6s} {'acc':>4s} {'o90':>4s}")

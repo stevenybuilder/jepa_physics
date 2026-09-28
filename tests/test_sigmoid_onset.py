@@ -15,6 +15,8 @@ def test_criterion_flags():
     late = criterion(x, logistic4(x, 0.0, 0.9, 2.0, 18.0))
     assert late["pass"]["r2_gt_0.9"] and not late["pass"]["inflection_le_50pct_depth"] and not late["accept_rebuttal_rule"]
     early = criterion(x, logistic4(x, 0.0, 0.9, 2.0, 6.0))
+    shifted = criterion(x, logistic4(x, 0.0, 0.9, 2.0, 6.0), first_point=1)
+    assert abs(shifted["inflection_frac"] - 5 / 23) < 0.01
     assert early["accept_rebuttal_rule"] and abs(early["inflection_frac"] - 0.25) < 0.01
     flat = criterion(x, 0.05 + 0.01 * np.sin(x))
     assert not flat["pass"]["peak_ge_15pp_above_chance"]

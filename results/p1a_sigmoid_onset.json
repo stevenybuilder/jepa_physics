@@ -1,17 +1,21 @@
 {
  "criterion": {
-  "source": "sonia_joseph.md l.153-154 (summary of the paper authors' OpenReview rebuttal, https://openreview.net/forum?id=aijGVmEG9Y; the thread itself was not re-read here)",
+  "source": "our own summary file sonia_joseph.md l.153-154 (a summary of the paper authors' OpenReview rebuttal, https://openreview.net/forum?id=aijGVmEG9Y; the rebuttal itself was not re-read here)",
   "quote": "Asked to define \"transition point\", the rebuttal introduced a sigmoid criterion: R\u00b2 > 0.9, inflection \u2264 50% depth, peak \u2265 15 pp above chance",
-  "applied_as": "4-parameter logistic y = lo + (hi - lo) / (1 + exp(-k (x - x0))) in layer index x (points 0..24, post-LN point excluded), k > 0, x0 bounded to [0, 24], least squares with multi-start; fit R\u00b2 on the sampled points; depth fraction = x0 / 24; chance = R\u00b2 0 (every curve here is an R\u00b2 curve); peak = observed max over sampled points. accept_rebuttal_rule uses 'peak >= 15 pp above chance' as the source words it; accept_rise_variant replaces it with fitted rise (hi - lo) >= 15 pp",
-  "paper_depth": "the paper's transition at about one third depth = its layer 8 = our point 9 (frac 0.375); within_1_point_of_paper_depth = |x0 - 9| <= 1",
-  "onset90": "stored rule: first sampled point with the curve >= 90% of its max over sampled points"
+  "reading": {
+   "r2": "'R\u00b2 > 0.9' applied to the R\u00b2 of the 4-parameter logistic fit to the layer curve (not to the probe score)",
+   "peak": "'peak \u2265 15 pp above chance' read as the observed max of the curve over sampled points minus R\u00b2 0 (chance for every R\u00b2 curve here); accept_rise_variant replaces it with the fitted rise (fitted curve at the last sampled point minus at the first) >= 15 pp",
+   "depth": "the paper's layers 0-23 are our points 1-24 (point 0 = patch embedding, not a paper layer; post-LN point 25 excluded); headline fits use points 1-24 only, depth = (point - 1) / 23, x0 bounded to [1, 24]"
+  },
+  "applied_as": "4-parameter logistic y = lo + (hi - lo) / (1 + exp(-k (x - x0))) in layer index x, k > 0; profile grid then least-squares refinement (wm.sigmoid_onset.fit_logistic4); fit R\u00b2 on the sampled points",
+  "paper_depth": "the paper's transition at about one third depth = its layer 8 = our point 9 (depth 0.348); within_1_point_of_paper_depth = |x0 - 9| <= 1",
+  "onset90": "first sampled point (of those fitted) with the curve >= 90% of its max over them; onset90_stored = the stored onset (computed with point 0 where sampled)"
  },
  "curves": {
   "meanpool/direction/vjepa2": {
    "file": "p1a_direction_direction_meanpool.json",
    "metric": "layers[].cv_mean (5-fold CV R2, train)",
    "points": [
-    0,
     1,
     2,
     3,
@@ -38,7 +42,6 @@
     24
    ],
    "curve": [
-    0.0999,
     0.8746,
     0.9313,
     0.9452,
@@ -64,37 +67,37 @@
     0.9895,
     0.9897
    ],
-   "inflection_point": 2.271085146215583e-17,
-   "inflection_frac": 9.462854775898263e-19,
-   "fit_r2": 0.9928530014547907,
+   "inflection_point": 1.0000000000000002,
+   "inflection_frac": 9.654113257610057e-18,
+   "fit_r2": 0.9407786185189446,
    "fit": {
-    "lo": -0.7782632618180111,
-    "hi": 0.9790447141080564,
-    "k": 2.6956509909938013,
-    "x0": 2.271085146215583e-17,
-    "r2": 0.9928530014547907,
-    "sse": 0.005359801956327997,
+    "lo": 0.7929866357035231,
+    "hi": 0.9873597075088685,
+    "k": 0.5024580198126317,
+    "x0": 1.0000000000000002,
+    "r2": 0.9407786185189446,
+    "sse": 0.0009699340036725874,
     "x0_at_bound": true,
     "k_at_bound": false
    },
    "inflection_bracket": [
-    0.0,
-    1.0
+    1.0,
+    2.0
    ],
-   "rise_fit_pp": 87.86539879630337,
-   "rise_obs_pp": 89.05821159792934,
+   "rise_fit_pp": 9.718467513224027,
+   "rise_obs_pp": 11.596264004935842,
    "peak_above_chance_pp": 99.05177054062138,
    "inflection_before_first_sample": false,
    "pass": {
     "r2_gt_0.9": true,
     "inflection_le_50pct_depth": true,
     "peak_ge_15pp_above_chance": true,
-    "rise_ge_15pp": true
+    "rise_ge_15pp": false
    },
    "accept_rebuttal_rule": true,
-   "accept_rise_variant": true,
+   "accept_rise_variant": false,
    "onset90_point": 2,
-   "onset90_frac": 0.08333333333333333,
+   "onset90_frac": 0.043478260869565216,
    "onset90_stored": 2,
    "within_1_point_of_paper_depth": false
   },
@@ -102,7 +105,6 @@
    "file": "p1a_direction_direction_meanpool_random.json",
    "metric": "layers[].cv_mean (5-fold CV R2, train)",
    "points": [
-    0,
     1,
     2,
     3,
@@ -129,7 +131,6 @@
     24
    ],
    "curve": [
-    0.0581,
     0.8481,
     0.8589,
     0.8622,
@@ -155,37 +156,37 @@
     0.8654,
     0.8649
    ],
-   "inflection_point": 6.350900544197068e-10,
-   "inflection_frac": 2.6462085600821116e-11,
-   "fit_r2": 0.9998783689653556,
+   "inflection_point": 1.0000000000000002,
+   "inflection_frac": 9.654113257610057e-18,
+   "fit_r2": 0.9300954986069335,
    "fit": {
-    "lo": -0.7489976903100453,
-    "hi": 0.8651632829935001,
-    "k": 4.530147145283295,
-    "x0": 6.350900544197068e-10,
-    "r2": 0.9998783689653556,
-    "sse": 7.596591576888238e-05,
+    "lo": 0.8313146106633241,
+    "hi": 0.8656648573710066,
+    "k": 1.1911675589296602,
+    "x0": 1.0000000000000002,
+    "r2": 0.9300954986069335,
+    "sse": 2.4979738278440958e-05,
     "x0_at_bound": true,
     "k_at_bound": false
    },
    "inflection_bracket": [
-    0.0,
-    1.0
+    1.0,
+    2.0
    ],
-   "rise_fit_pp": 80.70804878127788,
-   "rise_obs_pp": 80.95059284954868,
+   "rise_fit_pp": 1.7175123353797894,
+   "rise_obs_pp": 1.9502754068001948,
    "peak_above_chance_pp": 86.75872594148683,
    "inflection_before_first_sample": false,
    "pass": {
     "r2_gt_0.9": true,
     "inflection_le_50pct_depth": true,
     "peak_ge_15pp_above_chance": true,
-    "rise_ge_15pp": true
+    "rise_ge_15pp": false
    },
    "accept_rebuttal_rule": true,
-   "accept_rise_variant": true,
+   "accept_rise_variant": false,
    "onset90_point": 1,
-   "onset90_frac": 0.041666666666666664,
+   "onset90_frac": 0.0,
    "onset90_stored": 1,
    "within_1_point_of_paper_depth": false
   },
@@ -193,7 +194,6 @@
    "file": "p1a_speed_speed_meanpool.json",
    "metric": "layers[].cv_mean (5-fold CV R2, train)",
    "points": [
-    0,
     1,
     2,
     3,
@@ -220,7 +220,6 @@
     24
    ],
    "curve": [
-    -0.0018,
     0.9834,
     0.9831,
     0.9822,
@@ -246,45 +245,44 @@
     0.9926,
     0.9925
    ],
-   "inflection_point": 0.7495502931498078,
-   "inflection_frac": 0.031231262214575325,
-   "fit_r2": 0.9994224509195881,
+   "inflection_point": 9.76176985710103,
+   "inflection_frac": 0.38094651552613173,
+   "fit_r2": 0.9257143452624933,
    "fit": {
-    "lo": -0.0017587193767868382,
-    "hi": 0.9884075783025267,
-    "k": 21.1225883040576,
-    "x0": 0.7495502931498078,
-    "r2": 0.9994224509195881,
-    "sse": 0.0005436965283531336,
+    "lo": 0.9810781076932407,
+    "hi": 0.9926843651808301,
+    "k": 0.5549707526544154,
+    "x0": 9.76176985710103,
+    "r2": 0.9257143452624933,
+    "sse": 4.214478491107957e-05,
     "x0_at_bound": false,
     "k_at_bound": false
    },
    "inflection_bracket": [
-    0.0,
-    1.0
+    9.0,
+    10.0
    ],
-   "rise_fit_pp": 99.01661659247168,
-   "rise_obs_pp": 99.57869862094364,
+   "rise_fit_pp": 1.151292505517354,
+   "rise_obs_pp": 1.5125067923317803,
    "peak_above_chance_pp": 99.40283985872365,
    "inflection_before_first_sample": false,
    "pass": {
     "r2_gt_0.9": true,
     "inflection_le_50pct_depth": true,
     "peak_ge_15pp_above_chance": true,
-    "rise_ge_15pp": true
+    "rise_ge_15pp": false
    },
    "accept_rebuttal_rule": true,
-   "accept_rise_variant": true,
+   "accept_rise_variant": false,
    "onset90_point": 1,
-   "onset90_frac": 0.041666666666666664,
+   "onset90_frac": 0.0,
    "onset90_stored": 1,
-   "within_1_point_of_paper_depth": false
+   "within_1_point_of_paper_depth": true
   },
   "meanpool/speed/random_init": {
    "file": "p1a_speed_speed_meanpool_random.json",
    "metric": "layers[].cv_mean (5-fold CV R2, train)",
    "points": [
-    0,
     1,
     2,
     3,
@@ -311,7 +309,6 @@
     24
    ],
    "curve": [
-    -0.0277,
     0.9202,
     0.9329,
     0.9338,
@@ -337,37 +334,37 @@
     0.9375,
     0.9373
    ],
-   "inflection_point": 1.326574372660243e-14,
-   "inflection_frac": 5.527393219417679e-16,
-   "fit_r2": 0.9999298930688444,
+   "inflection_point": 1.0000000000000002,
+   "inflection_frac": 9.654113257610057e-18,
+   "fit_r2": 0.9145727168830505,
    "fit": {
-    "lo": -0.9930228657862686,
-    "hi": 0.9377002056924599,
-    "k": 4.688833246532113,
-    "x0": 1.326574372660243e-14,
-    "r2": 0.9999298930688444,
-    "sse": 6.264993836255543e-05,
+    "lo": 0.9030541404260053,
+    "hi": 0.9380814721425561,
+    "k": 1.420041495856711,
+    "x0": 1.0000000000000002,
+    "r2": 0.9145727168830505,
+    "sse": 3.0547239839240554e-05,
     "x0_at_bound": true,
     "k_at_bound": false
    },
    "inflection_bracket": [
-    0.0,
-    1.0
+    1.0,
+    2.0
    ],
-   "rise_fit_pp": 96.53615357393943,
-   "rise_obs_pp": 96.75614587273664,
+   "rise_fit_pp": 1.7513665858275185,
+   "rise_obs_pp": 1.9707082304084245,
    "peak_above_chance_pp": 93.98993180264114,
    "inflection_before_first_sample": false,
    "pass": {
     "r2_gt_0.9": true,
     "inflection_le_50pct_depth": true,
     "peak_ge_15pp_above_chance": true,
-    "rise_ge_15pp": true
+    "rise_ge_15pp": false
    },
    "accept_rebuttal_rule": true,
-   "accept_rise_variant": true,
+   "accept_rise_variant": false,
    "onset90_point": 1,
-   "onset90_frac": 0.041666666666666664,
+   "onset90_frac": 0.0,
    "onset90_stored": 1,
    "within_1_point_of_paper_depth": false
   },
@@ -375,7 +372,6 @@
    "file": "p1a_acceleration_acceleration_meanpool.json",
    "metric": "layers[].cv_mean (5-fold CV R2, train)",
    "points": [
-    0,
     1,
     2,
     3,
@@ -402,7 +398,6 @@
     24
    ],
    "curve": [
-    -0.0185,
     0.9769,
     0.9751,
     0.9729,
@@ -428,37 +423,37 @@
     0.9912,
     0.9903
    ],
-   "inflection_point": 0.00044171366859767065,
-   "inflection_frac": 1.8404736191569612e-05,
-   "fit_r2": 0.9985056644268686,
+   "inflection_point": 10.168348167027357,
+   "inflection_frac": 0.3986238333490155,
+   "fit_r2": 0.9419423139101489,
    "fit": {
-    "lo": -1.0185371627084674,
-    "hi": 0.983946252040847,
-    "k": 5.636322646328371,
-    "x0": 0.00044171366859767065,
-    "r2": 0.9985056644268686,
-    "sse": 0.0014430817717288797,
-    "x0_at_bound": true,
+    "lo": 0.9723347952570132,
+    "hi": 0.9912930921314104,
+    "k": 0.5323348139221395,
+    "x0": 10.168348167027357,
+    "r2": 0.9419423139101489,
+    "sse": 8.658561756312341e-05,
+    "x0_at_bound": false,
     "k_at_bound": false
    },
    "inflection_bracket": [
-    0.0,
-    1.0
+    10.0,
+    11.0
    ],
-   "rise_fit_pp": 100.24880728102741,
-   "rise_obs_pp": 101.10039993459267,
+   "rise_fit_pp": 1.8803429175063169,
+   "rise_obs_pp": 2.337522056073038,
    "peak_above_chance_pp": 99.24617264921793,
    "inflection_before_first_sample": false,
    "pass": {
     "r2_gt_0.9": true,
     "inflection_le_50pct_depth": true,
     "peak_ge_15pp_above_chance": true,
-    "rise_ge_15pp": true
+    "rise_ge_15pp": false
    },
    "accept_rebuttal_rule": true,
-   "accept_rise_variant": true,
+   "accept_rise_variant": false,
    "onset90_point": 1,
-   "onset90_frac": 0.041666666666666664,
+   "onset90_frac": 0.0,
    "onset90_stored": 1,
    "within_1_point_of_paper_depth": false
   },
@@ -466,7 +461,6 @@
    "file": "p1a_acceleration_acceleration_meanpool_random.json",
    "metric": "layers[].cv_mean (5-fold CV R2, train)",
    "points": [
-    0,
     1,
     2,
     3,
@@ -493,7 +487,6 @@
     24
    ],
    "curve": [
-    -0.0186,
     0.914,
     0.9275,
     0.9327,
@@ -519,37 +512,37 @@
     0.9339,
     0.9346
    ],
-   "inflection_point": 1.2958993538656737e-09,
-   "inflection_frac": 5.399580641106974e-11,
-   "fit_r2": 0.9998601136407783,
+   "inflection_point": 1.0000000000007054,
+   "inflection_frac": 3.067111781942715e-14,
+   "fit_r2": 0.946525846787851,
    "fit": {
-    "lo": -0.9734210963015608,
-    "hi": 0.9362614294538746,
-    "k": 4.432413141849218,
-    "x0": 1.2958993538656737e-09,
-    "r2": 0.9998601136407783,
-    "sse": 0.00012227797792166154,
+    "lo": 0.8914540952658765,
+    "hi": 0.9368649295432678,
+    "k": 1.2792819253299932,
+    "x0": 1.0000000000007054,
+    "r2": 0.946525846787851,
+    "sse": 3.204800846283062e-05,
     "x0_at_bound": true,
     "k_at_bound": false
    },
    "inflection_bracket": [
-    0.0,
-    1.0
+    1.0,
+    2.0
    ],
-   "rise_fit_pp": 95.48412656200033,
-   "rise_obs_pp": 95.73879739413655,
+   "rise_fit_pp": 2.2705417138698336,
+   "rise_obs_pp": 2.476771970941005,
    "peak_above_chance_pp": 93.8805593612057,
    "inflection_before_first_sample": false,
    "pass": {
     "r2_gt_0.9": true,
     "inflection_le_50pct_depth": true,
     "peak_ge_15pp_above_chance": true,
-    "rise_ge_15pp": true
+    "rise_ge_15pp": false
    },
    "accept_rebuttal_rule": true,
-   "accept_rise_variant": true,
+   "accept_rise_variant": false,
    "onset90_point": 1,
-   "onset90_frac": 0.041666666666666664,
+   "onset90_frac": 0.0,
    "onset90_stored": 1,
    "within_1_point_of_paper_depth": false
   },
@@ -557,7 +550,6 @@
    "file": "p1a_perpatch_direction_vjepa2.json",
    "metric": "curves.perpos_mean_r2 (held-out test R2)",
    "points": [
-    0,
     1,
     2,
     3,
@@ -576,7 +568,6 @@
     24
    ],
    "curve": [
-    0.0049,
     0.5616,
     0.6631,
     0.785,
@@ -594,25 +585,25 @@
     0.9464,
     0.9393
    ],
-   "inflection_point": 2.8574093177238043e-27,
-   "inflection_frac": 1.1905872157182517e-28,
-   "fit_r2": 0.9634308398576238,
+   "inflection_point": 2.103242608788611,
+   "inflection_frac": 0.04796706994733091,
+   "fit_r2": 0.9831538795769331,
    "fit": {
-    "lo": -0.8282980770880675,
-    "hi": 0.9515329462485878,
-    "k": 0.8815225689692777,
-    "x0": 2.8574093177238043e-27,
-    "r2": 0.9634308398576238,
-    "sse": 0.03573048602503132,
-    "x0_at_bound": true,
+    "lo": 0.3811450292701942,
+    "hi": 0.9659327363428275,
+    "k": 0.7113435593004303,
+    "x0": 2.103242608788611,
+    "r2": 0.9831538795769331,
+    "sse": 0.003945120837885929,
+    "x0_at_bound": false,
     "k_at_bound": false
    },
    "inflection_bracket": [
-    0.0,
-    1.0
+    2.0,
+    3.0
    ],
-   "rise_fit_pp": 88.9915510514318,
-   "rise_obs_pp": 97.13389374529179,
+   "rise_fit_pp": 40.15796828424555,
+   "rise_obs_pp": 41.46451716520614,
    "peak_above_chance_pp": 97.62760968525109,
    "inflection_before_first_sample": false,
    "pass": {
@@ -624,7 +615,7 @@
    "accept_rebuttal_rule": true,
    "accept_rise_variant": true,
    "onset90_point": 5,
-   "onset90_frac": 0.20833333333333334,
+   "onset90_frac": 0.17391304347826086,
    "onset90_stored": 5,
    "within_1_point_of_paper_depth": false
   },
@@ -632,7 +623,6 @@
    "file": "p1a_perpatch_direction_vjepa2.json",
    "metric": "curves.cross_half_r2 (held-out test R2)",
    "points": [
-    0,
     1,
     2,
     3,
@@ -651,7 +641,6 @@
     24
    ],
    "curve": [
-    -0.0091,
     0.8228,
     0.8903,
     0.886,
@@ -669,37 +658,37 @@
     0.8088,
     0.8264
    ],
-   "inflection_point": 3.065227606320247e-18,
-   "inflection_frac": 1.2771781693001028e-19,
-   "fit_r2": 0.9593556142588361,
+   "inflection_point": 1.0000000000000002,
+   "inflection_frac": 9.654113257610057e-18,
+   "fit_r2": 0.1828961950511665,
    "fit": {
-    "lo": -0.9266153110462296,
-    "hi": 0.9085404197744399,
-    "k": 2.995459205327035,
-    "x0": 3.065227606320247e-18,
-    "r2": 0.9593556142588361,
-    "sse": 0.03345363124026354,
+    "lo": 0.7399546492134358,
+    "hi": 0.9108909932153767,
+    "k": 1.4492463719875621,
+    "x0": 1.0000000000000002,
+    "r2": 0.1828961950511665,
+    "sse": 0.03303077646108423,
     "x0_at_bound": true,
     "k_at_bound": false
    },
    "inflection_bracket": [
-    0.0,
-    1.0
+    1.0,
+    2.0
    ],
-   "rise_fit_pp": 91.75778654103348,
-   "rise_obs_pp": 96.87928443462155,
+   "rise_fit_pp": 8.54681720009699,
+   "rise_obs_pp": 15.090630137901261,
    "peak_above_chance_pp": 95.96679553713227,
    "inflection_before_first_sample": false,
    "pass": {
-    "r2_gt_0.9": true,
+    "r2_gt_0.9": false,
     "inflection_le_50pct_depth": true,
     "peak_ge_15pp_above_chance": true,
-    "rise_ge_15pp": true
+    "rise_ge_15pp": false
    },
-   "accept_rebuttal_rule": true,
-   "accept_rise_variant": true,
+   "accept_rebuttal_rule": false,
+   "accept_rise_variant": false,
    "onset90_point": 2,
-   "onset90_frac": 0.08333333333333333,
+   "onset90_frac": 0.043478260869565216,
    "onset90_stored": 2,
    "within_1_point_of_paper_depth": false
   },
@@ -707,7 +696,6 @@
    "file": "p1a_perpatch_direction_vjepa2.json",
    "metric": "curves.meanpool_r2 (held-out test R2)",
    "points": [
-    0,
     1,
     2,
     3,
@@ -726,7 +714,6 @@
     24
    ],
    "curve": [
-    0.0349,
     0.889,
     0.9402,
     0.9526,
@@ -744,37 +731,37 @@
     0.9919,
     0.9912
    ],
-   "inflection_point": 7.615858549113878e-20,
-   "inflection_frac": 3.173274395464116e-21,
-   "fit_r2": 0.9962286550415056,
+   "inflection_point": 1.0000000000000002,
+   "inflection_frac": 9.654113257610057e-18,
+   "fit_r2": 0.9490432987535948,
    "fit": {
-    "lo": -0.9083522441716132,
-    "hi": 0.9785750258629272,
-    "k": 2.952418676063572,
-    "x0": 7.615858549113878e-20,
-    "r2": 0.9962286550415056,
-    "sse": 0.0031609419100200836,
+    "lo": 0.8098396801994118,
+    "hi": 0.9874958510508226,
+    "k": 0.6306439119577959,
+    "x0": 1.0000000000000002,
+    "r2": 0.9490432987535948,
+    "sse": 0.0005573552182491805,
     "x0_at_bound": true,
     "k_at_bound": false
    },
    "inflection_bracket": [
-    0.0,
-    1.0
+    1.0,
+    2.0
    ],
-   "rise_fit_pp": 94.34636350172703,
-   "rise_obs_pp": 95.69828965969303,
+   "rise_fit_pp": 8.882799625521686,
+   "rise_obs_pp": 10.286977922681107,
    "peak_above_chance_pp": 99.18789883741016,
    "inflection_before_first_sample": false,
    "pass": {
     "r2_gt_0.9": true,
     "inflection_le_50pct_depth": true,
     "peak_ge_15pp_above_chance": true,
-    "rise_ge_15pp": true
+    "rise_ge_15pp": false
    },
    "accept_rebuttal_rule": true,
-   "accept_rise_variant": true,
+   "accept_rise_variant": false,
    "onset90_point": 2,
-   "onset90_frac": 0.08333333333333333,
+   "onset90_frac": 0.043478260869565216,
    "onset90_stored": 2,
    "within_1_point_of_paper_depth": false
   },
@@ -782,7 +769,6 @@
    "file": "p1a_perpatch_direction_vjepa2_constvel.json",
    "metric": "curves.perpos_mean_r2 (held-out test R2)",
    "points": [
-    0,
     1,
     2,
     3,
@@ -801,7 +787,6 @@
     24
    ],
    "curve": [
-    0.0089,
     0.5384,
     0.7277,
     0.7624,
@@ -819,25 +804,25 @@
     0.9425,
     0.9369
    ],
-   "inflection_point": 9.232775839091082e-30,
-   "inflection_frac": 3.8469899329546175e-31,
-   "fit_r2": 0.9565169756478845,
+   "inflection_point": 1.0000000000000002,
+   "inflection_frac": 9.654113257610057e-18,
+   "fit_r2": 0.9492122665146204,
    "fit": {
-    "lo": -0.8312969484714821,
-    "hi": 0.947219150548338,
-    "k": 0.9119686944893842,
-    "x0": 9.232775839091082e-30,
-    "r2": 0.9565169756478845,
-    "sse": 0.04222191353971546,
+    "lo": 0.1554284329307208,
+    "hi": 0.9674513839722939,
+    "k": 0.5584939211140986,
+    "x0": 1.0000000000000002,
+    "r2": 0.9492122665146204,
+    "sse": 0.012079831314480765,
     "x0_at_bound": true,
     "k_at_bound": false
    },
    "inflection_bracket": [
-    0.0,
-    1.0
+    1.0,
+    2.0
    ],
-   "rise_fit_pp": 88.92580489545863,
-   "rise_obs_pp": 97.13264083144362,
+   "rise_fit_pp": 40.60093331328618,
+   "rise_obs_pp": 44.179607268383634,
    "peak_above_chance_pp": 98.02028064394865,
    "inflection_before_first_sample": false,
    "pass": {
@@ -849,7 +834,7 @@
    "accept_rebuttal_rule": true,
    "accept_rise_variant": true,
    "onset90_point": 6,
-   "onset90_frac": 0.25,
+   "onset90_frac": 0.21739130434782608,
    "onset90_stored": 6,
    "within_1_point_of_paper_depth": false
   },
@@ -857,7 +842,6 @@
    "file": "p1a_perpatch_direction_vjepa2_constvel.json",
    "metric": "curves.cross_half_r2 (held-out test R2)",
    "points": [
-    0,
     1,
     2,
     3,
@@ -876,7 +860,6 @@
     24
    ],
    "curve": [
-    -0.0179,
     0.8724,
     0.9116,
     0.8975,
@@ -894,37 +877,37 @@
     0.8395,
     0.8631
    ],
-   "inflection_point": 1.837648845985953e-08,
-   "inflection_frac": 7.656870191608137e-10,
-   "fit_r2": 0.9677644206823972,
+   "inflection_point": 4.817089524975522,
+   "inflection_frac": 0.16596041412937051,
+   "fit_r2": 0.09456082093409868,
    "fit": {
-    "lo": -0.9549415218732352,
-    "hi": 0.9192521539621115,
-    "k": 3.655447210616462,
-    "x0": 1.837648845985953e-08,
-    "r2": 0.9677644206823972,
-    "sse": 0.027421564236802837,
-    "x0_at_bound": true,
+    "lo": 0.8933625584509052,
+    "hi": 0.9239503061492087,
+    "k": 16.937848442286096,
+    "x0": 4.817089524975522,
+    "r2": 0.09456082093409868,
+    "sse": 0.026698260656212565,
+    "x0_at_bound": false,
     "k_at_bound": false
    },
    "inflection_bracket": [
-    0.0,
-    1.0
+    4.0,
+    5.0
    ],
-   "rise_fit_pp": 93.70968693920777,
-   "rise_obs_pp": 99.15589900639714,
+   "rise_fit_pp": 3.0587747698303525,
+   "rise_obs_pp": 13.420923695571407,
    "peak_above_chance_pp": 97.37036438729544,
    "inflection_before_first_sample": false,
    "pass": {
-    "r2_gt_0.9": true,
+    "r2_gt_0.9": false,
     "inflection_le_50pct_depth": true,
     "peak_ge_15pp_above_chance": true,
-    "rise_ge_15pp": true
+    "rise_ge_15pp": false
    },
-   "accept_rebuttal_rule": true,
-   "accept_rise_variant": true,
+   "accept_rebuttal_rule": false,
+   "accept_rise_variant": false,
    "onset90_point": 2,
-   "onset90_frac": 0.08333333333333333,
+   "onset90_frac": 0.043478260869565216,
    "onset90_stored": 2,
    "within_1_point_of_paper_depth": false
   },
@@ -932,7 +915,6 @@
    "file": "p1a_perpatch_direction_vjepa2_constvel.json",
    "metric": "curves.meanpool_r2 (held-out test R2)",
    "points": [
-    0,
     1,
     2,
     3,
@@ -951,7 +933,6 @@
     24
    ],
    "curve": [
-    0.1193,
     0.8996,
     0.9507,
     0.9645,
@@ -969,37 +950,37 @@
     0.991,
     0.9921
    ],
-   "inflection_point": 1.0012599071655041e-19,
-   "inflection_frac": 4.171916279856267e-21,
-   "fit_r2": 0.9974313768876385,
+   "inflection_point": 1.0000000000000002,
+   "inflection_frac": 9.654113257610057e-18,
+   "fit_r2": 0.9398628196078971,
    "fit": {
-    "lo": -0.7428285867764948,
-    "hi": 0.9817229637439157,
-    "k": 2.9556169925389386,
-    "x0": 1.0012599071655041e-19,
-    "r2": 0.9974313768876385,
-    "sse": 0.0017961030718857234,
+    "lo": 0.8230524692307013,
+    "hi": 0.9867353105771338,
+    "k": 0.8984450207717453,
+    "x0": 1.0000000000000002,
+    "r2": 0.9398628196078971,
+    "sse": 0.0004992069021663053,
     "x0_at_bound": true,
     "k_at_bound": false
    },
    "inflection_bracket": [
-    0.0,
-    1.0
+    1.0,
+    2.0
    ],
-   "rise_fit_pp": 86.22757752602053,
-   "rise_obs_pp": 87.27915854725484,
+   "rise_fit_pp": 8.184142049958021,
+   "rise_obs_pp": 9.248416250251656,
    "peak_above_chance_pp": 99.2071405685091,
    "inflection_before_first_sample": false,
    "pass": {
     "r2_gt_0.9": true,
     "inflection_le_50pct_depth": true,
     "peak_ge_15pp_above_chance": true,
-    "rise_ge_15pp": true
+    "rise_ge_15pp": false
    },
    "accept_rebuttal_rule": true,
-   "accept_rise_variant": true,
+   "accept_rise_variant": false,
    "onset90_point": 1,
-   "onset90_frac": 0.041666666666666664,
+   "onset90_frac": 0.0,
    "onset90_stored": 1,
    "within_1_point_of_paper_depth": false
   },
@@ -1030,16 +1011,16 @@
     0.9652,
     0.9631
    ],
-   "inflection_point": 5.7322012615191555,
-   "inflection_frac": 0.2388417192299648,
-   "fit_r2": 0.9668800761710632,
+   "inflection_point": 5.732201160646334,
+   "inflection_frac": 0.2057478765498406,
+   "fit_r2": 0.966880076171286,
    "fit": {
-    "lo": 0.4603555300113243,
-    "hi": 0.9635213192395448,
-    "k": 0.7843993398426176,
-    "x0": 5.7322012615191555,
-    "r2": 0.9668800761710632,
-    "sse": 0.009814719925936728,
+    "lo": 0.4603555208982056,
+    "hi": 0.9635213195923079,
+    "k": 0.7843992993046364,
+    "x0": 5.732201160646334,
+    "r2": 0.966880076171286,
+    "sse": 0.00981471992587068,
     "x0_at_bound": false,
     "k_at_bound": false
    },
@@ -1047,7 +1028,7 @@
     4.0,
     6.0
    ],
-   "rise_fit_pp": 49.1165052359449,
+   "rise_fit_pp": 49.11650584249522,
    "rise_obs_pp": 47.8193057873591,
    "peak_above_chance_pp": 96.8592558376101,
    "inflection_before_first_sample": false,
@@ -1060,7 +1041,7 @@
    "accept_rebuttal_rule": true,
    "accept_rise_variant": true,
    "onset90_point": 9,
-   "onset90_frac": 0.375,
+   "onset90_frac": 0.34782608695652173,
    "onset90_stored": 9,
    "within_1_point_of_paper_depth": false
   },
@@ -1091,16 +1072,16 @@
     0.3637,
     0.7464
    ],
-   "inflection_point": 8.953692476149008,
-   "inflection_frac": 0.37307051983954204,
-   "fit_r2": 0.4764769188952098,
+   "inflection_point": 8.953697302372012,
+   "inflection_frac": 0.34581292619008747,
+   "fit_r2": 0.4764769188833946,
    "fit": {
-    "lo": -0.6638810311721574,
-    "hi": 0.4023334534776196,
-    "k": 17.73175022396145,
-    "x0": 8.953692476149008,
-    "r2": 0.4764769188952098,
-    "sse": 2.846034739431806,
+    "lo": -0.6638810322947549,
+    "hi": 0.4023334546091275,
+    "k": 17.73353388350129,
+    "x0": 8.953697302372012,
+    "r2": 0.4764769188833946,
+    "sse": 2.846034739496037,
     "x0_at_bound": false,
     "k_at_bound": false
    },
@@ -1108,7 +1089,7 @@
     8.0,
     9.0
    ],
-   "rise_fit_pp": 106.6214484649777,
+   "rise_fit_pp": 106.62144869038825,
    "rise_obs_pp": 216.8374336931726,
    "peak_above_chance_pp": 74.64401861439762,
    "inflection_before_first_sample": false,
@@ -1121,7 +1102,7 @@
    "accept_rebuttal_rule": false,
    "accept_rise_variant": false,
    "onset90_point": 1,
-   "onset90_frac": 0.041666666666666664,
+   "onset90_frac": 0.0,
    "onset90_stored": 1,
    "within_1_point_of_paper_depth": true
   },
@@ -1152,16 +1133,16 @@
     0.9879,
     0.9909
    ],
-   "inflection_point": 3.627280628484943,
-   "inflection_frac": 0.15113669285353928,
-   "fit_r2": 0.9932484743919189,
+   "inflection_point": 3.627282122653174,
+   "inflection_frac": 0.11422965750665974,
+   "fit_r2": 0.9932484743918428,
    "fit": {
-    "lo": 0.7478248172542991,
-    "hi": 0.9918520854708027,
-    "k": 0.37019212932928397,
-    "x0": 3.627280628484943,
-    "r2": 0.9932484743919189,
-    "sse": 0.0001922537938998072,
+    "lo": 0.74782487650718,
+    "hi": 0.9918520818609237,
+    "k": 0.37019222342597524,
+    "x0": 3.627282122653174,
+    "r2": 0.9932484743918428,
+    "sse": 0.00019225379390197438,
     "x0_at_bound": false,
     "k_at_bound": false
    },
@@ -1169,7 +1150,7 @@
     1.0,
     4.0
    ],
-   "rise_fit_pp": 17.680415216123546,
+   "rise_fit_pp": 17.680414581707105,
    "rise_obs_pp": 17.71953835084591,
    "peak_above_chance_pp": 99.09410537907043,
    "inflection_before_first_sample": false,
@@ -1182,7 +1163,7 @@
    "accept_rebuttal_rule": true,
    "accept_rise_variant": true,
    "onset90_point": 6,
-   "onset90_frac": 0.25,
+   "onset90_frac": 0.21739130434782608,
    "onset90_stored": 6,
    "within_1_point_of_paper_depth": false
   },
@@ -1219,16 +1200,16 @@
     0.9672,
     0.9639
    ],
-   "inflection_point": 5.755012947727592,
-   "inflection_frac": 0.23979220615531635,
-   "fit_r2": 0.9800899046230758,
+   "inflection_point": 5.7550129468568345,
+   "inflection_frac": 0.2067396933416015,
+   "fit_r2": 0.9800899046230744,
    "fit": {
-    "lo": 0.5409847192660504,
-    "hi": 0.965120323250387,
-    "k": 0.813608772964894,
-    "x0": 5.755012947727592,
-    "r2": 0.9800899046230758,
-    "sse": 0.007075049191952988,
+    "lo": 0.5409847197186093,
+    "hi": 0.965120322861848,
+    "k": 0.8136087782616814,
+    "x0": 5.7550129468568345,
+    "r2": 0.9800899046230744,
+    "sse": 0.007075049191953442,
     "x0_at_bound": false,
     "k_at_bound": false
    },
@@ -1236,7 +1217,7 @@
     5.0,
     6.0
    ],
-   "rise_fit_pp": 41.545794384447476,
+   "rise_fit_pp": 41.54579432286988,
    "rise_obs_pp": 42.68034205382521,
    "peak_above_chance_pp": 96.85568686734638,
    "inflection_before_first_sample": false,
@@ -1249,7 +1230,7 @@
    "accept_rebuttal_rule": true,
    "accept_rise_variant": true,
    "onset90_point": 8,
-   "onset90_frac": 0.3333333333333333,
+   "onset90_frac": 0.30434782608695654,
    "onset90_stored": 8,
    "within_1_point_of_paper_depth": false
   },
@@ -1286,16 +1267,16 @@
     0.5794,
     0.7432
    ],
-   "inflection_point": 8.966158463582458,
-   "inflection_frac": 0.37358993598260243,
-   "fit_r2": 0.23693016278273715,
+   "inflection_point": 8.96615203589658,
+   "inflection_frac": 0.3463544363433295,
+   "fit_r2": 0.23693016277610635,
    "fit": {
-    "lo": -0.06087089056520688,
-    "hi": 0.6168211370844949,
-    "k": 19.33021383684077,
-    "x0": 8.966158463582458,
-    "r2": 0.23693016278273715,
-    "sse": 4.088250765470894,
+    "lo": -0.06087089057081284,
+    "hi": 0.6168211370915757,
+    "k": 19.326546577729797,
+    "x0": 8.96615203589658,
+    "r2": 0.23693016277610635,
+    "sse": 4.0882507655064195,
     "x0_at_bound": false,
     "k_at_bound": false
    },
@@ -1303,7 +1284,7 @@
     8.0,
     9.0
    ],
-   "rise_fit_pp": 67.76920276497019,
+   "rise_fit_pp": 67.76920276623886,
    "rise_obs_pp": 190.05403455292503,
    "peak_above_chance_pp": 74.32206382260723,
    "inflection_before_first_sample": false,
@@ -1316,7 +1297,7 @@
    "accept_rebuttal_rule": false,
    "accept_rise_variant": false,
    "onset90_point": 1,
-   "onset90_frac": 0.041666666666666664,
+   "onset90_frac": 0.0,
    "onset90_stored": 1,
    "within_1_point_of_paper_depth": true
   },
@@ -1353,16 +1334,16 @@
     0.9883,
     0.9912
    ],
-   "inflection_point": 4.592717174762506,
-   "inflection_frac": 0.19136321561510442,
-   "fit_r2": 0.9352653044649805,
+   "inflection_point": 4.592717571574534,
+   "inflection_frac": 0.15620511180758842,
+   "fit_r2": 0.9352653044643828,
    "fit": {
-    "lo": 0.7997246776012287,
-    "hi": 0.9848481634032942,
-    "k": 0.591787756334047,
-    "x0": 4.592717174762506,
-    "r2": 0.9352653044649805,
-    "sse": 0.0031419524312938964,
+    "lo": 0.7997246919145302,
+    "hi": 0.9848481634527569,
+    "k": 0.5917878163317266,
+    "x0": 4.592717571574534,
+    "r2": 0.9352653044643828,
+    "sse": 0.0031419524313228988,
     "x0_at_bound": false,
     "k_at_bound": false
    },
@@ -1370,7 +1351,7 @@
     4.0,
     5.0
    ],
-   "rise_fit_pp": 16.538619253633115,
+   "rise_fit_pp": 16.538618773767787,
    "rise_obs_pp": 20.044435203575283,
    "peak_above_chance_pp": 99.12300054708389,
    "inflection_before_first_sample": false,
@@ -1383,7 +1364,7 @@
    "accept_rebuttal_rule": true,
    "accept_rise_variant": true,
    "onset90_point": 5,
-   "onset90_frac": 0.20833333333333334,
+   "onset90_frac": 0.17391304347826086,
    "onset90_stored": 5,
    "within_1_point_of_paper_depth": false
   },
@@ -1420,16 +1401,16 @@
     0.9727,
     0.9721
    ],
-   "inflection_point": 5.9347887466191205,
-   "inflection_frac": 0.24728286444246336,
-   "fit_r2": 0.9811267603606514,
+   "inflection_point": 5.9347887710435385,
+   "inflection_frac": 0.21455603352363212,
+   "fit_r2": 0.9811267603606334,
    "fit": {
-    "lo": 0.5321893882473833,
-    "hi": 0.9718703868574311,
-    "k": 0.7584072032193623,
-    "x0": 5.9347887466191205,
-    "r2": 0.9811267603606514,
-    "sse": 0.007036587172760382,
+    "lo": 0.532189391250641,
+    "hi": 0.9718703862495057,
+    "k": 0.7584072216017937,
+    "x0": 5.9347887710435385,
+    "r2": 0.9811267603606334,
+    "sse": 0.007036587172767068,
     "x0_at_bound": false,
     "k_at_bound": false
    },
@@ -1437,7 +1418,7 @@
     5.0,
     6.0
    ],
-   "rise_fit_pp": 42.95025319871684,
+   "rise_fit_pp": 42.950252954609724,
    "rise_obs_pp": 42.64176536685061,
    "peak_above_chance_pp": 97.27126787829602,
    "inflection_before_first_sample": false,
@@ -1450,7 +1431,7 @@
    "accept_rebuttal_rule": true,
    "accept_rise_variant": true,
    "onset90_point": 8,
-   "onset90_frac": 0.3333333333333333,
+   "onset90_frac": 0.30434782608695654,
    "onset90_stored": 8,
    "within_1_point_of_paper_depth": false
   },
@@ -1487,16 +1468,16 @@
     0.6049,
     0.7941
    ],
-   "inflection_point": 9.017952710092276,
-   "inflection_frac": 0.3757480295871782,
-   "fit_r2": 0.23669707845301358,
+   "inflection_point": 9.0177741530024,
+   "inflection_frac": 0.34859887621749563,
+   "fit_r2": 0.23669707890346536,
    "fit": {
-    "lo": -0.29409847236183345,
-    "hi": 0.6007369818785526,
-    "k": 17.85227512552768,
-    "x0": 9.017952710092276,
-    "r2": 0.23669707845301358,
-    "sse": 6.903999887527171,
+    "lo": -0.29409847374617143,
+    "hi": 0.6007369786564527,
+    "k": 18.030906916543152,
+    "x0": 9.0177741530024,
+    "r2": 0.23669707890346536,
+    "sse": 6.903999883452879,
     "x0_at_bound": false,
     "k_at_bound": false
    },
@@ -1504,7 +1485,7 @@
     9.0,
     10.0
    ],
-   "rise_fit_pp": 89.4835454240386,
+   "rise_fit_pp": 89.4835452402624,
    "rise_obs_pp": 263.51136722515116,
    "peak_above_chance_pp": 79.40525198399611,
    "inflection_before_first_sample": false,
@@ -1517,7 +1498,7 @@
    "accept_rebuttal_rule": false,
    "accept_rise_variant": false,
    "onset90_point": 2,
-   "onset90_frac": 0.08333333333333333,
+   "onset90_frac": 0.043478260869565216,
    "onset90_stored": 2,
    "within_1_point_of_paper_depth": true
   },
@@ -1554,16 +1535,16 @@
     0.9925,
     0.9935
    ],
-   "inflection_point": 5.120194051587074,
-   "inflection_frac": 0.2133414188161281,
-   "fit_r2": 0.9612127892756501,
+   "inflection_point": 5.120194182746333,
+   "inflection_frac": 0.17913887751071014,
+   "fit_r2": 0.9612127892757064,
    "fit": {
-    "lo": 0.7901690353430411,
-    "hi": 0.9932716942531193,
-    "k": 0.4532132848329339,
-    "x0": 5.120194051587074,
-    "r2": 0.9612127892756501,
-    "sse": 0.0019543167840035394,
+    "lo": 0.790169040882927,
+    "hi": 0.9932716933972794,
+    "k": 0.45321330680443217,
+    "x0": 5.120194182746333,
+    "r2": 0.9612127892757064,
+    "sse": 0.001954316784000702,
     "x0_at_bound": false,
     "k_at_bound": false
    },
@@ -1571,7 +1552,7 @@
     5.0,
     6.0
    ],
-   "rise_fit_pp": 17.58204685011342,
+   "rise_fit_pp": 17.582046652590865,
    "rise_obs_pp": 19.100249624044764,
    "peak_above_chance_pp": 99.34922630230709,
    "inflection_before_first_sample": false,
@@ -1584,7 +1565,7 @@
    "accept_rebuttal_rule": true,
    "accept_rise_variant": true,
    "onset90_point": 5,
-   "onset90_frac": 0.20833333333333334,
+   "onset90_frac": 0.17391304347826086,
    "onset90_stored": 5,
    "within_1_point_of_paper_depth": false
   },
@@ -1615,16 +1596,16 @@
     0.9582,
     0.9291
    ],
-   "inflection_point": 3.5229816035492476,
-   "inflection_frac": 0.14679090014788532,
-   "fit_r2": 0.9908151231761062,
+   "inflection_point": 3.5229810980196468,
+   "inflection_frac": 0.1096948303486803,
+   "fit_r2": 0.9908151231760589,
    "fit": {
-    "lo": 0.4679096550655877,
-    "hi": 0.9616007532308259,
-    "k": 1.7837155264995446,
-    "x0": 3.5229816035492476,
-    "r2": 0.9908151231761062,
-    "sse": 0.0020293208998513725,
+    "lo": 0.4679096261270596,
+    "hi": 0.9616007564581505,
+    "k": 1.783713783608176,
+    "x0": 3.5229810980196468,
+    "r2": 0.9908151231760589,
+    "sse": 0.002029320899861837,
     "x0_at_bound": false,
     "k_at_bound": false
    },
@@ -1632,7 +1613,7 @@
     1.0,
     4.0
    ],
-   "rise_fit_pp": 48.82684520903366,
+   "rise_fit_pp": 48.82684554838078,
    "rise_obs_pp": 50.50833401494303,
    "peak_above_chance_pp": 97.84199053434817,
    "inflection_before_first_sample": false,
@@ -1645,7 +1626,7 @@
    "accept_rebuttal_rule": true,
    "accept_rise_variant": true,
    "onset90_point": 6,
-   "onset90_frac": 0.25,
+   "onset90_frac": 0.21739130434782608,
    "onset90_stored": 6,
    "within_1_point_of_paper_depth": false
   },
@@ -1676,24 +1657,24 @@
     0.8929,
     0.8616
    ],
-   "inflection_point": 4.005297843540684,
-   "inflection_frac": 0.1668874101475285,
-   "fit_r2": 0.5986569060748999,
+   "inflection_point": 4.002007891583313,
+   "inflection_frac": 0.13052208224275272,
+   "fit_r2": 0.5986569060749001,
    "fit": {
-    "lo": 0.8134695037796043,
-    "hi": 0.936549615010412,
-    "k": 18.95008384786422,
-    "x0": 4.005297843540684,
-    "r2": 0.5986569060748999,
-    "sse": 0.010593707013840107,
+    "lo": 0.8134695037807544,
+    "hi": 0.9365496150105447,
+    "k": 49.99999999500012,
+    "x0": 4.002007891583313,
+    "r2": 0.5986569060749001,
+    "sse": 0.010593707013840105,
     "x0_at_bound": false,
-    "k_at_bound": false
+    "k_at_bound": true
    },
    "inflection_bracket": [
     4.0,
     6.0
    ],
-   "rise_fit_pp": 12.308011123080774,
+   "rise_fit_pp": 12.308011122979023,
    "rise_obs_pp": 15.775353451469742,
    "peak_above_chance_pp": 97.12230382975808,
    "inflection_before_first_sample": false,
@@ -1706,7 +1687,7 @@
    "accept_rebuttal_rule": false,
    "accept_rise_variant": false,
    "onset90_point": 6,
-   "onset90_frac": 0.25,
+   "onset90_frac": 0.21739130434782608,
    "onset90_stored": 6,
    "within_1_point_of_paper_depth": false
   },
@@ -1737,27 +1718,27 @@
     0.9902,
     0.9934
    ],
-   "inflection_point": 7.03488482478298e-24,
-   "inflection_frac": 2.931202010326242e-25,
-   "fit_r2": 0.9813680951176588,
+   "inflection_point": 1.0000000000000002,
+   "inflection_frac": 9.654113257610057e-18,
+   "fit_r2": 0.9792860420752398,
    "fit": {
-    "lo": 0.5939913751662731,
-    "hi": 0.9861774662783159,
-    "k": 0.6095145219744965,
-    "x0": 7.03488482478298e-24,
-    "r2": 0.9813680951176588,
-    "sse": 0.0003146326502252641,
+    "lo": 0.7105175540649727,
+    "hi": 0.9855881422739424,
+    "k": 0.691900017369052,
+    "x0": 1.0000000000000002,
+    "r2": 0.9792860420752398,
+    "sse": 0.00034979179636639336,
     "x0_at_bound": true,
     "k_at_bound": false
    },
    "inflection_bracket": [
-    null,
-    1.0
+    1.0,
+    4.0
    ],
-   "rise_fit_pp": 13.811556738133712,
+   "rise_fit_pp": 13.753515946005468,
    "rise_obs_pp": 14.611203111233351,
    "peak_above_chance_pp": 99.33992485343272,
-   "inflection_before_first_sample": true,
+   "inflection_before_first_sample": false,
    "pass": {
     "r2_gt_0.9": true,
     "inflection_le_50pct_depth": true,
@@ -1767,7 +1748,7 @@
    "accept_rebuttal_rule": true,
    "accept_rise_variant": false,
    "onset90_point": 4,
-   "onset90_frac": 0.16666666666666666,
+   "onset90_frac": 0.13043478260869565,
    "onset90_stored": 4,
    "within_1_point_of_paper_depth": false
   },
@@ -1775,7 +1756,6 @@
    "file": "p1a_perpatch_direction_random.json",
    "metric": "curves.perpos_mean_r2 (held-out test R2)",
    "points": [
-    0,
     1,
     2,
     3,
@@ -1794,7 +1774,6 @@
     24
    ],
    "curve": [
-    0.0067,
     -0.0123,
     -0.021,
     0.0446,
@@ -1812,24 +1791,24 @@
     0.3798,
     0.3845
    ],
-   "inflection_point": 4.81545306810865,
-   "inflection_frac": 0.20064387783786042,
-   "fit_r2": 0.9765372339769456,
+   "inflection_point": 3.2602021941439823,
+   "inflection_frac": 0.09826966061495575,
+   "fit_r2": 0.9823197672942603,
    "fit": {
-    "lo": -0.07032459944092562,
-    "hi": 0.3589466542294917,
-    "k": 0.4612428344832796,
-    "x0": 4.81545306810865,
-    "r2": 0.9765372339769456,
-    "sse": 0.00786963864093778,
+    "lo": -0.2195009639545698,
+    "hi": 0.36513307027242237,
+    "k": 0.354445566141826,
+    "x0": 3.2602021941439823,
+    "r2": 0.9823197672942603,
+    "sse": 0.005054041092356581,
     "x0_at_bound": false,
     "k_at_bound": false
    },
    "inflection_bracket": [
-    4.0,
-    5.0
+    3.0,
+    4.0
    ],
-   "rise_fit_pp": 38.71958967699821,
+   "rise_fit_pp": 40.314741473251736,
    "rise_obs_pp": 40.557168293755005,
    "peak_above_chance_pp": 38.4545818692615,
    "inflection_before_first_sample": false,
@@ -1842,7 +1821,7 @@
    "accept_rebuttal_rule": true,
    "accept_rise_variant": true,
    "onset90_point": 16,
-   "onset90_frac": 0.6666666666666666,
+   "onset90_frac": 0.6521739130434783,
    "onset90_stored": 16,
    "within_1_point_of_paper_depth": false
   },
@@ -1850,7 +1829,6 @@
    "file": "p1a_perpatch_direction_random.json",
    "metric": "curves.cross_half_r2 (held-out test R2)",
    "points": [
-    0,
     1,
     2,
     3,
@@ -1869,7 +1847,6 @@
     24
    ],
    "curve": [
-    -0.0088,
     0.6117,
     0.638,
     0.6484,
@@ -1887,37 +1864,37 @@
     0.74,
     0.7441
    ],
-   "inflection_point": 8.704976815600662e-18,
-   "inflection_frac": 3.6270736731669423e-19,
-   "fit_r2": 0.9709893208568976,
+   "inflection_point": 1.0000000000000002,
+   "inflection_frac": 9.654113257610057e-18,
+   "fit_r2": 0.982456157363646,
    "fit": {
-    "lo": -0.7185330132740665,
-    "hi": 0.7028153448946127,
-    "k": 2.5559503258492664,
-    "x0": 8.704976815600662e-18,
-    "r2": 0.9709893208568976,
-    "sse": 0.014216828349525736,
+    "lo": 0.5004184749741817,
+    "hi": 0.7370460588498814,
+    "k": 0.2537093517797902,
+    "x0": 1.0000000000000002,
+    "r2": 0.982456157363646,
+    "sse": 0.00039884085799723394,
     "x0_at_bound": true,
     "k_at_bound": false
    },
    "inflection_bracket": [
-    0.0,
-    1.0
+    1.0,
+    2.0
    ],
-   "rise_fit_pp": 71.06741790843397,
-   "rise_obs_pp": 75.28369555628134,
+   "rise_fit_pp": 11.762426244045232,
+   "rise_obs_pp": 13.239245136876088,
    "peak_above_chance_pp": 74.40847341639866,
    "inflection_before_first_sample": false,
    "pass": {
     "r2_gt_0.9": true,
     "inflection_le_50pct_depth": true,
     "peak_ge_15pp_above_chance": true,
-    "rise_ge_15pp": true
+    "rise_ge_15pp": false
    },
    "accept_rebuttal_rule": true,
-   "accept_rise_variant": true,
+   "accept_rise_variant": false,
    "onset90_point": 5,
-   "onset90_frac": 0.20833333333333334,
+   "onset90_frac": 0.17391304347826086,
    "onset90_stored": 5,
    "within_1_point_of_paper_depth": false
   },
@@ -1925,7 +1902,6 @@
    "file": "p1a_perpatch_direction_random.json",
    "metric": "curves.meanpool_r2 (held-out test R2)",
    "points": [
-    0,
     1,
     2,
     3,
@@ -1944,7 +1920,6 @@
     24
    ],
    "curve": [
-    0.0121,
     0.8616,
     0.8729,
     0.8702,
@@ -1962,37 +1937,37 @@
     0.873,
     0.8704
    ],
-   "inflection_point": 1.4912326027498543e-10,
-   "inflection_frac": 6.213469178124393e-12,
-   "fit_r2": 0.9997922395523252,
+   "inflection_point": 1.0000000000000087,
+   "inflection_frac": 3.765104170467922e-16,
+   "fit_r2": 0.6251441603565902,
    "fit": {
-    "lo": -0.8517718624133745,
-    "hi": 0.8758798685257212,
-    "k": 4.784393950451225,
-    "x0": 1.4912326027498543e-10,
-    "r2": 0.9997922395523252,
-    "sse": 0.0001456758017121126,
+    "lo": 0.8480358712428017,
+    "hi": 0.8764328762149708,
+    "k": 1.2759652143313813,
+    "x0": 1.0000000000000087,
+    "r2": 0.6251441603565902,
+    "sse": 0.0001263485674237546,
     "x0_at_bound": true,
     "k_at_bound": false
    },
    "inflection_bracket": [
-    0.0,
-    1.0
+    1.0,
+    2.0
    ],
-   "rise_fit_pp": 86.38258657777024,
-   "rise_obs_pp": 86.81317554450642,
+   "rise_fit_pp": 1.4198502486079567,
+   "rise_obs_pp": 1.8578463030504588,
    "peak_above_chance_pp": 88.01853430911726,
    "inflection_before_first_sample": false,
    "pass": {
-    "r2_gt_0.9": true,
+    "r2_gt_0.9": false,
     "inflection_le_50pct_depth": true,
     "peak_ge_15pp_above_chance": true,
-    "rise_ge_15pp": true
+    "rise_ge_15pp": false
    },
-   "accept_rebuttal_rule": true,
-   "accept_rise_variant": true,
+   "accept_rebuttal_rule": false,
+   "accept_rise_variant": false,
    "onset90_point": 1,
-   "onset90_frac": 0.041666666666666664,
+   "onset90_frac": 0.0,
    "onset90_stored": 1,
    "within_1_point_of_paper_depth": false
   },
@@ -2023,27 +1998,27 @@
     0.6193,
     0.6145
    ],
-   "inflection_point": 7.706335147850213e-15,
-   "inflection_frac": 3.2109729782709223e-16,
-   "fit_r2": 0.9917402334174633,
+   "inflection_point": 1.0000000000000002,
+   "inflection_frac": 9.654113257610057e-18,
+   "fit_r2": 0.9903281622916976,
    "fit": {
-    "lo": 0.0900240992197213,
-    "hi": 0.6180165766670402,
-    "k": 0.41733655816569015,
-    "x0": 7.706335147850213e-15,
-    "r2": 0.9917402334174633,
-    "sse": 0.0003134270750309874,
+    "lo": 0.20068800449608043,
+    "hi": 0.6172009000120218,
+    "k": 0.4551138865367972,
+    "x0": 1.0000000000000002,
+    "r2": 0.9903281622916976,
+    "sse": 0.00036700986314756423,
     "x0_at_bound": true,
     "k_at_bound": false
    },
    "inflection_bracket": [
-    null,
-    1.0
+    1.0,
+    4.0
    ],
-   "rise_fit_pp": 20.964011984758447,
+   "rise_fit_pp": 20.822701199360537,
    "rise_obs_pp": 21.387186422309885,
    "peak_above_chance_pp": 62.048498646786044,
-   "inflection_before_first_sample": true,
+   "inflection_before_first_sample": false,
    "pass": {
     "r2_gt_0.9": true,
     "inflection_le_50pct_depth": true,
@@ -2053,7 +2028,7 @@
    "accept_rebuttal_rule": true,
    "accept_rise_variant": true,
    "onset90_point": 6,
-   "onset90_frac": 0.25,
+   "onset90_frac": 0.21739130434782608,
    "onset90_stored": 6,
    "within_1_point_of_paper_depth": false
   },
@@ -2084,16 +2059,16 @@
     0.4467,
     0.5143
    ],
-   "inflection_point": 5.01024457002518,
-   "inflection_frac": 0.20876019041771585,
-   "fit_r2": 0.9849490324493275,
+   "inflection_point": 5.0102446232124045,
+   "inflection_frac": 0.1743584618788002,
+   "fit_r2": 0.9849490324493078,
    "fit": {
-    "lo": -0.8757280641094267,
-    "hi": 0.4410114370300912,
-    "k": 0.524820958683839,
-    "x0": 5.01024457002518,
-    "r2": 0.9849490324493275,
-    "sse": 0.02128619387032325,
+    "lo": -0.8757280485066415,
+    "hi": 0.4410114338359689,
+    "k": 0.524820972582422,
+    "x0": 5.0102446232124045,
+    "r2": 0.9849490324493078,
+    "sse": 0.021286193870351265,
     "x0_at_bound": false,
     "k_at_bound": false
    },
@@ -2101,7 +2076,7 @@
     4.0,
     6.0
    ],
-   "rise_fit_pp": 117.35061480069811,
+   "rise_fit_pp": 117.3506141958188,
    "rise_obs_pp": 123.76462069276828,
    "peak_above_chance_pp": 51.425172870871684,
    "inflection_before_first_sample": false,
@@ -2114,7 +2089,7 @@
    "accept_rebuttal_rule": true,
    "accept_rise_variant": true,
    "onset90_point": 22,
-   "onset90_frac": 0.9166666666666666,
+   "onset90_frac": 0.9130434782608695,
    "onset90_stored": 22,
    "within_1_point_of_paper_depth": false
   },
@@ -2145,16 +2120,16 @@
     0.8633,
     0.8601
    ],
-   "inflection_point": 12.340018511057165,
-   "inflection_frac": 0.5141674379607152,
-   "fit_r2": 0.9292051272361362,
+   "inflection_point": 12.340010621755194,
+   "inflection_frac": 0.4930439400763128,
+   "fit_r2": 0.9292051272015069,
    "fit": {
-    "lo": 0.880914032622123,
-    "hi": 0.8578037123392227,
-    "k": 0.25321083513014947,
-    "x0": 12.340018511057165,
-    "r2": 0.9292051272361362,
-    "sse": 2.803253461345043e-05,
+    "lo": 0.8809141063168789,
+    "hi": 0.8578036630382829,
+    "k": 0.25320827674496765,
+    "x0": 12.340010621755194,
+    "r2": 0.9292051272015069,
+    "sse": 2.8032534627162543e-05,
     "x0_at_bound": false,
     "k_at_bound": false
    },
@@ -2162,20 +2137,20 @@
     12.0,
     16.0
    ],
-   "rise_fit_pp": -2.002935652487836,
+   "rise_fit_pp": -2.0029388258646197,
    "rise_obs_pp": 2.08983814123197,
    "peak_above_chance_pp": 88.09985899990541,
    "inflection_before_first_sample": false,
    "pass": {
     "r2_gt_0.9": true,
-    "inflection_le_50pct_depth": false,
+    "inflection_le_50pct_depth": true,
     "peak_ge_15pp_above_chance": true,
     "rise_ge_15pp": false
    },
-   "accept_rebuttal_rule": false,
+   "accept_rebuttal_rule": true,
    "accept_rise_variant": false,
    "onset90_point": 1,
-   "onset90_frac": 0.041666666666666664,
+   "onset90_frac": 0.0,
    "onset90_stored": 1,
    "within_1_point_of_paper_depth": false
   },
@@ -2206,27 +2181,27 @@
     0.6003,
     0.6143
    ],
-   "inflection_point": 4.977585361855258e-23,
-   "inflection_frac": 2.073993900773024e-24,
-   "fit_r2": 0.9771677920264181,
+   "inflection_point": 1.0000000000000002,
+   "inflection_frac": 9.654113257610057e-18,
+   "fit_r2": 0.9746438284889539,
    "fit": {
-    "lo": 0.02407688574797571,
-    "hi": 0.5987102830472079,
-    "k": 0.3395969454085083,
-    "x0": 4.977585361855258e-23,
-    "r2": 0.9771677920264181,
-    "sse": 0.0011277081605375642,
+    "lo": 0.12365622994872631,
+    "hi": 0.597419402797771,
+    "k": 0.36772831075400175,
+    "x0": 1.0000000000000002,
+    "r2": 0.9746438284889539,
+    "sse": 0.0012523695284346564,
     "x0_at_bound": true,
     "k_at_bound": false
    },
    "inflection_bracket": [
-    null,
-    1.0
+    1.0,
+    4.0
    ],
-   "rise_fit_pp": 23.866733191941258,
+   "rise_fit_pp": 23.667187643597128,
    "rise_obs_pp": 25.914881521170525,
    "peak_above_chance_pp": 61.43170266682682,
-   "inflection_before_first_sample": true,
+   "inflection_before_first_sample": false,
    "pass": {
     "r2_gt_0.9": true,
     "inflection_le_50pct_depth": true,
@@ -2236,7 +2211,7 @@
    "accept_rebuttal_rule": true,
    "accept_rise_variant": true,
    "onset90_point": 7,
-   "onset90_frac": 0.2916666666666667,
+   "onset90_frac": 0.2608695652173913,
    "onset90_stored": 7,
    "within_1_point_of_paper_depth": false
   },
@@ -2267,16 +2242,16 @@
     -0.4312,
     -0.4231
    ],
-   "inflection_point": 1.1099987469490213,
-   "inflection_frac": 0.046249947789542556,
-   "fit_r2": 0.8432359266460658,
+   "inflection_point": 1.1097426569148687,
+   "inflection_frac": 0.004771419865863858,
+   "fit_r2": 0.8432359266747114,
    "fit": {
-    "lo": -1.7869905219952318,
-    "hi": -0.3038462749240511,
-    "k": 0.5819932681288694,
-    "x0": 1.1099987469490213,
-    "r2": 0.8432359266460658,
-    "sse": 0.09494519023478742,
+    "lo": -1.7871003133498324,
+    "hi": -0.30384527699103,
+    "k": 0.5819726712481817,
+    "x0": 1.1097426569148687,
+    "r2": 0.8432359266747114,
+    "sse": 0.09494519021743814,
     "x0_at_bound": false,
     "k_at_bound": false
    },
@@ -2284,7 +2259,7 @@
     1.0,
     4.0
    ],
-   "rise_fit_pp": 76.5293416451198,
+   "rise_fit_pp": 76.52945329252145,
    "rise_obs_pp": 90.23723253507174,
    "peak_above_chance_pp": -16.78431495269386,
    "inflection_before_first_sample": false,
@@ -2297,7 +2272,7 @@
    "accept_rebuttal_rule": false,
    "accept_rise_variant": false,
    "onset90_point": 1,
-   "onset90_frac": 0.041666666666666664,
+   "onset90_frac": 0.0,
    "onset90_stored": null,
    "within_1_point_of_paper_depth": false
   },
@@ -2328,14 +2303,14 @@
     0.8658,
     0.8661
    ],
-   "inflection_point": 9.5,
-   "inflection_frac": 0.3958333333333333,
+   "inflection_point": 9.500000000000007,
+   "inflection_frac": 0.36956521739130466,
    "fit_r2": 0.02987399555852266,
    "fit": {
     "lo": 0.8669000740428543,
     "hi": 0.8691005406941401,
     "k": 49.99999999999999,
-    "x0": 9.5,
+    "x0": 9.500000000000007,
     "r2": 0.02987399555852266,
     "sse": 0.0003773772000393011,
     "x0_at_bound": false,
@@ -2358,7 +2333,7 @@
    "accept_rebuttal_rule": false,
    "accept_rise_variant": false,
    "onset90_point": 1,
-   "onset90_frac": 0.041666666666666664,
+   "onset90_frac": 0.0,
    "onset90_stored": 1,
    "within_1_point_of_paper_depth": true
   }
@@ -2402,10 +2377,10 @@
      8
     ],
     "fold_mean_curve": {
-     "inflection_point": 5.345995822144051,
-     "inflection_frac": 0.2227498259226688,
-     "fit_r2": 0.9745678097425946,
-     "rise_fit_pp": 54.60005313968804,
+     "inflection_point": 5.345995959036996,
+     "inflection_frac": 0.18895634604508676,
+     "fit_r2": 0.9745678097427798,
+     "rise_fit_pp": 54.6000524140897,
      "peak_above_chance_pp": 95.8096565301502,
      "pass": {
       "r2_gt_0.9": true,
@@ -2416,16 +2391,16 @@
      "accept_rebuttal_rule": true
     },
     "boot_inflection_point": {
-     "median": 5.362763994134759,
+     "median": 5.36276394019358,
      "ci95": [
-      4.778289951459196,
-      5.737019193721262
+      4.778289986480098,
+      5.737019319260491
      ],
-     "sd": 0.2506874385579243
+     "sd": 0.2506874208720943
     },
     "boot_inflection_frac_ci95": [
-     0.19909541464413316,
-     0.23904246640505258
+     0.16427347767304773,
+     0.20595736170697787
     ]
    },
    "random_folds/hard/cross_half_r2": {
@@ -2444,7 +2419,7 @@
     "n_folds": 5,
     "per_fold_inflection_point": [
      8.951,
-     8.995,
+     8.994,
      8.988,
      8.966,
      9.666
@@ -2464,10 +2439,10 @@
      1
     ],
     "fold_mean_curve": {
-     "inflection_point": 8.978257809212911,
-     "inflection_frac": 0.3740940753838713,
-     "fit_r2": 0.3781000742170524,
-     "rise_fit_pp": 85.83314101285173,
+     "inflection_point": 8.978250568764095,
+     "inflection_frac": 0.3468804595114824,
+     "fit_r2": 0.3781000746205886,
+     "rise_fit_pp": 85.83314127494835,
      "peak_above_chance_pp": 75.18932742580226,
      "pass": {
       "r2_gt_0.9": false,
@@ -2478,16 +2453,16 @@
      "accept_rebuttal_rule": false
     },
     "boot_inflection_point": {
-     "median": 8.978257809212911,
+     "median": 8.978250568764095,
      "ci95": [
-      8.951937104850643,
-      8.999856820245657
+      8.952015637113048,
+      8.99989638690078
      ],
-     "sd": 0.0808413077814206
+     "sd": 0.08083900637531229
     },
     "boot_inflection_frac_ci95": [
-     0.3729973793687768,
-     0.3749940341769024
+     0.34573981030926293,
+     0.3478215820391643
     ]
    },
    "random_folds/hard/meanpool_r2": {
@@ -2526,10 +2501,10 @@
      6
     ],
     "fold_mean_curve": {
-     "inflection_point": 5.950838535636848,
-     "inflection_frac": 0.24795160565153532,
-     "fit_r2": 0.9853754664359984,
-     "rise_fit_pp": 18.193678847108696,
+     "inflection_point": 5.95083859406805,
+     "inflection_frac": 0.21525385191600216,
+     "fit_r2": 0.9853754664360025,
+     "rise_fit_pp": 18.19367872175961,
      "peak_above_chance_pp": 99.21379093102594,
      "pass": {
       "r2_gt_0.9": true,
@@ -2540,16 +2515,16 @@
      "accept_rebuttal_rule": true
     },
     "boot_inflection_point": {
-     "median": 5.929983662145405,
+     "median": 5.929983670518208,
      "ci95": [
-      5.470116617642065,
-      6.182516861643364
+      5.47011671367475,
+      6.182516819809304
      ],
-     "sd": 0.18652538015738276
+     "sd": 0.18652534726076864
     },
     "boot_inflection_frac_ci95": [
-     0.22792152573508603,
-     0.2576048692351402
+     0.19435290059455437,
+     0.22532681825257841
     ]
    },
    "random_folds/paper_layout/perpos_mean_r2": {
@@ -2571,7 +2546,7 @@
      3.581,
      3.547,
      3.327,
-     3.87
+     3.871
     ],
     "per_fold_fit_r2": [
      0.985,
@@ -2588,10 +2563,10 @@
      6
     ],
     "fold_mean_curve": {
-     "inflection_point": 3.593120921437381,
-     "inflection_frac": 0.14971337172655755,
-     "fit_r2": 0.9911928467627238,
-     "rise_fit_pp": 55.40232898136286,
+     "inflection_point": 3.59312143632756,
+     "inflection_frac": 0.1127444102751113,
+     "fit_r2": 0.9911928467626921,
+     "rise_fit_pp": 55.40232855918521,
      "peak_above_chance_pp": 97.78642924634659,
      "pass": {
       "r2_gt_0.9": true,
@@ -2602,16 +2577,16 @@
      "accept_rebuttal_rule": true
     },
     "boot_inflection_point": {
-     "median": 3.593120921437381,
+     "median": 3.59312143632756,
      "ci95": [
-      3.423829700069645,
-      3.882963783561601
+      3.423829604437092,
+      3.8819914473685078
      ],
-     "sd": 0.10359390280790319
+     "sd": 0.10362160433881223
     },
     "boot_inflection_frac_ci95": [
-     0.1426595708362352,
-     0.16179015764840005
+     0.10538389584509096,
+     0.1253039759725438
     ]
    },
    "random_folds/paper_layout/cross_half_r2": {
@@ -2650,10 +2625,10 @@
      6
     ],
     "fold_mean_curve": {
-     "inflection_point": 4.025068195946375,
-     "inflection_frac": 0.16771117483109896,
-     "fit_r2": 0.7122574447983294,
-     "rise_fit_pp": 15.61329649339509,
+     "inflection_point": 4.023995775520464,
+     "inflection_frac": 0.13147807719654192,
+     "fit_r2": 0.7122574465499221,
+     "rise_fit_pp": 15.613296440343916,
      "peak_above_chance_pp": 97.08907331805918,
      "pass": {
       "r2_gt_0.9": false,
@@ -2664,16 +2639,16 @@
      "accept_rebuttal_rule": false
     },
     "boot_inflection_point": {
-     "median": 4.025068195946375,
+     "median": 4.024560480891533,
      "ci95": [
-      3.989221476315647,
-      4.052297269084347
+      3.9891715722806858,
+      4.052325010332036
      ],
-     "sd": 0.017679678489156476
+     "sd": 0.018057088343983972
     },
     "boot_inflection_frac_ci95": [
-     0.16621756151315195,
-     0.16884571954518113
+     0.12996398140350807,
+     0.13270978305791462
     ]
    },
    "random_folds/paper_layout/meanpool_r2": {
@@ -2691,18 +2666,18 @@
     ],
     "n_folds": 5,
     "per_fold_inflection_point": [
-     0.0,
-     0.0,
-     0.0,
-     0.0,
-     0.0
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.0
     ],
     "per_fold_fit_r2": [
-     0.989,
-     0.986,
-     0.992,
-     0.981,
-     0.989
+     0.987,
+     0.984,
+     0.99,
+     0.978,
+     0.987
     ],
     "per_fold_onset90": [
      4,
@@ -2712,10 +2687,10 @@
      4
     ],
     "fold_mean_curve": {
-     "inflection_point": 2.669589015781237e-22,
-     "inflection_frac": 1.1123287565755155e-23,
-     "fit_r2": 0.9888600662548284,
-     "rise_fit_pp": 16.686695848855273,
+     "inflection_point": 1.0000000000000002,
+     "inflection_frac": 9.654113257610057e-18,
+     "fit_r2": 0.9868472085078763,
+     "rise_fit_pp": 16.601381878465126,
      "peak_above_chance_pp": 99.1814657863946,
      "pass": {
       "r2_gt_0.9": true,
@@ -2726,16 +2701,16 @@
      "accept_rebuttal_rule": true
     },
     "boot_inflection_point": {
-     "median": 1.5210960187581932e-21,
+     "median": 1.0000000000000002,
      "ci95": [
-      7.945109495798542e-24,
-      9.961935775442723e-16
+      1.0000000000000002,
+      1.0000000000000002
      ],
-     "sd": 8.432501824834914e-15
+     "sd": 0.0
     },
     "boot_inflection_frac_ci95": [
-     3.3104622899160595e-25,
-     4.150806573101135e-17
+     9.654113257610057e-18,
+     9.654113257610057e-18
     ]
    },
    "start_grouped_folds/hard/perpos_mean_r2": {
@@ -2774,10 +2749,10 @@
      9
     ],
     "fold_mean_curve": {
-     "inflection_point": 4.662886099701458,
-     "inflection_frac": 0.19428692082089408,
-     "fit_r2": 0.9652447286195607,
-     "rise_fit_pp": 100.01232037906898,
+     "inflection_point": 4.662886112487861,
+     "inflection_frac": 0.15925591793425484,
+     "fit_r2": 0.9652447286195557,
+     "rise_fit_pp": 100.01232010057382,
      "peak_above_chance_pp": 90.58791067771563,
      "pass": {
       "r2_gt_0.9": true,
@@ -2788,16 +2763,16 @@
      "accept_rebuttal_rule": true
     },
     "boot_inflection_point": {
-     "median": 4.662886099701458,
+     "median": 4.662886112487861,
      "ci95": [
-      3.7923974857919553,
-      5.5006360453596495
+      3.792397539145319,
+      5.500635873841965
      ],
-     "sd": 0.45410463862524136
+     "sd": 0.45410464272789625
     },
     "boot_inflection_frac_ci95": [
-     0.15801656190799815,
-     0.22919316855665206
+     0.12140858865849212,
+     0.19567982060182457
     ]
    },
    "start_grouped_folds/hard/cross_half_r2": {
@@ -2836,10 +2811,10 @@
      12
     ],
     "fold_mean_curve": {
-     "inflection_point": 8.966288310624503,
-     "inflection_frac": 0.3735953462760209,
-     "fit_r2": 0.38168802859801376,
-     "rise_fit_pp": 81.74103079416508,
+     "inflection_point": 8.965356658228327,
+     "inflection_frac": 0.3463198547055794,
+     "fit_r2": 0.38168802200158014,
+     "rise_fit_pp": 81.74103062904963,
      "peak_above_chance_pp": 71.32001536964697,
      "pass": {
       "r2_gt_0.9": false,
@@ -2850,16 +2825,16 @@
      "accept_rebuttal_rule": false
     },
     "boot_inflection_point": {
-     "median": 8.965328289593613,
+     "median": 8.965226942093711,
      "ci95": [
-      8.950772935458096,
-      8.982074920984436
+      8.950352427357702,
+      8.982007340504925
      ],
-     "sd": 0.06117697714158376
+     "sd": 0.06118874962985134
     },
     "boot_inflection_frac_ci95": [
-     0.37294887231075396,
-     0.3742531217076848
+     0.3456674968416392,
+     0.3470437974132576
     ]
    },
    "start_grouped_folds/hard/meanpool_r2": {
@@ -2898,10 +2873,10 @@
      6
     ],
     "fold_mean_curve": {
-     "inflection_point": 5.325112023234519,
-     "inflection_frac": 0.22187966763477163,
-     "fit_r2": 0.9772995692825136,
-     "rise_fit_pp": 22.979207430194148,
+     "inflection_point": 5.325111985080845,
+     "inflection_frac": 0.18804834717742805,
+     "fit_r2": 0.9772995692826855,
+     "rise_fit_pp": 22.979207721674065,
      "peak_above_chance_pp": 97.12437572440257,
      "pass": {
       "r2_gt_0.9": true,
@@ -2912,17 +2887,2939 @@
      "accept_rebuttal_rule": true
     },
     "boot_inflection_point": {
-     "median": 5.333802825710553,
+     "median": 5.3338027586589165,
      "ci95": [
-      4.767785273432838,
-      5.669411649625647
+      4.767785262139417,
+      5.669407133371117
      ],
-     "sd": 0.239682187953177
+     "sd": 0.2396828774537138
     },
     "boot_inflection_frac_ci95": [
-     0.19865771972636825,
-     0.2362254854010686
+     0.16381675052780073,
+     0.20301770145091816
     ]
+   }
+  }
+ },
+ "with_point0": {
+  "rule": "superseded first pass, kept for comparison: point 0 (patch embedding, R2 ~ 0) included, depth = point / 24, x0 bounded to [0, 24]; point 0 pins the supplied-set inflections at 0",
+  "curves": {
+   "meanpool/direction/vjepa2": {
+    "file": "p1a_direction_direction_meanpool.json",
+    "metric": "layers[].cv_mean (5-fold CV R2, train)",
+    "points": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19,
+     20,
+     21,
+     22,
+     23,
+     24
+    ],
+    "curve": [
+     0.0999,
+     0.8746,
+     0.9313,
+     0.9452,
+     0.954,
+     0.9609,
+     0.9671,
+     0.9687,
+     0.9731,
+     0.98,
+     0.9822,
+     0.9816,
+     0.9844,
+     0.9885,
+     0.988,
+     0.9895,
+     0.9892,
+     0.9897,
+     0.9896,
+     0.99,
+     0.9904,
+     0.9902,
+     0.9905,
+     0.9895,
+     0.9897
+    ],
+    "inflection_point": 2.271085146215583e-17,
+    "inflection_frac": 9.462854775898263e-19,
+    "fit_r2": 0.9928530014547907,
+    "fit": {
+     "lo": -0.7782632618180111,
+     "hi": 0.9790447141080564,
+     "k": 2.6956509909938013,
+     "x0": 2.271085146215583e-17,
+     "r2": 0.9928530014547907,
+     "sse": 0.005359801956327997,
+     "x0_at_bound": true,
+     "k_at_bound": false
+    },
+    "inflection_bracket": [
+     0.0,
+     1.0
+    ],
+    "rise_fit_pp": 87.86539879630337,
+    "rise_obs_pp": 89.05821159792934,
+    "peak_above_chance_pp": 99.05177054062138,
+    "inflection_before_first_sample": false,
+    "pass": {
+     "r2_gt_0.9": true,
+     "inflection_le_50pct_depth": true,
+     "peak_ge_15pp_above_chance": true,
+     "rise_ge_15pp": true
+    },
+    "accept_rebuttal_rule": true,
+    "accept_rise_variant": true,
+    "onset90_point": 2,
+    "onset90_frac": 0.08333333333333333,
+    "onset90_stored": 2,
+    "within_1_point_of_paper_depth": false
+   },
+   "meanpool/direction/random_init": {
+    "file": "p1a_direction_direction_meanpool_random.json",
+    "metric": "layers[].cv_mean (5-fold CV R2, train)",
+    "points": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19,
+     20,
+     21,
+     22,
+     23,
+     24
+    ],
+    "curve": [
+     0.0581,
+     0.8481,
+     0.8589,
+     0.8622,
+     0.8641,
+     0.8635,
+     0.8647,
+     0.865,
+     0.8645,
+     0.8646,
+     0.8647,
+     0.8656,
+     0.8653,
+     0.8649,
+     0.8666,
+     0.8676,
+     0.8675,
+     0.8667,
+     0.8668,
+     0.8671,
+     0.8663,
+     0.8661,
+     0.8654,
+     0.8654,
+     0.8649
+    ],
+    "inflection_point": 6.350900544197068e-10,
+    "inflection_frac": 2.6462085600821116e-11,
+    "fit_r2": 0.9998783689653556,
+    "fit": {
+     "lo": -0.7489976903100453,
+     "hi": 0.8651632829935001,
+     "k": 4.530147145283295,
+     "x0": 6.350900544197068e-10,
+     "r2": 0.9998783689653556,
+     "sse": 7.596591576888238e-05,
+     "x0_at_bound": true,
+     "k_at_bound": false
+    },
+    "inflection_bracket": [
+     0.0,
+     1.0
+    ],
+    "rise_fit_pp": 80.70804878127788,
+    "rise_obs_pp": 80.95059284954868,
+    "peak_above_chance_pp": 86.75872594148683,
+    "inflection_before_first_sample": false,
+    "pass": {
+     "r2_gt_0.9": true,
+     "inflection_le_50pct_depth": true,
+     "peak_ge_15pp_above_chance": true,
+     "rise_ge_15pp": true
+    },
+    "accept_rebuttal_rule": true,
+    "accept_rise_variant": true,
+    "onset90_point": 1,
+    "onset90_frac": 0.041666666666666664,
+    "onset90_stored": 1,
+    "within_1_point_of_paper_depth": false
+   },
+   "meanpool/speed/vjepa2": {
+    "file": "p1a_speed_speed_meanpool.json",
+    "metric": "layers[].cv_mean (5-fold CV R2, train)",
+    "points": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19,
+     20,
+     21,
+     22,
+     23,
+     24
+    ],
+    "curve": [
+     -0.0018,
+     0.9834,
+     0.9831,
+     0.9822,
+     0.9801,
+     0.9789,
+     0.9807,
+     0.9813,
+     0.9853,
+     0.9885,
+     0.988,
+     0.9882,
+     0.9896,
+     0.9898,
+     0.991,
+     0.9915,
+     0.9915,
+     0.9924,
+     0.9925,
+     0.994,
+     0.9936,
+     0.993,
+     0.993,
+     0.9926,
+     0.9925
+    ],
+    "inflection_point": 0.7495502931498078,
+    "inflection_frac": 0.031231262214575325,
+    "fit_r2": 0.9994224509195881,
+    "fit": {
+     "lo": -0.0017587193767868382,
+     "hi": 0.9884075783025267,
+     "k": 21.1225883040576,
+     "x0": 0.7495502931498078,
+     "r2": 0.9994224509195881,
+     "sse": 0.0005436965283531336,
+     "x0_at_bound": false,
+     "k_at_bound": false
+    },
+    "inflection_bracket": [
+     0.0,
+     1.0
+    ],
+    "rise_fit_pp": 99.01661659247168,
+    "rise_obs_pp": 99.57869862094364,
+    "peak_above_chance_pp": 99.40283985872365,
+    "inflection_before_first_sample": false,
+    "pass": {
+     "r2_gt_0.9": true,
+     "inflection_le_50pct_depth": true,
+     "peak_ge_15pp_above_chance": true,
+     "rise_ge_15pp": true
+    },
+    "accept_rebuttal_rule": true,
+    "accept_rise_variant": true,
+    "onset90_point": 1,
+    "onset90_frac": 0.041666666666666664,
+    "onset90_stored": 1,
+    "within_1_point_of_paper_depth": false
+   },
+   "meanpool/speed/random_init": {
+    "file": "p1a_speed_speed_meanpool_random.json",
+    "metric": "layers[].cv_mean (5-fold CV R2, train)",
+    "points": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19,
+     20,
+     21,
+     22,
+     23,
+     24
+    ],
+    "curve": [
+     -0.0277,
+     0.9202,
+     0.9329,
+     0.9338,
+     0.9375,
+     0.9379,
+     0.9356,
+     0.9364,
+     0.9387,
+     0.9374,
+     0.939,
+     0.9392,
+     0.9389,
+     0.9393,
+     0.9399,
+     0.9398,
+     0.9377,
+     0.9382,
+     0.9379,
+     0.9385,
+     0.938,
+     0.9381,
+     0.9372,
+     0.9375,
+     0.9373
+    ],
+    "inflection_point": 1.326574372660243e-14,
+    "inflection_frac": 5.527393219417679e-16,
+    "fit_r2": 0.9999298930688444,
+    "fit": {
+     "lo": -0.9930228657862686,
+     "hi": 0.9377002056924599,
+     "k": 4.688833246532113,
+     "x0": 1.326574372660243e-14,
+     "r2": 0.9999298930688444,
+     "sse": 6.264993836255543e-05,
+     "x0_at_bound": true,
+     "k_at_bound": false
+    },
+    "inflection_bracket": [
+     0.0,
+     1.0
+    ],
+    "rise_fit_pp": 96.53615357393943,
+    "rise_obs_pp": 96.75614587273664,
+    "peak_above_chance_pp": 93.98993180264114,
+    "inflection_before_first_sample": false,
+    "pass": {
+     "r2_gt_0.9": true,
+     "inflection_le_50pct_depth": true,
+     "peak_ge_15pp_above_chance": true,
+     "rise_ge_15pp": true
+    },
+    "accept_rebuttal_rule": true,
+    "accept_rise_variant": true,
+    "onset90_point": 1,
+    "onset90_frac": 0.041666666666666664,
+    "onset90_stored": 1,
+    "within_1_point_of_paper_depth": false
+   },
+   "meanpool/acceleration/vjepa2": {
+    "file": "p1a_acceleration_acceleration_meanpool.json",
+    "metric": "layers[].cv_mean (5-fold CV R2, train)",
+    "points": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19,
+     20,
+     21,
+     22,
+     23,
+     24
+    ],
+    "curve": [
+     -0.0185,
+     0.9769,
+     0.9751,
+     0.9729,
+     0.9703,
+     0.9691,
+     0.9716,
+     0.9738,
+     0.979,
+     0.9824,
+     0.9819,
+     0.9824,
+     0.9858,
+     0.9873,
+     0.9883,
+     0.9897,
+     0.99,
+     0.9903,
+     0.9907,
+     0.9923,
+     0.9922,
+     0.9925,
+     0.9916,
+     0.9912,
+     0.9903
+    ],
+    "inflection_point": 0.00044171366859767065,
+    "inflection_frac": 1.8404736191569612e-05,
+    "fit_r2": 0.9985056644268686,
+    "fit": {
+     "lo": -1.0185371627084674,
+     "hi": 0.983946252040847,
+     "k": 5.636322646328371,
+     "x0": 0.00044171366859767065,
+     "r2": 0.9985056644268686,
+     "sse": 0.0014430817717288797,
+     "x0_at_bound": true,
+     "k_at_bound": false
+    },
+    "inflection_bracket": [
+     0.0,
+     1.0
+    ],
+    "rise_fit_pp": 100.24880728102741,
+    "rise_obs_pp": 101.10039993459267,
+    "peak_above_chance_pp": 99.24617264921793,
+    "inflection_before_first_sample": false,
+    "pass": {
+     "r2_gt_0.9": true,
+     "inflection_le_50pct_depth": true,
+     "peak_ge_15pp_above_chance": true,
+     "rise_ge_15pp": true
+    },
+    "accept_rebuttal_rule": true,
+    "accept_rise_variant": true,
+    "onset90_point": 1,
+    "onset90_frac": 0.041666666666666664,
+    "onset90_stored": 1,
+    "within_1_point_of_paper_depth": false
+   },
+   "meanpool/acceleration/random_init": {
+    "file": "p1a_acceleration_acceleration_meanpool_random.json",
+    "metric": "layers[].cv_mean (5-fold CV R2, train)",
+    "points": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19,
+     20,
+     21,
+     22,
+     23,
+     24
+    ],
+    "curve": [
+     -0.0186,
+     0.914,
+     0.9275,
+     0.9327,
+     0.936,
+     0.9376,
+     0.9356,
+     0.9379,
+     0.9379,
+     0.9375,
+     0.9372,
+     0.9387,
+     0.9388,
+     0.9375,
+     0.9373,
+     0.9367,
+     0.9363,
+     0.9369,
+     0.9372,
+     0.9372,
+     0.9368,
+     0.9366,
+     0.935,
+     0.9339,
+     0.9346
+    ],
+    "inflection_point": 1.2958993538656737e-09,
+    "inflection_frac": 5.399580641106974e-11,
+    "fit_r2": 0.9998601136407783,
+    "fit": {
+     "lo": -0.9734210963015608,
+     "hi": 0.9362614294538746,
+     "k": 4.432413141849218,
+     "x0": 1.2958993538656737e-09,
+     "r2": 0.9998601136407783,
+     "sse": 0.00012227797792166154,
+     "x0_at_bound": true,
+     "k_at_bound": false
+    },
+    "inflection_bracket": [
+     0.0,
+     1.0
+    ],
+    "rise_fit_pp": 95.48412656200033,
+    "rise_obs_pp": 95.73879739413655,
+    "peak_above_chance_pp": 93.8805593612057,
+    "inflection_before_first_sample": false,
+    "pass": {
+     "r2_gt_0.9": true,
+     "inflection_le_50pct_depth": true,
+     "peak_ge_15pp_above_chance": true,
+     "rise_ge_15pp": true
+    },
+    "accept_rebuttal_rule": true,
+    "accept_rise_variant": true,
+    "onset90_point": 1,
+    "onset90_frac": 0.041666666666666664,
+    "onset90_stored": 1,
+    "within_1_point_of_paper_depth": false
+   },
+   "perpatch/supplied/vjepa2/perpos_mean_r2": {
+    "file": "p1a_perpatch_direction_vjepa2.json",
+    "metric": "curves.perpos_mean_r2 (held-out test R2)",
+    "points": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     12,
+     14,
+     16,
+     19,
+     22,
+     24
+    ],
+    "curve": [
+     0.0049,
+     0.5616,
+     0.6631,
+     0.785,
+     0.8141,
+     0.8909,
+     0.9572,
+     0.9532,
+     0.9578,
+     0.9754,
+     0.9756,
+     0.975,
+     0.9763,
+     0.9676,
+     0.9554,
+     0.9464,
+     0.9393
+    ],
+    "inflection_point": 2.8574093177238043e-27,
+    "inflection_frac": 1.1905872157182517e-28,
+    "fit_r2": 0.9634308398576238,
+    "fit": {
+     "lo": -0.8282980770880675,
+     "hi": 0.9515329462485878,
+     "k": 0.8815225689692777,
+     "x0": 2.8574093177238043e-27,
+     "r2": 0.9634308398576238,
+     "sse": 0.03573048602503132,
+     "x0_at_bound": true,
+     "k_at_bound": false
+    },
+    "inflection_bracket": [
+     0.0,
+     1.0
+    ],
+    "rise_fit_pp": 88.9915510514318,
+    "rise_obs_pp": 97.13389374529179,
+    "peak_above_chance_pp": 97.62760968525109,
+    "inflection_before_first_sample": false,
+    "pass": {
+     "r2_gt_0.9": true,
+     "inflection_le_50pct_depth": true,
+     "peak_ge_15pp_above_chance": true,
+     "rise_ge_15pp": true
+    },
+    "accept_rebuttal_rule": true,
+    "accept_rise_variant": true,
+    "onset90_point": 5,
+    "onset90_frac": 0.20833333333333334,
+    "onset90_stored": 5,
+    "within_1_point_of_paper_depth": false
+   },
+   "perpatch/supplied/vjepa2/cross_half_r2": {
+    "file": "p1a_perpatch_direction_vjepa2.json",
+    "metric": "curves.cross_half_r2 (held-out test R2)",
+    "points": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     12,
+     14,
+     16,
+     19,
+     22,
+     24
+    ],
+    "curve": [
+     -0.0091,
+     0.8228,
+     0.8903,
+     0.886,
+     0.8939,
+     0.9196,
+     0.9527,
+     0.9489,
+     0.9474,
+     0.9597,
+     0.9457,
+     0.9432,
+     0.9339,
+     0.9241,
+     0.8411,
+     0.8088,
+     0.8264
+    ],
+    "inflection_point": 3.065227606320247e-18,
+    "inflection_frac": 1.2771781693001028e-19,
+    "fit_r2": 0.9593556142588361,
+    "fit": {
+     "lo": -0.9266153110462296,
+     "hi": 0.9085404197744399,
+     "k": 2.995459205327035,
+     "x0": 3.065227606320247e-18,
+     "r2": 0.9593556142588361,
+     "sse": 0.03345363124026354,
+     "x0_at_bound": true,
+     "k_at_bound": false
+    },
+    "inflection_bracket": [
+     0.0,
+     1.0
+    ],
+    "rise_fit_pp": 91.75778654103348,
+    "rise_obs_pp": 96.87928443462155,
+    "peak_above_chance_pp": 95.96679553713227,
+    "inflection_before_first_sample": false,
+    "pass": {
+     "r2_gt_0.9": true,
+     "inflection_le_50pct_depth": true,
+     "peak_ge_15pp_above_chance": true,
+     "rise_ge_15pp": true
+    },
+    "accept_rebuttal_rule": true,
+    "accept_rise_variant": true,
+    "onset90_point": 2,
+    "onset90_frac": 0.08333333333333333,
+    "onset90_stored": 2,
+    "within_1_point_of_paper_depth": false
+   },
+   "perpatch/supplied/vjepa2/meanpool_r2": {
+    "file": "p1a_perpatch_direction_vjepa2.json",
+    "metric": "curves.meanpool_r2 (held-out test R2)",
+    "points": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     12,
+     14,
+     16,
+     19,
+     22,
+     24
+    ],
+    "curve": [
+     0.0349,
+     0.889,
+     0.9402,
+     0.9526,
+     0.9623,
+     0.9687,
+     0.9759,
+     0.9748,
+     0.9792,
+     0.9857,
+     0.9862,
+     0.9885,
+     0.9903,
+     0.9908,
+     0.9911,
+     0.9919,
+     0.9912
+    ],
+    "inflection_point": 7.615858549113878e-20,
+    "inflection_frac": 3.173274395464116e-21,
+    "fit_r2": 0.9962286550415056,
+    "fit": {
+     "lo": -0.9083522441716132,
+     "hi": 0.9785750258629272,
+     "k": 2.952418676063572,
+     "x0": 7.615858549113878e-20,
+     "r2": 0.9962286550415056,
+     "sse": 0.0031609419100200836,
+     "x0_at_bound": true,
+     "k_at_bound": false
+    },
+    "inflection_bracket": [
+     0.0,
+     1.0
+    ],
+    "rise_fit_pp": 94.34636350172703,
+    "rise_obs_pp": 95.69828965969303,
+    "peak_above_chance_pp": 99.18789883741016,
+    "inflection_before_first_sample": false,
+    "pass": {
+     "r2_gt_0.9": true,
+     "inflection_le_50pct_depth": true,
+     "peak_ge_15pp_above_chance": true,
+     "rise_ge_15pp": true
+    },
+    "accept_rebuttal_rule": true,
+    "accept_rise_variant": true,
+    "onset90_point": 2,
+    "onset90_frac": 0.08333333333333333,
+    "onset90_stored": 2,
+    "within_1_point_of_paper_depth": false
+   },
+   "perpatch/supplied_constvel/vjepa2/perpos_mean_r2": {
+    "file": "p1a_perpatch_direction_vjepa2_constvel.json",
+    "metric": "curves.perpos_mean_r2 (held-out test R2)",
+    "points": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     12,
+     14,
+     16,
+     19,
+     22,
+     24
+    ],
+    "curve": [
+     0.0089,
+     0.5384,
+     0.7277,
+     0.7624,
+     0.78,
+     0.8736,
+     0.9589,
+     0.9549,
+     0.961,
+     0.9802,
+     0.9793,
+     0.9784,
+     0.975,
+     0.9645,
+     0.9499,
+     0.9425,
+     0.9369
+    ],
+    "inflection_point": 9.232775839091082e-30,
+    "inflection_frac": 3.8469899329546175e-31,
+    "fit_r2": 0.9565169756478845,
+    "fit": {
+     "lo": -0.8312969484714821,
+     "hi": 0.947219150548338,
+     "k": 0.9119686944893842,
+     "x0": 9.232775839091082e-30,
+     "r2": 0.9565169756478845,
+     "sse": 0.04222191353971546,
+     "x0_at_bound": true,
+     "k_at_bound": false
+    },
+    "inflection_bracket": [
+     0.0,
+     1.0
+    ],
+    "rise_fit_pp": 88.92580489545863,
+    "rise_obs_pp": 97.13264083144362,
+    "peak_above_chance_pp": 98.02028064394865,
+    "inflection_before_first_sample": false,
+    "pass": {
+     "r2_gt_0.9": true,
+     "inflection_le_50pct_depth": true,
+     "peak_ge_15pp_above_chance": true,
+     "rise_ge_15pp": true
+    },
+    "accept_rebuttal_rule": true,
+    "accept_rise_variant": true,
+    "onset90_point": 6,
+    "onset90_frac": 0.25,
+    "onset90_stored": 6,
+    "within_1_point_of_paper_depth": false
+   },
+   "perpatch/supplied_constvel/vjepa2/cross_half_r2": {
+    "file": "p1a_perpatch_direction_vjepa2_constvel.json",
+    "metric": "curves.cross_half_r2 (held-out test R2)",
+    "points": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     12,
+     14,
+     16,
+     19,
+     22,
+     24
+    ],
+    "curve": [
+     -0.0179,
+     0.8724,
+     0.9116,
+     0.8975,
+     0.8919,
+     0.9226,
+     0.9581,
+     0.9559,
+     0.9581,
+     0.9737,
+     0.9586,
+     0.9552,
+     0.9478,
+     0.9086,
+     0.8448,
+     0.8395,
+     0.8631
+    ],
+    "inflection_point": 1.837648845985953e-08,
+    "inflection_frac": 7.656870191608137e-10,
+    "fit_r2": 0.9677644206823972,
+    "fit": {
+     "lo": -0.9549415218732352,
+     "hi": 0.9192521539621115,
+     "k": 3.655447210616462,
+     "x0": 1.837648845985953e-08,
+     "r2": 0.9677644206823972,
+     "sse": 0.027421564236802837,
+     "x0_at_bound": true,
+     "k_at_bound": false
+    },
+    "inflection_bracket": [
+     0.0,
+     1.0
+    ],
+    "rise_fit_pp": 93.70968693920777,
+    "rise_obs_pp": 99.15589900639714,
+    "peak_above_chance_pp": 97.37036438729544,
+    "inflection_before_first_sample": false,
+    "pass": {
+     "r2_gt_0.9": true,
+     "inflection_le_50pct_depth": true,
+     "peak_ge_15pp_above_chance": true,
+     "rise_ge_15pp": true
+    },
+    "accept_rebuttal_rule": true,
+    "accept_rise_variant": true,
+    "onset90_point": 2,
+    "onset90_frac": 0.08333333333333333,
+    "onset90_stored": 2,
+    "within_1_point_of_paper_depth": false
+   },
+   "perpatch/supplied_constvel/vjepa2/meanpool_r2": {
+    "file": "p1a_perpatch_direction_vjepa2_constvel.json",
+    "metric": "curves.meanpool_r2 (held-out test R2)",
+    "points": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     12,
+     14,
+     16,
+     19,
+     22,
+     24
+    ],
+    "curve": [
+     0.1193,
+     0.8996,
+     0.9507,
+     0.9645,
+     0.9673,
+     0.9792,
+     0.9789,
+     0.9762,
+     0.9825,
+     0.9865,
+     0.9877,
+     0.9907,
+     0.9897,
+     0.9907,
+     0.9903,
+     0.991,
+     0.9921
+    ],
+    "inflection_point": 1.0012599071655041e-19,
+    "inflection_frac": 4.171916279856267e-21,
+    "fit_r2": 0.9974313768876385,
+    "fit": {
+     "lo": -0.7428285867764948,
+     "hi": 0.9817229637439157,
+     "k": 2.9556169925389386,
+     "x0": 1.0012599071655041e-19,
+     "r2": 0.9974313768876385,
+     "sse": 0.0017961030718857234,
+     "x0_at_bound": true,
+     "k_at_bound": false
+    },
+    "inflection_bracket": [
+     0.0,
+     1.0
+    ],
+    "rise_fit_pp": 86.22757752602053,
+    "rise_obs_pp": 87.27915854725484,
+    "peak_above_chance_pp": 99.2071405685091,
+    "inflection_before_first_sample": false,
+    "pass": {
+     "r2_gt_0.9": true,
+     "inflection_le_50pct_depth": true,
+     "peak_ge_15pp_above_chance": true,
+     "rise_ge_15pp": true
+    },
+    "accept_rebuttal_rule": true,
+    "accept_rise_variant": true,
+    "onset90_point": 1,
+    "onset90_frac": 0.041666666666666664,
+    "onset90_stored": 1,
+    "within_1_point_of_paper_depth": false
+   },
+   "perpatch/hard_seed0/vjepa2/perpos_mean_r2": {
+    "file": "p1a_perpatch_direction_vjepa2_hard.json",
+    "metric": "curves.perpos_mean_r2 (held-out test R2)",
+    "points": [
+     1,
+     4,
+     6,
+     7,
+     8,
+     9,
+     10,
+     12,
+     16,
+     22
+    ],
+    "curve": [
+     0.4904,
+     0.5195,
+     0.8059,
+     0.7953,
+     0.8509,
+     0.9439,
+     0.9502,
+     0.9686,
+     0.9652,
+     0.9631
+    ],
+    "inflection_point": 5.7322012615191555,
+    "inflection_frac": 0.2388417192299648,
+    "fit_r2": 0.9668800761710632,
+    "fit": {
+     "lo": 0.4603555300113243,
+     "hi": 0.9635213192395448,
+     "k": 0.7843993398426176,
+     "x0": 5.7322012615191555,
+     "r2": 0.9668800761710632,
+     "sse": 0.009814719925936728,
+     "x0_at_bound": false,
+     "k_at_bound": false
+    },
+    "inflection_bracket": [
+     4.0,
+     6.0
+    ],
+    "rise_fit_pp": 49.1165052359449,
+    "rise_obs_pp": 47.8193057873591,
+    "peak_above_chance_pp": 96.8592558376101,
+    "inflection_before_first_sample": false,
+    "pass": {
+     "r2_gt_0.9": true,
+     "inflection_le_50pct_depth": true,
+     "peak_ge_15pp_above_chance": true,
+     "rise_ge_15pp": true
+    },
+    "accept_rebuttal_rule": true,
+    "accept_rise_variant": true,
+    "onset90_point": 9,
+    "onset90_frac": 0.375,
+    "onset90_stored": 9,
+    "within_1_point_of_paper_depth": false
+   },
+   "perpatch/hard_seed0/vjepa2/cross_half_r2": {
+    "file": "p1a_perpatch_direction_vjepa2_hard.json",
+    "metric": "curves.cross_half_r2 (held-out test R2)",
+    "points": [
+     1,
+     4,
+     6,
+     7,
+     8,
+     9,
+     10,
+     12,
+     16,
+     22
+    ],
+    "curve": [
+     0.689,
+     -0.7249,
+     -0.7393,
+     -1.1222,
+     -1.4219,
+     0.0767,
+     0.0836,
+     0.4157,
+     0.3637,
+     0.7464
+    ],
+    "inflection_point": 8.953692476149008,
+    "inflection_frac": 0.37307051983954204,
+    "fit_r2": 0.4764769188952098,
+    "fit": {
+     "lo": -0.6638810311721574,
+     "hi": 0.4023334534776196,
+     "k": 17.73175022396145,
+     "x0": 8.953692476149008,
+     "r2": 0.4764769188952098,
+     "sse": 2.846034739431806,
+     "x0_at_bound": false,
+     "k_at_bound": false
+    },
+    "inflection_bracket": [
+     8.0,
+     9.0
+    ],
+    "rise_fit_pp": 106.6214484649777,
+    "rise_obs_pp": 216.8374336931726,
+    "peak_above_chance_pp": 74.64401861439762,
+    "inflection_before_first_sample": false,
+    "pass": {
+     "r2_gt_0.9": false,
+     "inflection_le_50pct_depth": true,
+     "peak_ge_15pp_above_chance": true,
+     "rise_ge_15pp": true
+    },
+    "accept_rebuttal_rule": false,
+    "accept_rise_variant": false,
+    "onset90_point": 1,
+    "onset90_frac": 0.041666666666666664,
+    "onset90_stored": 1,
+    "within_1_point_of_paper_depth": true
+   },
+   "perpatch/hard_seed0/vjepa2/meanpool_r2": {
+    "file": "p1a_perpatch_direction_vjepa2_hard.json",
+    "metric": "curves.meanpool_r2 (held-out test R2)",
+    "points": [
+     1,
+     4,
+     6,
+     7,
+     8,
+     9,
+     10,
+     12,
+     16,
+     22
+    ],
+    "curve": [
+     0.8137,
+     0.8835,
+     0.9147,
+     0.9309,
+     0.956,
+     0.9699,
+     0.9674,
+     0.9828,
+     0.9879,
+     0.9909
+    ],
+    "inflection_point": 3.627280628484943,
+    "inflection_frac": 0.15113669285353928,
+    "fit_r2": 0.9932484743919189,
+    "fit": {
+     "lo": 0.7478248172542991,
+     "hi": 0.9918520854708027,
+     "k": 0.37019212932928397,
+     "x0": 3.627280628484943,
+     "r2": 0.9932484743919189,
+     "sse": 0.0001922537938998072,
+     "x0_at_bound": false,
+     "k_at_bound": false
+    },
+    "inflection_bracket": [
+     1.0,
+     4.0
+    ],
+    "rise_fit_pp": 17.680415216123546,
+    "rise_obs_pp": 17.71953835084591,
+    "peak_above_chance_pp": 99.09410537907043,
+    "inflection_before_first_sample": false,
+    "pass": {
+     "r2_gt_0.9": true,
+     "inflection_le_50pct_depth": true,
+     "peak_ge_15pp_above_chance": true,
+     "rise_ge_15pp": true
+    },
+    "accept_rebuttal_rule": true,
+    "accept_rise_variant": true,
+    "onset90_point": 6,
+    "onset90_frac": 0.25,
+    "onset90_stored": 6,
+    "within_1_point_of_paper_depth": false
+   },
+   "perpatch/hard_seed1/vjepa2/perpos_mean_r2": {
+    "file": "p1a_perpatch_direction_vjepa2_hard_seed1.json",
+    "metric": "curves.perpos_mean_r2 (held-out test R2)",
+    "points": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     12,
+     16,
+     22
+    ],
+    "curve": [
+     0.5418,
+     0.5831,
+     0.5877,
+     0.5882,
+     0.678,
+     0.8333,
+     0.8223,
+     0.8832,
+     0.9479,
+     0.9537,
+     0.9686,
+     0.9672,
+     0.9639
+    ],
+    "inflection_point": 5.755012947727592,
+    "inflection_frac": 0.23979220615531635,
+    "fit_r2": 0.9800899046230758,
+    "fit": {
+     "lo": 0.5409847192660504,
+     "hi": 0.965120323250387,
+     "k": 0.813608772964894,
+     "x0": 5.755012947727592,
+     "r2": 0.9800899046230758,
+     "sse": 0.007075049191952988,
+     "x0_at_bound": false,
+     "k_at_bound": false
+    },
+    "inflection_bracket": [
+     5.0,
+     6.0
+    ],
+    "rise_fit_pp": 41.545794384447476,
+    "rise_obs_pp": 42.68034205382521,
+    "peak_above_chance_pp": 96.85568686734638,
+    "inflection_before_first_sample": false,
+    "pass": {
+     "r2_gt_0.9": true,
+     "inflection_le_50pct_depth": true,
+     "peak_ge_15pp_above_chance": true,
+     "rise_ge_15pp": true
+    },
+    "accept_rebuttal_rule": true,
+    "accept_rise_variant": true,
+    "onset90_point": 8,
+    "onset90_frac": 0.3333333333333333,
+    "onset90_stored": 8,
+    "within_1_point_of_paper_depth": false
+   },
+   "perpatch/hard_seed1/vjepa2/cross_half_r2": {
+    "file": "p1a_perpatch_direction_vjepa2_hard_seed1.json",
+    "metric": "curves.cross_half_r2 (held-out test R2)",
+    "points": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     12,
+     16,
+     22
+    ],
+    "curve": [
+     0.7298,
+     0.6838,
+     0.4957,
+     0.1625,
+     -1.1573,
+     0.2169,
+     -0.5859,
+     -1.0324,
+     0.385,
+     0.4523,
+     0.6924,
+     0.5794,
+     0.7432
+    ],
+    "inflection_point": 8.966158463582458,
+    "inflection_frac": 0.37358993598260243,
+    "fit_r2": 0.23693016278273715,
+    "fit": {
+     "lo": -0.06087089056520688,
+     "hi": 0.6168211370844949,
+     "k": 19.33021383684077,
+     "x0": 8.966158463582458,
+     "r2": 0.23693016278273715,
+     "sse": 4.088250765470894,
+     "x0_at_bound": false,
+     "k_at_bound": false
+    },
+    "inflection_bracket": [
+     8.0,
+     9.0
+    ],
+    "rise_fit_pp": 67.76920276497019,
+    "rise_obs_pp": 190.05403455292503,
+    "peak_above_chance_pp": 74.32206382260723,
+    "inflection_before_first_sample": false,
+    "pass": {
+     "r2_gt_0.9": false,
+     "inflection_le_50pct_depth": true,
+     "peak_ge_15pp_above_chance": true,
+     "rise_ge_15pp": true
+    },
+    "accept_rebuttal_rule": false,
+    "accept_rise_variant": false,
+    "onset90_point": 1,
+    "onset90_frac": 0.041666666666666664,
+    "onset90_stored": 1,
+    "within_1_point_of_paper_depth": true
+   },
+   "perpatch/hard_seed1/vjepa2/meanpool_r2": {
+    "file": "p1a_perpatch_direction_vjepa2_hard_seed1.json",
+    "metric": "curves.meanpool_r2 (held-out test R2)",
+    "points": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     12,
+     16,
+     22
+    ],
+    "curve": [
+     0.8465,
+     0.7908,
+     0.8558,
+     0.8839,
+     0.9186,
+     0.9212,
+     0.9376,
+     0.9697,
+     0.9734,
+     0.97,
+     0.9789,
+     0.9883,
+     0.9912
+    ],
+    "inflection_point": 4.592717174762506,
+    "inflection_frac": 0.19136321561510442,
+    "fit_r2": 0.9352653044649805,
+    "fit": {
+     "lo": 0.7997246776012287,
+     "hi": 0.9848481634032942,
+     "k": 0.591787756334047,
+     "x0": 4.592717174762506,
+     "r2": 0.9352653044649805,
+     "sse": 0.0031419524312938964,
+     "x0_at_bound": false,
+     "k_at_bound": false
+    },
+    "inflection_bracket": [
+     4.0,
+     5.0
+    ],
+    "rise_fit_pp": 16.538619253633115,
+    "rise_obs_pp": 20.044435203575283,
+    "peak_above_chance_pp": 99.12300054708389,
+    "inflection_before_first_sample": false,
+    "pass": {
+     "r2_gt_0.9": true,
+     "inflection_le_50pct_depth": true,
+     "peak_ge_15pp_above_chance": true,
+     "rise_ge_15pp": true
+    },
+    "accept_rebuttal_rule": true,
+    "accept_rise_variant": true,
+    "onset90_point": 5,
+    "onset90_frac": 0.20833333333333334,
+    "onset90_stored": 5,
+    "within_1_point_of_paper_depth": false
+   },
+   "perpatch/hard_seed2/vjepa2/perpos_mean_r2": {
+    "file": "p1a_perpatch_direction_vjepa2_hard_seed2.json",
+    "metric": "curves.perpos_mean_r2 (held-out test R2)",
+    "points": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     12,
+     16,
+     22
+    ],
+    "curve": [
+     0.5463,
+     0.5766,
+     0.5623,
+     0.5732,
+     0.6863,
+     0.8104,
+     0.8006,
+     0.8795,
+     0.9448,
+     0.9516,
+     0.9721,
+     0.9727,
+     0.9721
+    ],
+    "inflection_point": 5.9347887466191205,
+    "inflection_frac": 0.24728286444246336,
+    "fit_r2": 0.9811267603606514,
+    "fit": {
+     "lo": 0.5321893882473833,
+     "hi": 0.9718703868574311,
+     "k": 0.7584072032193623,
+     "x0": 5.9347887466191205,
+     "r2": 0.9811267603606514,
+     "sse": 0.007036587172760382,
+     "x0_at_bound": false,
+     "k_at_bound": false
+    },
+    "inflection_bracket": [
+     5.0,
+     6.0
+    ],
+    "rise_fit_pp": 42.95025319871684,
+    "rise_obs_pp": 42.64176536685061,
+    "peak_above_chance_pp": 97.27126787829602,
+    "inflection_before_first_sample": false,
+    "pass": {
+     "r2_gt_0.9": true,
+     "inflection_le_50pct_depth": true,
+     "peak_ge_15pp_above_chance": true,
+     "rise_ge_15pp": true
+    },
+    "accept_rebuttal_rule": true,
+    "accept_rise_variant": true,
+    "onset90_point": 8,
+    "onset90_frac": 0.3333333333333333,
+    "onset90_stored": 8,
+    "within_1_point_of_paper_depth": false
+   },
+   "perpatch/hard_seed2/vjepa2/cross_half_r2": {
+    "file": "p1a_perpatch_direction_vjepa2_hard_seed2.json",
+    "metric": "curves.cross_half_r2 (held-out test R2)",
+    "points": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     12,
+     16,
+     22
+    ],
+    "curve": [
+     0.7064,
+     0.723,
+     0.4417,
+     0.1537,
+     -0.4332,
+     -0.564,
+     -1.5394,
+     -1.8411,
+     0.0822,
+     0.3724,
+     0.6317,
+     0.6049,
+     0.7941
+    ],
+    "inflection_point": 9.017952710092276,
+    "inflection_frac": 0.3757480295871782,
+    "fit_r2": 0.23669707845301358,
+    "fit": {
+     "lo": -0.29409847236183345,
+     "hi": 0.6007369818785526,
+     "k": 17.85227512552768,
+     "x0": 9.017952710092276,
+     "r2": 0.23669707845301358,
+     "sse": 6.903999887527171,
+     "x0_at_bound": false,
+     "k_at_bound": false
+    },
+    "inflection_bracket": [
+     9.0,
+     10.0
+    ],
+    "rise_fit_pp": 89.4835454240386,
+    "rise_obs_pp": 263.51136722515116,
+    "peak_above_chance_pp": 79.40525198399611,
+    "inflection_before_first_sample": false,
+    "pass": {
+     "r2_gt_0.9": false,
+     "inflection_le_50pct_depth": true,
+     "peak_ge_15pp_above_chance": true,
+     "rise_ge_15pp": true
+    },
+    "accept_rebuttal_rule": false,
+    "accept_rise_variant": false,
+    "onset90_point": 2,
+    "onset90_frac": 0.08333333333333333,
+    "onset90_stored": 2,
+    "within_1_point_of_paper_depth": true
+   },
+   "perpatch/hard_seed2/vjepa2/meanpool_r2": {
+    "file": "p1a_perpatch_direction_vjepa2_hard_seed2.json",
+    "metric": "curves.meanpool_r2 (held-out test R2)",
+    "points": [
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     12,
+     16,
+     22
+    ],
+    "curve": [
+     0.8363,
+     0.8025,
+     0.843,
+     0.8719,
+     0.9078,
+     0.9065,
+     0.9162,
+     0.9615,
+     0.9618,
+     0.9696,
+     0.9865,
+     0.9925,
+     0.9935
+    ],
+    "inflection_point": 5.120194051587074,
+    "inflection_frac": 0.2133414188161281,
+    "fit_r2": 0.9612127892756501,
+    "fit": {
+     "lo": 0.7901690353430411,
+     "hi": 0.9932716942531193,
+     "k": 0.4532132848329339,
+     "x0": 5.120194051587074,
+     "r2": 0.9612127892756501,
+     "sse": 0.0019543167840035394,
+     "x0_at_bound": false,
+     "k_at_bound": false
+    },
+    "inflection_bracket": [
+     5.0,
+     6.0
+    ],
+    "rise_fit_pp": 17.58204685011342,
+    "rise_obs_pp": 19.100249624044764,
+    "peak_above_chance_pp": 99.34922630230709,
+    "inflection_before_first_sample": false,
+    "pass": {
+     "r2_gt_0.9": true,
+     "inflection_le_50pct_depth": true,
+     "peak_ge_15pp_above_chance": true,
+     "rise_ge_15pp": true
+    },
+    "accept_rebuttal_rule": true,
+    "accept_rise_variant": true,
+    "onset90_point": 5,
+    "onset90_frac": 0.20833333333333334,
+    "onset90_stored": 5,
+    "within_1_point_of_paper_depth": false
+   },
+   "perpatch/paper_layout/vjepa2/perpos_mean_r2": {
+    "file": "p1a_perpatch_direction_vjepa2_paper_layout.json",
+    "metric": "curves.perpos_mean_r2 (held-out test R2)",
+    "points": [
+     1,
+     4,
+     6,
+     7,
+     8,
+     9,
+     10,
+     12,
+     16,
+     22
+    ],
+    "curve": [
+     0.4733,
+     0.8138,
+     0.9584,
+     0.9506,
+     0.9553,
+     0.9784,
+     0.9775,
+     0.9783,
+     0.9582,
+     0.9291
+    ],
+    "inflection_point": 3.5229816035492476,
+    "inflection_frac": 0.14679090014788532,
+    "fit_r2": 0.9908151231761062,
+    "fit": {
+     "lo": 0.4679096550655877,
+     "hi": 0.9616007532308259,
+     "k": 1.7837155264995446,
+     "x0": 3.5229816035492476,
+     "r2": 0.9908151231761062,
+     "sse": 0.0020293208998513725,
+     "x0_at_bound": false,
+     "k_at_bound": false
+    },
+    "inflection_bracket": [
+     1.0,
+     4.0
+    ],
+    "rise_fit_pp": 48.82684520903366,
+    "rise_obs_pp": 50.50833401494303,
+    "peak_above_chance_pp": 97.84199053434817,
+    "inflection_before_first_sample": false,
+    "pass": {
+     "r2_gt_0.9": true,
+     "inflection_le_50pct_depth": true,
+     "peak_ge_15pp_above_chance": true,
+     "rise_ge_15pp": true
+    },
+    "accept_rebuttal_rule": true,
+    "accept_rise_variant": true,
+    "onset90_point": 6,
+    "onset90_frac": 0.25,
+    "onset90_stored": 6,
+    "within_1_point_of_paper_depth": false
+   },
+   "perpatch/paper_layout/vjepa2/cross_half_r2": {
+    "file": "p1a_perpatch_direction_vjepa2_paper_layout.json",
+    "metric": "curves.cross_half_r2 (held-out test R2)",
+    "points": [
+     1,
+     4,
+     6,
+     7,
+     8,
+     9,
+     10,
+     12,
+     16,
+     22
+    ],
+    "curve": [
+     0.8135,
+     0.8719,
+     0.9539,
+     0.943,
+     0.9461,
+     0.9705,
+     0.9712,
+     0.9532,
+     0.8929,
+     0.8616
+    ],
+    "inflection_point": 4.005297843540684,
+    "inflection_frac": 0.1668874101475285,
+    "fit_r2": 0.5986569060748999,
+    "fit": {
+     "lo": 0.8134695037796043,
+     "hi": 0.936549615010412,
+     "k": 18.95008384786422,
+     "x0": 4.005297843540684,
+     "r2": 0.5986569060748999,
+     "sse": 0.010593707013840107,
+     "x0_at_bound": false,
+     "k_at_bound": false
+    },
+    "inflection_bracket": [
+     4.0,
+     6.0
+    ],
+    "rise_fit_pp": 12.308011123080774,
+    "rise_obs_pp": 15.775353451469742,
+    "peak_above_chance_pp": 97.12230382975808,
+    "inflection_before_first_sample": false,
+    "pass": {
+     "r2_gt_0.9": false,
+     "inflection_le_50pct_depth": true,
+     "peak_ge_15pp_above_chance": true,
+     "rise_ge_15pp": false
+    },
+    "accept_rebuttal_rule": false,
+    "accept_rise_variant": false,
+    "onset90_point": 6,
+    "onset90_frac": 0.25,
+    "onset90_stored": 6,
+    "within_1_point_of_paper_depth": false
+   },
+   "perpatch/paper_layout/vjepa2/meanpool_r2": {
+    "file": "p1a_perpatch_direction_vjepa2_paper_layout.json",
+    "metric": "curves.meanpool_r2 (held-out test R2)",
+    "points": [
+     1,
+     4,
+     6,
+     7,
+     8,
+     9,
+     10,
+     12,
+     16,
+     22
+    ],
+    "curve": [
+     0.8473,
+     0.9614,
+     0.9734,
+     0.9718,
+     0.9731,
+     0.9859,
+     0.9858,
+     0.9888,
+     0.9902,
+     0.9934
+    ],
+    "inflection_point": 7.03488482478298e-24,
+    "inflection_frac": 2.931202010326242e-25,
+    "fit_r2": 0.9813680951176588,
+    "fit": {
+     "lo": 0.5939913751662731,
+     "hi": 0.9861774662783159,
+     "k": 0.6095145219744965,
+     "x0": 7.03488482478298e-24,
+     "r2": 0.9813680951176588,
+     "sse": 0.0003146326502252641,
+     "x0_at_bound": true,
+     "k_at_bound": false
+    },
+    "inflection_bracket": [
+     null,
+     1.0
+    ],
+    "rise_fit_pp": 13.811556738133712,
+    "rise_obs_pp": 14.611203111233351,
+    "peak_above_chance_pp": 99.33992485343272,
+    "inflection_before_first_sample": true,
+    "pass": {
+     "r2_gt_0.9": true,
+     "inflection_le_50pct_depth": true,
+     "peak_ge_15pp_above_chance": true,
+     "rise_ge_15pp": false
+    },
+    "accept_rebuttal_rule": true,
+    "accept_rise_variant": false,
+    "onset90_point": 4,
+    "onset90_frac": 0.16666666666666666,
+    "onset90_stored": 4,
+    "within_1_point_of_paper_depth": false
+   },
+   "perpatch/supplied/random_init/perpos_mean_r2": {
+    "file": "p1a_perpatch_direction_random.json",
+    "metric": "curves.perpos_mean_r2 (held-out test R2)",
+    "points": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     12,
+     14,
+     16,
+     19,
+     22,
+     24
+    ],
+    "curve": [
+     0.0067,
+     -0.0123,
+     -0.021,
+     0.0446,
+     0.0982,
+     0.1954,
+     0.2191,
+     0.2361,
+     0.2742,
+     0.2886,
+     0.3188,
+     0.3282,
+     0.3257,
+     0.3618,
+     0.3558,
+     0.3798,
+     0.3845
+    ],
+    "inflection_point": 4.81545306810865,
+    "inflection_frac": 0.20064387783786042,
+    "fit_r2": 0.9765372339769456,
+    "fit": {
+     "lo": -0.07032459944092562,
+     "hi": 0.3589466542294917,
+     "k": 0.4612428344832796,
+     "x0": 4.81545306810865,
+     "r2": 0.9765372339769456,
+     "sse": 0.00786963864093778,
+     "x0_at_bound": false,
+     "k_at_bound": false
+    },
+    "inflection_bracket": [
+     4.0,
+     5.0
+    ],
+    "rise_fit_pp": 38.71958967699821,
+    "rise_obs_pp": 40.557168293755005,
+    "peak_above_chance_pp": 38.4545818692615,
+    "inflection_before_first_sample": false,
+    "pass": {
+     "r2_gt_0.9": true,
+     "inflection_le_50pct_depth": true,
+     "peak_ge_15pp_above_chance": true,
+     "rise_ge_15pp": true
+    },
+    "accept_rebuttal_rule": true,
+    "accept_rise_variant": true,
+    "onset90_point": 16,
+    "onset90_frac": 0.6666666666666666,
+    "onset90_stored": 16,
+    "within_1_point_of_paper_depth": false
+   },
+   "perpatch/supplied/random_init/cross_half_r2": {
+    "file": "p1a_perpatch_direction_random.json",
+    "metric": "curves.cross_half_r2 (held-out test R2)",
+    "points": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     12,
+     14,
+     16,
+     19,
+     22,
+     24
+    ],
+    "curve": [
+     -0.0088,
+     0.6117,
+     0.638,
+     0.6484,
+     0.6603,
+     0.6788,
+     0.6902,
+     0.7012,
+     0.7026,
+     0.706,
+     0.7108,
+     0.7151,
+     0.7213,
+     0.7298,
+     0.7361,
+     0.74,
+     0.7441
+    ],
+    "inflection_point": 8.704976815600662e-18,
+    "inflection_frac": 3.6270736731669423e-19,
+    "fit_r2": 0.9709893208568976,
+    "fit": {
+     "lo": -0.7185330132740665,
+     "hi": 0.7028153448946127,
+     "k": 2.5559503258492664,
+     "x0": 8.704976815600662e-18,
+     "r2": 0.9709893208568976,
+     "sse": 0.014216828349525736,
+     "x0_at_bound": true,
+     "k_at_bound": false
+    },
+    "inflection_bracket": [
+     0.0,
+     1.0
+    ],
+    "rise_fit_pp": 71.06741790843397,
+    "rise_obs_pp": 75.28369555628134,
+    "peak_above_chance_pp": 74.40847341639866,
+    "inflection_before_first_sample": false,
+    "pass": {
+     "r2_gt_0.9": true,
+     "inflection_le_50pct_depth": true,
+     "peak_ge_15pp_above_chance": true,
+     "rise_ge_15pp": true
+    },
+    "accept_rebuttal_rule": true,
+    "accept_rise_variant": true,
+    "onset90_point": 5,
+    "onset90_frac": 0.20833333333333334,
+    "onset90_stored": 5,
+    "within_1_point_of_paper_depth": false
+   },
+   "perpatch/supplied/random_init/meanpool_r2": {
+    "file": "p1a_perpatch_direction_random.json",
+    "metric": "curves.meanpool_r2 (held-out test R2)",
+    "points": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     12,
+     14,
+     16,
+     19,
+     22,
+     24
+    ],
+    "curve": [
+     0.0121,
+     0.8616,
+     0.8729,
+     0.8702,
+     0.8765,
+     0.8774,
+     0.8784,
+     0.8802,
+     0.8802,
+     0.8798,
+     0.8771,
+     0.8759,
+     0.875,
+     0.8767,
+     0.8743,
+     0.873,
+     0.8704
+    ],
+    "inflection_point": 1.4912326027498543e-10,
+    "inflection_frac": 6.213469178124393e-12,
+    "fit_r2": 0.9997922395523252,
+    "fit": {
+     "lo": -0.8517718624133745,
+     "hi": 0.8758798685257212,
+     "k": 4.784393950451225,
+     "x0": 1.4912326027498543e-10,
+     "r2": 0.9997922395523252,
+     "sse": 0.0001456758017121126,
+     "x0_at_bound": true,
+     "k_at_bound": false
+    },
+    "inflection_bracket": [
+     0.0,
+     1.0
+    ],
+    "rise_fit_pp": 86.38258657777024,
+    "rise_obs_pp": 86.81317554450642,
+    "peak_above_chance_pp": 88.01853430911726,
+    "inflection_before_first_sample": false,
+    "pass": {
+     "r2_gt_0.9": true,
+     "inflection_le_50pct_depth": true,
+     "peak_ge_15pp_above_chance": true,
+     "rise_ge_15pp": true
+    },
+    "accept_rebuttal_rule": true,
+    "accept_rise_variant": true,
+    "onset90_point": 1,
+    "onset90_frac": 0.041666666666666664,
+    "onset90_stored": 1,
+    "within_1_point_of_paper_depth": false
+   },
+   "perpatch/hard_seed0/random_init/perpos_mean_r2": {
+    "file": "p1a_perpatch_direction_random_hard.json",
+    "metric": "curves.perpos_mean_r2 (held-out test R2)",
+    "points": [
+     1,
+     4,
+     6,
+     7,
+     8,
+     9,
+     10,
+     12,
+     16,
+     22
+    ],
+    "curve": [
+     0.4066,
+     0.5445,
+     0.5677,
+     0.5879,
+     0.5962,
+     0.6108,
+     0.6095,
+     0.6205,
+     0.6193,
+     0.6145
+    ],
+    "inflection_point": 7.706335147850213e-15,
+    "inflection_frac": 3.2109729782709223e-16,
+    "fit_r2": 0.9917402334174633,
+    "fit": {
+     "lo": 0.0900240992197213,
+     "hi": 0.6180165766670402,
+     "k": 0.41733655816569015,
+     "x0": 7.706335147850213e-15,
+     "r2": 0.9917402334174633,
+     "sse": 0.0003134270750309874,
+     "x0_at_bound": true,
+     "k_at_bound": false
+    },
+    "inflection_bracket": [
+     null,
+     1.0
+    ],
+    "rise_fit_pp": 20.964011984758447,
+    "rise_obs_pp": 21.387186422309885,
+    "peak_above_chance_pp": 62.048498646786044,
+    "inflection_before_first_sample": true,
+    "pass": {
+     "r2_gt_0.9": true,
+     "inflection_le_50pct_depth": true,
+     "peak_ge_15pp_above_chance": true,
+     "rise_ge_15pp": true
+    },
+    "accept_rebuttal_rule": true,
+    "accept_rise_variant": true,
+    "onset90_point": 6,
+    "onset90_frac": 0.25,
+    "onset90_stored": 6,
+    "within_1_point_of_paper_depth": false
+   },
+   "perpatch/hard_seed0/random_init/cross_half_r2": {
+    "file": "p1a_perpatch_direction_random_hard.json",
+    "metric": "curves.cross_half_r2 (held-out test R2)",
+    "points": [
+     1,
+     4,
+     6,
+     7,
+     8,
+     9,
+     10,
+     12,
+     16,
+     22
+    ],
+    "curve": [
+     -0.7234,
+     -0.4085,
+     -0.0749,
+     0.1437,
+     0.2744,
+     0.2659,
+     0.3072,
+     0.3304,
+     0.4467,
+     0.5143
+    ],
+    "inflection_point": 5.01024457002518,
+    "inflection_frac": 0.20876019041771585,
+    "fit_r2": 0.9849490324493275,
+    "fit": {
+     "lo": -0.8757280641094267,
+     "hi": 0.4410114370300912,
+     "k": 0.524820958683839,
+     "x0": 5.01024457002518,
+     "r2": 0.9849490324493275,
+     "sse": 0.02128619387032325,
+     "x0_at_bound": false,
+     "k_at_bound": false
+    },
+    "inflection_bracket": [
+     4.0,
+     6.0
+    ],
+    "rise_fit_pp": 117.35061480069811,
+    "rise_obs_pp": 123.76462069276828,
+    "peak_above_chance_pp": 51.425172870871684,
+    "inflection_before_first_sample": false,
+    "pass": {
+     "r2_gt_0.9": true,
+     "inflection_le_50pct_depth": true,
+     "peak_ge_15pp_above_chance": true,
+     "rise_ge_15pp": true
+    },
+    "accept_rebuttal_rule": true,
+    "accept_rise_variant": true,
+    "onset90_point": 22,
+    "onset90_frac": 0.9166666666666666,
+    "onset90_stored": 22,
+    "within_1_point_of_paper_depth": false
+   },
+   "perpatch/hard_seed0/random_init/meanpool_r2": {
+    "file": "p1a_perpatch_direction_random_hard.json",
+    "metric": "curves.meanpool_r2 (held-out test R2)",
+    "points": [
+     1,
+     4,
+     6,
+     7,
+     8,
+     9,
+     10,
+     12,
+     16,
+     22
+    ],
+    "curve": [
+     0.881,
+     0.8783,
+     0.8762,
+     0.8725,
+     0.8751,
+     0.8766,
+     0.8746,
+     0.8693,
+     0.8633,
+     0.8601
+    ],
+    "inflection_point": 12.340026758864171,
+    "inflection_frac": 0.5141677816193405,
+    "fit_r2": 0.9292051272639164,
+    "fit": {
+     "lo": 0.8809139606860313,
+     "hi": 0.8578037594597199,
+     "k": 0.25321331429075955,
+     "x0": 12.340026758864171,
+     "r2": 0.9292051272639164,
+     "sse": 2.8032534602450377e-05,
+     "x0_at_bound": false,
+     "k_at_bound": false
+    },
+    "inflection_bracket": [
+     12.0,
+     16.0
+    ],
+    "rise_fit_pp": -2.002932580438954,
+    "rise_obs_pp": 2.08983814123197,
+    "peak_above_chance_pp": 88.09985899990541,
+    "inflection_before_first_sample": false,
+    "pass": {
+     "r2_gt_0.9": true,
+     "inflection_le_50pct_depth": false,
+     "peak_ge_15pp_above_chance": true,
+     "rise_ge_15pp": false
+    },
+    "accept_rebuttal_rule": false,
+    "accept_rise_variant": false,
+    "onset90_point": 1,
+    "onset90_frac": 0.041666666666666664,
+    "onset90_stored": 1,
+    "within_1_point_of_paper_depth": false
+   },
+   "perpatch/hard_seed1/random_init/perpos_mean_r2": {
+    "file": "p1a_perpatch_direction_random_hard_seed1.json",
+    "metric": "curves.perpos_mean_r2 (held-out test R2)",
+    "points": [
+     1,
+     4,
+     6,
+     7,
+     8,
+     9,
+     10,
+     12,
+     16,
+     22
+    ],
+    "curve": [
+     0.3552,
+     0.4964,
+     0.5227,
+     0.5542,
+     0.5653,
+     0.5763,
+     0.5638,
+     0.5746,
+     0.6003,
+     0.6143
+    ],
+    "inflection_point": 4.977585361855258e-23,
+    "inflection_frac": 2.073993900773024e-24,
+    "fit_r2": 0.9771677920264181,
+    "fit": {
+     "lo": 0.02407688574797571,
+     "hi": 0.5987102830472079,
+     "k": 0.3395969454085083,
+     "x0": 4.977585361855258e-23,
+     "r2": 0.9771677920264181,
+     "sse": 0.0011277081605375642,
+     "x0_at_bound": true,
+     "k_at_bound": false
+    },
+    "inflection_bracket": [
+     null,
+     1.0
+    ],
+    "rise_fit_pp": 23.866733191941258,
+    "rise_obs_pp": 25.914881521170525,
+    "peak_above_chance_pp": 61.43170266682682,
+    "inflection_before_first_sample": true,
+    "pass": {
+     "r2_gt_0.9": true,
+     "inflection_le_50pct_depth": true,
+     "peak_ge_15pp_above_chance": true,
+     "rise_ge_15pp": true
+    },
+    "accept_rebuttal_rule": true,
+    "accept_rise_variant": true,
+    "onset90_point": 7,
+    "onset90_frac": 0.2916666666666667,
+    "onset90_stored": 7,
+    "within_1_point_of_paper_depth": false
+   },
+   "perpatch/hard_seed1/random_init/cross_half_r2": {
+    "file": "p1a_perpatch_direction_random_hard_seed1.json",
+    "metric": "curves.cross_half_r2 (held-out test R2)",
+    "points": [
+     1,
+     4,
+     6,
+     7,
+     8,
+     9,
+     10,
+     12,
+     16,
+     22
+    ],
+    "curve": [
+     -1.0702,
+     -0.5204,
+     -0.4021,
+     -0.3957,
+     -0.4299,
+     -0.2071,
+     -0.1678,
+     -0.1694,
+     -0.4312,
+     -0.4231
+    ],
+    "inflection_point": 1.1099987469490213,
+    "inflection_frac": 0.046249947789542556,
+    "fit_r2": 0.8432359266460658,
+    "fit": {
+     "lo": -1.7869905219952318,
+     "hi": -0.3038462749240511,
+     "k": 0.5819932681288694,
+     "x0": 1.1099987469490213,
+     "r2": 0.8432359266460658,
+     "sse": 0.09494519023478742,
+     "x0_at_bound": false,
+     "k_at_bound": false
+    },
+    "inflection_bracket": [
+     1.0,
+     4.0
+    ],
+    "rise_fit_pp": 76.5293416451198,
+    "rise_obs_pp": 90.23723253507174,
+    "peak_above_chance_pp": -16.78431495269386,
+    "inflection_before_first_sample": false,
+    "pass": {
+     "r2_gt_0.9": false,
+     "inflection_le_50pct_depth": true,
+     "peak_ge_15pp_above_chance": false,
+     "rise_ge_15pp": true
+    },
+    "accept_rebuttal_rule": false,
+    "accept_rise_variant": false,
+    "onset90_point": 1,
+    "onset90_frac": 0.041666666666666664,
+    "onset90_stored": null,
+    "within_1_point_of_paper_depth": false
+   },
+   "perpatch/hard_seed1/random_init/meanpool_r2": {
+    "file": "p1a_perpatch_direction_random_hard_seed1.json",
+    "metric": "curves.meanpool_r2 (held-out test R2)",
+    "points": [
+     1,
+     4,
+     6,
+     7,
+     8,
+     9,
+     10,
+     12,
+     16,
+     22
+    ],
+    "curve": [
+     0.8791,
+     0.8751,
+     0.864,
+     0.8628,
+     0.8615,
+     0.8589,
+     0.8735,
+     0.871,
+     0.8658,
+     0.8661
+    ],
+    "inflection_point": 9.5,
+    "inflection_frac": 0.3958333333333333,
+    "fit_r2": 0.02987399555852266,
+    "fit": {
+     "lo": 0.8669000740428543,
+     "hi": 0.8691005406941401,
+     "k": 49.99999999999999,
+     "x0": 9.5,
+     "r2": 0.02987399555852266,
+     "sse": 0.0003773772000393011,
+     "x0_at_bound": false,
+     "k_at_bound": true
+    },
+    "inflection_bracket": [
+     9.0,
+     10.0
+    ],
+    "rise_fit_pp": 0.2200466651285815,
+    "rise_obs_pp": 2.0226971784152004,
+    "peak_above_chance_pp": 87.91232347792534,
+    "inflection_before_first_sample": false,
+    "pass": {
+     "r2_gt_0.9": false,
+     "inflection_le_50pct_depth": true,
+     "peak_ge_15pp_above_chance": true,
+     "rise_ge_15pp": false
+    },
+    "accept_rebuttal_rule": false,
+    "accept_rise_variant": false,
+    "onset90_point": 1,
+    "onset90_frac": 0.041666666666666664,
+    "onset90_stored": 1,
+    "within_1_point_of_paper_depth": true
+   }
+  },
+  "fold_bootstrap": {
+   "rows": {
+    "random_folds/hard/perpos_mean_r2": {
+     "points": [
+      1,
+      4,
+      6,
+      7,
+      8,
+      9,
+      10,
+      12,
+      16,
+      22
+     ],
+     "n_folds": 5,
+     "per_fold_inflection_point": [
+      5.574,
+      5.511,
+      4.326,
+      5.302,
+      5.87
+     ],
+     "per_fold_fit_r2": [
+      0.97,
+      0.966,
+      0.985,
+      0.977,
+      0.951
+     ],
+     "per_fold_onset90": [
+      8,
+      9,
+      9,
+      8,
+      8
+     ],
+     "fold_mean_curve": {
+      "inflection_point": 5.345995822144051,
+      "inflection_frac": 0.2227498259226688,
+      "fit_r2": 0.9745678097425946,
+      "rise_fit_pp": 54.60005313968804,
+      "peak_above_chance_pp": 95.8096565301502,
+      "pass": {
+       "r2_gt_0.9": true,
+       "inflection_le_50pct_depth": true,
+       "peak_ge_15pp_above_chance": true,
+       "rise_ge_15pp": true
+      },
+      "accept_rebuttal_rule": true
+     },
+     "boot_inflection_point": {
+      "median": 5.362763994134759,
+      "ci95": [
+       4.778289951459196,
+       5.737019193721262
+      ],
+      "sd": 0.2506874385579243
+     },
+     "boot_inflection_frac_ci95": [
+      0.19909541464413316,
+      0.23904246640505258
+     ]
+    },
+    "random_folds/hard/cross_half_r2": {
+     "points": [
+      1,
+      4,
+      6,
+      7,
+      8,
+      9,
+      10,
+      12,
+      16,
+      22
+     ],
+     "n_folds": 5,
+     "per_fold_inflection_point": [
+      8.951,
+      8.995,
+      8.988,
+      8.966,
+      9.666
+     ],
+     "per_fold_fit_r2": [
+      0.41,
+      0.4,
+      0.362,
+      0.323,
+      0.372
+     ],
+     "per_fold_onset90": [
+      22,
+      1,
+      22,
+      1,
+      1
+     ],
+     "fold_mean_curve": {
+      "inflection_point": 8.978257809212911,
+      "inflection_frac": 0.3740940753838713,
+      "fit_r2": 0.3781000742170524,
+      "rise_fit_pp": 85.83314101285173,
+      "peak_above_chance_pp": 75.18932742580226,
+      "pass": {
+       "r2_gt_0.9": false,
+       "inflection_le_50pct_depth": true,
+       "peak_ge_15pp_above_chance": true,
+       "rise_ge_15pp": true
+      },
+      "accept_rebuttal_rule": false
+     },
+     "boot_inflection_point": {
+      "median": 8.978257809212911,
+      "ci95": [
+       8.951937104850643,
+       8.999856820245657
+      ],
+      "sd": 0.0808413077814206
+     },
+     "boot_inflection_frac_ci95": [
+      0.3729973793687768,
+      0.3749940341769024
+     ]
+    },
+    "random_folds/hard/meanpool_r2": {
+     "points": [
+      1,
+      4,
+      6,
+      7,
+      8,
+      9,
+      10,
+      12,
+      16,
+      22
+     ],
+     "n_folds": 5,
+     "per_fold_inflection_point": [
+      6.012,
+      6.639,
+      5.625,
+      5.369,
+      5.413
+     ],
+     "per_fold_fit_r2": [
+      0.968,
+      0.975,
+      0.986,
+      0.992,
+      0.99
+     ],
+     "per_fold_onset90": [
+      6,
+      6,
+      6,
+      6,
+      6
+     ],
+     "fold_mean_curve": {
+      "inflection_point": 5.950838535636848,
+      "inflection_frac": 0.24795160565153532,
+      "fit_r2": 0.9853754664359984,
+      "rise_fit_pp": 18.193678847108696,
+      "peak_above_chance_pp": 99.21379093102594,
+      "pass": {
+       "r2_gt_0.9": true,
+       "inflection_le_50pct_depth": true,
+       "peak_ge_15pp_above_chance": true,
+       "rise_ge_15pp": true
+      },
+      "accept_rebuttal_rule": true
+     },
+     "boot_inflection_point": {
+      "median": 5.929983662145405,
+      "ci95": [
+       5.470116617642065,
+       6.182516861643364
+      ],
+      "sd": 0.18652538015738276
+     },
+     "boot_inflection_frac_ci95": [
+      0.22792152573508603,
+      0.2576048692351402
+     ]
+    },
+    "random_folds/paper_layout/perpos_mean_r2": {
+     "points": [
+      1,
+      4,
+      6,
+      7,
+      8,
+      9,
+      10,
+      12,
+      16,
+      22
+     ],
+     "n_folds": 5,
+     "per_fold_inflection_point": [
+      3.923,
+      3.581,
+      3.547,
+      3.327,
+      3.87
+     ],
+     "per_fold_fit_r2": [
+      0.985,
+      0.992,
+      0.989,
+      0.994,
+      0.992
+     ],
+     "per_fold_onset90": [
+      6,
+      6,
+      6,
+      6,
+      6
+     ],
+     "fold_mean_curve": {
+      "inflection_point": 3.593120921437381,
+      "inflection_frac": 0.14971337172655755,
+      "fit_r2": 0.9911928467627238,
+      "rise_fit_pp": 55.40232898136286,
+      "peak_above_chance_pp": 97.78642924634659,
+      "pass": {
+       "r2_gt_0.9": true,
+       "inflection_le_50pct_depth": true,
+       "peak_ge_15pp_above_chance": true,
+       "rise_ge_15pp": true
+      },
+      "accept_rebuttal_rule": true
+     },
+     "boot_inflection_point": {
+      "median": 3.593120921437381,
+      "ci95": [
+       3.423829700069645,
+       3.882963783561601
+      ],
+      "sd": 0.10359390270834071
+     },
+     "boot_inflection_frac_ci95": [
+      0.1426595708362352,
+      0.16179015764840005
+     ]
+    },
+    "random_folds/paper_layout/cross_half_r2": {
+     "points": [
+      1,
+      4,
+      6,
+      7,
+      8,
+      9,
+      10,
+      12,
+      16,
+      22
+     ],
+     "n_folds": 5,
+     "per_fold_inflection_point": [
+      4.05,
+      4.049,
+      4.036,
+      4.018,
+      3.956
+     ],
+     "per_fold_fit_r2": [
+      0.759,
+      0.648,
+      0.745,
+      0.703,
+      0.68
+     ],
+     "per_fold_onset90": [
+      6,
+      6,
+      6,
+      6,
+      6
+     ],
+     "fold_mean_curve": {
+      "inflection_point": 4.025068195946375,
+      "inflection_frac": 0.16771117483109896,
+      "fit_r2": 0.7122574447983294,
+      "rise_fit_pp": 15.61329649339509,
+      "peak_above_chance_pp": 97.08907331805918,
+      "pass": {
+       "r2_gt_0.9": false,
+       "inflection_le_50pct_depth": true,
+       "peak_ge_15pp_above_chance": true,
+       "rise_ge_15pp": true
+      },
+      "accept_rebuttal_rule": false
+     },
+     "boot_inflection_point": {
+      "median": 4.025068195946375,
+      "ci95": [
+       3.989221476315647,
+       4.052297269084347
+      ],
+      "sd": 0.017679678489156476
+     },
+     "boot_inflection_frac_ci95": [
+      0.16621756151315195,
+      0.16884571954518113
+     ]
+    },
+    "random_folds/paper_layout/meanpool_r2": {
+     "points": [
+      1,
+      4,
+      6,
+      7,
+      8,
+      9,
+      10,
+      12,
+      16,
+      22
+     ],
+     "n_folds": 5,
+     "per_fold_inflection_point": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "per_fold_fit_r2": [
+      0.989,
+      0.986,
+      0.992,
+      0.981,
+      0.989
+     ],
+     "per_fold_onset90": [
+      4,
+      4,
+      4,
+      4,
+      4
+     ],
+     "fold_mean_curve": {
+      "inflection_point": 2.669589015781237e-22,
+      "inflection_frac": 1.1123287565755155e-23,
+      "fit_r2": 0.9888600662548284,
+      "rise_fit_pp": 16.686695848855273,
+      "peak_above_chance_pp": 99.1814657863946,
+      "pass": {
+       "r2_gt_0.9": true,
+       "inflection_le_50pct_depth": true,
+       "peak_ge_15pp_above_chance": true,
+       "rise_ge_15pp": true
+      },
+      "accept_rebuttal_rule": true
+     },
+     "boot_inflection_point": {
+      "median": 1.5210960187581932e-21,
+      "ci95": [
+       7.945109495798542e-24,
+       9.961935775442723e-16
+      ],
+      "sd": 8.432501824834914e-15
+     },
+     "boot_inflection_frac_ci95": [
+      3.3104622899160595e-25,
+      4.150806573101135e-17
+     ]
+    },
+    "start_grouped_folds/hard/perpos_mean_r2": {
+     "points": [
+      1,
+      4,
+      6,
+      7,
+      8,
+      9,
+      10,
+      12,
+      16,
+      22
+     ],
+     "n_folds": 5,
+     "per_fold_inflection_point": [
+      3.45,
+      5.613,
+      4.006,
+      5.64,
+      4.816
+     ],
+     "per_fold_fit_r2": [
+      0.969,
+      0.927,
+      0.965,
+      0.96,
+      0.978
+     ],
+     "per_fold_onset90": [
+      9,
+      9,
+      9,
+      9,
+      9
+     ],
+     "fold_mean_curve": {
+      "inflection_point": 4.662886099701458,
+      "inflection_frac": 0.19428692082089408,
+      "fit_r2": 0.9652447286195607,
+      "rise_fit_pp": 100.01232037906898,
+      "peak_above_chance_pp": 90.58791067771563,
+      "pass": {
+       "r2_gt_0.9": true,
+       "inflection_le_50pct_depth": true,
+       "peak_ge_15pp_above_chance": true,
+       "rise_ge_15pp": true
+      },
+      "accept_rebuttal_rule": true
+     },
+     "boot_inflection_point": {
+      "median": 4.662886099701458,
+      "ci95": [
+       3.7923974857919553,
+       5.5006360453596495
+      ],
+      "sd": 0.45410463862524136
+     },
+     "boot_inflection_frac_ci95": [
+      0.15801656190799815,
+      0.22919316855665206
+     ]
+    },
+    "start_grouped_folds/hard/cross_half_r2": {
+     "points": [
+      1,
+      4,
+      6,
+      7,
+      8,
+      9,
+      10,
+      12,
+      16,
+      22
+     ],
+     "n_folds": 5,
+     "per_fold_inflection_point": [
+      8.951,
+      9.821,
+      8.971,
+      8.952,
+      8.966
+     ],
+     "per_fold_fit_r2": [
+      0.376,
+      0.415,
+      0.34,
+      0.405,
+      0.349
+     ],
+     "per_fold_onset90": [
+      1,
+      22,
+      22,
+      22,
+      12
+     ],
+     "fold_mean_curve": {
+      "inflection_point": 8.966288310624503,
+      "inflection_frac": 0.3735953462760209,
+      "fit_r2": 0.38168802859801376,
+      "rise_fit_pp": 81.74103079416508,
+      "peak_above_chance_pp": 71.32001536964697,
+      "pass": {
+       "r2_gt_0.9": false,
+       "inflection_le_50pct_depth": true,
+       "peak_ge_15pp_above_chance": true,
+       "rise_ge_15pp": true
+      },
+      "accept_rebuttal_rule": false
+     },
+     "boot_inflection_point": {
+      "median": 8.965328289593613,
+      "ci95": [
+       8.950772935458096,
+       8.982074920984436
+      ],
+      "sd": 0.06117697714158376
+     },
+     "boot_inflection_frac_ci95": [
+      0.37294887231075396,
+      0.3742531217076848
+     ]
+    },
+    "start_grouped_folds/hard/meanpool_r2": {
+     "points": [
+      1,
+      4,
+      6,
+      7,
+      8,
+      9,
+      10,
+      12,
+      16,
+      22
+     ],
+     "n_folds": 5,
+     "per_fold_inflection_point": [
+      5.807,
+      5.475,
+      5.51,
+      4.764,
+      4.396
+     ],
+     "per_fold_fit_r2": [
+      0.922,
+      0.967,
+      0.948,
+      0.984,
+      0.987
+     ],
+     "per_fold_onset90": [
+      6,
+      8,
+      6,
+      6,
+      6
+     ],
+     "fold_mean_curve": {
+      "inflection_point": 5.325112023234519,
+      "inflection_frac": 0.22187966763477163,
+      "fit_r2": 0.9772995692825136,
+      "rise_fit_pp": 22.979207430194148,
+      "peak_above_chance_pp": 97.12437572440257,
+      "pass": {
+       "r2_gt_0.9": true,
+       "inflection_le_50pct_depth": true,
+       "peak_ge_15pp_above_chance": true,
+       "rise_ge_15pp": true
+      },
+      "accept_rebuttal_rule": true
+     },
+     "boot_inflection_point": {
+      "median": 5.333802825710553,
+      "ci95": [
+       4.767785273432838,
+       5.669411649625647
+      ],
+      "sd": 0.239682187953177
+     },
+     "boot_inflection_frac_ci95": [
+      0.19865771972636825,
+      0.2362254854010686
+     ]
+    }
    }
   }
  },
@@ -2951,11 +5848,11 @@
    "split": 0,
    "other": "all other RNG seeds are 0 (bootstrap, folds, null draws, shuffles); random-removal controls use seeds 0..n-1"
   },
-  "commit": "1653625d74fcd7842763dc7dee98d2bb3aa717c2",
+  "commit": "555b4117bc2507a71cb2a43b0ed50f67b8a9ded7",
   "dirty": true,
-  "git_commit": "1653625d74fcd7842763dc7dee98d2bb3aa717c2",
+  "git_commit": "555b4117bc2507a71cb2a43b0ed50f67b8a9ded7",
   "git_dirty_src_or_scripts": true,
-  "timestamp_utc": "2026-09-28T09:01:59+00:00",
+  "timestamp_utc": "2026-09-28T09:14:31+00:00",
   "pool": null,
   "model": null,
   "layer": null
