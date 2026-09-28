@@ -287,13 +287,14 @@ random network's per-position curve also plateaus by point 6. A 5-fold refit on 
 across 8 → 9 appears in 5 of 5 folds under both schemes[^hfolds]. Under the sigmoid criterion the paper's rebuttal
 proposed, as summarised in our notes (fit R² > 0.9, inflection at ≤ 50% depth, peak ≥ 15 pp above chance; we read the
 R² as the fit's, depth as (point − 1)/23 and chance as R² 0, none of which is the only reading), fitted on the sampled
-points 1–22 (10 points for seed 0 and the folds), the hard-set per-position curves inflect at points 5.73 / 5.76 / 5.93
+points (1–22 for the hard and paper-layout sets, 10 or 13 points; 1–24 for the supplied set), the hard-set per-position curves inflect at points 5.73 / 5.76 / 5.93
 (depth 0.21; fold bootstrap 5.36 [4.78, 5.74], start-grouped 4.66 [3.79, 5.50]), the supplied set at 2.10 and the
 paper-layout set at 3.52. The cross-half curves inflect at her depth (8.95–9.02, depth 0.35) but fail the fit test
-(R² 0.24–0.48); the mean-pooled speed and acceleration curves also pass with inflections at her depth (9.76, 10.17), on
-fitted rises of 1–2 points from R² 0.97, which is the criterion's weakness with chance set at zero: it also accepts
+(R² 0.24–0.48); the mean-pooled speed and acceleration curves also pass with inflections at or just past her depth (9.76;
+10.17, 1.2 points past), on fitted rises of 1–2 points from R² 0.97–0.98, which is the criterion's weakness with chance set at zero: it also accepts
 the random-init per-position curves (supplied set: inflection 3.26, peak 38.5 pp) and the random-init hard-set
-cross-half curve on seed 0, so it does not separate a trained encoder from an untrained one[^sig].
+cross-half curve on seed 0, along with curves whose inflection sits at the first point and one random-init mean-pooled
+curve with a negative fitted rise, so it does not separate a trained encoder from an untrained one[^sig].
 On the supplied clips neither part appears: the per-patch code forms by block 6 with no step at points 8 → 9, while the mean-pooled
 curve is early under every fold grouping and at the paper's clip count. What training changes on both stimulus sets is
 the per-position code from point 6 on (supplied: V-JEPA 2 0.94–0.98 against a mean of 0.39 for the random network;
@@ -477,7 +478,7 @@ p = 0.048 at every N (mean 87.4° at N = 1). Source: `p1c_direction_L{2,9,22}.js
   outlier draw of norm 982, the medians are 4.2 / 4.5 / 5.7 / 6.4°), with edits larger (median 2.5×, mean 5.6×) and more
   off-target speed change (median 125×, mean 390×); the learned probe beats all 20 draws on both (p = 1/21). Built from the Adam
   sequence's first probe instead (cosine 0.8 to the ridge one), the edit reaches 4.3° / 4.7° / 4.4° / 6.3° under the four
-  evaluation probes against null medians of 5.0–7.0° (p = 0.10–0.24), the same picture on target error; its off-target
+  evaluation probes against null medians of 5.0–7.0° (p = 0.095–0.24), the same picture on target error; its off-target
   speed change is 0.150 m/s against 0.033 for the ridge probe (null p = 0.095 rather than 1/21), so the specificity
   edge is the ridge probe's. The paper's unit circle in §7.1
   is a population of MLP units at fc1/fc2; this test is at the block-output residual stream, and the paper's §7.2
@@ -1152,8 +1153,8 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
 [^hfolds]: `results/p1a_perpatch_hard_folds.json` (`sets.hard` for the stratified folds and `folds_start_grouped.hard` for start-grouped, each with per-point fold means ± SD and `summary.*.onset_per_fold`; `sets.paper_layout` alongside), cc41a6c.
 [^adamb]: `results/p1c_direction_L9_adam_basis.json` (per-N error to target / to true, both nulls with p, `n_to_10deg`, `K`, `comparison_vs_ridge_basis` incl. `null_dimension_note`); basis weights `artifacts/inlp/direction_direction_L9_adam_b64.npz` (sha256 in the JSON); `scripts/run_step3_adam_basis.py`; 36c4cdc, 94c96c7, baa8eac, 7dd1eb5; 216 tests.
 [^r2cov]: `results/p1c_direction_L9_rank2_covweighted.json` (Euclidean N = 1, covariance-weighted and oracle edits with error to target / to true, off-target speed and edit norm; the 20-draw Σ-weighted null with p; `evalprobe_variants` for α = 1e-3, Adam and split-half; Ledoit-Wolf check); `scripts/run_step3_rank2_covweighted.py`, `src/wm/steer.py:cov_weighted_delta`.
-[^n200]: `results/p1c_direction_L9_nulls200.json` (per basis and N: learned error, `rank_2n` and `rank_2k` null mean ± SD and exact p over 200 draws, seed 0, draws 1–20 reproducing the stored files; `first_n_below` at 0.05 and 0.01; `evalprobe_variants` at every N); `scripts/run_step3_nulls200.py`; 555b411, 221 tests.
-[^sig]: `results/p1a_sigmoid_onset.json` (`curves.*.{inflection_point,depth,fit_r2,rise_pp,peak_pp,accept}`, `fold_bootstrap`, `with_point0` for the fits that included the patch embedding, provenance quoting the criterion from `sonia_joseph.md` l.153–154); `src/wm/sigmoid_onset.py`; 555b411, 7921bbb.
+[^n200]: `results/p1c_direction_L9_nulls200.json` (`bases.{ridge,adam}.all_n[]` with learned error and `nulls.{rank_matched,rank_2K}` mean ± SD and exact p over 200 draws, seed 0, draws 1–20 reproducing the stored files; `bases.*.first_n.{rank_matched,rank_2K}.p_lt_0.05/0.01.{first_n,first_n_sustained}`; `evalprobe_variants` at every N); `scripts/run_step3_nulls200.py`; 555b411, 221 tests.
+[^sig]: `results/p1a_sigmoid_onset.json` (`curves.*.{inflection_point,inflection_frac,fit_r2,rise_fit_pp,rise_obs_pp,peak_above_chance_pp,accept_rebuttal_rule,within_1_point_of_paper_depth}`, `fold_bootstrap`, `with_point0` for the fits that included the patch embedding, provenance quoting the criterion from `sonia_joseph.md` l.153–154); `src/wm/sigmoid_onset.py`; 555b411, 7921bbb.
 [^seeds]: `results/p1a_perpatch_hard_seeds.json` (`by_point[].{perpos_mean_r2,cross_half_r2}.per_seed`, `onsets.{0,1,2}`, `jump_8_to_9`, `extra_point_curves`), `results/p1a_perpatch_direction_vjepa2_hard_seed{1,2}.json` (`layers[].halves.cross_r2_mean`), `results/p1a_perpatch_direction_random_hard{,_seed1}.json`, `figures/fig1j_perpatch_hard_seeds.png`; render seeds at 2abb3e9, extraction on the box from a frozen worktree (GPU forward 611 s), 3a8d7c7. The random-init control is one weight draw (seed 0) on two render seeds.
 [^appb]: `results/p1a_appB_sweep.json` (`variables.{direction,speed}.{per_point[].{sweep_cv_mean,sweep_cv_sd,lr,wd,grid},sweep_onset,sweep_onset_ci,ridge_onset_stored}`); 100 / 50 epochs from C.11 and batch 64 (our choice; neither appendix gives one); coupled L2 weight decay, App. B not saying Adam or AdamW; the best of the 20 configurations is selected on the same folds it is reported on, as our ridge α is over 13 values; fbdc60a, 212 tests.
 [^gcv]: `results/p1a_grouped_cv.json` (`sets.{direction,speed}_{vjepa2,random}.{stratified,direction_grouped,start_grouped,speed_grouped}.{onset,onset_ci}`; `sector_grouped` with its pooled-prediction `score`); `figures/fig1i_grouped_cv.png`.
