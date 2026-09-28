@@ -35,7 +35,8 @@ and layer; N = 3 under the near-unregularised probes); at N = 1 it separates fro
 network, and at the onset layer the learned basis never beats the rank-2K random basis for N ≤ 20. Rerunning Parts 1
 and 2 at the paper's literal 70/30 split changes no qualitative verdict. **Part 2.** Direction lies on a ring.
 My centroid-plane angle recovers it without labels at point 12 but not at point 22; Goodfire's own label-free angle
-fails its periodicity test on our data, and its alphabet, age and 70B runs take the coordinate from the labels[^src].
+fails its periodicity test at point 12 and passes at 22, where it sits up to 38–97° from θ; its sequential tasks use
+the ordinal index, as A.3 says, and only its 70B cyclic configs take the coordinate from the labels[^src].
 The ring is an ellipse, not a circle: axis ratio 0.68–0.89 in its own plane from point 8 on (0.74 / 0.87 / 0.74 at
 points 8 / 12 / 22), bent out of that plane by a cos 2θ saddle that holds 20–34% of the centroid variance. Held-out
 clips occupy the ring along its whole length and leave it hollow in its plane. At held-out direction values the spline path stays on the ring and the straight path cuts across the
@@ -103,11 +104,11 @@ test does not recover the ring. This is a probe of the forecast on one stimulus 
 | Objective axis | VideoMAE-v2 family | VideoMAE v1 ViT-L (`MCG-NJU/videomae-large`), 224² | "not the objective" is shown for v1 only |
 | Part 2: steering site | Goodfire: last-token residual stream (A.2); encoder output for the world model (§5) | mean-pool over 2,048 tokens at point L | the edited vector is not one the model consumes; §4.1–§4.4 read it with probes, §4.5 adds the edit to every token |
 | Part 2: PCA-64 fit set | all prompts in the task (A.3) | knot clips (folds 0–2) at the kept values only | held-out values never shape the subspace; the plane can differ from an all-clip fit (point 22, §4.1) |
-| Part 2: spline | interpolating, through the centroids exactly (A.3); √count-weighted smoothing spline for the world model (B.1) | count-weighted smoothing spline; interpolating run beside it | interpolating rebuilds held-out centroids worse and its edit is 1.4–1.6× the chord's (§4.1) |
-| Part 2: direction coordinate | unsupervised atan2(PC2, PC1) (A.3; the weekdays/months 8B configs inherit `intrinsic_mode: pca`); labels in the alphabet, age and 70B configs | our centroid-plane atan2 at point 12; labels at points 2, 8 and 22 | label-free only at point 12, and only through our fallback (§4.1) |
+| Part 2: spline | interpolating, through the centroids exactly (A.3); √count-weighted smoothing spline for the world model (B.1) | smoothing spline with weight √count / sd_c per knot and coordinate and s = number of knots (both my choices; B.1 gives no smoothing value); interpolating run beside it | interpolating rebuilds held-out centroids worse and its edit is 1.4–1.6× the chord's (§4.1) |
+| Part 2: direction coordinate | unsupervised atan2(PC2, PC1) (A.3; the weekdays/months 8B configs inherit `intrinsic_mode: pca`); ordinal index for the sequential tasks (A.3; alphabet/age configs `parameter`); the labels only in the 70B cyclic configs | our centroid-plane atan2 at point 12; labels at points 2, 8 and 22 | label-free only at point 12, and only through our fallback (§4.1) |
 | Part 2: manifold arm | replace the PCA-64 part with the curve point (A.6) | additive, x + γ(t) − γ(t_src), residual kept | theirs run as a labelled arm (§4.4) |
 | Part 2: base pair of arms | manifold vs whole-activation chord replacement (A.6) | spline vs chord in the same PCA-64 subspace (matched support) | their linear arm erases the residual; run separately and labelled (§4.4) |
-| Part 2: waypoints | K = 50 (A.6; the weekdays/months 8B default); alphabet/age 8B configs 150/250, 70B configs 100–150 | K = 50 | E_BC sums over waypoints, so only within-run energy ratios compare |
+| Part 2: waypoints | K = 50 (A.6; the weekdays/months 8B default); alphabet/age 8B configs 150/250 (alphabet_8b_n3 50), 70B configs 100–150, grid/cylinder 20 | K = 50 | E_BC sums over waypoints, so only within-run energy ratios compare |
 | Part 2: Eq. 10 temperature | τ = 0.5 on a LayerNorm'd 64-d latent (B.1) | τ = 0.5 in raw PCA-64 units | absolute energies not comparable; τ 0.25–2 keeps the point-12 ordering (`tau_sensitivity` in `p2_steer_direction_direction_L12_contiguous.json`) |
 | Part 2: behaviour manifold | smoothing spline through 128 bin centroids (B.1) | interpolating spline through the 64 per-value centroids in the Hellinger tangent plane (A.4), F over 128 bins | circular at the steered layer either way (§4.2) |
 | Part 2: carriers | 16 fixed base prompts per task, one set for every pair (A.6) | 48 test clips per target, each steered from its own value | Goodfire starts every carrier at the centroid c_a whatever the carrier's own value (A.6); ours starts each carrier at its true value (an oracle source) and averages over sources |
@@ -125,11 +126,12 @@ at layers 20–23; the main text says 40–50, up to 80. (h) "Speed needs fewer"
 Table 3: at layers 0–2 the direction dimension is 30 / 30 / 14 (15 / 15 / 7 probes) against speed's 25 / 24 / 25, so
 speed needs more probes there, and fewer from layer 3 on. Goodfire's paper
 has a smaller one of its own: A.3 derives the cyclic coordinate as atan2(PC2, PC1) "in an unsupervised manner", and
-the weekdays and months 8B configs do inherit that label-free mode (`intrinsic_mode: pca` in
-`configs/analysis/activation_manifold.yaml`), but the alphabet and age 8B configs, every 70B config and the code
-default set `intrinsic_mode: parameter`, the labels (`refs/causalab/causalab/configs/runners/*/*.yaml`,
-`methods/spline/train.py`); A.6 says K = 50 waypoints where the alphabet and age 8B configs use 150 and 250 and the
-70B configs 100–150.
+the weekdays and months 8B configs, the paper's cyclic runs, do inherit that mode (`intrinsic_mode: pca` in
+`configs/analysis/activation_manifold.yaml`); the sequential tasks use the ordinal index as A.3 says (alphabet and
+age configs `parameter`). The only text-vs-config gap is the 70B weekdays and months configs, which set `parameter`,
+the labels, for a model the paper's one-dimensional experiments do not report (A.2: 8B layer 28 "for all tasks").
+A.6 says K = 50 waypoints, which the weekdays/months 8B and alphabet_8b_n3 configs use, where alphabet/age 8B use
+150/250, the 70B configs 100–150 and the grid/cylinder configs 20.
 
 **Probe-recipe parity** (point = CV-peak layer; pooled out-of-fold R², targets standardised for Adam[^recipe]):
 ridge vs Adam (C.11 recipe) is 0.9905 vs 0.9858 for direction, 0.9940 vs 0.9882 for speed and 0.9925 vs 0.9871 for
@@ -452,7 +454,7 @@ the split of record so that Part 1 and Part 2 read the same clips.
 
 Recipe (Goodfire A.3): PCA-64 on train, one centroid per value, a periodic cubic spline for direction and a natural
 spline for scalars. Goodfire's text takes the intrinsic angle as atan2(PC2, PC1) on the centroids, without labels, and its weekdays and
-months 8B runs do so; its alphabet, age and 70B configs use the labels instead (§2). I compute a label-free angle, check it against θ, and use the
+months 8B runs do so; only its 70B cyclic configs use the labels instead (§2). I compute a label-free angle, check it against θ, and use the
 labels when the check fails.
 
 | Direction layer | unsupervised angle vs θ: circ. corr (mean / max dev) | supervised circular chart MAE, radius | centroid PR / residual PR | expected sagitta ÷ centroid noise at 45° / 90° gap | LOO cubic beats line |
@@ -502,7 +504,7 @@ label-free recovery here is my extension, the centroid-plane fallback, and it wo
   line; the ring itself is not one, and estimates made in that plane (eigenvalue ratio 0.91 at points 14–16 against
   0.66–0.77 in the ring plane) mislead. Planted controls in real point-12 activations recover a circle as 0.99, an
   ellipse of ratio 0.5 as 0.51, and a circle with a saddle of bend 1.2 as 0.99 in the ring plane but 0.84 by top-2
-  eigenvalues. The random-init encoder's direction code is a cleaner ring: fold share ≤ 0.04, b/a 0.89–0.95 at every point.
+  eigenvalues. The random-init encoder's direction code is a cleaner ring: fold share ≤ 0.04, b/a 0.91–0.95 at every point (conic fit).
   Local curvature does not predict where the spline beats the chord: Spearman ρ between the ellipse curvature at the
   arc midpoint and the spline-minus-chord minimum-radius gap over the 15 distinct stored arcs (at point 22 four of
   them still on the label-free angle) is 0.05 (p = 0.85) at point 12 and −0.05 (p = 0.86) at point 22; the smoothing-spline curvature and the stored sagitta do no better (|ρ| ≤ 0.33, all
@@ -574,7 +576,10 @@ Design of the arms. Both arms edit the same PCA-64 subspace and add back each cl
 (matched support). Goodfire's own linear baseline erases the residual, so it is run separately and labelled. The
 controls are a dose-matched line (rescaled to the spline's ‖Δ‖ at each waypoint), a *projected* arm (the chord walked
 with the spline's spacing), a *reflected* arm (the bend flipped), 20 endpoint-matched random curves, 20 shuffled-centroid
-curves, and a BF16 repeat. Each path has K = 50 waypoints. Every arm starts from the carrier's ground-truth value (an
+curves, and a BF16 repeat. Each path has K = 50 waypoints (the §4.3 ring-occupancy and 5-NN side analyses recompute
+the paths at K = 49 so that a waypoint sits at the midpoint). Held-out sources and targets take their coordinate by
+linear interpolation of the labels between neighbouring knots (`Curve.coord_of_value`), for both arms alike, even in
+the label-free point-12 runs. Every arm starts from the carrier's ground-truth value (an
 oracle source coordinate; Goodfire instead starts every carrier at the centroid c_a whatever the carrier's own value,
 A.6), so no arm has to infer where the carrier sits.
 
@@ -727,10 +732,12 @@ point-22 endpoint on 1 of 16 arcs (+3.7°) and on the headline arc (+3.80°), an
   figures. With the authors' recipe (behaviour manifold = an interpolating spline through the per-value forecast
   centroids in the full 1,024-d forecast space) on the label-free knot order, r is 0.84 / 0.93 / 0.67 along the
   interpolating activation spline against 0.73 / 0.87 / 0.75 for the chord, and 0.885 / 0.979 / 0.758 against 0.800 /
-  0.876 / 0.752 along the smoothing spline[^iso]. On the labels coordinate, which Goodfire's alphabet, age and 70B runners use, the spline
+  0.876 / 0.752 along the smoothing spline[^iso]. On the labels coordinate (Goodfire's 70B cyclic configs; its 8B cyclic runs use the √variance-scaled atan2, on
+  which a run is in progress), the spline
   leads at every point: interpolating 0.986 / 0.982 / 0.984 against chord 0.727 / 0.867 / 0.749 at points 8 / 12 / 22,
   smoothing 0.984 / 0.994 / 0.979 against 0.858 / 0.890 / 0.831[^isol]. The point-22 reversal came from the label-free
-  angle's scrambled knot order and is withdrawn.
+  angle's scrambled knot order and is withdrawn on the labels coordinate; the check on Goodfire's own coordinate is
+  pending.
 
 ### 4.5 Beyond the steered layer (GPU session 2)
 
@@ -930,7 +937,7 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
   CIs are the evidence.
 - **Label-free coordinate.** Found only at point 12 and only through my centroid-plane fallback; Goodfire's own
   label-free angle fails its periodicity test at point 12, and point-22 steering and session 2 at points 2, 8 and 22 use
-  the labels, as Goodfire's alphabet, age and 70B runs do (§4.1).
+  the labels, as only Goodfire's 70B cyclic runs do (§4.1).
 - **Encoder-output steering.** At point 25, the predictor's input and Goodfire's site, edits reach the forecast
   (chord 12.5°, interpolating spline 15.7°) but the spline's matched-norm lead over the chord from point 22 does not
   carry over (+10.8° worse at the chord's norm, 2.1° better at the natural norm; §4.5). The route effect in the forecast
