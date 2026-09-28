@@ -122,7 +122,7 @@ test does not recover the ring. This is a probe of the forecast on one stimulus 
 | Part 2: Eq. 10 temperature | τ = 0.5 on a LayerNorm'd 64-d latent (B.1) | τ = 0.5 in raw PCA-64 units | absolute energies not comparable; τ 0.25–2 keeps the point-12 ordering (`tau_sensitivity` in `p2_steer_direction_direction_L12_contiguous.json`) |
 | Part 2: behaviour manifold | smoothing spline through 128 bin centroids (B.1) | interpolating spline through the 64 per-value centroids in the Hellinger tangent plane (A.4), F over 128 bins | circular at the steered layer either way (§4.2) |
 | Part 2: carriers | 16 fixed base prompts per task, one set for every pair (A.6) | 48 test clips per target, each steered from its own value | Goodfire starts every carrier at the centroid c_a whatever the carrier's own value (A.6); ours starts each carrier at its true value (an oracle source) and averages over sources |
-| Part 2: pullback (A.8–A.9, C.3) | one path per (source, target) pair, loss averaged over 16 carriers (A.8); replace the top-32 PCs, other PCs and residual held; L-BFGS; path = natural cubic through 10 free control vectors evaluated at K = 20, chord init (A.8), 20 free points with kNN-graph init in the causalab config, K = 30 all free with 30 pairs for the world model (C.3); squared-Hellinger target on M_y; norm regulariser off for weekdays only (5·10⁻⁴ months, 10⁻³ age); scored by closest-point residual and intrinsic R² (A.9), and for the world model by mean distance to M_h (C.3: chord 2.22, geometric 0.20, pullback 0.29) | one path per carrier; additive edit in PCA-64; Adam, zero init, 8 free waypoints; 1 − cos loss on the forecast angle; hard cap 1.2× natural change; equal-t distances | the per-carrier path and the additive edit plausibly favour an off-ring route; the cap and the on-ring zero start work against one; optimiser and waypoint count have no stated direction; so the negative is not a clean test of their method; rerun with their recipe in progress (§4.5) |
+| Part 2: pullback (A.8–A.9, C.3) | one path per (source, target) pair, loss averaged over 16 carriers (A.8); replace the top-32 PCs, other PCs and residual held; L-BFGS; path = natural cubic through 10 free control vectors evaluated at K = 20, chord init (A.8), 20 free points with kNN-graph init in the causalab config, K = 30 all free with 30 pairs for the world model (C.3); squared-Hellinger target on M_y; norm regulariser off for weekdays only (5·10⁻⁴ months, 10⁻³ age); scored by closest-point residual and intrinsic R² (A.9), and for the world model by mean distance to M_h (C.3: chord 2.22, geometric 0.20, pullback 0.29) | one path per carrier; additive edit in PCA-64; Adam, zero init, 8 free waypoints; 1 − cos loss on the forecast angle; hard cap 1.2× natural change; equal-t distances | rerun with their recipe (8 pairs, 32 evaluations per pair, unconverged): the path sits 0.6 natural units from both references, chord and spline tie, the chord itself is 0.21 from the spline; neither protocol recovers the ring (§4.5) |
 
 **Places where the paper contradicts itself**[^ptxt]. (a) The INLP stopping
 threshold for direction is R² < 0.1 in C.11 and R² < 0.3 in the Fig. 22 caption: each `p1b` file has both (`K`,
@@ -951,7 +951,18 @@ protocol differs from A.8 in four ways: one path per clip instead of one path sh
 value, an additive edit instead of a replacement of the top PCs, 64 PCs instead of 32, and a hard norm cap where
 Goodfire's released configs use no norm term for weekdays, months or age (A.8's text gives months and age a small one; only the alphabet config carries it). The first two plausibly favour an off-ring
 route; the cap and the on-ring zero start work against one, so the departures do not all point the same way. The full-space comparison is at equal t,
-not A.9's closest-point residual. A rerun with Goodfire's recipe is in progress. A negative, as run.
+not A.9's closest-point residual; rescored by closest point, the old paths sit 1.19 natural units from both references
+(the chord itself is 0.18 from the spline). *With Goodfire's recipe*[^pbg]: 8 pairs at 135–180°, one path per pair
+shared by 16 carriers, the top-32 PCs replaced with the rest held, 20 free waypoints from a chord start, L-BFGS with
+strong Wolfe, a squared-Hellinger target on the predictor-native direction readout (turned into a distribution by a
+fitted softmax), no norm term. The loss falls 13.5 → 2.4 and the forecast ends within about 7° of the ideal
+intermediate direction, but the activation path sits 0.61 ± 0.09 natural units from the spline and 0.59 ± 0.09 from
+the chord (paired +0.018 [−0.004, 0.040]; intrinsic R² 0.15 vs 0.27, p = 0.10), three times the chord's own 0.21
+distance from the spline (p = 0.003, chord closer on 8 of 8), along a route of norm 1.0–1.5 against the spline's
+0.3–0.8. The GPU budget capped each pair at 32 loss evaluations (5 L-BFGS steps against A.8's up to 250), so no pair
+converged and the loss was still falling. So far, then, neither our angle-only test nor an unconverged run of
+Goodfire's recipe recovers the ring from the forecast; both find the high-norm shortcut A.8's regulariser exists to
+prevent, and neither is a test the paper would count as complete. A negative, as run, on both protocols.
 
 **Time-reversed clips** (the forward-trained probe read on reversed clips)[^trev]. From point 1 on, the direction probe
 reads θ + 180° on the reversed clip: the error to θ + 180° is 20.5° at point 1 and 5.7–10.3° from point 2 on, with
@@ -1019,7 +1030,7 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
   angle only and the smoothing spline (the Part 2 default) is the worst real arm.
 - **The hollow is in the ring plane.** In the 64-D edit subspace and full space the chord is no farther from real clips
   than the spline (§4.3). Along the path the forecast follows the intermediate directions along the spline and jumps
-  along the chord (−13.4° paired, −31.3° at large shifts); the reverse test does not recover the ring (§4.5).
+  along the chord (−13.4° paired, −31.3° at large shifts); the reverse test does not recover the ring under our protocol or an unconverged run of Goodfire's (§4.5).
 - **Post-hoc verdict rule.** Iterated after seeing results, frozen at 8d3cac8 before the arc sweep (§4.2); the gaps and
   CIs are the evidence.
 - **Label-free coordinate.** Found only at point 12 and only through my centroid-plane fallback; Goodfire's own
@@ -1102,6 +1113,7 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
 [^iso]: `results/p2_isometry_goodfire_method.json` (`layers.{8,12,22}.new.{interp,smooth}.{geo,lin}_pearson`).
 [^isog]: `results/p2_isometry_goodfire_coord.json` (`layers.{8,12,22}.goodfire_angle.{interp,smooth}.{geo,lin}_pearson`, `goodfire_periodicity_test`, `angle_vs_labels`, `geo_below_chord_goodfire_angle`; 213 tests at ee828a7).
 [^isof]: `results/p2_isometry_goodfire_full.json` (`layers.{8,12,22}.{goodfire_full_angle,goodfire_angle,labels_angle,unsupervised_angle}.{interp,smooth}.{geo,lin}_pearson`, `layers.*.bootstrap.variants.*` with percentile / shifted / basic intervals, bias and calls, `geo_minus_lin_calls`, `branches`, `circular_corr_with_labels`); 8ca50cf, ce42042.
+[^pbg]: `results/session2_pullback_goodfire.json` (per pair `closest_point_residual.{spline,chord}`, `intrinsic_r2.{spline,chord}`, `loss.{init,final}`, optimiser trace; `summary.paired`, `chord_vs_pullback_to_spline`, `old_reverse_paths_rescored`, `top32_scoring`); `scripts/session2_pullback_goodfire.py`; box 53030966, ≈ 62 GPU-min; cab0dfa, 216 tests. The point-25 along-path read was not run (GPU budget).
 [^isol]: `results/p2_isometry_goodfire_labels.json` (`layers.{8,12,22}.labels_angle.{interp,smooth}.{geo,lin}_pearson`; `unsupervised_angle` rows reproduce the label-free figures; `geo_below_chord_labels_angle` false at every point).
 [^pp]: `results/p1a_perpatch_direction_{vjepa2,vjepa2_constvel,random,vjepa2_hard,vjepa2_paper_layout}.json` (`curves.{perpos_mean_r2,pooled_mean_r2,pooled_frac_ge_0.5,cross_half_r2,meanpool_r2}`, `onsets.*`, `layers[].halves` for the cross-half MAE, `methods`, `provenance.time_averaging`); `figures/fig1g_perpatch_direction.png`, `fig1h_perpatch_heatmaps.png`; rendered-set layout (7 shared starts) in `results/session2_stimuli_validation.json` (`layout.start_rule`) and `scripts/render_hard_stimuli.py`.
 [^hfolds]: `results/p1a_perpatch_hard_folds.json` (`sets.hard` for the stratified folds and `folds_start_grouped.hard` for start-grouped, each with per-point fold means ± SD and `summary.*.onset_per_fold`; `sets.paper_layout` alongside), cc41a6c.
