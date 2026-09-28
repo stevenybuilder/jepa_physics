@@ -1,0 +1,506 @@
+"""Per-patch direction probes across layers (the physics paper's App. C.5 / Fig. 18 diagnostic).
+
+The paper's emergence zone for direction is a per-patch claim: mean-pooled probes do moderately well early, per-patch
+probes become reliable only at the zone (its layers 7 -> 8 = our points 8 -> 9), and a probe fit on one half of the frame
+transfers to the other half only from there on. Part 1 used mean-pooled probes only; this tests the per-patch reading.
+
+  extract  box, GPU. wm.extract.encode (16 frames, 256 px, no crop, fp32, TF32 off), time-pool over the 8 token time
+           steps -> fp16 memmap [N, P, 256, 1024] (P = chosen points, 256 = 16 x 16 spatial positions, index h*16 + w)
+           plus a JSON sidecar (ids, points, frame hashes, timing, meanpool parity against the stored meanpool.npy).
+  probe    box, CPU. Closed-form ridge exactly as wm.probes (train-standardised features, targets (sin, cos), alpha by
+           the split's 5 train folds over ALPHAS, refit on all train, score test once):
+             meanpool   one probe on the position mean (= our Part 1 meanpool), for parity and a same-rule baseline
+             perpos     one probe per spatial position (own standardiser and own CV alpha per position)
+             pooled     one probe on every (train clip, position) sample; folds by clip; scored per test position
+             halves     pooled probe fit on columns 0-7 (left) or 8-15 (right) of train clips, scored on both halves of
+                        test clips: within-half vs cross-half
+           Onsets: first point with metric >= 90% of its max over the sampled points; 95% CI from a 200-draw bootstrap of
+           TEST clips over fixed test predictions (no refit).
+  figures  Mac. fig1g (curves) and fig1h (heatmaps) from the results JSONs.
+
+  python scripts/p1a_perpatch.py extract --set direction --model vjepa2 --out /workspace/wm/artifacts/perpatch/direction_vjepa2.f16
+  python scripts/p1a_perpatch.py probe   --set direction --model vjepa2 --memmap ... --commit <sha>
+  python scripts/p1a_perpatch.py figures
+"""
+import argparse
+import json
+import os
+import sys
+import time
+from pathlib import Path
+
+import numpy as np
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+from wm.data import PROJECT_ROOT, load_table  # noqa: E402
+
+POINTS_FULL = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 16, 19, 22, 24]
+POINTS_STIM = [1, 4, 6, 7, 8, 9, 10, 12, 16, 22]
+HEATMAP_POINTS = [4, 7, 8, 9, 12, 22]
+GRID, NPOS, WIDTH, NSTEP = 16, 256, 1024, 8
+SETS = {"direction": (None, "splits/split_v1.json"),
+        "paper_layout": ("artifacts/stimuli/paper_layout", "splits/split_paper_layout.json"),
+        "hard": ("artifacts/stimuli/hard", "splits/split_hard.json")}
+RESULTS = PROJECT_ROOT / "results"
+FIGURES = PROJECT_ROOT / "figures"
+N_BOOT = 200
+
+
+def table(name):
+    root = SETS[name][0]
+    return load_table("direction", root=None if root is None else PROJECT_ROOT / root)
+
+
+def result_path(name, model):
+    suffix = "" if name == "direction" else f"_{name}"
+    return RESULTS / f"p1a_perpatch_direction_{model}{suffix}.json"
+
+
+# ================================================================ extract (GPU)
+
+def extract(a):
+    import torch
+    from wm.data import decode, frame_hash
+    from wm.extract import encode, load_model, pick_device, preprocess, set_precision
+
+    points = a.points or (POINTS_FULL if a.set == "direction" else POINTS_STIM)
+    df = table(a.set)
+    ids = [int(i) for i in df["id"]]
+    videos = list(df["video"])
+    N, P = len(ids), len(points)
+    out = Path(a.out)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    side = out.with_suffix(".json")
+    mm = np.lib.format.open_memmap(out, mode="r+" if out.exists() else "w+", dtype=np.float16,
+                                   shape=(N, P, NPOS, WIDTH))
+    done_path = out.with_suffix(".done.npy")
+    done = np.load(done_path) if done_path.exists() else np.zeros(N, bool)
+    set_precision()
+    device = pick_device()
+    model = load_model(a.model, device)
+    hashes = {}
+    t0 = time.time()
+    gpu_s = 0.0
+    from concurrent.futures import ThreadPoolExecutor
+    pool = ThreadPoolExecutor(8)
+    starts = [s for s in range(0, N, a.batch_size) if not done[s:s + a.batch_size].all()]
+    fut = {s: [pool.submit(decode, videos[i]) for i in range(s, min(s + a.batch_size, N))] for s in starts[:2]}
+    for j, s in enumerate(starts):
+        frames = [f.result() for f in fut.pop(s)]
+        if j + 2 < len(starts):
+            s2 = starts[j + 2]
+            fut[s2] = [pool.submit(decode, videos[i]) for i in range(s2, min(s2 + a.batch_size, N))]
+        for k, f in enumerate(frames):
+            hashes[ids[s + k]] = frame_hash(f)
+        tg = time.time()
+        pts, _ = encode(model, preprocess(frames).to(device))
+        B = len(frames)
+        tp = torch.stack([pts[p].reshape(B, NSTEP, NPOS, WIDTH).mean(dim=1) for p in points], dim=1)  # [B,P,256,1024]
+        tp = tp.half().cpu().numpy()
+        gpu_s += time.time() - tg
+        mm[s:s + B] = tp
+        done[s:s + B] = True
+        if j % 10 == 0 or j == len(starts) - 1:
+            mm.flush()
+            np.save(done_path, done)
+            print(f"{a.set}/{a.model}: {int(done.sum())}/{N} clips, {time.time() - t0:.0f}s", flush=True)
+        del pts
+    mm.flush()
+    np.save(done_path, done)
+    info = json.loads(side.read_text()) if side.exists() else {"frame_hash": {}}
+    info["frame_hash"].update({str(k): v for k, v in hashes.items()})
+    # parity: position mean of the stored time-pool vs Part 1's stored meanpool (fp32), where available
+    ref_dir = {"direction": "direction", "paper_layout": "stimuli_paper_layout", "hard": "stimuli_hard"}[a.set]
+    ref = PROJECT_ROOT / "artifacts" / "activations" / ref_dir / a.model / "meanpool.npy"
+    parity = None
+    if ref.exists():
+        refm = np.load(ref, mmap_mode="r")
+        rows = np.arange(0, N, max(1, N // 50))
+        mine = np.asarray(mm[rows], np.float32).mean(axis=2)                     # [r, P, 1024]
+        theirs = np.asarray(refm[rows][:, points], np.float32)
+        rel = np.linalg.norm(mine - theirs, axis=-1) / np.linalg.norm(theirs, axis=-1)
+        parity = {"reference": str(ref.relative_to(PROJECT_ROOT)), "n_clips_checked": len(rows),
+                  "max_rel_err_per_point": rel.max(axis=0).round(6).tolist()}
+        print("parity max rel err per point:", parity["max_rel_err_per_point"])
+    info.update({"set": a.set, "model": a.model, "ids": ids, "points": points, "shape": [N, P, NPOS, WIDTH],
+                 "dtype": "float16", "memmap": str(out),
+                 "pooling": "mean over the 8 token time steps; positions kept (16x16, index h*16 + w, w = column)",
+                 "preprocess": "wm.extract: 16 frames, 256 px, ImageNet mean/std, no resize/crop, fp32 forward, TF32 off",
+                 "random_init": "VJEPA2Config + torch.manual_seed(0) (wm.extract.load_model)" if a.model == "random" else None,
+                 "gpu_seconds_forward": gpu_s + info.get("gpu_seconds_forward", 0.0),
+                 "wall_seconds_last_run": time.time() - t0, "batch_size": a.batch_size,
+                 "gpu": torch.cuda.get_device_name(0) if device.type == "cuda" else None,
+                 "meanpool_parity": parity, "complete": bool(done.all()),
+                 "location_note": ("RAM-backed /dev/shm: volatile, lost on reboot (box disk too small for all caches)"
+                                   if str(out).startswith("/dev/shm") else "persistent box disk")})
+    side.write_text(json.dumps(info, indent=1))
+    print(f"done: {side}")
+
+
+# ================================================================ probe (CPU)
+
+_G = {}
+
+
+def _init_worker():
+    from threadpoolctl import threadpool_limits
+    _G["tl"] = threadpool_limits(1)
+
+
+def _perpos(task):
+    """One (point, spatial position): wm.probes recipe (standardise on train, CV alpha on the 5 folds, refit, score
+    test). Workers read the memmap themselves (page cache), so the pool is forked before the parent touches BLAS."""
+    from wm.probes import Standardizer, cv_select_alpha, fit_ridge, predict, ALPHAS
+    pi, pos = task
+    if "mm" not in _G:
+        _G["mm"] = np.load(_G["memmap"], mmap_mode="r")
+    tr, te, Ytr, Yte, folds, score_fn = (_G[k] for k in ("tr", "te", "Ytr", "Yte", "folds", "score_fn"))
+    Xp = np.asarray(_G["mm"][:, pi, pos], np.float64)
+    st = Standardizer().fit(Xp[tr])
+    Xtr, Xte = st.transform(Xp[tr]), st.transform(Xp[te])
+    cv = cv_select_alpha(Xtr, Ytr, folds, ALPHAS, score_fn)
+    W, b = fit_ridge(Xtr, Ytr, cv["alpha"])
+    P = predict(Xte, W, b)
+    s = score_fn(Yte, P)
+    return pi, pos, cv["alpha"], cv["cv_mean"], s["r2"], s["mae"], P.astype(np.float32)
+
+
+def gram_stats(Z, Y):
+    """Z [n, P, d] float32 samples (every position is a sample), Y [n, 2] per clip. float64 sums."""
+    n, P, d = Z.shape
+    S, G, XtY = np.zeros(d), np.zeros((d, d)), np.zeros((d, Y.shape[1]))
+    for s in range(0, n, 64):
+        x = Z[s:s + 64].reshape(-1, d).astype(np.float64)
+        y = np.repeat(Y[s:s + 64], P, axis=0)
+        S += x.sum(0)
+        G += x.T @ x
+        XtY += x.T @ y
+    return {"n": n * P, "S": S, "G": G, "XtY": XtY, "Sy": Y.sum(0) * P}
+
+
+def solve_from_stats(parts, alphas):
+    """Centred ridge path from summed stats: returns (U, lam, R, xm, ym) with W_a = U (R / (lam + a))."""
+    n = sum(p["n"] for p in parts)
+    S, G = sum(p["S"] for p in parts), sum(p["G"] for p in parts)
+    XtY, Sy = sum(p["XtY"] for p in parts), sum(p["Sy"] for p in parts)
+    xm, ym = S / n, Sy / n
+    Gc = G - n * np.outer(xm, xm)
+    XtYc = XtY - n * np.outer(xm, ym)
+    lam, U = np.linalg.eigh(Gc)
+    return U, lam, U.T @ XtYc, xm, ym
+
+
+def pooled_probe(Xfit, Yfit, folds, evals, score_fn, alphas):
+    """Pooled-patch ridge. Xfit [n, P, d] (standardised with the fit samples' statistics inside), folds by clip.
+    evals: {name: X [m, Q, d]}; returns alpha, cv curve, and {name: predictions [m, Q, 2]}."""
+    n, P, d = Xfit.shape
+    mean = np.zeros(d)
+    sq = np.zeros(d)
+    for s in range(0, n, 64):
+        x = Xfit[s:s + 64].reshape(-1, d).astype(np.float64)
+        mean += x.sum(0)
+        sq += (x * x).sum(0)
+    mean /= n * P
+    std = np.maximum(np.sqrt(np.maximum(sq / (n * P) - mean ** 2, 0)), 1e-6)
+    zs = lambda X: ((X.astype(np.float32) - mean.astype(np.float32)) / std.astype(np.float32))  # noqa: E731
+    Z = zs(Xfit)
+    ks = np.unique(folds)
+    stats = {k: gram_stats(Z[folds == k], Yfit[folds == k]) for k in ks}
+    curve = np.zeros(len(alphas))
+    for k in ks:
+        U, lam, R, xm, ym = solve_from_stats([stats[j] for j in ks if j != k], alphas)
+        Zk = Z[folds == k].reshape(-1, d).astype(np.float64)
+        Yk = np.repeat(Yfit[folds == k], P, axis=0)
+        ZU = (Zk - xm) @ U
+        for i, al in enumerate(alphas):
+            curve[i] += score_fn(Yk, ZU @ (R / (lam + al)[:, None]) + ym)["r2"] / len(ks)
+    best = int(np.argmax(curve))
+    U, lam, R, xm, ym = solve_from_stats(list(stats.values()), alphas)
+    W = U @ (R / (lam + alphas[best])[:, None])
+    b = ym - xm @ W
+    preds = {}
+    for name, Xe in evals.items():
+        m, Q, _ = Xe.shape
+        preds[name] = (zs(Xe).reshape(-1, d).astype(np.float64) @ W + b).reshape(m, Q, -1).astype(np.float32)
+    return float(alphas[best]), curve.tolist(), preds
+
+
+def r2_per_pos(Y, P):
+    """Y [n, 2], P [n, Q, 2] -> R2 per position [Q] (mean over sin, cos columns)."""
+    ss_res = ((Y[:, None, :] - P) ** 2).sum(0)
+    ss_tot = ((Y - Y.mean(0)) ** 2).sum(0)
+    return (1 - ss_res / ss_tot).mean(-1)
+
+
+def r2_pooled(Y, P):
+    """R2 over all (clip, position) samples of P [n, Q, 2]."""
+    ss_res = ((Y[:, None, :] - P) ** 2).sum((0, 1))
+    ss_tot = ((Y - Y.mean(0)) ** 2).sum(0) * P.shape[1]
+    return float((1 - ss_res / ss_tot).mean())
+
+
+def cmae(Y, P):
+    """Circular MAE (deg) over all (clip, position) samples."""
+    th = np.degrees(np.arctan2(Y[:, 0], Y[:, 1]))[:, None]
+    ph = np.degrees(np.arctan2(P[..., 0], P[..., 1]))
+    return float(np.mean(np.abs((ph - th + 180) % 360 - 180)))
+
+
+def cmae_per_pos(Y, P):
+    th = np.degrees(np.arctan2(Y[:, 0], Y[:, 1]))[:, None]
+    ph = np.degrees(np.arctan2(P[..., 0], P[..., 1]))
+    return np.mean(np.abs((ph - th + 180) % 360 - 180), axis=0)
+
+
+def summarise(r2):
+    r2 = np.asarray(r2)
+    return {"mean_r2": float(r2.mean()), "median_r2": float(np.median(r2)), "frac_ge_0.5": float((r2 >= 0.5).mean()),
+            "frac_ge_0.8": float((r2 >= 0.8).mean()), "best_r2": float(r2.max()), "best_pos": int(r2.argmax()),
+            "worst_r2": float(r2.min())}
+
+
+def onset_of(curve):
+    curve = np.asarray(curve, float)
+    if curve.max() <= 0:
+        return None
+    return int(np.argmax(curve >= 0.9 * curve.max()))
+
+
+def jump(points, curve):
+    d = np.diff(np.asarray(curve, float))
+    i = int(np.argmax(d))
+    return {"largest_jump": float(d[i]), "from_point": points[i], "to_point": points[i + 1],
+            "second_largest": float(np.sort(d)[-2]) if len(d) > 1 else None,
+            "note": "difference between consecutive SAMPLED points (points 10+ are 2-3 blocks apart)"}
+
+
+def probe(a):
+    import multiprocessing as mp
+    from threadpoolctl import threadpool_limits
+    from wm.probes import ALPHAS, targets, split_rows, Standardizer, cv_select_alpha, fit_ridge, predict
+    from wm.provenance import sha256_file
+
+    side = json.loads(Path(a.memmap).with_suffix(".json").read_text())
+    assert side["complete"], "extraction incomplete"
+    points = side["points"]
+    mm = np.load(a.memmap, mmap_mode="r")
+    df = table(a.set)
+    assert [int(i) for i in df["id"]] == side["ids"]
+    split_file = PROJECT_ROOT / SETS[a.set][1]
+    Y, kind, score_fn = targets(df, "direction")
+    tr, te, folds = split_rows("direction", df, split_file)
+    Ytr, Yte = Y[tr], Y[te]
+    left = np.array([p for p in range(NPOS) if p % GRID < GRID // 2])
+    right = np.array([p for p in range(NPOS) if p % GRID >= GRID // 2])
+    rng = np.random.default_rng(0)
+    boot = [rng.integers(0, len(te), len(te)) for _ in range(N_BOOT)]
+    t_all = time.time()
+    # per-position probes: fork the pool before any BLAS call in the parent, queue every (point, position) task
+    _G.update(memmap=a.memmap, tr=tr, te=te, Ytr=Ytr, Yte=Yte, folds=folds, score_fn=score_fn)
+    pool = mp.get_context("fork").Pool(a.workers, initializer=_init_worker)
+    pending = pool.map_async(_perpos, [(pi, pos) for pi in range(len(points)) for pos in range(NPOS)], chunksize=4)
+    pooled_rows = []
+    with threadpool_limits(a.parent_threads):
+        for pi, point in enumerate(points):
+            t0 = time.time()
+            X = np.ascontiguousarray(mm[:, pi]).astype(np.float32)                    # [N, 256, 1024]
+            Xm = X.mean(axis=1).astype(np.float64)
+            st = Standardizer().fit(Xm[tr])
+            cvm = cv_select_alpha(st.transform(Xm[tr]), Ytr, folds, ALPHAS, score_fn)
+            W, b = fit_ridge(st.transform(Xm[tr]), Ytr, cvm["alpha"])
+            Pm = predict(st.transform(Xm[te]), W, b)
+            al_all, curve_all, pr = pooled_probe(X[tr], Ytr, folds, {"test": X[te]}, score_fn, ALPHAS)
+            al_L, curve_L, prL = pooled_probe(X[tr][:, left], Ytr, folds,
+                                              {"L": X[te][:, left], "R": X[te][:, right]}, score_fn, ALPHAS)
+            al_R, curve_R, prR = pooled_probe(X[tr][:, right], Ytr, folds,
+                                              {"R": X[te][:, right], "L": X[te][:, left]}, score_fn, ALPHAS)
+            pooled_rows.append((cvm, Pm, al_all, curve_all, pr, al_L, curve_L, prL, al_R, curve_R, prR))
+            print(f"{a.set}/{a.model} point {point:2d}: meanpool/pooled/halves done in {time.time() - t0:.0f}s "
+                  f"(pooled all-sample R2 {r2_pooled(Yte, pr['test']):.3f})", flush=True)
+            del X
+    allres = pending.get()
+    pool.close()
+    pool.join()
+    print(f"per-position probes done ({time.time() - t_all:.0f}s since start)", flush=True)
+    rows, cache = [], {"meanpool": [], "perpos": [], "pooled": [], "LL": [], "LR": [], "RR": [], "RL": []}
+    for pi, point in enumerate(points):
+        cvm, Pm, al_all, curve_all, pr, al_L, curve_L, prL, al_R, curve_R, prR = pooled_rows[pi]
+        sm = score_fn(Yte, Pm)
+        res = sorted([r for r in allres if r[0] == pi], key=lambda r: r[1])
+        assert [r[1] for r in res] == list(range(NPOS))
+        pp_alpha = np.array([r[2] for r in res])
+        pp_cv = np.array([r[3] for r in res])
+        pp_r2 = np.array([r[4] for r in res])
+        pp_mae = np.array([r[5] for r in res])
+        Ppp = np.stack([r[6] for r in res], axis=1)                              # [n_te, 256, 2]
+        Ppool = pr["test"]
+        pool_r2 = r2_per_pos(Yte, Ppool)
+        halves = {
+            "left_fit": {"alpha": al_L, "cv_curve_max": max(curve_L),
+                         "within_r2": r2_pooled(Yte, prL["L"]), "within_mae": cmae(Yte, prL["L"]),
+                         "cross_r2": r2_pooled(Yte, prL["R"]), "cross_mae": cmae(Yte, prL["R"]),
+                         "within_mean_pos_r2": float(r2_per_pos(Yte, prL["L"]).mean()),
+                         "cross_mean_pos_r2": float(r2_per_pos(Yte, prL["R"]).mean())},
+            "right_fit": {"alpha": al_R, "cv_curve_max": max(curve_R),
+                          "within_r2": r2_pooled(Yte, prR["R"]), "within_mae": cmae(Yte, prR["R"]),
+                          "cross_r2": r2_pooled(Yte, prR["L"]), "cross_mae": cmae(Yte, prR["L"]),
+                          "within_mean_pos_r2": float(r2_per_pos(Yte, prR["R"]).mean()),
+                          "cross_mean_pos_r2": float(r2_per_pos(Yte, prR["L"]).mean())}}
+        cross = (halves["left_fit"]["cross_r2"] + halves["right_fit"]["cross_r2"]) / 2
+        within = (halves["left_fit"]["within_r2"] + halves["right_fit"]["within_r2"]) / 2
+        row = {"point": point, "frac": min(point, 24) / 24,
+               "meanpool": {"alpha": cvm["alpha"], "cv_mean": cvm["cv_mean"], "test_r2": sm["r2"], "test_mae": sm["mae"]},
+               "perpos": {**summarise(pp_r2), "mean_mae": float(pp_mae.mean()), "median_mae": float(np.median(pp_mae)),
+                          "best_mae": float(pp_mae.min()), "mean_cv_r2": float(pp_cv.mean()),
+                          "r2": pp_r2.round(4).tolist(), "mae": pp_mae.round(2).tolist(),
+                          "alpha": pp_alpha.tolist(), "cv_r2": pp_cv.round(4).tolist()},
+               "pooled": {**summarise(pool_r2), "alpha": al_all, "cv_mean": max(curve_all),
+                          "pooled_r2_all_samples": r2_pooled(Yte, Ppool), "mae_all_samples": cmae(Yte, Ppool),
+                          "r2": pool_r2.round(4).tolist(), "mae": cmae_per_pos(Yte, Ppool).round(2).tolist()},
+               "halves": {**halves, "cross_r2_mean": cross, "within_r2_mean": within,
+                          "cross_minus_within": cross - within,
+                          "cross_mae_mean": (halves["left_fit"]["cross_mae"] + halves["right_fit"]["cross_mae"]) / 2,
+                          "within_mae_mean": (halves["left_fit"]["within_mae"] + halves["right_fit"]["within_mae"]) / 2}}
+        rows.append(row)
+        for k, v in (("meanpool", Pm[:, None, :]), ("perpos", Ppp), ("pooled", Ppool), ("LL", prL["L"]),
+                     ("LR", prL["R"]), ("RR", prR["R"]), ("RL", prR["L"])):
+            cache[k].append(v.astype(np.float32))
+        print(f"{a.set}/{a.model} point {point:2d}: meanpool test R2 {sm['r2']:.3f} (Part1 alpha rule, a={cvm['alpha']:.3g}) | "
+              f"perpos mean {pp_r2.mean():.3f} med {np.median(pp_r2):.3f} >=.5 {(pp_r2 >= .5).mean():.2f} best {pp_r2.max():.3f} | "
+              f"pooled mean {pool_r2.mean():.3f} | cross {cross:.3f} within {within:.3f}", flush=True)
+
+    # --- curves, onsets, bootstrap over test clips
+    def metric_curves(idx):
+        Yb = Yte[idx]
+        out = {"meanpool_r2": [], "perpos_mean_r2": [], "perpos_frac_ge_0.5": [], "pooled_mean_r2": [],
+               "pooled_frac_ge_0.5": [], "cross_half_r2": [], "within_half_r2": []}
+        for i in range(len(points)):
+            out["meanpool_r2"].append(r2_pooled(Yb, cache["meanpool"][i][idx]))
+            pp = r2_per_pos(Yb, cache["perpos"][i][idx])
+            out["perpos_mean_r2"].append(float(pp.mean()))
+            out["perpos_frac_ge_0.5"].append(float((pp >= 0.5).mean()))
+            po = r2_per_pos(Yb, cache["pooled"][i][idx])
+            out["pooled_mean_r2"].append(float(po.mean()))
+            out["pooled_frac_ge_0.5"].append(float((po >= 0.5).mean()))
+            out["cross_half_r2"].append((r2_pooled(Yb, cache["LR"][i][idx]) + r2_pooled(Yb, cache["RL"][i][idx])) / 2)
+            out["within_half_r2"].append((r2_pooled(Yb, cache["LL"][i][idx]) + r2_pooled(Yb, cache["RR"][i][idx])) / 2)
+        return out
+
+    curves = metric_curves(np.arange(len(te)))
+    boots = [metric_curves(idx) for idx in boot]
+    onsets = {}
+    for name, c in curves.items():
+        o = onset_of(c)
+        bo = [onset_of(b[name]) for b in boots]
+        bo_pts = np.array([points[x] for x in bo if x is not None])
+        onsets[name] = {"onset": None if o is None else points[o],
+                        "onset_frac": None if o is None else min(points[o], 24) / 24,
+                        "ci95": None if len(bo_pts) == 0 else [int(np.percentile(bo_pts, 2.5)), int(np.percentile(bo_pts, 97.5))],
+                        "boot_draws_without_onset": int(sum(x is None for x in bo)),
+                        "max": float(max(c)), "argmax_point": points[int(np.argmax(c))],
+                        **jump(points, c)}
+    part1 = None
+    if a.set == "direction":
+        p1f = RESULTS / f"p1a_direction_direction_meanpool{'' if a.model == 'vjepa2' else '_' + a.model}.json"
+        if p1f.exists():
+            p1 = json.loads(p1f.read_text())
+            part1 = {"file": p1f.name, "cv_onset": p1["availability"]["onset"], "cv_onset_ci": p1["availability"].get("onset_ci"),
+                     "cv_mean_by_point": {str(r["point"]): r["cv_mean"] for r in p1["layers"] if r["point"] in points},
+                     "test_r2_by_point": {str(r["point"]): r["test_r2"] for r in p1["layers"] if r["point"] in points}}
+    wall = time.time() - t_all
+    out = {"set": a.set, "model": a.model, "variable": "direction", "target": "(sin theta, cos theta)",
+           "n_train": len(tr), "n_test": len(te), "points": points, "curves": curves, "onsets": onsets,
+           "part1_meanpool": part1, "layers": rows,
+           "left_positions": "columns 0-7 of the 16x16 grid (128 positions); right = columns 8-15",
+           "methods": {
+               "probe": "closed-form ridge as wm.probes: train-standardised features, targets (sin, cos), alpha by fold-mean R2 on the split's 5 train folds over ALPHAS = logspace(-2, 4, 13), refit on all train, test scored once",
+               "meanpool": "position mean of the stored time-pool (= Part 1 meanpool up to fp16 storage), same recipe",
+               "perpos": "one probe per spatial position, own standardiser and own CV alpha (no alpha sharing)",
+               "pooled": "one probe on all (train clip, position) samples (n_train x 256), standardised over those samples, folds by clip; test scored per position",
+               "halves": "pooled probe fit on the left (right) 128 positions of train clips; within = same half of test clips, cross = other half; R2 over all (clip, position) samples of that half; cross_half_r2 = mean of left->right and right->left",
+               "r2": "mean over the sin and cos columns of per-column R2 on test clips",
+               "onset": "first SAMPLED point with metric >= 90% of its max over the sampled points; 95% CI from a 200-draw bootstrap of test clips over fixed test predictions (Part 1's CV onset used train-fold OOF predictions; the meanpool_r2 curve here gives the same-rule test-set baseline)"},
+           "memmap": {"path": side["memmap"], "shape": side["shape"], "dtype": side["dtype"], "pooling": side["pooling"],
+                      "location_note": side.get("location_note")},
+           "extraction": {k: side.get(k) for k in ("gpu_seconds_forward", "wall_seconds_last_run", "batch_size", "gpu",
+                                                     "meanpool_parity", "random_init", "preprocess")},
+           "probe_wall_seconds": wall,
+           "provenance": {"split_file": SETS[a.set][1], "split_sha256": sha256_file(split_file), "commit": a.commit,
+                          "points": points, "pooling": side["pooling"], "positions": "16x16 (no spatial pooling)",
+                          "host": "vast 53030966 RTX 4060 Ti (extract GPU, probes CPU)",
+                          "timestamp_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "seed_bootstrap": 0}}
+    path = Path(a.results_dir) / result_path(a.set, a.model).name
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(out, indent=1))
+    print(f"wrote {path} ({wall:.0f}s)")
+    for name, o in onsets.items():
+        print(f"  onset {name}: {o['onset']} {o['ci95']} | max {o['max']:.3f} | jump {o['largest_jump']:.3f} {o['from_point']}->{o['to_point']}")
+
+
+# ================================================================ figures (Mac)
+
+def figures(a):
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    res = {m: json.loads(result_path("direction", m).read_text()) for m in ("vjepa2", "random")
+           if result_path("direction", m).exists()}
+    colors = {"meanpool_r2": "#6b7280", "perpos_mean_r2": "#2563eb", "perpos_frac_ge_0.5": "#16a34a",
+              "cross_half_r2": "#dc2626", "pooled_mean_r2": "#9333ea"}
+    labels = {"meanpool_r2": "mean-pooled probe R²", "perpos_mean_r2": "per-position probes: mean R²",
+              "perpos_frac_ge_0.5": "per-position probes: fraction of positions R² ≥ 0.5",
+              "pooled_mean_r2": "pooled-patch probe: mean per-position R²",
+              "cross_half_r2": "half-frame probe: cross-half R²"}
+    fig, axes = plt.subplots(1, len(res), figsize=(6.2 * len(res), 4.4), sharey=True, squeeze=False)
+    for ax, (m, r) in zip(axes[0], res.items()):
+        x = [min(p, 24) / 24 for p in r["points"]]
+        for k in colors:
+            ax.plot(x, r["curves"][k], "-o", ms=3.5, lw=1.8 if k != "meanpool_r2" else 2.4, color=colors[k],
+                    label=labels[k], ls="--" if k == "meanpool_r2" else "-")
+        ax.axvspan(8 / 24, 9 / 24, color="#fde68a", alpha=0.5, lw=0, label="paper's transition (its layers 7→8 = points 8→9)")
+        ax.set_title({"vjepa2": "V-JEPA 2 ViT-L", "random": "random-init ViT-L"}[m] + " — direction set, test clips")
+        ax.set_xlabel("layer fraction (block / 24)")
+        ax.set_ylim(-0.1, 1.02)
+        ax.axhline(0, color="k", lw=0.5)
+        ax.grid(alpha=0.25)
+    axes[0][0].set_ylabel("R² / fraction")
+    axes[0][0].legend(fontsize=7.5, loc="lower right")
+    fig.tight_layout()
+    fig.savefig(FIGURES / "fig1g_perpatch_direction.png", dpi=160)
+    plt.close(fig)
+
+    fig, axes = plt.subplots(len(res), len(HEATMAP_POINTS), figsize=(2.3 * len(HEATMAP_POINTS) + 0.8, 2.5 * len(res)),
+                             squeeze=False)
+    for row, (m, r) in zip(axes, res.items()):
+        by = {L["point"]: L for L in r["layers"]}
+        for ax, p in zip(row, HEATMAP_POINTS):
+            if p not in by:
+                ax.axis("off")
+                continue
+            im = ax.imshow(np.array(by[p]["perpos"]["r2"]).reshape(GRID, GRID), vmin=0, vmax=1, cmap="viridis")
+            ax.set_title(f"{'V-JEPA 2' if m == 'vjepa2' else 'random'} pt {p}\nmean {by[p]['perpos']['mean_r2']:.2f}",
+                         fontsize=8)
+            ax.set_xticks([])
+            ax.set_yticks([])
+    fig.colorbar(im, ax=axes.ravel().tolist(), shrink=0.8, label="per-position test R²")
+    fig.suptitle("Per-position direction probe R² on the 16×16 grid (paper Fig. 18c analogue)", fontsize=10)
+    fig.savefig(FIGURES / "fig1h_perpatch_heatmaps.png", dpi=160, bbox_inches="tight")
+    plt.close(fig)
+    print("figures written")
+
+
+if __name__ == "__main__":
+    ap = argparse.ArgumentParser()
+    ap.add_argument("stage", choices=("extract", "probe", "figures"))
+    ap.add_argument("--set", default="direction", choices=tuple(SETS))
+    ap.add_argument("--model", default="vjepa2", choices=("vjepa2", "random"))
+    ap.add_argument("--points", type=int, nargs="*", default=None)
+    ap.add_argument("--out", default=None)
+    ap.add_argument("--memmap", default=None)
+    ap.add_argument("--batch-size", type=int, default=16)
+    ap.add_argument("--workers", type=int, default=96)
+    ap.add_argument("--parent-threads", type=int, default=24)
+    ap.add_argument("--commit", default="unknown")
+    ap.add_argument("--results-dir", default=str(RESULTS))
+    a = ap.parse_args()
+    {"extract": extract, "probe": probe, "figures": figures}[a.stage](a)
