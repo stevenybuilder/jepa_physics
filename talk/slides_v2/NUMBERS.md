@@ -89,3 +89,12 @@ Every number shown on a slide, with the file and key it was read from. Numbers i
 | p2-clock | shared curve 0.81 vs 0.01 | results/p5_time_manifold_controls.json → ["speed/vjepa2/timepool_same_subset"].geometry.22.heldout_var_explained.spline (0.813) vs ["speed/random/timepool"].geometry.22.heldout_var_explained.spline (0.009); the full speed set gives 0.823 (p5_time_manifold.json geometry["speed/vjepa2/timepool"]["22"]) |
 | p2-clock / interpret notes | untrained fast/slow ratio 0.90–1.07 (blocks 8–22); unit slope 0.99–1.00 vs 0.65–0.77 | results/p5_time_manifold_controls.json → ["speed/random/timepool"].clock.{8,12,19,22}.spline.fast.slope.mean / .slow.slope.mean (0.984, 0.902, 0.962, 1.074); ["speed/vjepa2/timepool_same_subset"].clock.{8..22}.spline.*.slope.mean (0.987–1.002) |
 | p2-clock / p2-table notes | time edit leaves decoded position unchanged: 0.479 vs 0.477 m | results/p5_time_manifold.json → steer.12.summary.{spline,unedited}.xy_err (0.4794, 0.4774); donor_real_step 0.1935; block 22: 0.4532 vs 0.4511 |
+
+## p2-clock figure regenerated on the speed set (17:45 ET): figures/fig_p2clock_speedset.png, rail aligned to it
+
+| Slide | Number on slide | File → key |
+|---|---|---|
+| p2-clock (figure + rail) | V-JEPA 2 0.99 / 1.00 / 1.00 per step, CI [0.983, 0.994] / [0.993, 0.998] / [0.994, 0.998] | results/p5_time_manifold_controls.json → ["speed/vjepa2/timepool_same_subset"].clock.22.spline.{slow,mid,fast}.slope.{mean,ci95} (0.9885, 0.9959, 0.9960); n_clips 100 / 135 / 63 |
+| p2-clock (figure + rail) | untrained copy 0.71 / 0.74 / 0.77, CI [0.63, 0.80] / [0.69, 0.80] / [0.71, 0.83] | same file → ["speed/random/timepool"].clock.22.spline.{slow,mid,fast}.slope.{mean,ci95} (0.7128, 0.7432, 0.7659) |
+| p2-clock (figure + rail) | distance counter 0.21 / 1.01 / 1.59 (hollow ochre) | same file → ["speed/vjepa2/timepool_same_subset"].clock.22.spline.{slow,mid,fast}.odometer_prediction (0.2144, 1.0078, 1.5945); identical under speed/random/timepool |
+| p2-clock | supersedes the rail values 1.00 / 1.00 / 1.00 and 0.38 / 1.00 / 1.63 (direction set, block 12, row above), which stay in the notes only | results/p5_time_manifold.json clock["direction/vjepa2/timepool"]["12"] |
