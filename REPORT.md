@@ -580,9 +580,9 @@ label-free recovery here is my extension, the centroid-plane fallback, and it wo
   near the minor axis. PCA is the right first tool here: it finds the ring's plane, but its top-2 plane is not always
   the ring's plane.
 - **Curvature vs noise.** Over any knot gap up to 45° the chord and the arc differ by less than a quarter of centroid
-  noise. Held-out centroids on the contiguous 45° arc are rebuilt best by the chord at every direction layer (point
+  noise (the contiguous design's own knot gap is 50.6°, where the sagitta reaches 0.45 of noise). Held-out centroids on the contiguous 45° arc are rebuilt best by the chord at every direction layer (point
   12: chord 2.59, smoothing spline 2.76).
-- **Planted-ring positive control** (point 12). A synthetic ring is recovered without labels once its radius is ≥ 0.40
+- **Planted-ring positive control** (point 12). A synthetic ring is recovered without labels (angle; the stored `recovered` flag also demands a cubic win) once its radius is ≥ 0.40
   of the real ring's (circular correlation 0.996). A cubic-over-line gain appears only at 0.80[^planted]. A
   "curvature below noise" result is therefore a real null for this pipeline, not blindness.
 - **Cone check / velocity plane.** On the speed set the ring's radius grows with speed and then saturates: at point
@@ -591,11 +591,11 @@ label-free recovery here is my extension, the centroid-plane fallback, and it wo
   plane at every layer, narrowly (point 12: 0.445 vs 0.428; point 22: 0.435 vs 0.421; point 8: 0.285 vs 0.285). The
   sharp test is to take a chord between opposite directions: a velocity plane predicts the speed readout at the
   midpoint collapses (ratio cos 90° = 0), and a ring predicts it is unchanged. Measured MLP-speed ratios at Δθ = 180°
-  are 0.989 / 0.993 / 1.071 at points 8 / 12 / 22, and Eq. 10 speed ratios 0.991 / 0.963 / 0.953. **Verdict: ring,
+  are 0.989 / 0.993 / 1.071 at points 8 / 12 / 22, and Eq. 9 speed ratios (speed × direction cell centroids) 0.991 / 0.963 / 0.953. **Verdict: ring,
   with a radius that saturates in speed, not a velocity plane**[^vp] (`figures/fig4_ring_radius_vs_speed.png`).
 - **Is the ring occupied?** (780 held-out clips, chart plane, ring radius 1)[^p2b]. Yes, along its whole length: the
   largest angular gap between clips is 2.9° and neighbouring directions overlap (spread 2.2× the spacing at point 12,
-  4.4× at point 22). The interior is empty except for the slowest speed-set clips (0.25–0.67 m/s: median radius 0.59,
+  4.4× at point 22). The interior is nearly empty (3.6% of 780 held-out clips inside radius 0.5) except for the slowest speed-set clips (0.25–0.67 m/s: median radius 0.59,
   direction error 30°). Direction is undefined at zero speed, so a polar code should pull its slowest clips toward the
   centre. The midpoint of a 180° chord sits at radius 0.09, where 0% of held-out clips lie (point 22:
   0.14, 0.5%). This is what "dense manifold" means in the Goodfire paper, which defines a density metric (its Eq. 6) but
@@ -984,8 +984,8 @@ context-only geometry throughout (PCA basis, replaced components, centroids and 
 knot activations; same 8 pairs, 16 carriers, 32 evaluations, no pair converged)[^ctx2], the initial path (the carriers' own coordinates outside the top 32, a chord start inside them) averages 0.18
 from the spline (0.04 at its first waypoint) and the optimised paths average 0.87 ± 0.07 from the spline and 0.87 ± 0.08
 from the chord (start 0.90, end 0.75; optimised minus initial +0.68 [0.51, 0.85], 8 of 8 away; spline − chord +0.000
-[−0.019, 0.019]; R² 0 / 0.01; full-clip natural units, and the loss still falling 0.1–0.25 per step at the
-evaluation cap), while the forecast lands 6° from the ideal. The optimiser moves off the ring under Goodfire's
+[−0.019, 0.019]; R² 0 / 0.01; full-clip natural units, and the loss still falling 0.13–0.30 at the last logged step and
+0.27–0.57 to the final evaluation), while the forecast lands 6° from the ideal. The optimiser moves off the ring under Goodfire's
 recipe as it did under ours; the unedited carriers of the old angle-only test already sit 0.61 from the ring and its
 paths average 0.59 further out (20 of 20). Data separation in these pullback runs is not clean: 3–5 of each pair's 16
 carriers are knot clips, 5 are test clips, the readout's softmax sharpness was fitted on test clips, and the behaviour
