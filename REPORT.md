@@ -42,8 +42,8 @@ stimulus and one 45° arc, not a rendered future.
 **One negative.** At held-out endpoints the paper's comparison baseline, the chord between the raw centroids (A.9), run
 with our matched-support edit, lands closer than the smoothing spline: 4.7° against 9.7° at point 12 and 3.6° against
 10.7° at point 22 on the headline arc (clip-bootstrap gap +5.0° [3.9, 6.1] and +7.0° [6.0, 8.1]). The headline arc is the
-extreme case: over the 16 held-out arcs at point 12 the raw chord's lead is +1.3° ± 1.7 SD, with the spline ahead on 3
-(point-22 arcs in §4.3). The spline ties only the chord between its own smoothed knots, which was our line arm until
+extreme case: over the 16 held-out arcs the raw chord's lead is +1.3° ± 1.7 SD at point 12, with the spline ahead on 3,
+and +2.4° ± 2.0 at point 22, with the spline ahead on none. The spline ties only the chord between its own smoothed knots, which was our line arm until
 the parity audit[^rawchord]. Speed and acceleration are straight, and there the spline
 adds nothing; in extrapolation our smoothing spline, continued along its end tangent as the authors' code does, trails
 the chord by 0.02–0.06, while the authors' own interpolating arm beats the chord on speed and trails it on
@@ -731,7 +731,7 @@ across the 16 runs of the paired gap (spline − line, `gaps.manifold_minus_line
 | verdict "negative_endpoint" | 0 / 16 | 1 / 16 |
 
 The path result holds on every arc at both points, and against the smoothed-knot chord the endpoint ties at both
-(the raw-centroid chord over the arcs is reported in the paragraph after the donor ceiling). At point 22 the one
+(the raw-centroid chord over the arcs is in the paragraph after the donor ceiling). At point 22 the one
 "negative_endpoint" run is 191.25°–230.625° (+3.7°) and the other 15 are within ±3°, so the single-arc +3.80° above is
 not typical. On the label-free angle the four rerun arcs had the two largest endpoint losses (+9.2° and +9.9°, the
 duplicated arc) and the four smallest radius gaps (+0.11 to +0.19); on the labels they give +0.21°, +0.27°, −0.36° and
@@ -743,6 +743,15 @@ the whole activation adds almost nothing to R (+0.004 / +0.001). A real clip at 
 other real clips at θ\*, so this readout's ceiling is set by clip-specific variance, and the spline reaches 84% / 84% of the in-subspace ceiling (82% / 84% of the whole-activation donor)
 of it. The MLP evaluator reads the in-subspace donor at 25.2° / 18.5° vs 30.7° / 21.2° for the spline[^donor]
 (`figures/fig4d_donor_ceiling_direction_L12_L22.png`).
+
+**Raw-centroid chord over the same 16 arcs** (the `linear_raw` arm rerun on every arc; point 22 on the all-labels set;
+`results/arcs_rawchord/L{12,22}_s{1..16}/` and `L22_s{4,8,9,10}_labels/`, `gaps.manifold_minus_linear_raw`)[^rawchord].
+The paired endpoint gap (spline − raw chord) is +1.30° ± 1.73 SD at point 12 (range −1.68 to +4.08; the spline ahead on
+3 of 16; +1.12 ± 1.62 with the duplicate arc counted once) and +2.35° ± 2.02 at point 22 (range +0.42 to +8.39; the
+spline ahead on none; +2.47 ± 2.04 counted once), against +0.13 ± 1.48 and +0.19 ± 1.35 for the smoothed-knot chord on
+the same runs. So the endpoint tie in the table above is a property of our smoothed-knot line arm; against the paper's
+chord the spline loses the endpoint on average at both points, modestly, and the headline arc's +5.0° / +7.0° is the
+largest of the 17 runs at each point. The path metrics (radius, ordering, energy) are unchanged by the choice of chord.
 
 **All designs, endpoint probe error, spline vs line** (source `p2_steer_{var}_{var}_L{pt}_{design}.json`; extrapolation
 column from `p2_extrapolation_linear_ext.json`[^ext]: the smoothing spline continued linearly along its end tangent, and
@@ -797,7 +806,8 @@ not the method's, gives large extrapolation losses.
 | Arm (nominal rank) | pt 12 probe / MLP | pt 22 probe / MLP |
 |---|---|---|
 | spline (64; effective 2.55) | 9.7° / 30.9° | 10.7° / 21.3° |
-| chord (64) | 9.4° / 32.6° | 7.4° / 19.7° |
+| chord between smoothed knots (64) | 9.4° / 32.6° | 7.4° / 19.7° |
+| chord between raw centroids (64; A.9)[^rawchord] | 6.4° / 31.6° | 8.0° / 20.1° |
 | centroid transport x + μ(θ\*) − μ(θ) | 6.4° / 32.0° | 8.1° / 20.4° |
 | ring rotation (2) | 16.9° / 36.7° | 35.5° / 39.3° |
 | Part 1 probe-QR least squares (34 / 84) | 5.6° / 23.1° | 12.6° / 19.3° |
@@ -1165,7 +1175,7 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
 [^planted]: `results/p2_planted_ring_direction_L12.json`.
 [^vp]: `results/p2_velocity_plane.json`.
 [^sheet]: `results/p2_sheet_speed_L{12,19}.json` (`verdict`, `summary`).
-[^bake]: `results/p2_bakeoff_direction_direction_L{12,22}_contiguous.json`.
+[^bake]: `results/p2_bakeoff_direction_direction_L{12,22}_contiguous.json`; the raw-centroid row from the rerun `results/p2_bakeoff_direction_direction_L{12,22}_contiguous_rawchord.json` (`chord_raw.err_probe_matched`, `err_mlp_matched`; unmatched 4.7° / 3.6°, the headline endpoint). Rescaled to the spline's norm the raw chord loses 1.7° at point 12 and 4.3° at point 22 relative to its unmatched endpoint, and at point 22 the smoothed-knot chord then reads 0.5° better than it.
 [^s2]: `results/session2_plan.json` (`targets`: 4 per carrier, all in 303.75°–343.125°), `results/session2_renderer_validation.json`, `results/session2_stimuli_validation.json`.
 [^fig22]: `loose_threshold` in each `p1b_*` file: R² < 0.3 for direction and R² < 0.1 for speed and acceleration, the thresholds of the paper's Fig. 22. For speed and acceleration the K at that threshold equals the nested K at every V-JEPA point except acceleration at onset (493 vs 466). `K_loose_censored` is set only in the VideoMAE files (true for acceleration at point 22, where K_loose = 87 is a floor); the V-JEPA files predate the flag, and there speed and acceleration K_loose is also a floor at every point (the MAE rule stops the sequence while R² is still 0.13–0.20) except nested acceleration at onset, where R² reaches 0.071 (`rounds[].cv_r2`, `paper.rounds[].test_r2`).
 [^stim]: `results/stimuli/{paper_layout,hard}/p1a_direction_direction_meanpool{,_random}.json`; `results/session2_stimuli_validation.json`.
