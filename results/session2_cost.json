@@ -65,6 +65,18 @@
    "cost_usd": 0.0722,
    "dph_total": 0.19777777777777777,
    "note": "20 carriers x 2 targets x 8 waypoints, Adam 100 steps with gradients through blocks 23-24 + predictor (bf16 autocast), fp32 re-score; ~30 s smoke included"
+  },
+  {
+   "run": "perpatch_direction (scripts/p1a_perpatch.py extract x4 + probe x6 incl. a killed slow CPU-pooled run and the constant-velocity subset)",
+   "window_utc": [
+    "2026-09-28T03:05:51+00:00",
+    "2026-09-28T04:44:57+00:00"
+   ],
+   "gpu_seconds_forward": 1462.0,
+   "hours": 1.652,
+   "cost_usd": 0.3267,
+   "dph_total": 0.19777777777777777,
+   "note": "forward: direction vjepa2 619 s + random 578 s + hard 165 s + paper_layout 100 s (RTX 4060 Ti, batch 16, fp32); the rest of the window is CPU probing on the box's 32 vCPU (per-position ridge) + GPU pooled probes. Memmaps: /workspace/wm/artifacts/perpatch/{direction,hard,paper_layout}_vjepa2.npy (disk), /dev/shm/perpatch/direction_random.npy (RAM, volatile). Box totals above not refreshed."
   }
  ]
 }

@@ -480,32 +480,51 @@ def figures(a):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
-    res = {m: json.loads(result_path("direction", m).read_text()) for m in ("vjepa2", "random")
-           if result_path("direction", m).exists()}
+    panels = {"vjepa2": ("direction", "vjepa2", None, "V-JEPA 2 ViT-L — direction set (1,500 clips)"),
+              "random": ("direction", "random", None, "random-init ViT-L — direction set"),
+              "constvel": ("direction", "vjepa2", "constvel", "V-JEPA 2 — constant-velocity clips only (750)"),
+              "hard": ("hard", "vjepa2", None, "V-JEPA 2 — hard render set (392 clips, 8 directions)"),
+              "paper_layout": ("paper_layout", "vjepa2", None, "V-JEPA 2 — paper-layout set (392 clips)")}
+    res, titles = {}, {}
+    for key, (st, m, sub, title) in panels.items():
+        if result_path(st, m, sub).exists():
+            res[key], titles[key] = json.loads(result_path(st, m, sub).read_text()), title
     colors = {"meanpool_r2": "#6b7280", "perpos_mean_r2": "#2563eb", "perpos_frac_ge_0.5": "#16a34a",
               "cross_half_r2": "#dc2626", "pooled_mean_r2": "#9333ea"}
     labels = {"meanpool_r2": "mean-pooled probe R²", "perpos_mean_r2": "per-position probes: mean R²",
               "perpos_frac_ge_0.5": "per-position probes: fraction of positions R² ≥ 0.5",
               "pooled_mean_r2": "pooled-patch probe: mean per-position R²",
               "cross_half_r2": "half-frame probe: cross-half R²"}
-    fig, axes = plt.subplots(1, len(res), figsize=(6.2 * len(res), 4.4), sharey=True, squeeze=False)
-    for ax, (m, r) in zip(axes[0], res.items()):
+    ncol = min(3, len(res))
+    nrow = -(-len(res) // ncol)
+    fig, axes = plt.subplots(nrow, ncol, figsize=(5.6 * ncol, 4.2 * nrow), sharey=True, squeeze=False)
+    for ax in axes.ravel()[len(res):]:
+        ax.axis("off")
+    for ax, (m, r) in zip(axes.ravel(), res.items()):
         x = [min(p, 24) / 24 for p in r["points"]]
         for k in colors:
-            ax.plot(x, r["curves"][k], "-o", ms=3.5, lw=1.8 if k != "meanpool_r2" else 2.4, color=colors[k],
+            ax.plot(x, r["curves"][k], marker="o", ms=3.5, lw=1.8 if k != "meanpool_r2" else 2.4, color=colors[k],
                     label=labels[k], ls="--" if k == "meanpool_r2" else "-")
         ax.axvspan(8 / 24, 9 / 24, color="#fde68a", alpha=0.5, lw=0, label="paper's transition (its layers 7→8 = points 8→9)")
-        ax.set_title({"vjepa2": "V-JEPA 2 ViT-L", "random": "random-init ViT-L"}[m] + " — direction set, test clips")
+        ax.set_title(titles[m], fontsize=9.5)
         ax.set_xlabel("layer fraction (block / 24)")
-        ax.set_ylim(-0.1, 1.02)
+        lo = min(min(r["curves"][k]) for k in colors)
+        ax.set_ylim(max(-0.3, lo - 0.05) if lo < -0.1 else -0.1, 1.02)
+        if lo < -0.3:
+            ax.text(0.02, 0.97, f"cross-half R² dips to {lo:.2f} (clipped)", transform=ax.transAxes, ha="left", va="top",
+                    fontsize=7, color=colors["cross_half_r2"])
         ax.axhline(0, color="k", lw=0.5)
         ax.grid(alpha=0.25)
-    axes[0][0].set_ylabel("R² / fraction")
-    axes[0][0].legend(fontsize=7.5, loc="lower right")
+    for row in axes:
+        row[0].set_ylabel("test R² / fraction")
+    axes[0][0].legend(fontsize=7, loc="lower right")
+    fig.suptitle("Per-patch direction probes vs layer (paper App. C.5 / Fig. 18 analogue); dashed = mean-pooled probe, "
+                 "same test clips", fontsize=10)
     fig.tight_layout()
     fig.savefig(FIGURES / "fig1g_perpatch_direction.png", dpi=160)
     plt.close(fig)
 
+    res = {k: v for k, v in res.items() if k in ("vjepa2", "random", "hard")}
     fig, axes = plt.subplots(len(res), len(HEATMAP_POINTS), figsize=(2.3 * len(HEATMAP_POINTS) + 0.8, 2.5 * len(res)),
                              squeeze=False)
     for row, (m, r) in zip(axes, res.items()):
@@ -515,8 +534,8 @@ def figures(a):
                 ax.axis("off")
                 continue
             im = ax.imshow(np.array(by[p]["perpos"]["r2"]).reshape(GRID, GRID), vmin=0, vmax=1, cmap="viridis")
-            ax.set_title(f"{'V-JEPA 2' if m == 'vjepa2' else 'random'} pt {p}\nmean {by[p]['perpos']['mean_r2']:.2f}",
-                         fontsize=8)
+            name = {"vjepa2": "V-JEPA 2", "random": "random init", "hard": "V-JEPA 2, hard set"}[m]
+            ax.set_title(f"{name} pt {p}\nmean {by[p]['perpos']['mean_r2']:.2f}", fontsize=8)
             ax.set_xticks([])
             ax.set_yticks([])
     fig.colorbar(im, ax=axes.ravel().tolist(), shrink=0.8, label="per-position test R²")
