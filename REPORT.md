@@ -18,10 +18,12 @@ the wrong comparison. Per patch, three things hold. On the supplied clips the pe
 per-position R² is 0.56 at block 1, 0.89 at block 5 and 0.96 at block 6, with no step at the paper's transition. That
 code is training-selective: the random-init network pools to 0.86–0.88 at every depth, but its mean per-position R² never
 exceeds 0.39 (best single position 0.76–0.86), the paper's "fragmented local signal that pooling adds up" regime, which V-JEPA 2 leaves within six
-blocks. On a harder rendered set (textured floor, shading, smaller disk; 392 clips, 8 directions) the per-position curve
-rises in two steps: its largest rise is between points 4 and 6 (0.52 → 0.81), and it clears the 90% rule only at point 9
-(0.851 → 0.944 across points 8→9), where half-frame transfer changes sign (−1.42 at 8, 0.08 at 9, after 0.69 at point 1).
-The sign change sits at the paper's depth; the largest rise is earlier (§3.1). VideoMAE (pixel reconstruction) matches V-JEPA 2 on the pooled curves for all three variables.
+blocks. On a harder rendered set (textured floor, shading, smaller disk; 392 clips, 8 directions, three render seeds) the
+per-position curve rises most between points 4 and 6 on every seed (+0.24 to +0.29) and only +0.07 ± 0.02 across
+points 8→9, where the 90% rule fires on one seed (9) and one point earlier on the other two (8); a random-init network
+plateaus at 0.57–0.62 from point 6 on the same clips. What does replicate at the paper's depth on all three seeds is
+half-frame transfer: negative at points 7–8 (−1.0 to −1.8 at 8) and positive from point 9 (+1.4 to +1.9 jump), after
+0.69–0.73 at point 1 (§3.1). VideoMAE (pixel reconstruction) matches V-JEPA 2 on the pooled curves for all three variables.
 **Step 2 reproduces in part.** Every variable needs tens of probes at the paper's layer, far outside a random-removal
 band. Measured four ways, that count reflects anisotropy: a whitened erasure needs one probe at every point; the code
 is rank-2 linear plus a second harmonic and a nonlinear residual (§3.2). Speed does not need fewer probes than
@@ -225,8 +227,8 @@ The two sets have the same size and the same 8 directions, so the shift from ons
 from the rendering, not from sample size. On the hard set V-JEPA's block 1 is below the random network's, and V-JEPA
 first beats it beyond the paired CI at point 5 (post-hoc selectivity onset). The random network stays flat or declines
 (0.881 → 0.861). On the pooled curve this is a partial recovery of the emergence zone (point 5 is about a fifth of the
-depth); per patch, the hard set shows the paper's step at the paper's depth (below). Caveats: 392 clips, 8 directions,
-direction only, one render seed, and the 7 start positions are shared by every (θ, v) cell, where the paper samples
+depth); per patch, the hard set shows the paper's half-frame transition at the paper's depth but not its sharp rise
+(below). Caveats: 392 clips per seed, 8 directions, direction only, three render seeds, and the 7 start positions are shared by every (θ, v) cell, where the paper samples
 starts per pair.
 
 **Per-patch probes (paper App. C.5 / Fig. 18)**[^pp]. One ridge probe per spatial position (16 × 16 = 256), on that
@@ -239,7 +241,9 @@ All scores are test R² on the stored split (rendered sets: 313 / 79).
 | supplied, V-JEPA 2 | 0.56 / 0.957 / 0.958 / 0.975 / 0.95 | 5 [5, 5] | 0.83, 2 [2, 4] | 0.82 / 0.95 / 0.96 / 0.81 | 2 [1, 2] |
 | supplied, constant-velocity clips | 0.54 / 0.959 / 0.961 / 0.980 / 0.94 | 6 [5, 6] | 0.88, 2 [1, 2] | 0.87 / 0.96 / 0.97 / 0.84 | 1 [1, 2] |
 | supplied, random-init ViT-L | −0.01 / 0.22 / 0.27 / 0.29 / 0.38 | 16 [10, 19] | 0.66, 4 [3, 5] | 0.61 / 0.70 / 0.71 / 0.74 | 1 [1, 1] |
-| hard rendered set | 0.49 / 0.806 / 0.851 / 0.944 / 0.96 | 9 [9, 9] | 0.78, 9 [8, 9] | 0.69 / −1.42 / 0.08 / 0.75 | 6 [4, 6] |
+| hard rendered set, seed 0 | 0.49 / 0.806 / 0.851 / 0.944 / 0.96 | 9 [9, 9] | 0.78, 9 [8, 9] | 0.69 / −1.42 / 0.08 / 0.75 | 6 [4, 6] |
+| hard, render seed 1 · seed 2 | 0.54 / 0.83 / 0.88 / 0.95 / 0.96 · 0.55 / 0.81 / 0.88 / 0.95 / 0.97 | 8 [8, 9] · 8 [8, 9] | — | 0.73 / −1.03 / 0.39 / 0.74 · 0.71 / −1.84 / 0.08 / 0.79 | — |
+| hard, seed 0, random-init ViT-L | 0.41 / 0.57 / 0.60 / 0.61 / 0.62 | — | — | −0.72 / 0.27 / 0.27 / 0.51 | — |
 | paper-layout rendered set | 0.47 / 0.958 / 0.955 / 0.978 / 0.93 | 6 [6, 6] | 0.86, 4 [1, 4] | 0.81 / 0.95 / 0.97 / 0.86 | 4 [4, 4] |
 
 Three findings. (1) On the supplied clips both readouts are early. Mean per-position R² is 0.56 at block 1, 0.89 at
@@ -249,26 +253,32 @@ is 0.82 at block 1, peaks at 0.96 at point 9 and falls to 0.81 at point 22, the 
 generalisation. There is no step at the paper's transition (points 8 → 9: 0.958 → 0.975). (2) The per-patch code is
 training-selective. The random-init network pools to 0.86–0.88 at every point, but its mean per-position R² never exceeds
 0.39 (best single position 0.76–0.86) and its cross-half R² is 0.61–0.74. That is the paper's regime of fragmented local signal that pooling adds up;
-V-JEPA 2 leaves it within six blocks on these clips. (3) On the hard set the per-position curve has two rises. The
-largest is between points 4 and 6 (0.52 → 0.81, the largest jump between consecutive sampled points; every position
-is above R² 0.5 from point 6); the 90%-of-max onset is 9 [9, 9] (0.851 → 0.944 across points 8 → 9, the second-largest
-jump), and pooled-patch onset is 9 [8, 9]. Cross-half transfer is 0.69 at point 1, −0.73 at point 4 and −1.42 at point
-8, then 0.08 at 9 (about chance), 0.42 at 12 and 0.75 at 22: transfer exists before the zone, is lost at points 4–8,
-changes sign across 8 → 9 (the curve's largest jump, +1.50, at the paper's depth) and is recovered from point 12. The negative
+V-JEPA 2 leaves it within six blocks on these clips. (3) On the hard set, three render seeds (fresh starts and floor texture, otherwise identical)[^seeds]. The
+per-position curve rises most between points 4 and 6 on every seed (+0.286 / +0.245 / +0.237; every position is above
+R² 0.5 from point 6 on every seed); across points 8 → 9 it rises +0.093 / +0.065 / +0.065, so the 90%-of-max onset is
+9 [9, 9] on seed 0 and 8 [8, 9] on seeds 1 and 2; pooled-patch onset on seed 0 is 9 [8, 9]. A random-init network on
+the same clips reaches 0.57 at point 6 and 0.60–0.62 from point 8, so the trained network leads by 0.24–0.35 from point
+6 on and not at all at points 1–4, where random matches or beats it (0.41 / 0.54 vs 0.49 / 0.52). Cross-half transfer
+is 0.69–0.73 at point 1, negative at points 7 and 8 on every seed (−1.03 to −1.84 at 8), positive at 9 on every seed
+(jump +1.50 / +1.42 / +1.92), then 0.58 ± 0.15 at 12 and 0.76 ± 0.03 at 22; at points 4–6 its sign varies by seed. The
+random network's cross-half is +0.27 at points 8–9 on seed 0 and negative at every point on seed 1, so this readout
+cannot separate trained from random. The negative
 values are a between-half miscalibration, not a mirror flip: at point 8 the cross-half MAE is 56° against 11° within a
 half, where a left-right mirror of 8 directions would give 90°. On the paper-layout set the per-position onset is 6 and
 cross-half transfer is already 0.81 at block 1, so the step on the hard set comes from the rendering. Caveats: per-position
 features are averaged over the 8 time steps; the half-frame test is one pooled probe per half; the rendered sets sample
-points 1, 4, 6, 7, 8, 9, 10, 12, 16 and 22 only, so their onsets of 4 and 6 are upper bounds; they reuse 7 start
-positions across all (θ, v) pairs; the hard set is 392 clips and one render seed.
+points 1, 4, 6, 7, 8, 9, 10, 12, 16 and 22 only (seeds 1–2 add 2, 3 and 5), so their onsets of 4 and 6 are upper
+bounds; they reuse 7 start positions across all (θ, v) pairs; each hard set is 392 clips.
 
-**Verdict.** On a harder stimulus the per-patch readout shows the paper's signature in part: the half-frame sign
-change and the 90%-rule onset fall at the paper's depth (points 8 → 9), but the largest per-position rise is earlier
-(points 4 → 6) and transfer already exists at point 1 (one render seed, stratified folds; seed and fold reruns in
-progress). On the supplied clips it does not: the per-patch code forms by block 6 with no step at points 8 → 9, while the mean-pooled
-curve is early under every fold grouping and at the paper's clip count. What training changes on the supplied clips is
-the per-patch code (V-JEPA 2 0.96–0.98 against a mean of 0.39 for the random network; the random-init control has
-been run on the supplied set only), not pooled availability.
+**Verdict.** On a harder stimulus, across three render seeds, one part of the paper's signature replicates: half-frame
+transfer is negative at points 7–8 and positive from point 9 on every seed (paper layers 6–7 → 8). The sharp per-patch
+rise does not: the largest rise is at points 4 → 6 on every seed, the 90% onset is 8 on two seeds and 9 on one, and the
+random network's per-position curve also plateaus by point 6 (stratified folds; a start-grouped refit is in progress).
+On the supplied clips neither part appears: the per-patch code forms by block 6 with no step at points 8 → 9, while the mean-pooled
+curve is early under every fold grouping and at the paper's clip count. What training changes on both stimulus sets is
+the per-position code from point 6 on (supplied: V-JEPA 2 0.96–0.98 against a mean of 0.39 for the random network;
+hard: 0.81–0.97 against 0.57–0.62), not pooled availability; the half-frame dip is not separable from random, whose
+transfer varies by render seed.
 
 **Objective axis: VideoMAE** (v1 ViT-L, `MCG-NJU/videomae-large`, pixel reconstruction; 224-px input, 1,568 tokens; the paper used the VideoMAE-v2 family)[^obj]. VideoMAE matches V-JEPA 2
 on every variable. Direction: block 1 0.886 vs 0.875, peak 0.992 (point 21) vs 0.991 (22), onset 2 for both. Speed:
@@ -905,8 +915,8 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
   control shows that pooled linear availability is architectural and that carrying direction into disk-free tokens is
   not a training effect. The per-patch probes show what training does add: the random network never gets past a mean
   per-position R² of 0.39, the regime of fragmented local signal that pooling adds up, while V-JEPA 2 reaches 0.96 by
-  block 6 on the supplied clips and, on a harder stimulus, forms that code in two rises, the larger at points 4 → 6 and
-  a second at the paper's depth, where half-frame transfer changes sign (§3.1). So the emergence zone is a claim about the per-patch readout, which the paper's C.5 says, and a mean-pooled
+  block 6 on the supplied clips and, on a harder stimulus, forms that code with its largest rise at points 4 → 6 on every render seed and, across the paper's depth, loses
+  and recovers half-frame transfer (§3.1). So the emergence zone is a claim about the per-patch readout, which the paper's C.5 says, and a mean-pooled
   curve can neither confirm nor refute it. VideoMAE matches V-JEPA 2 on every pooled Part 1 measure (I did not run it
   per patch), so none of this is specific to latent prediction or shows that the variables are used to predict. The authors' OpenReview response states that "all 13 models encode motion direction
   (R²≥.43), regardless of objective", classification CNNs included, so availability is their own finding; training buys
@@ -1019,6 +1029,7 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
 [^isog]: `results/p2_isometry_goodfire_coord.json` (`layers.{8,12,22}.goodfire_angle.{interp,smooth}.{geo,lin}_pearson`, `goodfire_periodicity_test`, `angle_vs_labels`, `geo_below_chord_goodfire_angle`; 213 tests at ee828a7).
 [^isol]: `results/p2_isometry_goodfire_labels.json` (`layers.{8,12,22}.labels_angle.{interp,smooth}.{geo,lin}_pearson`; `unsupervised_angle` rows reproduce the label-free figures; `geo_below_chord_labels_angle` false at every point).
 [^pp]: `results/p1a_perpatch_direction_{vjepa2,vjepa2_constvel,random,vjepa2_hard,vjepa2_paper_layout}.json` (`curves.{perpos_mean_r2,pooled_mean_r2,pooled_frac_ge_0.5,cross_half_r2,meanpool_r2}`, `onsets.*`, `layers[].halves` for the cross-half MAE, `methods`, `provenance.time_averaging`); `figures/fig1g_perpatch_direction.png`, `fig1h_perpatch_heatmaps.png`; rendered-set layout (7 shared starts) in `results/session2_stimuli_validation.json` (`layout.start_rule`) and `scripts/render_hard_stimuli.py`.
+[^seeds]: `results/p1a_perpatch_hard_seeds.json` (per seed `layers[].perpos.mean_r2`, `halves.cross_r2`, `onsets`, `largest_jump`), `results/p1a_perpatch_direction_vjepa2_hard_seed{1,2}.json`, `results/p1a_perpatch_direction_random_hard{,_seed1}.json`, `figures/fig1j_perpatch_hard_seeds.png`; render seeds at 2abb3e9, extraction on the box from a frozen worktree (GPU forward 611 s), 3a8d7c7.
 [^gcv]: `results/p1a_grouped_cv.json` (`sets.{direction,speed}_{vjepa2,random}.{stratified,direction_grouped,start_grouped,speed_grouped}.{onset,onset_ci}`); `figures/fig1i_grouped_cv.png`.
 [^psv]: `results/p1a_paperscale_velocity_only.json` (`summary`, `models.vjepa2.n392_velocity.onset_per_seed`).
 [^raw]: `results/p1b_raw_coordinates.json` (`cells.{direction,speed}_L{8,9}.{raw,stored_zscored}.{nested_K,paper_K}`).
