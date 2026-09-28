@@ -41,7 +41,9 @@ the learned probe buys is specificity, not target error.
 **One new thing.** Edits at points ≤ 12 wash out within a few blocks and barely reach the predictor's forecast; point-22
 edits survive to the output, and along the point-22 path the forecast follows the intermediate directions along the
 spline and jumps along the chord (−13.4° paired, −31.3° at large shifts). This is a probe of the forecast on one
-stimulus and one 45° arc, not a rendered future.
+stimulus and one 45° arc, not a rendered future. The wash-out holds at the edits' own norms, and speed shows it too. Scaled to the
+natural twin change, though, a point-12 speed edit moves the forecast's speed readout 0.57 of the way to the target,
+so for speed it is partly a matter of dose. Direction at point 12 was not rerun at that norm (§4.5).
 
 **One negative.** At held-out endpoints the paper's comparison baseline, the chord between the raw centroids (A.9), run
 with our matched-support edit, lands closer than the smoothing spline: 4.7° against 9.7° at point 12 and 3.6° against
@@ -595,7 +597,8 @@ label-free recovery here is my extension, the centroid-plane fallback, and it wo
   (0.89). Geometric residual in centroid-noise units at points 8 / 12 / 22: ellipse 0.92 / 1.15 / 1.11, circle 1.22 /
   1.55 / 1.36, smoothing spline 0.92–0.97 (about 1 by construction). So the ellipse sits at the noise floor and the
   circle does not. The ring is also bent out of its plane: a third centroid axis follows cos 2θ (a saddle) and holds
-  0.28 / 0.20 / 0.24 of the centroid variance at 8 / 12 / 22, growing to 0.34 at point 14. At points 14–20 and 24 the
+  0.28 / 0.20 / 0.24 of the centroid variance at 8 / 12 / 22, growing to 0.34 at point 14 (the forecast carries it but
+  does not read it as direction, speed or position; §4.5, saddle axis). At points 14–20 and 24 the
   saddle axis outranks the ring's minor axis, so a top-2 PC plane there is one ring axis plus the fold and shows a bent
   line; the ring itself is not one, and estimates made in that plane (eigenvalue ratio 0.91 at points 14–16 against
   0.66–0.77 in the ring plane) mislead. Planted controls in real point-12 activations recover a circle as 0.99, an
@@ -636,7 +639,8 @@ label-free recovery here is my extension, the centroid-plane fallback, and it wo
   sharp test is to take a chord between opposite directions: a velocity plane predicts the speed readout at the
   midpoint collapses (ratio cos 90° = 0), and a ring predicts it is unchanged. Measured MLP-speed ratios at Δθ = 180°
   are 0.989 / 0.993 / 1.071 at points 8 / 12 / 22, and Eq. 9 speed ratios (speed × direction cell centroids) 0.991 / 0.963 / 0.953. **Verdict: ring,
-  with a radius that saturates in speed, not a velocity plane**[^vp] (`figures/fig4_ring_radius_vs_speed.png`).
+  with a radius that saturates in speed, not a velocity plane**[^vp] (`figures/fig4_ring_radius_vs_speed.png`). Scaling
+  the radius at point 22 does not move the forecast's speed (§4.5, radial steering).
 - **Is the ring occupied?** (780 held-out clips, chart plane, ring radius 1)[^p2b]. Yes, along its whole length: the
   largest angular gap between clips is 2.9° and neighbouring directions overlap (spread 2.2× the spacing at point 12,
   4.4× at point 22). The interior is nearly empty (3.6% of 780 held-out clips inside radius 0.5) except for the slowest speed-set clips (0.25–0.67 m/s: median radius 0.59,
@@ -980,9 +984,9 @@ point-12 arcs, and the position sheet.
   variables it should leave alone; the endpoint verdict does not move, but the lead is not free. The conceptor run's
   own probes (previous bullet) give the same ordering. Part 1's probe-QR edit at the spline's norm leaks least into
   speed (0.88 / 1.02) but moves the start position by 3.95 spreads at point 22 (5.61 at its own norm). Scale: the
-  transferred speed probe is itself 0.56 / 0.44 m/s off on unedited direction test clips (r 0.97 / 0.98), and every
-  change above except the random curve's is smaller than that, so the ratios to natural spread, not the m/s, carry
-  the comparison.
+  transferred speed probe is itself 0.56 / 0.44 m/s off on unedited direction test clips (r 0.97 / 0.98), the same
+  order as every non-random change above, so the ratios to natural spread and the between-arm contrasts, not the m/s,
+  carry the comparison.
 
 - **Cosine between the Part 1 step and the spline** (additional metric; contiguous design, same rows; the Part 1
   step is the multi-probe subspace edit x\* − x at that point)[^cos]:
@@ -1134,9 +1138,10 @@ true disk than the spline). Read at the encoder output (the full edited clip pro
 direction: 25.0° vs 23.9° (+1.1° [−0.02, 2.3]) and 16.1° vs 16.8° (−0.8° [−1.7, 0.2]). It also ties on nearest-real R (+0.004
 [−0.009, 0.017]; −0.003 [−0.021, 0.016]), and it moves the activation furthest along the twin's own point-25 change
 (R 0.31 vs 0.19, +0.12 [0.10, 0.13]; 0.48 vs 0.28, +0.20 [0.18, 0.22]). So the edit made of real counterfactual
-differences is the most twin-like at the encoder output and the worst structured edit in the forecast. At a fixed norm the forecast's direction readout
-responds to the direction content the curve edits isolate, not to the full activation change a re-render
-causes. A negative for this baseline, on one fit set (seed 0, 2 clips per value) at point 22 only
+differences is the most twin-like of these arms at the encoder output. In the forecast it is worse than the
+interpolating spline, probe-QR and the chord at both norms (the smoothing spline, 39.1° / 37.3° above, was not in
+this run). My reading, which I did not test directly: at a fixed norm the forecast's direction readout responds to the
+direction content that the curve edits isolate, not to the whole activation change a re-render causes. A negative for this baseline, on one fit set (seed 0, 2 clips per value) at point 22 only
 (`figures/fig_twin_difference.png`).
 
 **At the encoder output**[^enc]. Point 25 is the final LayerNorm, whose tokens are the predictor's input and the site
@@ -1280,6 +1285,87 @@ reads θ + 180° on the reversed clip: the error to θ + 180° is 20.5° at poin
 constant-velocity clip has the same frame set). A speed probe transfers to reversed clips (R² 0.944–0.981 vs
 0.936–0.987 forward at points ≥ 1).
 
+**Straightening across depth** (Hénaff, Goris & Simoncelli 2019; the open question of Musa et al., arXiv 2609.01551;
+`figures/fig_straightening.png`)[^str]. Does the encoder straighten a clip's own path through time, as the perceptual
+straightening hypothesis predicts for a predictive code? At each point, the whole-frame mean token of each of the 8
+tubelets gives an 8-step trajectory, and its curvature is the mean angle between successive displacements (0° for a
+straight line, 90° for a random walk, above 90° when successive steps partly reverse). The pixel reference is the
+32 × 32 frames averaged into the same 8 tubelets, and straightening = pixel − latent curvature. Clips: 750
+constant-velocity and 750 accelerating direction-set clips, 1,536 acceleration-set clips; controls: the random-init
+encoder, reversed clips, and random walks with each clip's step norms (isotropic, and matched to the displacement
+covariance). It does not straighten. On constant-velocity clips latent curvature is 102.5–118.7° at every point,
+against 81.6° [79.8, 83.3] in pixels and 88.7–91.1° for the two random-walk nulls, so the straightening index is negative
+everywhere (−20.9° at its least negative, point 6; −36.9° at point 22) and the latent steps zig-zag. The curve dips at
+middle depth, to a minimum of 102.5° at point 6 (point 6 in 2,000 of 2,000 bootstrap draws, never inside the paper's
+zone 8–12; the zone's minimum, 106.1° at point 9, sits 11.2° [10.9, 11.5] below point 25), then climbs to 117–119°
+from point 17 on. The random-init encoder is flat at 115.9–116.3° at every depth, so the mid-depth dip is a training
+effect, but it is a partial undoing of a zig-zag the untrained network already has, not a straightening. Accelerating
+clips (pixel curvature 54.0°) give 104.2–117.4° with the same minimum at point 6. At points 3–9 faster clips have
+straighter latent paths (Spearman −0.41 to −0.52 with speed), while pixel curvature rises with speed (+0.98); from
+point 12 on the link is weak (−0.03 to −0.39). Reversing the clip changes the constant-velocity curve by at most 1.6°.
+Caveats: the whole-frame mean includes the static background, and 8 tubelets give 6 angles per clip.
+
+**Is the ring's fold used? (saddle axis)**[^sad]. §4.1 found the ring bent out of its plane along a cos 2θ axis. Does
+the predictor use that fold? The axis comes from a fit C(θ) ≈ μ + A1 [cos θ, sin θ] + A2 [cos 2θ, sin 2θ] on the train centroids (PCA-64): u is A2's
+top direction with the ring plane projected out. It is nearly a pure second harmonic (k = 2 share 0.997 / 0.999) and
+holds 0.17 / 0.21 of the centroid variance at points 12 / 22 by this fit, against 0.20 / 0.24 for the third centroid PC
+in §4.1. On the 16 headline-arc carriers, the coordinate along u (read on the context-only activation) is scaled by 0
+(removed), 2 or −1 at points 12 and 22. The controls are 20 random axes outside the ring plane and u, with the same context-only variance and
+the same scalings. The headline smoothing-spline path is also run with and without its component along u. Readouts are
+predictor-native probes of the forecast (direction, speed, per-step position) plus a cos 2θ / sin 2θ probe (CV R²
+0.76). At point 22 (point 12 in brackets):
+
+- *The forecast carries the fold.* Removing it moves the forecast's cos 2θ readout by 0.37 [0.25, 0.48] in the sign the
+  edit predicts (0.063 [0.041, 0.082]). Random axes move it by −0.008 (−0.007), and none of the 20 draws moves it as far.
+- *The forecast's direction does not use it.* The error to the true direction (unedited 6.2°) changes by +0.19° [−0.39,
+  0.87] on removal, −0.14° [−0.95, 0.53] at ×2 and +0.48° [−0.57, 1.65] at ×−1. Random axes of the same variance move it
+  more, +2.6° [1.4, 3.8] and +7.4° [5.3, 9.6], so saddle − random is −2.4° [−3.8, −1.0] and −6.9° [−9.5, −4.4]. The
+  forecast position moves less than under a random axis (1.8 px vs 4.3 px; −2.4 px [−3.3, −1.6]), and speed does not move (+0.009 m/s
+  [−0.04, 0.06]). The whole forecast still changes by as much as under a random axis (0.11 vs 0.10 of the median
+  distance between probe-clip forecasts). At point 12 the direction change is +0.56° [−0.15, 1.28], tied with random
+  (+0.42° [−0.30, 1.19]). The axis refit on context-only activations (cosine 0.97–0.98 with the full-clip axis) gives
+  the same results.
+- *The spline's bend along u is inert.* The component along u is 0.43–0.56 of the point-22 path edit's norm (0.38–0.56),
+  yet flattening the path into the ring plane changes almost nothing. The endpoint forecast error changes by −0.10° [−0.96, 0.74] (+0.03°
+  [−0.60, 0.68]), the minimum forecast radius by −0.007 [−0.019, 0.005] and the endpoint forecast direction by 1.2°
+  [0.6, 1.9]. The edit-point probe does not see it either (+0.03° [−0.04, 0.10]).
+- *What the fold tracks.* On train clips, cos 2θ and sin 2θ explain 78% / 84% of the coordinate. Within a direction value it
+  correlates with speed at 0.38 / 0.28. Across the 64 value means it correlates with the disk's mean horizontal and
+  vertical offset from the frame centre (0.52 / −0.63 at point 12, 0.52 / −0.62 at point 22). A fold driven by frame geometry
+  would show this, but any cos 2θ-shaped nuisance would correlate this way across values.
+
+So the fold is real and reaches the forecast. The forecast does not use it for direction, speed or position: removing
+or flipping it moves only the forecast's own cos 2θ code, and a random axis of the same variance disturbs direction
+more. About half of the smoothing spline's edit on these carriers lies along the fold, and that half is inert for the
+forecast. The along-path route effect above used the interpolating spline, which was not flattened, so this test
+does not locate that effect. The bf16 forward differs from the fp32 cache by
+1.6° [0.9, 2.5] on the direction readout; every contrast above is bf16 against bf16 (`figures/fig_saddle_axis.png`).
+
+**Is the ring's radius read as speed? (radial steering)**[^rad]. On the speed set the ring's radius grows with speed
+(§4.1). At point 22 I scaled each carrier's ring-plane radius about the context-only ring centre by ×0.25, 0.5, 1.5 and 2,
+keeping the angle fixed. The controls are 20 random 2-planes outside the ring plane and saddle axis, matched in per-axis variance and given the
+same scalings, with the same 16 carriers and readouts. On the context-only train clips the mean radius rises from 5.1 at
+speed label 0 (the accelerating-from-rest clips) to 7.0 at 7 m/s (clip correlation 0.32). By that curve, ×2
+corresponds to +4.4 [3.0, 5.8] speed units, and both shrinks hit its floor (−2.4).
+
+- *Speed does not move.* The forecast speed changes by +0.004 m/s [−0.11, 0.11] at ×0.25, −0.001 at ×0.5, −0.013 at
+  ×1.5 and −0.03 [−0.16, 0.11] at ×2 (unedited 2.67). Random planes move it at least as much in 16–20 of 20 draws.
+- *The forecast's direction code scales with it.* The forecast's direction-probe radius (unedited 1.03) follows the edit: −0.27 [−0.36,
+  −0.17] at ×0.25, −0.19 at ×0.5, +0.21 at ×1.5 and +0.44 [0.33, 0.55] at ×2. No random plane moves it as far at any
+  scale (radial − random −0.30 [−0.41, −0.17] and +0.41 [0.25, 0.56]).
+- *Direction degrades at both ends, no more than for random planes.* The error to the true direction rises by +8.5° [3.1, 14.0]
+  at ×0.25, +3.0° [−1.2, 7.4] at ×0.5, +3.3° [1.5, 5.2] at ×1.5 and +8.2° [4.8, 12.0] at ×2. Radial − random is +5.6°
+  [−0.7, 12.5] at ×0.25 and −0.8° [−5.9, 4.3] at ×2.
+- *Position moves.* The forecast disk moves 22 px at ×0.25 and 30 px at ×2, against 7 px and 10 px for random planes (+15.0 px
+  [10.8, 19.5] and +20.0 px [14.4, 26.0]). Edit norms are matched (radial − random −0.20 [−1.5, 1.0] and −0.27 [−2.0,
+  1.3]), and the total forecast change is the same (−0.01 [−0.07, 0.03] and −0.02 [−0.09, 0.04]).
+
+So the predictor reads the ring radius as the strength of its direction code and as position, not as speed. Across
+an 8× radius range the speed readout moves no more than under a random plane. The radius–speed cone of §4.1 is a
+correlation, and at point 22 on these carriers it is not a speed channel the forecast uses. The limits are one point,
+16 carriers, no target (the angle is kept), and a direction-set speed label that puts the 750 accelerating clips at 0,
+so the curve that converts radius to speed mixes motion types.
+
 ## 5. Beyond the three variables
 
 | Question | Result | Source |
@@ -1339,8 +1425,15 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
 - **Predictor readout is a probe; the edit overshoots.** A probe of the pooled forecast, not a rendered future;
   point-22 edits overshoot in position (R 1.3–1.8); one stimulus, four targets in one 45° arc. The spline's lead is in
   angle only and the smoothing spline (the Part 2 default) is the worst real arm at the endpoint (over the path the chord is).
-- **The hollow is in the ring plane.** In the 64-D edit subspace and full space the chord is no farther from real clips
-  than the spline (§4.3). Along the path the forecast follows the intermediate directions along the spline and jumps
+- **The late causal follow-ups are small.** The saddle and radial tests use 16 carriers on one held-out arc, one
+  draw of 20 random axes or planes, and points 12 / 22 (radial: 22 only). Session 3 steers speed on one held-out block
+  (128 carriers × 4 targets), and its speed edits change the forecast's speed code but not the forecast disk's motion.
+  The twin-difference arm is one fit set (seed 0, 2 clips per value) at point 22. All four files were scored from a
+  dirty worktree at 3c13095 (§4.5).
+- **The hollow is in the ring plane and the whitened direction subspaces.** In the unwhitened 64-D edit subspace and
+  full space the chord is no farther from real clips than the spline (§4.3); once the variance a direction reader
+  ignores is whitened away, its 180° midpoint lies 8.9× (point 12) and 10.8× (point 22) the real clips' 5-NN distance
+  out against 0.9× / 1.4× for the spline, but that density run uses all-value splines, not held-out ones (§4.3). Along the path the forecast follows the intermediate directions along the spline and jumps
   along the chord (−13.4° paired, −31.3° at large shifts); the reverse test does not recover the ring under our protocol or an unconverged run of Goodfire's (§4.5).
 - **Post-hoc verdict rule.** Iterated after seeing results, frozen at 8d3cac8 before the arc sweep (§4.2); the gaps and
   CIs are the evidence.
@@ -1351,6 +1444,17 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
   (chord 12.5°, interpolating spline 15.7°) but the spline's matched-norm lead over the chord from point 22 does not
   carry over (+10.8° worse at the chord's norm, 2.1° better at the natural norm; §4.5). The route effect in the forecast
   is a point-22 result.
+- **Conceptor comparison is one arc, outside COAST's regime.** COAST's aperture rule found no aperture in its overlap
+  band at either point, its pseudoinverse AND is invalid for 87–90% of the steered pairs (Jaeger's AND used instead),
+  the target-aimed arm is my variant, and the 16-arc aggregate was not run (§4.4). The negative is for conceptor
+  steering of a ring code, not for COAST on its success/failure task.
+- **Off-target readouts are transferred probes.** The speed probe is fit on the speed set and is 0.56 / 0.44 m/s off on
+  unedited direction clips; off-target changes are read as ratios to natural spread, and spline and chord are compared
+  on unpaired intervals (§4.4).
+- **New Part 2 files lack clean provenance.** The conceptor, off-target, FFT, density, held-out two-route and
+  straightening scripts were uncommitted when these results were written; the density and conceptor files record a
+  dirty worktree at 3c13095, the two-route files an unknown commit, and the FFT, off-target and straightening files no
+  commit.
 - **Sample size vs d.** Around 1,200 train clips against d = 1,024 makes K a ridge count at a CV-chosen α. The K
   values should be compared across layers only at a fixed α (see the caveat in `p1b_*_dims.json`).
 
@@ -1364,7 +1468,7 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
   `run_velocity_plane.py`, `run_position_sheet.py`, `run_object_permanence.py`, `run_objective_axis.py`,
   `run_donor_ceiling.py`, `run_two_route.py`, `run_rotating_speed_axis.py`, `run_cosine_tangent.py`,
   `render_hard_stimuli.py`, `make_figures.py`. Session 2: `scripts/session2_box.sh` → `run_session2.py`,
-  `session2_extras.py`, `session2_native_readout.py` (predictor-native probes), `session2_norm_matched.py`, `session2_along_path.py` (forecast along the path, reverse test; `session2_predictor_along_path.json`, `session2_reverse_path.json`). The 70/30 reruns set `WM_SPLIT_PATH=splits/split_paper70.json`. Second look at Part 2 (commit 33a2cbd, clean): `run_ring_occupancy.py`, `run_isometry_linear.py`, `summarize_shift_dependence.py`; `PART2_SECOND_LOOK.md` is the audit record against the Goodfire paper. Part 1 follow-ups: `p1a_perpatch.py` (GPU extract + per-patch probes; `p1a_perpatch_direction_*.json`), `run_paperscale_velocity.py`, `run_support_cartesian_angle.py`, `run_audit_robustness.py --items 1 2 3 4` (grouped CV, raw coordinates, sawtooth metrics, evaluation-probe recipe), `run_stop_rules.py --items 1 2` (stop-rule sweep and one-column removal). Part 2 follow-ups: `session2_encoder_output.py` (point 25 and the point-12 labels-order spline), `run_angle_goodfire.py` (Goodfire's periodicity test, `--no-holdout` for all 64 centroids), `run_isometry_linear.py --angle labels`.
+  `session2_extras.py`, `session2_native_readout.py` (predictor-native probes), `session2_norm_matched.py`, `session2_along_path.py` (forecast along the path, reverse test; `session2_predictor_along_path.json`, `session2_reverse_path.json`). The 70/30 reruns set `WM_SPLIT_PATH=splits/split_paper70.json`. Second look at Part 2 (commit 33a2cbd, clean): `run_ring_occupancy.py`, `run_isometry_linear.py`, `summarize_shift_dependence.py`; `PART2_SECOND_LOOK.md` is the audit record against the Goodfire paper. Part 1 follow-ups: `p1a_perpatch.py` (GPU extract + per-patch probes; `p1a_perpatch_direction_*.json`), `run_paperscale_velocity.py`, `run_support_cartesian_angle.py`, `run_audit_robustness.py --items 1 2 3 4` (grouped CV, raw coordinates, sawtooth metrics, evaluation-probe recipe), `run_stop_rules.py --items 1 2` (stop-rule sweep and one-column removal). Part 2 follow-ups: `session2_encoder_output.py` (point 25 and the point-12 labels-order spline), `run_angle_goodfire.py` (Goodfire's periodicity test, `--no-holdout` for all 64 centroids), `run_isometry_linear.py --angle labels`. Comparison and geometry follow-ups (§4.1, §4.3–§4.5): `run_conceptor.py --layer {12,22}` (point 22 with `--labels-angle`), `run_offtarget.py --layer {12,22}`, `run_fft_harmonics.py`, `run_local_density.py --layers 8 12 22`, `run_two_route_heldout.py --layers 12 22 --seeds 1 … 16`, `run_straightening.py`.
 - **Provenance.** Every results JSON records the split sha256 (`98e6310c…`), seeds (split 0, all others 0), git
   commit and a dirty flag. The 20 `p2_steer_*` files and all 32 arc runs were produced at commit 8d3cac8; the other
   Part 2 files at 677b305, 8e552c1, 8829195, 8f08444 or fbf4f72; all with `git_dirty_src_or_scripts: false`. Most
@@ -1445,8 +1549,18 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
 [^evp]: `results/p1c_direction_evalprobe_recipe.json` (`stored`, `recipe_results.{ridge_alpha_1e-3,adam_c11}.{eval_probe,n_to_10deg,random_basis_p,rank_matched_p}`); the stored floor N from `random_nulls.rows[].random_basis.empirical_p_to_target` in `results/p1c_direction_L{9,22}.json`.
 [^enc]: `results/session2_encoder_output.json` (`per_arm.*.{unmatched,chord_norm,natural_twin_norm}`, `spline_minus_chord`, `spline_minus_chord.point22_stored`, `unedited`); `scripts/session2_encoder_output.py`.
 [^il12]: `results/session2_interp_labels_L12.json` (`spline_labels`, `stored_point12.spline`, `stored_spline_edit_norm_recomputed`).
+[^twd]: `results/session2_twin_difference_L22.json` (`fit_set.{n_fit_clips,n_fit_pairs,k_nn,svd_energy_top_r}`, `per_condition.{chord_norm,natural_twin_norm}.{twin_r1,twin_r2,twin_r4,twin_r8,twin_full,spline,chord,probe_qr}.{dir_err_to_target,R_dir_real_change,px_err_to_twin_true,enc_out_err_to_target,nearest_real_R_pt25,R_act_twin_pt25}`, `twin_minus_best_comparison.*` (best comparison = `spline`, the interpolating spline of the norm-matched rerun; best twin = `twin_full`), `unedited.dir_err_to_target`, `parity`); predictor readouts of the comparison arms from the norm-matched cache (`definitions."comparison arms"`); `scripts/session2_twin_difference.py`; 987 GPU-s (`forward.total_seconds`); scored at 3c13095 with `git_dirty_src_or_scripts: true`.
+[^s3]: `results/session3_speed_predictor.json` (`design.{holdout,renderer_validation_speed}`, `n_carriers`, `readouts.{direct,displacement}.{test_mae_mps,test_r2}`, `twin_reference.{direct,displacement}.*`, `twin_reference.{twin_dir_change_deg,twin_px_to_twin_true,unedited_px_to_twin_true}`, `predictor.{12,22}.{own,chord_norm,natural_norm}.{spline,chord,linear_raw,null}.{direct_err_to_target,direct_R_speed,direct_err_to_far_end,displacement_R_speed,px_to_twin_true,dir_change_deg,applied_norm_over_natural_median,scale_median}`, `paired.{12,22}.*`, `propagation.{12,22}.{spline.R_speed,spline.err_to_target,unedited_err_to_target,twin_err_to_target}`; definitions in `keys`); `scripts/session3_speed_predictor.py`; 1,796 GPU-s on box 53030966 (`compute.gpu_seconds_total`), cost not recorded (`compute.cost_usd` null); scored at 3c13095 with `git_dirty_src_or_scripts: true`.
+[^sad]: `results/p5_saddle_axis_L{12,22}.json` (`config.plan.points.{12,22}.{full_clip_axis.{share_u,u_harmonic_share_k2},path_bend_fraction_abs_delta_dot_u_over_norm_by_t}`, `config.forward.geometry.*.cos_u_ctx_vs_full`, `readers.cos2theta_sin2theta_stepmean_train_clips.cv_r2`, `result.unedited`, `result.{saddle,saddlectx}.{x0,x2,xm1}.{d_dir_err,d_c2_aligned,d_speed,pos_shift_px,forecast_change_rel}`, `result.random_axes.*.*.{per_carrier_mean_over_draws,frac_draws_abs_ge_saddle,paired_saddle_minus_random}`, `result.path_bent_vs_flat.{flat_minus_bent,edit_point_probe}`, `result.byproduct_diagnostics`, `result.parity`); `scripts/run_saddle_axis.py` (`score`); 16 carriers = the headline-arc carriers of the repair-attribution run, target 320.625°; one forward of 712 GPU-s on box 53030966 shared with [^rad]; scored at 3c13095 with `git_dirty_src_or_scripts: true`. The third-PC shares 0.20 / 0.24 are `p2_ellipse_direction.json`'s.
+[^rad]: `results/p5_radial_steering_L22.json` (`ring_radius_by_speed_ctx_train`, `unedited`, `radial.{r025,r05,r15,r2}.{d_speed,d_forecast_radius,d_dir_err,pos_shift_px,implied_speed_change_from_radius}`, `random_planes.*.{d_speed,d_forecast_radius}.frac_draws_abs_ge_radial`, `radial_minus_random.*`); `scripts/run_saddle_axis.py` (`radial`); direction-set speed labels: 0 for the 750 accelerating clips, 1–7 m/s for the 750 constant-velocity clips (`speed_mps` in the direction set's metadata, `vjepa-physics-takehome-4E00/data/direction`).
 [^stop]: `results/p1b_stop_rules.json` (`cells.*.{nested,paper}.{K,stored_stop_trigger,r2_at_stored_stop}`, `common_r2_stop_points_8_9`).
 [^onecol]: `results/p1b_one_column_removal.json` (`cells.direction.{two_column_stored,one_col_alternate,one_col_top_sv}.{ridge_nested,ridge_paper,adam_b64,adam_full}`).
 [^rawchord]: `results/p2_steer_direction_direction_L{12,22}_contiguous_rawchord.json` (`summary.{manifold,linear,linear_raw}.overall.probe_err_to_target`, `gaps.manifold_minus_linear_raw.probe_err_to_target.{mean_over_pairs,se_over_pairs}`, `sagitta_per_target[i].{sagitta_smoothed_chord,sagitta_raw_chord}`); `scripts/run_part2.py:subspace_arms` (`linear_raw` = piecewise-linear path through the raw kept centroids in knot order, same neighbours and weights as the line arm; `src/wm/manifold.py:raw_knot_curve`). Same carriers, split, K = 50 and edit rule as the stored run.
 [^adamsc]: `results/p1b_sameclip_adam_direction_vs_speed.json` (`cells.L{8,9,19,22}.comparison.{C11,fig22}`, `cells.*.{direction,speed}.b64.{K_first,c11_first_trigger,K_fig22_censored}`, `cells.*.*.full`, `cells.*.*.stored_cross_set`); `scripts/run_sameclip_adam.py`. Same 750 clips, 596 train / 154 test, per-feature z-score from the restricted train rows, C.11 Adam probe each round (lr 1e-3, weight decay 1e-4, 100 / 50 epochs), batch 64 (full batch at points 8 and 9), paper protocol, K = probes before the first at-chance round.
 [^sameclip]: `results/p1b_sameclip_direction_vs_speed.json` (`cells.L{8,9,19,22}.comparison.{nested,paper}_{C11,fig22}`, `cells.*.{direction,speed}.stored_cross_set`); `scripts/run_sameclip.py`.
+[^fft]: `results/p2_fft_harmonics.json` (`direction_vjepa2.{point}.{k1,k2,k3,k4plus,ci95,shuffle_noise_power_over_real,shuffle_fractions}`, `direction_random.*`, `speed_vjepa2.12`, `ramp_reference`); `scripts/run_fft_harmonics.py` (200 stratified clip bootstraps with the PCA fixed; 20 label shuffles). The file records no commit; script uncommitted at the time of writing.
+[^trh]: `results/p2_two_route_heldout_L{12,22}.json` (`over_arcs.{antipode_in_arc,midpoint_in_arc}.{via_plus90,via_minus90,chord,chord_raw}.{probe_intermediate_mass,probe_ordering,mlp_intermediate_mass,probe_radius_min,probe_radius_start,end_probe_err,probe_mid_err_to_route_mid,probe_intermediate_mass_{plus,minus}_half}`, `over_arcs.*.contrasts.via_plus90_minus_chord_raw.end_probe_err`, `per_arc_info.*.angle_source`); `scripts/run_two_route_heldout.py`. Run in a separate worktree (`/workspace/wm_route`); split sha256 matches, `git_commit` recorded as unknown.
+[^dens]: `results/p2_local_density.json` (`layers.{8,12,22}.density.{train,probe}.{full,pca64,leace2w,lda8w,chart2}.{90,135,180}.{chord_over_real_geomean,spline_over_real_geomean,chord_minus_spline_logratio,chord_minus_spline_ci95,frac_chord_beyond_real_p95,frac_spline_beyond_real_p95}`, `layers.*.intrinsic_dimension.*.all.k10.id`, `layers.*.angle_source`, `layers.*.verdict`); `scripts/run_local_density.py`; commit 3c13095 with `git_dirty_src_or_scripts: true` (script uncommitted).
+[^coast]: `results/p2_conceptor_direction_L{12,22}.json` (`arms.{manifold,linear_raw,coast_a,coast_a_b0.3,coast_a_centered,coast_b,coast_b_dose_matched}.{endpoint_err_deg,delta_norm_ratio_to_raw_chord.ratio_of_means,off_target.{abs_change_speed_mps,abs_change_start_position_m,ring_plane_energy_frac},trace_C_mean,unsteered_err_deg}`, `aperture.{mean_overlap,selected,in_band,pinv_AND_invalid_frac_by_alpha,pinv_AND_invalid_frac_steered_pairs,and_mode_used}`, `random_projector_null.{random_a,random_b}.probe_err_to_target.{draws_mean,conceptor_same_clips,frac_draws_conceptor_beats}`, `reproduction_check`, `off_target_readouts.start_pos_mean_dist_to_centroid_m`); `scripts/run_conceptor.py`, `src/wm/conceptor.py` (formulas and page numbers of `refs/coast.txt` in the module docstring; Jaeger's AND quoted from memory there). Point 12 on the label-free angle, point 22 on the labels; `--lite` (no β = 0.1 arm, no α sweep for the aimed arm); commit 3c13095 with `git_dirty_src_or_scripts: true` (scripts uncommitted).
+[^offt]: `results/p2_offtarget_direction_L{12,22}.json` (`arms.{spline,chord_smoothed,chord_raw,probe_qr,probe_qr_norm_matched,random_curve}.{speed,start}.{mean,ci95,ratio_to_natural_spread,ratio_ci95,signed_mean_mps}`, `natural_spread`, `readout_quality.speed_probe_on_direction_test_velocity_clips_{mae_mps,r}`, `regeneration_checks.max_rel_diff`; at point 22 `identical_within_1e-6` is false, max relative difference 1.7e-6); `scripts/run_offtarget.py` (start position = metres × 32 px/m). The file records no provenance block of its own; script uncommitted.
+[^str]: `results/p5_straightening.json` (`latent_curvature_by_point.{constvel,accel_direction_set,random_init_constvel,null_isotropic_constvel,null_covmatched_constvel}.mean`, `pixel_curvature`, `straightening_index_by_point.constvel`, `zone_test.constvel.{argmin_point,boot_argmin_counts,zone_min_minus_point25_deg}`, `reversed_minus_forward.constvel`, `geometry_links_by_point[].constvel_spearman_curv_speed`, `pixel_links.constvel_spearman_pixelcurv_speed`); `scripts/run_straightening.py` (2,000 clip bootstraps). The file records no commit; script uncommitted.

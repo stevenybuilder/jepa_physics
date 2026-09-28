@@ -35,9 +35,6 @@ Every number shown on a slide, with the file and key it was read from. Numbers i
 | p2-readuse | 0.976 | results/p1a_perpatch_direction_vjepa2.json → curves.perpos_mean_r2 at point 14 (0.9763) |
 | p2-readuse | 0.939 | same file → curves.perpos_mean_r2 at point 24 (0.9390) |
 | p2-readuse | 11.3° | results/session2_predictor_native_readout.json → per_layer.22.spline.dir_err_to_target.mean (11.3174) |
-| p2-shapes | 4 values + title slot | pending: results/p5_velocity_sheet.json (layers.12 / layers.22, steer_*/arms and gaps) for rows 1–3; p5_time_manifold.json for row 4 |
-| p2-repair | 3 values + title slot | pending: results/p5_repair_attribution_L12.json (two rows); saddle-axis file name to be confirmed |
-| p2-generalise | 3 values + title slot | pending: results/p2_steer_direction_direction_L12_contiguous_ctx-hard.json; p5_object_vs_scene_direction.json (binding index); p5_relational_motion.json (per-disk decoding) |
 
 ## Corrections applied in the notes
 
@@ -52,3 +49,6 @@ Every number shown on a slide, with the file and key it was read from. Numbers i
 - joint steer: sheet 4.334° / 0.110 m/s vs sequential 8.685° / 0.141 (joint.summary)
 - geometry pt 22: cone R² 0.827 > cylinder 0.789, TPS 0.834, noise ceiling 0.902; ring radius by speed bin 4.9 → 11.4 (radius_noise_corrected); random init cone 0.29 / ceiling 0.54
 - point 12: sheet 4.208° vs ring1d 6.674° vs chord_raw 4.629°; speed leakage 0.050 vs 0.182 vs 0.044
+| p1-zone | transfer 0.71 / 0.18 / 0.58 (blocks 1 / 9 / 12) | results/p1a_perpatch_hard_seeds.json by_point[point].cross_half_r2.mean (0.708, 0.181, 0.580) |
+| p2-compare | forecast 17° / 27° / 44° (interpolating 11°) | results/session2_predictor_native_readout.json per_layer.22.{probe_qr,chord,spline_smooth,spline}.dir_err_to_target.mean (17.13, 27.25, 44.19, 11.32) |
+| p2-readuse | speed 0.31 m/s; spline − chord −0.005 [−0.007, −0.004] | results/session3_speed_predictor.json predictor.22.own.spline.direct_err_to_target (0.312); paired.22.own.spline_minus_chord_direct_err |
