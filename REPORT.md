@@ -34,7 +34,7 @@ stimulus and one 45° arc, not a rendered future.
 
 **One negative.** The endpoint error ties at points 12 and 22. Speed and acceleration are straight, and there the spline
 adds nothing; in extrapolation our smoothing spline, continued along its end tangent as the authors' code does, trails
-the chord by 0.02–0.07, while the authors' own interpolating arm beats the chord on speed and trails it on
+the chord by 0.02–0.06, while the authors' own interpolating arm beats the chord on speed and trails it on
 acceleration[^ext].
 
 Rerunning Parts 1 and 2 (Part 2: the contiguous steering runs) at the paper's literal 70/30 split changes no qualitative
@@ -102,7 +102,7 @@ verdict; §2 lists every deviation from the paper and what the parity audit chan
 - Part 1, Step 3: with our refit of the paper's C.11 Adam probe sequence as the steering basis the probe count reproduces, 18 probes to 10° and 16 to the paper's 12° at about 20 (§3.3).
 - Part 1: a covariance-weighted edit built from one probe steers to 3–5°, outside the probe's plane, as does the same construction on a random 2-D subspace (median 4.2°), so the learned probe adds specificity, not reach (§3.3, §6).
 - Part 2: the isometry verdict is set by the knot coordinate; under every label-free ordering point 22 is a tie (spline only under the basic interval in the fully faithful run), and Goodfire's own angle loses to the chord at point 12 (§4.4).
-- Part 2: at the encoder output the verdict is mixed (the spline trails the chord by 10.8° at the chord's norm and leads by 2.1° at the natural norm), and in scalar extrapolation the spline trails the chord by 0.02–0.07 (§4.5, §4.3).
+- Part 2: at the encoder output the verdict is mixed (the spline trails the chord by 10.8° at the chord's norm and leads by 2.1° at the natural norm), and in scalar extrapolation the spline trails the chord by 0.02–0.06 (§4.5, §4.3).
 - Part 2: Goodfire's cyclic 8B runs take the coordinate label-free, as atan2(PC2, PC1), and only its 70B cyclic configs use the labels (§2).
 
 **Places where the paper contradicts itself**[^ptxt]. (a) The INLP stopping
@@ -513,7 +513,7 @@ the split of record so that Part 1 and Part 2 read the same clips.
 
 ### 4.1 The circular structure
 
-Recipe (Goodfire A.3): PCA-64 on train, one centroid per value, a periodic cubic spline for direction and a natural
+Recipe (Goodfire A.3, with the PCA fit on our train clips rather than all prompts): PCA-64, one centroid per value, a periodic cubic spline for direction and a natural
 spline for scalars. Goodfire's text takes the intrinsic angle as atan2(PC2, PC1) on the centroids, without labels, and its weekdays and
 months 8B runs do so; only its 70B cyclic configs use the labels instead (§2). I compute a label-free angle, check it against θ, and use the
 labels when the check fails.
@@ -625,7 +625,7 @@ Three leaks and the separation used for each:
    clips are steered (48 per target, 384 steers). Beside the probe there are two readouts that did not build the edit:
    agreement R with real-clip centroids at the target value (`nearest_real_R`), and an MLP on disjoint clips (§4.4).
 3. **The edit looks right only at layer L.** This leak needs the propagation and predictor readouts (§4.5).
-   At the steered layer, Goodfire's Eq. 9 "behaviour" is a softmax over distances to the spline, so it restates the
+   At the steered layer, Goodfire's Eq. 10 "behaviour" (B.1; its §5 Eq. 9 uses bin centroids) is a softmax over distances to the spline, so it restates the
    activation geometry. Every figure that uses it prints that caveat.
 
 "Held-out" is used in three senses, and each result says which it meets. *Excluded from fitting* holds for all
@@ -662,7 +662,7 @@ clip bootstrap):
 | endpoint probe error | 9.73° | 9.62° | +0.11 [0.05, 0.18] | 10.69° | 6.89° | +3.80 [3.36, 4.23] |
 | nearest-real agreement R | 0.196 | 0.197 | −0.0004 [−0.0018, 0.0008] | 0.175 | 0.180 | −0.005 [−0.006, −0.003] |
 | min readout radius along path | 0.86 | 0.61 | +0.26 [0.22, 0.29] | 0.85 | 0.61 | +0.24 [0.21, 0.27] |
-| Eq. 9 energy ÷ real-clip floor | 0.84 | 1.42 | | 1.01 | 1.00 | |
+| A.7 energy on the Eq. 10 behaviour ÷ real-clip floor | 0.84 | 1.42 | | 1.01 | 1.00 | |
 | intermediate mass on the arc | 0.68 | 0.48 | | 0.65 | 0.45 | |
 | waypoint ordering (Spearman) | 0.90 | 0.79 | | 0.76 | 0.67 | |
 | reflected arm: radius / energy / ordering | 0.53 / 1.64 / 0.52 | | | 0.51 / 1.12 / 0.50 | | |
@@ -729,9 +729,9 @@ subspace the edit acts on, the spline midpoint is no closer to real clips than t
 at point 12, CIs split 4 above / 9 below) and at point 22 it is farther (+0.030, 17/17 arcs); in full space the stored
 5-NN excess is +0.22 / +0.17 for the spline at points 22 / 12 (CI above zero in 17 / 7 of 17 runs; point-22 figures in this paragraph use the all-labels arc set,
 `results/p2_shift_dependence_labels22.json`, `results/p2_ring_occupancy_L22_labels22.json`). So "the chord cuts
-through the ring" holds in the ring plane only, and so does Goodfire's low-density-region premise here. For speed and
+through the ring" holds in the ring plane only, and so does Goodfire's activation-side density premise (its §3.4: e^{−E} "small where they are sparse (off M_h)") here. For speed and
 acceleration all arms coincide with the chord inside the knots; in extrapolation, continued along its end tangent, the
-smoothing spline trails the chord by 0.02–0.07 with the CI clear of zero on all four (all "path_geometry_positive"), and the authors'-code arm beats its
+smoothing spline trails the chord by 0.02–0.06 with the CI clear of zero on all four (all "path_geometry_positive"), and the authors'-code arm beats its
 chord on speed and trails it on acceleration. Extending the end cubic piece past the last knot instead, my choice and
 not the method's, gives large extrapolation losses.
 
@@ -765,7 +765,7 @@ without labels only at point 12, through my centroid-plane fallback; Goodfire's 
 periodicity test there, and point-22 steering and session 2 at points 2, 8 and 22 use the labels (§4.1). **Limitations**:
 at held-out endpoints it offers nothing a chord does not; the interpolating version rebuilds held-out centroids worse
 than the smoothing one and edits 1.4–1.6× more than the chord (hence smoothing); on scalars it adds nothing inside the
-knots and, as a smoothing spline, trails the chord by 0.02–0.07 in extrapolation even continued along its end tangent as
+knots and, as a smoothing spline, trails the chord by 0.02–0.06 in extrapolation even continued along its end tangent as
 the authors' code does (their own interpolating arm is mixed: better on speed, worse on acceleration). **Failure cases**: the
 point-22 endpoint on 1 of 16 arcs (+3.7°) and on the headline arc (+3.80°), and the position sheet.
 
@@ -967,8 +967,8 @@ distance from the spline (p = 0.003, chord closer on 8 of 8), along a route of n
 converged and the loss was still falling. Those figures were scored against a ring fitted on full-clip activations, while the edited
 activation is the carrier's context-only (frames 1–8) point-22 vector, which sits 0.56 from that ring before any edit.
 Rescored against a ring fitted on context-only activations of the same knot clips (same PCA-64, centroids, spline and
-chord recipe)[^ctx], the carriers sit within the chord's own offset from the ring (0.14 ± 0.01 against the chord's
-0.16 from the spline; distances in full-clip natural units, on which context-only centroid spacings run 0.61–0.75×),
+chord recipe)[^ctx], the carrier mean sits within the chord's own offset from the ring (0.14 ± 0.01 against the chord's
+0.16 from the spline; individual carriers sit 0.45–0.54 off it, and the scored path is the carrier mean; distances in full-clip natural units, on which context-only centroid spacings run 0.61–0.75×),
 the full-clip chord start is 0.57 off it, and the optimised paths end 0.81 ± 0.08 from the spline and 0.81 ± 0.08 from
 the chord (paired −0.006 [−0.023, 0.012]; intrinsic R² 0 against both). So the run started 0.57 off the ring it edits,
 because its PCA basis, replaced components, centroids and chord start all came from full-clip activations, and the

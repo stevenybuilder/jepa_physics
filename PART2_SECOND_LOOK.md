@@ -1,3 +1,5 @@
+> **Superseded (2026-09-28 06:50 ET).** This file is a working checklist written before the parity audit. Where it disagrees with REPORT.md §4 (isometry at point 22, extrapolation figures, the reverse test and pullback, the 1-of-16 endpoint count, the along-path readout), REPORT.md is current and this file is not.
+
 # Part 2 second look: the Goodfire paper against what we did
 
 Adversarial re-read of Goodfire (Wurgaft et al., arXiv 2605.05115; all sections and App. A–C) against Part 2. REPORT.md

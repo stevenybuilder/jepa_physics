@@ -1,3 +1,5 @@
+> **Superseded in part (2026-09-28 06:50 ET).** Pre-registration notes. Two claims here are narrowed in REPORT.md: the chord "cuts across the curve through regions the model never produces" holds in the ring plane only (REPORT §4.3), and an extrapolation design was added later (REPORT §4.3 table).
+
 # Part 2 rationale: why steering, what spline steering is, and how to reason about it here
 
 Companion to `spec.md` §6 and `nonobvious_components.md` §4–10. This file is the *why*. Those files are the *what*.
