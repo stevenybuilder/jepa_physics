@@ -336,7 +336,7 @@ and `p1b_*_random_L{pt}.json`.
   vs 73 at point 8, and under the paper-protocol rule 63 vs 61 and 68 vs 83[^raw]. So equal counts hold at point 9 and
   weaken at point 8, where speed needs more probes, not fewer.
 - **The stop rule is not the same for both variables.** C.11 stops when either the R² rule or the MAE rule fires. For
-  speed and acceleration the MAE rule (MAE > 0.9× the mean predictor's) fires first, at round R² 0.15–0.20 at every
+  speed and acceleration the MAE rule (MAE > 0.9× the mean predictor's) fires first, at round R² 0.13–0.20 at every
   V-JEPA point under both protocols, while direction runs on to R² just under 0.1 (0.094 at the lowest). The scalar counts are therefore taken
   at a looser point than direction's. The same asymmetry means the speed and acceleration counts at Fig. 22's R² < 0.1
   (`K_loose`) are floors at every V-JEPA point except nested acceleration at onset, as in the VideoMAE
@@ -384,7 +384,7 @@ et al.'s proof (arXiv 2608.10566) that the literal INLP count is not invariant t
 | planted: clean ring / ×30 sheared / + k = 3 harmonic / 3 copies | 1 / 8 / 1 / 1 | 1 | → −0.009 | → −0.24 to −0.31 | 0.995 / 0 / 0; 0.96 / 0 / 0; 0.66 / 0 / 0.32; 0.98 / 0.01 / 0 |
 
 Whitened K is 1 at every point 0–25 for both variables and every ε (0.001–0.1). After LEACE, ridge reads nothing, an
-MLP keeps 0.37–0.82, and every planted ring drops below −0.23. In the centroid DFT, k = 2 holds 0.21–0.37 of the
+MLP keeps 0.37–0.82 at points 9 / 12 / 22, and every planted ring drops below −0.23. In the centroid DFT, k = 2 holds 0.21–0.37 of the
 non-constant power from point 8 on (0.08–0.16 at points 2–7) and k ≥ 3 together 0.03–0.11. The controls calibrate each
 column: shear inflates literal K (8) but not whitened K, a planted k = 3 harmonic shows up in the DFT (0.32) with
 literal K = 1, and copies do not inflate K. So (i) direction is organised on a harmonic basis (k = 1 plus a cos 2θ
