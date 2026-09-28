@@ -36,9 +36,9 @@ disjoint clips) do not separate the two. Speed and acceleration are straight lin
 to the output with little target specificity (shuffled targets are at most 39° away). Probes fit on the predictor's own
 forecasts (8.9° on unedited forecasts, where real-token probes read 62.6° and were blind) show point-22 edits moving
 the forecast to 11.3–27.2° of the held-out target (smoothing spline 44.2°; unedited 92.1°, random 85.7°), position
-overshooting; edits at points ≤ 12 barely reach it. The arms are not norm-matched (‖Δ‖ 0.58–0.91× the natural twin
-change), so which route reaches the forecast best is confounded with dose. This is a probe of the forecast on one stimulus and one 45° arc,
-not a rendered future.
+overshooting; edits at points ≤ 12 barely reach it. At a common edit norm the interpolating spline still beats the
+chord (19.5° vs 27.2° at the chord's norm, 12.3° vs 25.7° at the natural one), in forecast angle only. This is a
+probe of the forecast on one stimulus and one 45° arc, not a rendered future.
 
 ## 2. Setup
 
@@ -533,37 +533,26 @@ carrier has a pixel twin rendered at the target direction (renderer validated on
 | 12 | 4.1 / 14.3 / 5.1 / 91.2 | 86.5 / 86.8 / 87.3 / 90.6 | 86.8 / 87.2 / 87.6 / 90.5 |
 | 22 | 3.6 / 10.7 / 3.6 / 89.8 | 17.4 / 25.2 / 21.8 / 100.1 | 23.6 / 26.6 / 23.1 / 99.8 |
 
-Edits at points 2–12 wash out: four blocks after the edit the error is already 82–88° for every edit arm except the
-overshooting spline (for example point 12 → 16), and at point 25 MAE-to-true is back to 4–7°. At the steered point the
-arms are read by a probe of the same family that built them, so those columns are not independent evidence. Point-22
-edits survive the last three blocks (15–25° at point 25), with weak target specificity. Scored against the
-neighbouring target instead of the true one, the error rises by only 1–6° at point 25, against 7–13° at the steered
-point. All targets lie in the held-out 45° arc (neighbour at most 39° away, 16.5° on average[^s2]), so this control
-shows specificity shrinking, not gone. The activation readout says the same: the projection of the edit onto the
-twin's real activation change at point 25 is 0.16 / 0.23 / 0.22 (probe-QR / smoothed spline / chord) against 0.15 /
-0.21 / 0.21 for the shuffled twin (`readout_b`). The interpolating spline overshoots (‖Δ‖ = 7.2× the natural twin
-change at point 12, vs 0.5–0.6× for the other arms) and is excluded from the reading.
+Edits at points 2–12 wash out: four blocks later the error is 82–88° for every arm but the overshooting spline, and
+at point 25 MAE-to-true is back to 4–7°. The steered-point columns are read by a probe of the family that built the
+edit, so they are not independent evidence. Point-22 edits survive the last three blocks (15–25° at point 25) with
+weak target specificity: against the neighbouring target (at most 39° away, 16.5° on average[^s2]) the error rises by
+only 1–6° at point 25 (7–13° at the steered point). The projection on the twin's real activation change at point 25
+is 0.16 / 0.23 / 0.22 (probe-QR / smoothed spline / chord) vs 0.15 / 0.21 / 0.21 for the shuffled twin (`readout_b`).
+The interpolating spline overshoots (‖Δ‖ 7.2× the natural twin change at point 12, vs 0.5–0.6×) and is excluded.
 
-**Predictor** (context frames 1–8 edited at every token; the predictor forecasts tubelets 4–7).
-
-*First attempt, token space (blind).* R projects the forecast change on the real twin-minus-source future change
-(`session2_predictor.json`). Probes fit on the encoder's real future tokens (direction 3.4°, position 6.7–8.4 px on
-them) read the unedited forecast 61° and 67.9 px from its source clip's direction and future position[^fpos]: the
-forecast is not in the encoder's code. In that readout edits moved the decoded position by ≤ 0.7 px at points 2–12 (16
-px, overshooting spline) and 2.9–5.5 px at point 22 (twin vs shuffled twin within 0.4 px), and the *real rendered
-twin's* context recovers only R = 0.0185 [0.0173, 0.0195] of the real future change (0.073 on disk tokens). R at point
-12 / 22 (shuffled target in brackets): probe-QR 0.00024 (0.00023) / 0.00178 (0.00173), smoothed spline 0.00049
-(0.00043) / 0.00241 (0.00220), chord 0.00040 (0.00036) / 0.00243 (0.00225), random 0.00001 (0.00002) / 0.00056
-(0.00055); ≤ 0.00011 at points 2 and 8; none beats its shuffled control. The readout was blind.
+**Predictor** (context frames 1–8 edited at every token; the predictor forecasts tubelets 4–7). *First attempt, token
+space (blind).* R projects the forecast change on the real twin-minus-source future change (`session2_predictor.json`).
+Probes fit on the encoder's real future tokens (3.4°, 6.7–8.4 px) read the unedited forecast 61° and 67.9 px off[^fpos]:
+the forecast is not in the encoder's code. The real twin's context recovers only R = 0.0185 [0.0173, 0.0195]; probe-QR,
+smoothed-spline, chord and random edits reach R ≤ 0.0025, none beating its shuffled control. The readout was blind.
 
 *Second attempt, a readout fit on the predictor's own outputs*[^nat]. Ridge probes (α by 5-fold CV) fit on the
-predictor's unedited forecasts of the 480 probe clips, disjoint from the steered test carriers, read the 300 test
-clips' unedited forecasts at 8.9° (R² 0.92) and 11.8 px; real-token probes read them at 62.6° / 65.7 px (real tokens:
-3.4°). The twin's own context now recovers R = 0.96 [0.92, 1.01] of the direction change (0.0185 in token space) and R
-= 1.07 of the position change, landing 9.1° from the target and 13.2 px from the twin's positions, so the test can see
-an edit. Edited forecasts (cached), 200 carriers × 4 targets (unedited: 92.1° from target, 60.2 px from the twin);
-the last column is the arm's median ‖Δ‖ at point 22 over the natural twin change (`session2_propagation.json`,
-`delta_over_natural_twin_change["22"].median_ratio`), and the arms are not norm-matched:
+unedited forecasts of the 480 probe clips read the 300 test clips' unedited forecasts at 8.9° (R² 0.92) and 11.8 px
+(real-token probes: 62.6° / 65.7 px). The twin's own context now recovers R = 0.96 [0.92, 1.01] of the direction
+change and R = 1.07 of the position change (9.1° from the target, 13.2 px from the twin), so the test can see an
+edit. Edited forecasts, 200 carriers × 4 targets (unedited: 92.1°, 60.2 px); last column = median ‖Δ‖ at point 22
+over the natural twin change (`session2_propagation.json`), not norm-matched (matched below):
 
 | Arm | pt 12: to target | pt 22: to target | pt 22: to shuffled | pt 22: to 180° flip | pt 22: target − shuffled [95% CI] | pt 22: R dir / R pos | pt 22: px to twin | pt 22: ‖Δ‖ ÷ twin change |
 |---|---|---|---|---|---|---|---|---|
@@ -574,18 +563,29 @@ the last column is the arm's median ‖Δ‖ at point 22 over the natural twin c
 | chord | 84.8° | 27.2° | 32.0° | 152.8° | −4.7 [−5.5, −3.9] | 0.68 / 1.30 | 39.7 | 0.65 |
 | random, matched ‖Δ‖ | 92.3° | 85.7° | 85.4° | 94.3° | +0.3 [0.2, 0.4] | 0.10 / −0.05 | 61.1 | 0.79 |
 
-At point 22 every structured arm moves the forecast toward the held-out target, away from its 180° flip (153–169° for
-probe-QR, radius-matched, interpolating spline, chord; 136° smoothing spline; 94° random). The shuffled null is weak by
-construction (shuffled targets average 16.5° from the true ones[^s2]); it separates by 3–7°, every structured arm's
-paired CI excluding 0. Position moves the right way but overshoots: R 1.3–1.8, 39–55 px from the twin against 13.2 px
-for the twin's own context. At point 12 edits barely reach the forecast (probe-QR, radius-matched, chord 84–85°;
-interpolating spline 77.9° but 104.9 px from the twin, R dir 0.31 [0.13, 0.48]); at points 2 and 8 every arm reads
-90.8–92.8°. Caveats: one stimulus, one 45° arc; the interpolating spline gets closest to the target (11.3° vs 27.2°
-for the chord) but at a larger edit (0.91× vs 0.65× the natural twin change), so route and dose are confounded there,
-and the smoothing spline (the Part 2 default, 0.62×) lands at 44.2°; a norm-matched rerun is in progress
-(`results/session2_predictor_norm_matched.json`). The point-22-vs-point-12 contrast and the 180°-flip null do not
-depend on dose. The readout is a linear probe of the pooled forecast, so
-it shows "the predictor's forecast changes in the steered direction", not "the rendered future changes".
+At point 22 every structured arm moves the forecast toward the held-out target, away from its 180° flip (136–169°;
+random 94°); the weak shuffled null (targets 16.5° apart) separates by 3–7°, every paired CI excluding 0. Position
+overshoots: R 1.3–1.8, 39–55 px from the twin vs 13.2 px for its own context. At point 12 edits barely reach the
+forecast (81.7–84.8°; interpolating spline 77.9° but 104.9 px off, R dir 0.31 [0.13, 0.48]); at points 2 and 8, 90.8–92.8°.
+The readout is a linear probe of the pooled forecast, not a rendered future. Unmatched, the spline's lead over the
+chord (11.3° vs 27.2°) is confounded with a larger edit (0.91× vs 0.65×; the point-12 contrast and flip null are not).
+*Norm-matched rerun*[^nm]: point-22 edits rescaled per (carrier, target) to a common norm, same carriers, targets and
+probes (chord and unedited forecasts match the cache exactly). Cells: to target / paired target − flip / R dir / px:
+
+| Arm | at the chord's norm (0.65× twin change) | at the natural norm (1.0×) |
+|---|---|---|
+| probe-QR | 23.2° / −134° / 0.64 / 51.4 | 18.8° / −142° / 1.04 / 69.8 |
+| radius-matched | 17.7° / −145° / 0.92 / 48.1 | 23.3° / −133° / 1.56 / 65.6 |
+| interpolating spline | 19.5° / −141° / 0.68 / 43.3 | 12.3° / −155° / 1.21 / 43.7 |
+| smoothing spline | 39.1° / −102° / 0.63 / 39.0 | 37.3° / −105° / 1.25 / 43.5 |
+| chord | 27.2° / −126° / 0.68 / 39.7 | 25.7° / −129° / 1.37 / 43.3 |
+| random | 86.4° / −7 [−20, 6] / 0.10 / 61.2 | 84.2° / −12 [−24, 1] / 0.12 / 63.0 |
+
+The ordering survives matching and the margin shrinks: the interpolating spline lands 7.7° closer than the chord at
+the chord's norm (paired 95% CI 5.0–10.6) and 13.4° at the natural norm (11.1–15.6), against 15.9° unmatched: about
+half of that lead was dose, and a route effect remains. The gain is angle-only: at the chord's norm its R equals the
+chord's (−0.003 [−0.04, 0.03]) and position is 3.6 px worse [2.5, 4.7]; at the natural norm R is 0.155 lower [0.06,
+0.26] and position ties (+0.4 px [−1.2, 2.1]). The smoothing spline trails the chord by 12° at both norms.
 
 **Time-reversed clips** (the forward-trained probe read on reversed clips)[^trev]. From point 1 on, the direction probe
 reads θ + 180° on the reversed clip: the error to θ + 180° is 20.5° at point 1 and 5.7–10.3° from point 2 on, with
@@ -630,9 +630,9 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
   the subspace form of the hypothesis. The steering corollary is what fails geometrically: the straight path between
   distant directions passes through the ring's interior (readout radius 0.61) where the curved path does not (0.86).
   The measured caveat is that independent readouts at the steered layer do not care; downstream, in the predictor's
-  forecast at point 22, the interpolating spline gets closer than the chord (11.3° vs 27.2°) but at a larger edit
-  (0.91× vs 0.65× the natural twin change), so route and dose are confounded there, and the smoothing spline (0.62×)
-  lands at 44.2°; a norm-matched rerun is in progress (§4.5). The supported statement is "for a cyclic variable
+  forecast at point 22, the interpolating spline gets closer than the chord at a common edit norm (19.5° vs 27.2° at
+  the chord's norm, 12.3° vs 25.7° at the natural norm), in angle only, and the smoothing spline stays worst of the
+  real arms (39.1° / 37.3°) (§4.5). The supported statement is "for a cyclic variable
   the hypothesis describes the subspace and misdescribes the moves, geometrically".
 
 ## 7. Limitations and next steps
@@ -644,7 +644,8 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
   That is the natural test of when precision and the ring appear.
 - **Predictor readout is a probe; the edit overshoots.** Probes fit on the predictor's own forecasts (8.9° / 11.8 px)
   show the pooled forecast moving in the steered direction, not a rendered future. Point-22 edits overshoot in position
-  (R 1.3–1.8; 39–55 px from the twin vs 13.2 px for its own context). One stimulus, one 45° arc of targets.
+  (R 1.3–1.8; 39–55 px from the twin vs 13.2 px for its own context). One stimulus, four targets in one 45° arc. The
+  spline's norm-matched lead is in angle only, and the smoothing spline (the Part 2 default) is the worst real arm.
 - **Post-hoc verdict rule.** The spline-vs-line call was iterated after seeing results and frozen at 8d3cac8 before
   the arc sweep and the 70/30 reruns (§4.2). The gaps and CIs are the evidence; the calls summarise them.
 - **Sample size vs d.** Around 1,200 train clips against d = 1,024 makes K a ridge count at a CV-chosen α. The K
@@ -660,20 +661,20 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
   `run_velocity_plane.py`, `run_position_sheet.py`, `run_object_permanence.py`, `run_objective_axis.py`,
   `run_donor_ceiling.py`, `run_two_route.py`, `run_rotating_speed_axis.py`, `run_cosine_tangent.py`,
   `render_hard_stimuli.py`, `make_figures.py`. Session 2: `scripts/session2_box.sh` → `run_session2.py`,
-  `session2_extras.py`, `session2_native_readout.py` (predictor-native probes). The 70/30 reruns set `WM_SPLIT_PATH=splits/split_paper70.json`.
+  `session2_extras.py`, `session2_native_readout.py` (predictor-native probes), `session2_norm_matched.py`. The 70/30 reruns set `WM_SPLIT_PATH=splits/split_paper70.json`.
 - **Provenance.** Every results JSON records the split sha256 (`98e6310c…`), seeds (split 0, all others 0), git
   commit and a dirty flag. The 20 `p2_steer_*` files and all 32 arc runs were produced at commit 8d3cac8; the other
   Part 2 files at 677b305, 8e552c1, 8829195, 8f08444 or fbf4f72; all with `git_dirty_src_or_scripts: false`. Most
   Part 2 files record split and source paths inside the frozen scratchpad worktree that ran them; the split sha256 and
   the commit are the same as the repository's. The session 2 files were scored at b9c53d0 or 0f34ec2 (the native
-  readout at 8734f4b) with the dirty flag set.
+  readout at 8734f4b, the norm-matched rerun at 494afe2) with the dirty flag set.
 - **Numerics.** CPU–GPU parity on 8 clips: worst per-layer max|Δ|/max|x| 8.2e-5 (rule < 1e-3); GPU batch-8 vs
   batch-16 gap 1.31× the CPU–CPU gap (rule ≤ 2×). Frame hashes and disk masks match, and 27/27 sha256 checks of the
   downloaded activations pass[^gpu].
 - **Cost.** GPU session 1 (RTX 4080 SUPER, Vast): 37.7 billed minutes, $0.19[^gpu]. Session 2 box (RTX 4060 Ti,
-  $0.198/h): $0.512 to the end of session 2 (the run itself $0.311); $0.792 over 4.00 billed hours as of 20:44 ET, box
-  still running, including the predictor-native readout extraction (0.09 h, $0.018); $0.006 egress[^cost]. No other
-  box's cost is recorded.
+  $0.198/h): $0.512 to the end of session 2 (the run itself $0.311); $0.90 over 4.55 billed hours as of 21:17 ET, box
+  still running, including the native-readout extraction (0.09 h, $0.018) and the norm-matched rerun (0.137 h,
+  $0.027); $0.006 egress[^cost]. No other box's cost is recorded.
 - **Tests.** `pytest --collect-only` collects 173 tests at the commit of this report.
 
 [^gpu]: `artifacts/gpu_session1.json`.
@@ -705,4 +706,5 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
 [^fpos]: `results/session2_future_position.json`.
 [^rm]: `results/p1c_{direction,speed,acceleration}_L{9,22|19|21}_rankmatched.json` (`rank_matched_null`: `rows[].rank_matched`, `rows[].random_basis_full_rank`); `figures/fig3c_steering_nulls{,_paper}.png`.
 [^nat]: `results/session2_predictor_native_readout.json` (`direction`, `position`, `twin_context_reference`, `per_layer`, `definitions`); `scripts/session2_native_readout.py`.
-[^cost]: `results/session2_cost.json` (`cost_start_to_session2_done_usd`, `session2_run_cost_usd`, `cost_so_far_usd`, `billed_hours_so_far`, `as_of_utc` 00:44 UTC, `runs[0]`, `pull_egress_usd`, `status: running`).
+[^nm]: `results/session2_predictor_norm_matched.json` (`per_condition`, `spline_minus_chord`, `session2_unmatched`, `applied_norms`, `forward.parity_*`); `scripts/session2_norm_matched.py`.
+[^cost]: `results/session2_cost.json` (`cost_start_to_session2_done_usd`, `session2_run_cost_usd`, `cost_so_far_usd`, `billed_hours_so_far`, `as_of_utc` 01:17 UTC, `runs[0]`, `runs[1]`, `pull_egress_usd`, `status: running`).
