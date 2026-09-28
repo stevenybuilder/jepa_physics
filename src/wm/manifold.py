@@ -394,7 +394,7 @@ def heldout_mask(values, every=4, periodic=False):
 HOLDOUT_DESIGNS = ("scattered", "contiguous", "extrapolation")
 
 
-def heldout_design(values, design, periodic, seed=0, block=8, every=4):
+def heldout_design(values, design, periodic, seed=0, block=8, every=4, extend="cubic"):
     """Held-out label values for one of three designs (spec.md section 6 item 1). values must be sorted (np.unique).
 
     scattered:     every 4th value (heldout_mask; interior for scalars). A local interpolation check only.
@@ -402,6 +402,8 @@ def heldout_design(values, design, periodic, seed=0, block=8, every=4):
                    drawn from `seed`, wrapping round 0/360. Scalars: an interior block (at least one kept knot on
                    each side), start drawn from `seed`. The spline-vs-line claim rests on this design.
     extrapolation: the top `block` values (scalars only; direction has no extrapolation).
+    extend: the scalar spline's extension beyond the end knots ("cubic" or "linear", as fit_curve); only the
+            extrapolation note depends on it.
     Returns (mask [m] bool, info dict naming the design and the held-out values).
     """
     values = np.asarray(values)
@@ -424,8 +426,8 @@ def heldout_design(values, design, periodic, seed=0, block=8, every=4):
             raise ValueError("direction is periodic: there is no extrapolation design")
         mask = np.zeros(m, bool)
         mask[np.argsort(values)[-block:]] = True
-        info["note"] = ("targets lie beyond the last kept knot: the spline extends its end cubic piece, the line "
-                        "extends its last chord")
+        how = "extends its end cubic piece" if extend == "cubic" else "continues along its end tangent"
+        info["note"] = f"targets lie beyond the last kept knot: the spline {how}, the line extends its last chord"
     else:
         raise ValueError(f"unknown held-out design {design!r}; choose from {HOLDOUT_DESIGNS}")
     info["held_out_values"] = values[mask].astype(float).tolist()

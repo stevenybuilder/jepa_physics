@@ -525,3 +525,27 @@ def test_isometry_path_length_matrix_circle():
     G = m.path_length_matrix(mf.fit_curve(cent, True, angle="labels"), v, n_steps=150)
     dth = np.radians(np.abs((v[:, None] - v[None] + 180) % 360 - 180))
     np.testing.assert_allclose(G, 2 * dth, rtol=2e-3, atol=1e-9)
+
+
+def test_angle_goodfire_no_holdout_row(tmp_path):
+    from wm.p2_data import load_inputs
+    fake_dataset(tmp_path, "direction")
+    spec = importlib.util.spec_from_file_location("ag", ROOT / "scripts" / "run_angle_goodfire.py")
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    d = load_inputs("direction", 1, "direction", tmp_path / "act", tmp_path / "table.csv", tmp_path / "split.json")
+    row = m.no_holdout_row(d, k=16)
+    assert row["n_centroids"] == len(np.unique(d["y"][d["role"] == "knot"]))
+    assert row["goodfire_passes_periodicity_test"] and abs(row["goodfire_angle_vs_labels"]["circular_corr"]) > 0.95
+
+
+def test_isometry_angle_choice_labels():
+    spec = importlib.util.spec_from_file_location("iso", ROOT / "scripts" / "run_isometry_linear.py")
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    th = np.radians(np.arange(16) * 22.5)
+    cent = {"C": np.stack([np.cos(th), np.sin(th), 0 * th], 1), "values": np.arange(16) * 22.5}
+    assert m.angle_choice(cent, "labels") == {"angle": "labels", "plane": "activation"}
+    assert m.angle_choice(cent, "auto")["angle"] in ("unsupervised", "labels")
+    with pytest.raises(ValueError):
+        m.angle_choice(cent, "bogus")

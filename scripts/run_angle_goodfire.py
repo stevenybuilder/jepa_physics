@@ -43,6 +43,20 @@ def angle_row(d, seed, design="contiguous", k=64):
                                                                                "plane)")}
 
 
+def no_holdout_row(d, k=64):
+    """causalab's periodicity test as its code runs it: on ALL knot-fold centroids (no held-out arc; 64 at the
+    direction grid), PCA-k fit on every knot clip. Returns n_centroids, pass/fail, rel_diff, eigenvalues and the
+    Goodfire angle vs the labels."""
+    knot = d["role"] == "knot"
+    pca = gc.fit_subspace(d["X"][knot], d["y"][knot], "pca", k, None)
+    cent = mf.centroids(pca.project(d["X"][knot]), d["y"][knot])
+    g = mf.goodfire_periodic_angle(cent["C"])
+    cg = mf.compare_angles(g["angle"], cent["values"])
+    return {"n_centroids": int(len(cent["values"])), "goodfire_passes_periodicity_test": g["passes"],
+            "goodfire_rel_diff": g["rel_diff"], "goodfire_eigenvalues_pc1_pc2": g["eigenvalues"],
+            "goodfire_angle_vs_labels": {q: cg[q] for q in ("circular_corr", "max_dev_deg", "mean_dev_deg")}}
+
+
 def stored_source(L, seed):
     p = (RES / f"p2_steer_direction_direction_L{L}_contiguous.json" if seed == 0 else
          RES / "arcs" / f"L{L}_s{seed}" / f"p2_steer_direction_direction_L{L}_contiguous.json")
@@ -52,7 +66,19 @@ def stored_source(L, seed):
 def main(argv=None):
     p = argparse.ArgumentParser()
     p.add_argument("--out", default=str(RES / "p2_angle_goodfire_method.json"))
+    p.add_argument("--no-holdout", action="store_true",
+                   help="only the all-centroid test (no_holdout_row) at points 8/12/22 -> p2_angle_goodfire_all64.json")
     a = p.parse_args(argv)
+    if a.no_holdout:
+        out = {"provenance": provenance(None, layers=[8, 12, 22], k=64),
+               "method": no_holdout_row.__doc__.split("Returns")[0].strip(), "no_holdout": {}}
+        for L in (8, 12, 22):
+            out["no_holdout"][str(L)] = r = no_holdout_row(load_inputs("direction", L, "direction"))
+            print(L, r, flush=True)
+        path = RES / "p2_angle_goodfire_all64.json"
+        path.write_text(json.dumps(out, indent=1))
+        print("wrote", path)
+        return
     runs = {8: [0], 12: list(range(17)), 22: list(range(17))}
     out = {"provenance": provenance(None, seeds={"designs": "contiguous seed 0 at 8; seeds 0-16 at 12 and 22"}),
            "method": mf.goodfire_periodic_angle.__doc__.split("Returns")[0].strip(),

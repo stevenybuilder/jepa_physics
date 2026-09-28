@@ -79,7 +79,7 @@ def build(d, k, angle, design="scattered", seed=0, n_controls=20, spline="interp
     extend: scalars beyond the end knots, "cubic" (end piece extended) or "linear" (end tangent)."""
     knot_all = d["role"] == "knot"
     values = np.unique(d["y"])
-    mask, design_info = mf.heldout_design(values, design, d["periodic"], seed=seed)
+    mask, design_info = mf.heldout_design(values, design, d["periodic"], seed=seed, extend=extend)
     held = values[mask]
     knot = knot_all & ~np.isin(d["y"], held)
     pca = gc.fit_subspace(d["X"][knot], d["y"][knot], subspace, k, basis)      # PCA-k unless --plane chart|inlp

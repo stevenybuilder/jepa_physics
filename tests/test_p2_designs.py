@@ -480,3 +480,9 @@ def test_curvature_verdict_rules():
     gaps2 = {f"manifold_minus_{o}": {q: mk(0.0) for q in qs} for o in ("projected", "reflected", "linear")}
     gaps2["manifold_minus_linear"]["excess_to_curve"] = mk(0.5)
     assert P2.curvature_verdict(gaps2, lo, floors, False)["text"].startswith("negative: no curvature benefit")
+
+
+def test_heldout_design_extrapolation_note_follows_extend():
+    assert "end cubic piece" in mf.heldout_design(SPEEDS, "extrapolation", False)[1]["note"]
+    note = mf.heldout_design(SPEEDS, "extrapolation", False, extend="linear")[1]["note"]
+    assert "end tangent" in note and "cubic" not in note

@@ -11,7 +11,8 @@ Here, per direction layer, on the 64 direction values (W = 64 vertices, K = 0 in
 W >= 81; A.5's shared-geodesic exclusion is then empty):
   activation side (knot folds 0-2, PCA-64 fit on them): the count-weighted periodic smoothing spline that run_part2
       steers with, and Goodfire's interpolating periodic spline; intrinsic angle chosen as in run_part2
-      (choose_angle_source). d_geo = arc length along the spline (short way round); d_lin = Euclidean distance
+      (choose_angle_source), or the true direction with --angle labels (causalab runners' intrinsic_mode:
+      parameter). d_geo = arc length along the spline (short way round); d_lin = Euclidean distance
       between the same vertex points in PCA-64.
   behaviour side (probe folds 3-4, disjoint clips), each a periodic smoothing spline through per-value centroids
       with the true angle as coordinate, distances = arc length:
@@ -37,6 +38,8 @@ from wm.p2_data import load_inputs
 from wm.provenance import layer_role, provenance
 
 PRED = PROJECT_ROOT / "artifacts" / "session2" / "native" / "pred_pooled_all.npy"
+N_INTERIOR_NOTE = ("0 here (vertices only); causalab's published runners use n_interior_per_pair = 1, adding one "
+                   "interior point between each adjacent vertex pair")
 
 
 def geo_matrix(curve, n=4000):
@@ -67,18 +70,31 @@ def path_length_matrix(curve, values, n_steps=150, chunk=256):
     return G
 
 
-def goodfire_method(L, n_steps=150):
-    """Isometry as causalab compute_isometry_from_manifolds (path_mode geometric, n_interior_per_pair 0): behaviour
-    manifold = INTERPOLATING periodic spline (labels angle) through per-value centroids of the predictor's forecast in
-    its full 1024-d space (probe folds), activation manifold = the knot-fold PCA-64 spline (interpolating as theirs, and
-    the smoothing spline run_part2 steers with; angle as choose_angle_source); both distances = path_length_matrix with
-    150 sub-intervals; Pearson r over the upper triangle. Chord baseline = the stored lin (PCA-64 chord)."""
+def angle_choice(cent, angle="auto"):
+    """Coordinate for the activation spline: "auto" = choose_angle_source (unsupervised angle, labels fallback);
+    "labels" = the true direction (causalab's runners, intrinsic_mode: parameter). Returns the choose_angle_source
+    dict or {"angle": "labels", "plane": "activation"}."""
+    if angle == "labels":
+        return {"angle": "labels", "plane": "activation"}
+    if angle != "auto":
+        raise ValueError(f"angle must be 'auto' or 'labels', not {angle!r}")
+    return mf.choose_angle_source(cent["C"], cent["values"])
+
+
+def goodfire_method(L, n_steps=150, angle="auto"):
+    """Isometry modelled on causalab compute_isometry_from_manifolds (path_mode geometric), with n_interior_per_pair 0
+    (causalab's runners use 1): behaviour manifold = INTERPOLATING periodic spline (labels angle) through per-value
+    centroids of the predictor's forecast in its full 1024-d space (probe folds), activation manifold = the knot-fold
+    PCA-64 spline (interpolating as theirs, and the smoothing spline run_part2 steers with; coordinate from
+    angle_choice: "auto" = choose_angle_source, "labels" = true direction as causalab's runners); both distances =
+    path_length_matrix with 150 sub-intervals; Pearson r over the upper triangle. Chord baseline = PCA-64 chord between
+    the same spline vertices, recomputed here."""
     d = load_inputs("direction", L)
     knot, probe = d["role"] == "knot", d["role"] == "probe"
     y, values = d["y"], np.unique(d["y"])
     pca = mf.fit_pca(d["X"][knot], 64)
     cent = mf.centroids(pca.project(d["X"][knot]), y[knot])
-    choice = mf.choose_angle_source(cent["C"], cent["values"])
+    choice = angle_choice(cent, angle)
     pred = np.load(PRED).astype(np.float64).mean(1)[probe]
     beh = mf.fit_curve(mf.centroids(pred, y[probe]), True, angle="labels", spline="interp")
     B = path_length_matrix(beh, values, n_steps)
@@ -100,7 +116,7 @@ def by_value(G, curve_values, values):
     return G[np.ix_(o, o)]
 
 
-def act_curves(Z, y, rng=None, choice=None):
+def act_curves(Z, y, rng=None, choice=None, angle="auto"):
     """Smoothing (run_part2) and interpolating (Goodfire A.3) periodic splines through per-value centroids of Z.
     choice: the point estimate's angle source and plane, held fixed in bootstrap draws (otherwise a draw can switch
     plane and reorder the knots, which is a different pipeline, not sampling noise)."""
@@ -108,7 +124,7 @@ def act_curves(Z, y, rng=None, choice=None):
         Z, y = resample(Z, y, rng)
     cent = mf.centroids(Z, y)
     if choice is None:
-        choice = mf.choose_angle_source(cent["C"], cent["values"])
+        choice = angle_choice(cent, angle)
     out = {}
     for sp in ("smooth", "interp"):
         c = mf.fit_curve(cent, True, angle=choice["angle"], plane=choice["plane"], spline=sp)
@@ -136,7 +152,7 @@ def corr(A, B):
     return float(np.corrcoef(A[iu], B[iu])[0, 1]), float(spearmanr(A[iu], B[iu])[0])
 
 
-def run_layer(L, n_boot, seed=0):
+def run_layer(L, n_boot, seed=0, angle="auto"):
     d = load_inputs("direction", L)
     knot, probe = d["role"] == "knot", d["role"] == "probe"
     y = d["y"]
@@ -166,7 +182,7 @@ def run_layer(L, n_boot, seed=0):
                     out[f"{sp}.{kind}.{name}"] = {"pearson": r, "spearman": rho}
         return out
 
-    act, vals, choice = act_curves(Zk, yk)
+    act, vals, choice = act_curves(Zk, yk, angle=angle)
     assert np.allclose(vals, values)
     beh = {"eq9_same_layer": eq9, "encoder_out": beh_curve(Z25, yp), "predictor": beh_curve(Zp, yp), "concept": dth}
     point = all_corrs(act, beh)
@@ -200,10 +216,33 @@ def main(argv=None):
     p.add_argument("--out", default=str(PROJECT_ROOT / "results" / "p2_isometry_linear.json"))
     p.add_argument("--goodfire-method", action="store_true",
                    help="only the causalab-faithful variant (goodfire_method) -> results/p2_isometry_goodfire_method.json")
+    p.add_argument("--angle", default="auto", choices=("auto", "labels"),
+                   help="activation-spline coordinate: auto = choose_angle_source (unsupervised angle), labels = true "
+                        "direction (causalab runners' intrinsic_mode: parameter)")
     args = p.parse_args(argv)
+    if args.goodfire_method and args.angle == "labels":
+        prev = json.loads((PROJECT_ROOT / "results" / "p2_isometry_goodfire_method.json").read_text())["layers"]
+        res = {"provenance": provenance(None, layers=args.layers, pool="meanpool", k=64, angle="labels",
+                                        n_interior_per_pair=N_INTERIOR_NOTE),
+               "method": goodfire_method.__doc__, "layers": {}}
+        for L in args.layers:
+            new = goodfire_method(L, angle="labels")
+            old = prev[str(L)]["new"]
+            res["layers"][str(L)] = {"labels_angle": new, "unsupervised_angle": {
+                "angle_choice": old["angle_choice"],
+                **{sp: {q: old[sp][q] for q in ("geo_pearson", "lin_pearson")} for sp in ("interp", "smooth")}}}
+            print(L, new, flush=True)
+        rev = {L: {sp: v[sp]["geo_pearson"] < v[sp]["lin_pearson"] for sp in ("interp", "smooth")}
+               for L, v in ((L, res["layers"][str(L)]["labels_angle"]) for L in args.layers)}
+        res["geo_below_chord_labels_angle"] = {str(L): r for L, r in rev.items()}
+        path = PROJECT_ROOT / "results" / "p2_isometry_goodfire_labels.json"
+        path.write_text(json.dumps(res, indent=1))
+        print("wrote", path)
+        return
     if args.goodfire_method:
         stored = json.loads((PROJECT_ROOT / "results" / "p2_isometry_linear.json").read_text())["layers"]
-        res = {"provenance": provenance(None, layers=args.layers, pool="meanpool", k=64),
+        res = {"provenance": provenance(None, layers=args.layers, pool="meanpool", k=64,
+                                        n_interior_per_pair=N_INTERIOR_NOTE),
                "method": goodfire_method.__doc__, "layers": {}}
         for L in args.layers:
             c = stored[str(L)]["correlations"]
@@ -226,7 +265,7 @@ def main(argv=None):
                       "small by construction; Spearman is reported beside Pearson."),
            "layers": {}}
     for L in args.layers:
-        out["layers"][str(L)] = run_layer(L, args.n_boot)
+        out["layers"][str(L)] = run_layer(L, args.n_boot, angle=args.angle)
         r = out["layers"][str(L)]["correlations"]
         print(f"L{L}: " + "  ".join(f"{b}: geo {r[f'smooth.geo.{b}']['pearson']:.3f} lin {r[f'smooth.lin.{b}']['pearson']:.3f}"
                                      for b in ("eq9_same_layer", "encoder_out", "predictor", "concept")), flush=True)
