@@ -22,7 +22,7 @@ blocks. On a harder rendered set (textured floor, shading, smaller disk; 392 cli
 per-position curve rises most between points 4 and 6 on every seed (+0.24 to +0.29 over two blocks; +0.09 to +0.16 per
 block where point 5 was sampled) and only +0.07 ± 0.02 across
 points 8→9, where the 90% rule fires on one seed (9) and one point earlier on the other two (8); a random-init network
-plateaus at 0.57–0.62 from point 6 on the same clips. What does replicate at the paper's depth on all three seeds is
+sits at 0.52–0.62 from point 6 on the same clips (two render seeds). What does replicate at the paper's depth on all three seeds is
 the half-frame jump: transfer falls from 0.69–0.73 at point 1 to −1.0 to −1.8 at point 8 and jumps back to about chance
 at point 9 (+1.4 to +1.9), a shape the random-init network never shows. The paper's stronger claim, that transfer
 appears only after the zone, does not hold: it is 0.7 at point 1 and regains that level only by point 22 (§3.1). VideoMAE (pixel reconstruction) matches V-JEPA 2 on the pooled curves for all three variables.
@@ -32,7 +32,7 @@ is rank-2 linear plus a second harmonic and a nonlinear residual (§3.2). Speed 
 direction (in raw coordinates and under one common R² stop too, except the paper protocol at point 8), and the ridge curves have no sawtooth. Under the paper's literal Adam
 recipe both variables' curves are jagged and K roughly doubles, with no direction-specific sawtooth. **Step 3
 reproduces in shape** (one probe fails, a few probes reach the target, MAE-to-true rises), with 3–5 probes to 10°
-where the paper needs about 20. How it compares with a random orthonormal basis of fixed rank 2K depends on the
+where the paper reports ≈ 12° at about 20 (C.12). How it compares with a random orthonormal basis of fixed rank 2K depends on the
 evaluation probe: with a near-unregularised probe (α = 1e-3, or the C.11 Adam recipe; C.12 gives no recipe) the learned basis
 beats all 20 draws from N = 5, with my CV-chosen one only from N = 14. Against a rank-matched random basis it first beats all 20 draws at N = 2–7 (by variable
 and layer; N = 3 under the near-unregularised probes); at N = 1 it separates from neither. The same curve appears in an untrained
@@ -91,7 +91,7 @@ test does not recover the ring. This is a probe of the forecast on one stimulus 
 
 | Item | Paper | Here | Effect / check |
 |---|---|---|---|
-| Probe fit | Adam + weight decay, 20-config lr × wd sweep, 5-fold (App. B) | ridge, α by CV | parity check below: ridge ≥ Adam on all three variables at the peak; App. B's sweep run at points 0–10 gives direction onset 2 [2, 3] and speed onset 1 [1, 1], the same as ridge, with the sweep 0.003–0.07 below ridge at every point (coupled L2 weight decay, chosen at the grid's low edge at most points)[^appb] |
+| Probe fit | Adam + weight decay, 20-config lr × wd sweep, 5-fold (App. B) | ridge, α by CV | parity check below: ridge ≥ Adam on all three variables at the peak; App. B's sweep run at points 0–10 gives direction onset 2 [2, 3] and speed onset 1 [1, 1], the same as ridge, with the sweep 0.0015–0.074 below ridge at every point (coupled L2 weight decay, at the grid's low edge for 10 of 12 direction points and 5 of 12 speed points)[^appb] |
 | Input | 224², 1,568 tokens | 256², no crop, 2,048 tokens | layer fractions comparable, patch counts not |
 | Hidden states | 24 points | 26 (embedding, blocks 1–24, final LN) | paper layer L = our point L+1 |
 | Data | 8 directions, separate sets | 64 directions, mixed motion types | direction also reported per motion type |
@@ -151,8 +151,8 @@ Every ridge value lies above the Adam CI, so ridge is slightly *better* on all t
 ### 3.1 Layer-wise probing
 
 **Paper's claim.** Speed and acceleration are decodable early. Direction appears only from about one third of the
-depth (the "Physics Emergence Zone"). The representation of physical variables "peaks in the middle layers, and degrades toward the output" (abstract;
-§4.2 makes the same claim for IntPhys). App. C.5 places the
+depth (the "Physics Emergence Zone"). The representation of physical variables "peaks in the middle layers, and degrades toward the output" (introduction; the abstract says the same, and
+§4.2 makes the claim for IntPhys). App. C.5 places the
 sharp step in per-patch probes: early direction signal is "fragmented across patches", mean-pooled probes reach
 "modest performance" by combining it, and "per-patch probe performance rises abruptly at the emergence zone, while
 mean-pooled performance improves more gradually" (`refs/physics_paper.txt` l.981–989).
@@ -173,8 +173,9 @@ Cells are CV R² (5-fold mean). Onset is the first point at ≥ 90% of the maxim
 the CI. Source: `p1a_{var}_meanpool.json`.
 
 **Mean-pooled curve.** Direction is at 0.875 after one block, and no variable declines late. The paper's §5.2 also says Cartesian velocity
-and acceleration "exhibit a transition at the Physics Emergence Zone"; on pooled probes here (vx, vy) and (ax, ay) reach
-onset at point 1 [1, 1] (table above), so that claim does not reproduce either. Disk-pooling changes little
+and acceleration "exhibit a transition at the Physics Emergence Zone"; the same passage adds that acceleration is "also decodable with
+high R² from early layers"; on pooled probes here (vx, vy) reads 0.985 / 0.986 / 0.984 and (ax, ay) 0.975 / 0.976 / 0.980
+at block 1 / point 8 / point 9 (table above), so no transition shows in the pooled readout. Disk-pooling changes little
 (direction peak 0.994, onset still 2[^disk]). The onset does not depend on how the CV folds are grouped (the paper's
 App. B says "5-fold grouped" without the key): direction onset is 2 [2, 2] with stratified, direction-grouped, start-grouped and
 8-sector-grouped folds (block 1 fold-mean R² 0.875 / 0.847 / 0.869; the sector figure, 0.828, is pooled out-of-fold R²,
@@ -929,7 +930,7 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
 
 | Question | Result | Source |
 |---|---|---|
-| Object permanence | Direction decoded from time steps whose frames contain no disk (89 clips; test 15 clips / 22 tokens): MAE 7.5° [5.6, 9.4] at point 8 (visible 5.4°), 6.1° at point 22 (visible 3.8°); shuffled-label null 84.5°, p = 0.001. The random-init encoder, same clips and protocol, does as well: test-clip absent-step MAE 5.9–7.2° across points vs 6.1–13.4° for V-JEPA 2 (null ≈ 90° for both). V-JEPA 2 is ahead only late, by ≤ 1.0° on test clips (points 16–25) and 2.4° / 2.0° pooled at points 22 / 25; it is behind at points 1–12. On visible steps V-JEPA 2 is 5–7° better from point 8 on. So above-null decoding after the disk leaves is attention mixing within the clip (no causal mask), not learned carrying. | `p1a_object_permanence.json` (`random_init.side_by_side`), `fig6_object_permanence.png` (random-init overlaid) |
+| Object permanence | Direction decoded from time steps whose frames contain no disk (89 clips; test 15 clips / 22 tokens): MAE 7.5° [5.6, 9.4] at point 8 (visible 5.4°), 6.1° at point 22 (visible 3.8°); shuffled-label null 84.5°, p = 0.001. The random-init encoder, same clips and protocol, does as well: test-clip absent-step MAE 5.9–7.3° across points vs 6.1–13.4° for V-JEPA 2 (null ≈ 90° for both). V-JEPA 2 is ahead only late, by ≤ 1.0° on test clips (points 16–25) and 2.4° / 2.0° pooled at points 22 / 25; it is behind at points 1–12. On visible steps V-JEPA 2 is 5–7° better from point 8 on. So above-null decoding after the disk leaves is attention mixing within the clip (no causal mask), not learned carrying. | `p1a_object_permanence.json` (`random_init.side_by_side`), `fig6_object_permanence.png` (random-init overlaid) |
 | Cartesian vs polar | On constant-velocity clips (596), (vx, vy) reaches onset at point 1 and (sin θ, cos θ) at point 2 (difference −1, CI [−1, −1]); block 1 R² 0.929 vs 0.863. Speed set: 0.985 vs 0.855. The one-block "emergence" of direction is the normalisation v/‖v‖. Direct test at block 1: the angle of the (vx, vy) probe's output has MAE 12.1° against 12.3° for the direct (sin, cos) probe, and R² 0.900 against 0.911 once the direct output is scaled to unit length, so the direct probe's lower R² there is its radius, not its angle; the two angles disagree clip by clip by 13.1°. From point 2 the direct probe is better (8.3° vs 11.2°). | `p1a_support_onset_*_meanpool.json`, `fig1d`, `p1a_support_cartesian_angle.json` |
 | Direction transfer (held-out context) | Direction probe fit on the direction set, read on the speed set at point 9: MAE 4.4° (source CV 4.0°); 8.7° below 1 m/s, 3.3° at 1–4 m/s. On the acceleration set: 5.8°. At point 1: 10.8° (23.9° below 1 m/s). | `p1a_support_transfer_meanpool.json`, `fig1c` |
 | Spatial generalisation | Train on start x < 0, test on x > 0, point 9: R² 0.971 (MAE 4.9°), vs 0.972 within-side. At point 22, mean-pool 0.957 vs disk-pool 0.988. | `p1a_support_spatial_{meanpool,diskpool}.json`, `fig1e` |
@@ -959,7 +960,9 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
   (R²≥.43), regardless of objective", classification CNNs included, so availability is their own finding; training buys
   precision, fewer probes to steer (4 vs 10 to reach 10°[^obj]) and a label-free ring.
 - **The linear representation hypothesis: right about the subspace, wrong about the moves.** Direction lives in a 2-D
-  linear subspace (sin, cos) with a ring on it, and nothing in Part 1 contradicts that form of the hypothesis. The
+  linear subspace (sin, cos) with a ring on it, but the paper's §7.1 says "manipulating only the unit-circle subspace does not effectively steer direction", and our
+  only rank-2 edit (N = 1, §3.3) barely moves the readout; a covariance-weighted rank-2 edit is being run to tell whether
+  that is the edit or the subspace. The
   steering corollary is what fails geometrically: in the ring plane the straight path between distant directions
   crosses the empty interior (readout radius 0.61) where the curved path does not (0.86), though in the 64-D edit
   subspace it is no farther from real clips (§4.3). Independent readouts at the steered layer do not care; the
