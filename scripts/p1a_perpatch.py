@@ -165,17 +165,27 @@ def _perpos(task):
     return pi, pos, cv["alpha"], cv["cv_mean"], s["r2"], s["mae"], P.astype(np.float32)
 
 
-def gram_stats(Z, Y):
-    """Z [n, P, d] float32 samples (every position is a sample), Y [n, 2] per clip. float64 sums."""
-    n, P, d = Z.shape
-    S, G, XtY = np.zeros(d), np.zeros((d, d)), np.zeros((d, Y.shape[1]))
-    for s in range(0, n, 64):
-        x = Z[s:s + 64].reshape(-1, d).astype(np.float64)
-        y = np.repeat(Y[s:s + 64], P, axis=0)
-        S += x.sum(0)
-        G += x.T @ x
-        XtY += x.T @ y
-    return {"n": n * P, "S": S, "G": G, "XtY": XtY, "Sy": Y.sum(0) * P}
+def _dev():
+    import torch
+    torch.backends.cuda.matmul.allow_tf32 = False
+    return torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
+def gram_stats(Z, Y, chunk=16384):
+    """Z [m, d] float32 torch (standardised samples), Y [m, 2] float32 torch. Chunked fp32 matmuls accumulated in
+    float64 (the box's numpy BLAS is slow in float64 on this AMD CPU, so the pooled probes run on the GPU)."""
+    import torch
+    d = Z.shape[1]
+    S = torch.zeros(d, dtype=torch.float64, device=Z.device)
+    G = torch.zeros(d, d, dtype=torch.float64, device=Z.device)
+    XtY = torch.zeros(d, Y.shape[1], dtype=torch.float64, device=Z.device)
+    for s in range(0, Z.shape[0], chunk):
+        x, y = Z[s:s + chunk], Y[s:s + chunk]
+        S += x.double().sum(0)
+        G += (x.T @ x).double()
+        XtY += (x.T @ y).double()
+    return {"n": Z.shape[0], "S": S.cpu().numpy(), "G": G.cpu().numpy(), "XtY": XtY.cpu().numpy(),
+            "Sy": Y.double().sum(0).cpu().numpy()}
 
 
 def solve_from_stats(parts, alphas):
@@ -191,37 +201,50 @@ def solve_from_stats(parts, alphas):
 
 
 def pooled_probe(Xfit, Yfit, folds, evals, score_fn, alphas):
-    """Pooled-patch ridge. Xfit [n, P, d] (standardised with the fit samples' statistics inside), folds by clip.
+    """Pooled-patch ridge. Xfit [n, P, d]: every (clip, position) is a sample, standardised with the fit samples'
+    statistics; alpha by fold-mean R2 with folds by clip. Grams on the GPU (fp32 chunks, float64 sums), eigh in float64.
     evals: {name: X [m, Q, d]}; returns alpha, cv curve, and {name: predictions [m, Q, 2]}."""
+    import torch
+    dev = _dev()
     n, P, d = Xfit.shape
-    mean = np.zeros(d)
-    sq = np.zeros(d)
-    for s in range(0, n, 64):
-        x = Xfit[s:s + 64].reshape(-1, d).astype(np.float64)
-        mean += x.sum(0)
-        sq += (x * x).sum(0)
-    mean /= n * P
-    std = np.maximum(np.sqrt(np.maximum(sq / (n * P) - mean ** 2, 0)), 1e-6)
-    zs = lambda X: ((X.astype(np.float32) - mean.astype(np.float32)) / std.astype(np.float32))  # noqa: E731
-    Z = zs(Xfit)
+    Xg = torch.from_numpy(np.ascontiguousarray(Xfit, dtype=np.float32)).to(dev).reshape(-1, d)
+    S = torch.zeros(d, dtype=torch.float64, device=dev)
+    SS = torch.zeros(d, dtype=torch.float64, device=dev)
+    for s in range(0, Xg.shape[0], 16384):
+        x = Xg[s:s + 16384].double()
+        S += x.sum(0)
+        SS += (x * x).sum(0)
+    mean = S / Xg.shape[0]
+    std = torch.sqrt(torch.clamp(SS / Xg.shape[0] - mean ** 2, min=0)).clamp(min=1e-6)
+    mean32, std32 = mean.float(), std.float()
+    Xg.sub_(mean32).div_(std32)                                                   # Z, in place
+    Yg = torch.from_numpy(np.repeat(Yfit, P, axis=0).astype(np.float32)).to(dev)
+    sample_fold = np.repeat(folds, P)
     ks = np.unique(folds)
-    stats = {k: gram_stats(Z[folds == k], Yfit[folds == k]) for k in ks}
+    idx = {k: torch.from_numpy(np.flatnonzero(sample_fold == k)).to(dev) for k in ks}
+    stats = {k: gram_stats(Xg[idx[k]], Yg[idx[k]]) for k in ks}
     curve = np.zeros(len(alphas))
     for k in ks:
         U, lam, R, xm, ym = solve_from_stats([stats[j] for j in ks if j != k], alphas)
-        Zk = Z[folds == k].reshape(-1, d).astype(np.float64)
+        ZU = ((Xg[idx[k]] - torch.from_numpy(xm).float().to(dev)) @ torch.from_numpy(U).float().to(dev)).double()
         Yk = np.repeat(Yfit[folds == k], P, axis=0)
-        ZU = (Zk - xm) @ U
         for i, al in enumerate(alphas):
-            curve[i] += score_fn(Yk, ZU @ (R / (lam + al)[:, None]) + ym)["r2"] / len(ks)
+            Pk = (ZU @ torch.from_numpy(R / (lam + al)[:, None]).to(dev)).cpu().numpy() + ym
+            curve[i] += score_fn(Yk, Pk)["r2"] / len(ks)
+        del ZU
     best = int(np.argmax(curve))
     U, lam, R, xm, ym = solve_from_stats(list(stats.values()), alphas)
     W = U @ (R / (lam + alphas[best])[:, None])
     b = ym - xm @ W
+    Wg = torch.from_numpy(W).float().to(dev)
     preds = {}
     for name, Xe in evals.items():
         m, Q, _ = Xe.shape
-        preds[name] = (zs(Xe).reshape(-1, d).astype(np.float64) @ W + b).reshape(m, Q, -1).astype(np.float32)
+        Ze = (torch.from_numpy(np.ascontiguousarray(Xe, dtype=np.float32)).to(dev).reshape(-1, d) - mean32) / std32
+        preds[name] = ((Ze @ Wg).double().cpu().numpy() + b).reshape(m, Q, -1).astype(np.float32)
+        del Ze
+    del Xg, Yg
+    torch.cuda.empty_cache() if dev.type == "cuda" else None
     return float(alphas[best]), curve.tolist(), preds
 
 
@@ -432,7 +455,7 @@ def probe(a):
            "probe_wall_seconds": wall,
            "provenance": {"split_file": SETS[a.set][1], "split_sha256": sha256_file(split_file), "commit": a.commit,
                           "points": points, "pooling": side["pooling"], "positions": "16x16 (no spatial pooling)",
-                          "host": "vast 53030966 RTX 4060 Ti (extract GPU, probes CPU)",
+                          "host": "vast 53030966 RTX 4060 Ti (extract GPU; per-position probes CPU float64; pooled/half probes GPU fp32 grams with float64 sums, float64 eigh)",
                           "subset": ("constant-velocity clips only (motion == 'velocity'), split rows filtered, same folds"
                                      if a.subset == "constvel" else "all clips of the set"),
                           "time_averaging": ("per-position features are averaged over the 8 token time steps before probing "
