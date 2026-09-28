@@ -284,7 +284,13 @@ rise does not: the largest rise is at points 4 → 6 on every seed, the 90% onse
 random network's per-position curve also plateaus by point 6. A 5-fold refit on seed 0 gives per-fold onsets 8, 9, 9,
 8, 8 on the stored stratified folds and 9 in all five folds when whole start positions are held out (per-position
 0.17 → 0.71 → 0.72 → 0.89 at points 4 / 6 / 8 / 9, so the largest rise is still 4 → 6); the cross-half sign change
-across 8 → 9 appears in 5 of 5 folds under both schemes[^hfolds].
+across 8 → 9 appears in 5 of 5 folds under both schemes[^hfolds]. Under the sigmoid criterion the paper's rebuttal
+proposed (fit R² > 0.9, inflection at ≤ 50% depth, peak ≥ 15 pp; our reading of it), fitted on points 1–24 with
+depth = (point − 1)/23, the hard-set per-position curves inflect at points 5.73 / 5.76 / 5.93 (depth 0.21–0.22; fold
+bootstrap 5.36 [4.78, 5.74], start-grouped 4.66 [3.79, 5.50]), the supplied set at 2.10 and the paper-layout set at 3.52;
+only the cross-half curves inflect at her depth (8.95–9.02, depth 0.35) and they fail the fit test (R² 0.24–0.48). The
+criterion also accepts the random-init per-position curves (inflection 3.26, peak 38.5 pp), so it does not separate a
+trained encoder from an untrained one[^sig].
 On the supplied clips neither part appears: the per-patch code forms by block 6 with no step at points 8 → 9, while the mean-pooled
 curve is early under every fold grouping and at the paper's clip count. What training changes on both stimulus sets is
 the per-position code from point 6 on (supplied: V-JEPA 2 0.94–0.98 against a mean of 0.39 for the random network;
@@ -1132,6 +1138,7 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
 [^adamb]: `results/p1c_direction_L9_adam_basis.json` (per-N error to target / to true, both nulls with p, `n_to_10deg`, `K`, `comparison_vs_ridge_basis` incl. `null_dimension_note`); basis weights `artifacts/inlp/direction_direction_L9_adam_b64.npz` (sha256 in the JSON); `scripts/run_step3_adam_basis.py`; 36c4cdc, 94c96c7, baa8eac, 7dd1eb5; 216 tests.
 [^r2cov]: `results/p1c_direction_L9_rank2_covweighted.json` (Euclidean N = 1, covariance-weighted and oracle edits with error to target / to true, off-target speed and edit norm; the 20-draw Σ-weighted null with p; `evalprobe_variants` for α = 1e-3, Adam and split-half; Ledoit-Wolf check); `scripts/run_step3_rank2_covweighted.py`, `src/wm/steer.py:cov_weighted_delta`.
 [^n200]: `results/p1c_direction_L9_nulls200.json` (per basis and N: learned error, `rank_2n` and `rank_2k` null mean ± SD and exact p over 200 draws, seed 0, draws 1–20 reproducing the stored files; `first_n_below` at 0.05 and 0.01; `evalprobe_variants` at every N); `scripts/run_step3_nulls200.py`; 555b411, 221 tests.
+[^sig]: `results/p1a_sigmoid_onset.json` (`curves.*.{inflection_point,depth,fit_r2,rise_pp,peak_pp,accept}`, `fold_bootstrap`, `with_point0` for the fits that included the patch embedding, provenance quoting the criterion from `sonia_joseph.md` l.153–154); `src/wm/sigmoid_onset.py`; 555b411, 7921bbb.
 [^seeds]: `results/p1a_perpatch_hard_seeds.json` (`by_point[].{perpos_mean_r2,cross_half_r2}.per_seed`, `onsets.{0,1,2}`, `jump_8_to_9`, `extra_point_curves`), `results/p1a_perpatch_direction_vjepa2_hard_seed{1,2}.json` (`layers[].halves.cross_r2_mean`), `results/p1a_perpatch_direction_random_hard{,_seed1}.json`, `figures/fig1j_perpatch_hard_seeds.png`; render seeds at 2abb3e9, extraction on the box from a frozen worktree (GPU forward 611 s), 3a8d7c7. The random-init control is one weight draw (seed 0) on two render seeds.
 [^appb]: `results/p1a_appB_sweep.json` (`variables.{direction,speed}.{per_point[].{sweep_cv_mean,sweep_cv_sd,lr,wd,grid},sweep_onset,sweep_onset_ci,ridge_onset_stored}`); 100 / 50 epochs from C.11 and batch 64 (our choice; neither appendix gives one); coupled L2 weight decay, App. B not saying Adam or AdamW; the best of the 20 configurations is selected on the same folds it is reported on, as our ridge α is over 13 values; fbdc60a, 212 tests.
 [^gcv]: `results/p1a_grouped_cv.json` (`sets.{direction,speed}_{vjepa2,random}.{stratified,direction_grouped,start_grouped,speed_grouped}.{onset,onset_ci}`; `sector_grouped` with its pooled-prediction `score`); `figures/fig1i_grouped_cv.png`.
