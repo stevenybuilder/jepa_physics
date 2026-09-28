@@ -590,3 +590,19 @@ def test_ring_occupancy_paths_passes_angle_to_build():
         with pytest.raises(Stop):
             mod.paths(RP2(), {}, 4, angle=angle)
     assert seen == [("unsupervised", "contiguous", 4), ("labels", "contiguous", 4)]
+
+
+def test_isometry_goodfire_angle_matches_periodic_angle():
+    from wm import manifold as mf
+    m = _load("run_isometry_linear.py")
+    v = np.arange(16) * 22.5
+    th = np.radians(v)
+    cent = {"C": np.stack([3 * np.cos(th + 0.3), np.sin(th + 0.3), 0 * th], 1), "values": v, "count": np.ones(16),
+            "sd_coord": np.ones(3)}
+    ch = m.angle_choice(cent, "goodfire")
+    np.testing.assert_allclose(ch["goodfire"]["angle"], mf.goodfire_periodic_angle(cent["C"])["angle"])
+    c = m.act_curve(cent, ch, "interp")
+    assert c.coord_source == "labels_angle"          # periodic_cubic's tag for any supplied angle
+    np.testing.assert_allclose(np.sort(c.coords), np.sort(ch["goodfire"]["angle"]))
+    np.testing.assert_allclose(m.path_length_matrix(c, v)[0, 8], m.path_length_matrix(c, v)[8, 0])
+    assert abs(mf.compare_angles(ch["goodfire"]["angle"], v)["circular_corr"]) > 0.99
