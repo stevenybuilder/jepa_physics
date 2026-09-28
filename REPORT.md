@@ -978,11 +978,17 @@ the full-clip chord initialisation averages 0.57 from it along its length, and t
 from the spline and 0.81 ± 0.08 from the chord along theirs (end points 0.76 from the spline; paired −0.006 [−0.023,
 0.012]; intrinsic R² 0 against both). So the run began about 0.57 off the ring it edits,
 because its PCA basis, replaced components, centroids and chord start all came from full-clip activations, and the
-optimiser added +0.23 on 8 of 8 pairs; the rescoring changes the ruler, not that anchoring, and a rerun with
-context-only geometry throughout is in progress. Data separation in these pullback runs is not clean: 3–5 of each pair's 16
+optimiser added +0.23 on 8 of 8 pairs; the rescoring changes the ruler, not that anchoring, Rerun with
+context-only geometry throughout (PCA basis, replaced components, centroids and chord start all from the context-only
+knot activations; same 8 pairs, 16 carriers, 32 evaluations, no pair converged)[^ctx2], the initial chord averages 0.18
+from the spline (0.04 at its first waypoint) and the optimised paths average 0.87 ± 0.07 from the spline and 0.87 ± 0.08
+from the chord (start 0.90, end 0.75; optimised minus initial +0.68 [0.51, 0.85], 8 of 8 away; spline − chord +0.000
+[−0.019, 0.019]; R² 0), while the forecast lands 6° from the ideal. The optimiser moves off the ring under Goodfire's
+recipe as it did under ours; the unedited carriers of the old angle-only test already sit 0.61 from the ring and its
+paths end 0.59 further out (20 of 20). Data separation in these pullback runs is not clean: 3–5 of each pair's 16
 carriers are knot clips, 5 are test clips, the readout's softmax sharpness was fitted on test clips, and the behaviour
 centroids use all clips (`data_separation` in both files); a leak here would favour recovery, and the result is negative. Our earlier angle-only paths score 1.20 / 1.27 on the same ring
-(closer to the spline by 0.07, 19 of 20; no per-carrier zero-edit baseline is stored for them yet). So neither our angle-only test nor an unconverged run of Goodfire's
+(closer to the spline by 0.07, 19 of 20, from a zero-edit start of 0.61). So neither our angle-only test nor an unconverged run of Goodfire's
 recipe recovers the ring from the forecast; both find a route off it, and neither is a test the paper would count as
 complete. A negative, as run, on both protocols.
 
@@ -1140,6 +1146,7 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
 [^isof]: `results/p2_isometry_goodfire_full.json` (`layers.{8,12,22}.{goodfire_full_angle,goodfire_angle,labels_angle,unsupervised_angle}.{interp,smooth}.{geo,lin}_pearson`, `layers.*.bootstrap.variants.*` with percentile / shifted / basic intervals, bias and calls, `geo_minus_lin_calls`, `branches`, `circular_corr_with_labels`); 8ca50cf, ce42042.
 [^pbg]: `results/session2_pullback_goodfire.json` (`goodfire.per_pair[].{resid_to_spline,resid_to_chord,r2_spline,r2_chord,chord_baseline_resid_to_spline,loss_chord_init_fp32,loss_final_fp32,n_evals,outer_steps,carrier_ctx_vs_fullclip_pca32_offset_over_unit,path_norm32_over_unit_by_t}`, `goodfire.summary_{64d,32d}`, `old_reverse_test`; provenance records a dirty worktree at d0e459c for the scripts, committed as cab0dfa); `scripts/session2_pullback_goodfire.py`; box 53030966, ≈ 62 GPU-min; cab0dfa, 216 tests. The point-25 along-path read was not run (GPU budget).
 [^ctx]: `results/session2_pullback_goodfire_ctxring.json` (`goodfire.per_pair[].{resid_to_spline,resid_to_chord,r2_spline,r2_chord,chord_baseline_resid_to_spline,carrier_offset_from_ctx_ring_over_unit,carrier_offset_from_fullclip_ring_over_unit}`, `init_fullclip_chord_path`, `goodfire.summary_{64d,32d}`, `old_reverse_test`, `ctx_ring_provenance`, `data_separation`); context-only activations of 805 clips extracted on the box (2.0 GPU-min forward), `artifacts/session2/ctx_ring/` with sha256s; `scripts/session2_pullback_ctxring.py`; clean worktree at 03c6b2b, c7d1a66, 219 tests.
+[^ctx2]: `results/session2_pullback_goodfire_ctx.json` (per pair start / path-mean / end residuals of the optimised and initial paths to the context-only spline and chord, `r2_*`, `n_evals`, `outer_steps`, losses; `summary_64d`, `init_ctx_chord_path`, `old_reverse_test.zero_edit_baseline`); 58.5 GPU-min on box 53030966; clean worktree at d58e6f2, dd47c4b, 221 tests.
 [^isol]: `results/p2_isometry_goodfire_labels.json` (`layers.{8,12,22}.labels_angle.{interp,smooth}.{geo,lin}_pearson`; `unsupervised_angle` rows reproduce the label-free figures; `geo_below_chord_labels_angle` false at every point).
 [^pp]: `results/p1a_perpatch_direction_{vjepa2,vjepa2_constvel,random,vjepa2_hard,vjepa2_paper_layout}.json` (`curves.{perpos_mean_r2,pooled_mean_r2,pooled_frac_ge_0.5,cross_half_r2,meanpool_r2}`, `onsets.*`, `layers[].halves` for the cross-half MAE, `methods`, `provenance.time_averaging`); `figures/fig1g_perpatch_direction.png`, `fig1h_perpatch_heatmaps.png`; rendered-set layout (7 shared starts) in `results/session2_stimuli_validation.json` (`layout.start_rule`) and `scripts/render_hard_stimuli.py`.
 [^hfolds]: `results/p1a_perpatch_hard_folds.json` (`sets.hard` for the stratified folds and `folds_start_grouped.hard` for start-grouped, each with per-point fold means ± SD and `summary.*.onset_per_fold`; `sets.paper_layout` alongside), cc41a6c.
