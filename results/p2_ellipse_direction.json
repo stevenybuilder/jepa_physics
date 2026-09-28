@@ -1,0 +1,5286 @@
+{
+ "dataset": "direction",
+ "points": [
+  2,
+  4,
+  6,
+  8,
+  10,
+  12,
+  14,
+  16,
+  18,
+  20,
+  22,
+  24
+ ],
+ "figure_points": [
+  8,
+  12,
+  22
+ ],
+ "provenance": {
+  "split_file": "/private/tmp/claude-501/-Users-stevenyang/ae13a11f-788a-4ea6-a4fa-c5d4c3df1c0e/scratchpad/wt_ellipse/splits/split_v1.json",
+  "split_sha256": "98e6310c40bf29e81bd8b6bf4b1ac603b89e4104d40ac1047b15dd5dc2be2df2",
+  "seeds": {
+   "planted": 0,
+   "dims_planted_ring": 0
+  },
+  "commit": "b23f4b12be6b24b4d5f580194a9a72fe9de567fd",
+  "dirty": true,
+  "git_commit": "b23f4b12be6b24b4d5f580194a9a72fe9de567fd",
+  "git_dirty_src_or_scripts": false,
+  "timestamp_utc": "2026-09-28T03:04:44+00:00",
+  "pool": "meanpool",
+  "subspace": "pca",
+  "k": 64,
+  "rows": "train (all 5 train folds)"
+ },
+ "estimators": "Circle, ellipse or bent line: shape estimators for the direction ring (scripts/run_ellipse.py).\n\nAll angles in radians. theta = the true direction of each centroid; P = centroids in a 2-D plane.\nThree independent axis-ratio (q = b/a) estimators:\n  1. shape fits in the centroid plane: Fitzgibbon direct least-squares conic, a polar fit\n     r(phi) = a b / sqrt((b cos(phi - phi0))^2 + (a sin(phi - phi0))^2) about a free centre, and the supervised chart\n     P ~ c + A [cos theta, sin theta] (singular values of A);\n  2. full-space spectrum: an ellipse sampled evenly in theta has centroid-covariance eigenvalues a^2/2, b^2/2, so\n     q = sqrt(lambda2 / lambda1); and its radius r(theta) puts its only non-constant r^2 power at 2 theta;\n  3. angle distortion: atan2 on an ellipse is arctan(q tan u); its first harmonic has amplitude (1 - q) / (1 + q).",
+ "per_point": {
+  "2": {
+   "n_train": 1200,
+   "n_values": 64,
+   "min_count": 18,
+   "ring_plane": {
+    "noise_unit_per_axis_centroid_se": 0.4047047840798209,
+    "conic": {
+     "a": 2.180341768187355,
+     "b": 0.9321644216009389,
+     "q": 0.4275313325653076,
+     "ecc": 0.9040005307935014,
+     "angle": 0.022867917800458493,
+     "center": [
+      0.01534838132384371,
+      0.07708968809290861
+     ]
+    },
+    "polar_fit": {
+     "a": 2.18756605323308,
+     "b": 0.8650245577937965,
+     "q": 0.3954278576024466,
+     "ecc": 0.918497038335965,
+     "angle": 0.010608964909548962,
+     "center": [
+      -0.06431018514754135,
+      0.013715446542902892
+     ],
+     "rms_radial": 0.4039546223861156
+    },
+    "chart": {
+     "a": 2.2659492464907562,
+     "b": 0.7784692881019069,
+     "q": 0.3435510699577721,
+     "angle": 0.0
+    },
+    "circle": {
+     "R": 1.6714335869304615,
+     "center": [
+      -0.04968850224636251,
+      0.22764118222563778
+     ]
+    },
+    "geometric_rms_over_noise": {
+     "ellipse_conic": 0.8216973315431823,
+     "ellipse_polar": 0.7749803606369459,
+     "circle": 1.503892946020772,
+     "spline_smooth": 1.0618122949011226
+    },
+    "vector_rms_at_true_angle_over_noise": {
+     "circle_chart": 2.199985287941926,
+     "ellipse_chart": 1.2094076464155732,
+     "spline_smooth": 1.416619155551401
+    },
+    "angle_distortion": {
+     "orientation": -1,
+     "offset_rad": -2.022383085751504,
+     "resid_rms_deg": 24.945966491165773,
+     "mean_abs_dev_deg": 21.588427199060046,
+     "eps_2theta": 0.4648376896694301,
+     "r2_2theta": 0.5699270092784007,
+     "q_linear": 0.36533898199420295,
+     "q_exact": 0.3441768168853845,
+     "exact_resid_rms_deg": 15.292932408520373
+    },
+    "params": {
+     "circle": 3,
+     "ellipse": 5,
+     "circle_chart": 4,
+     "ellipse_chart": 6,
+     "spline_smooth": "count-weighted, s = 64 (chi-square = number of knots by construction)"
+    },
+    "residual_note": "geometric = distance to the fitted closed curve (a correct model with pure centroid noise gives ~1); vector = distance to the model point at the true angle (~sqrt(2)); the smoothing spline is tuned to chi-square = m, so ~1 / ~sqrt(2) by construction",
+    "summary": {
+     "q_conic": 0.4275313325653076,
+     "q_polar": 0.3954278576024466,
+     "q_chart": 0.3435510699577721,
+     "q_angle_exact": 0.3441768168853845,
+     "q_angle_linear": 0.36533898199420295,
+     "r2_2theta_angle": 0.5699270092784007,
+     "resid_geo_over_noise": {
+      "ellipse_conic": 0.8216973315431823,
+      "circle": 1.503892946020772,
+      "spline_smooth": 1.0618122949011226
+     }
+    }
+   },
+   "variance_top2_plane": {
+    "noise_unit_per_axis_centroid_se": 0.6191335509138495,
+    "conic": {
+     "a": 2.080740638458578,
+     "b": 1.3282812742170793,
+     "q": 0.6383694582910997,
+     "ecc": 0.7697301051155061,
+     "angle": 3.0862066869132474,
+     "center": [
+      -0.053698381510763456,
+      -0.3781028021972125
+     ]
+    },
+    "polar_fit": {
+     "a": 2.6658255802278332,
+     "b": 2.2113795048569718,
+     "q": 0.82952895390402,
+     "ecc": 0.558463709326669,
+     "angle": 0.5406524950991471,
+     "center": [
+      -0.34829039157931463,
+      -1.6711470124725145
+     ],
+     "rms_radial": 0.46114113012131636
+    },
+    "chart": {
+     "a": 2.26441930969508,
+     "b": 0.5225533193657567,
+     "q": 0.23076703026177697,
+     "angle": 0.002839194939909806
+    },
+    "circle": {
+     "R": 2.481558024143529,
+     "center": [
+      -0.1267855052099254,
+      -1.7651326273679377
+     ]
+    },
+    "geometric_rms_over_noise": {
+     "ellipse_conic": 0.834688073478552,
+     "ellipse_polar": 0.7372876890434629,
+     "circle": 0.7579181170691083,
+     "spline_smooth": 1.2123573729240182
+    },
+    "vector_rms_at_true_angle_over_noise": {
+     "circle_chart": 1.8449320006531151,
+     "ellipse_chart": 1.1937248685598236,
+     "spline_smooth": 1.378495439486883
+    },
+    "angle_distortion": {
+     "orientation": 1,
+     "offset_rad": 2.0477535130112146,
+     "resid_rms_deg": 42.126130772695824,
+     "mean_abs_dev_deg": 32.063843614752784,
+     "eps_2theta": 0.6456795861366823,
+     "r2_2theta": 0.3860754947701974,
+     "q_linear": 0.21530340222248437,
+     "q_exact": 0.14545627558803753,
+     "exact_resid_rms_deg": 30.09588392113354
+    },
+    "params": {
+     "circle": 3,
+     "ellipse": 5,
+     "circle_chart": 4,
+     "ellipse_chart": 6,
+     "spline_smooth": "count-weighted, s = 64 (chi-square = number of knots by construction)"
+    },
+    "residual_note": "geometric = distance to the fitted closed curve (a correct model with pure centroid noise gives ~1); vector = distance to the model point at the true angle (~sqrt(2)); the smoothing spline is tuned to chi-square = m, so ~1 / ~sqrt(2) by construction",
+    "summary": {
+     "q_conic": 0.6383694582910997,
+     "q_polar": 0.82952895390402,
+     "q_chart": 0.23076703026177697,
+     "q_angle_exact": 0.14545627558803753,
+     "q_angle_linear": 0.21530340222248437,
+     "r2_2theta_angle": 0.3860754947701974,
+     "resid_geo_over_noise": {
+      "ellipse_conic": 0.834688073478552,
+      "circle": 0.7579181170691083,
+      "spline_smooth": 1.2123573729240182
+     }
+    }
+   },
+   "principal_angles_ring_vs_top2_plane_deg": [
+    2.094266801318611,
+    47.836185246153846
+   ],
+   "full_space": {
+    "top2_eigen": {
+     "eig_top": [
+      2.7537704529690687,
+      0.49289544665412777,
+      0.2554305095242174,
+      0.08280381517290054,
+      0.04113549408625904,
+      0.020071813062935352
+     ],
+     "q_eig": 0.4230712709849494,
+     "frac_outside_top2": 0.13044248409342207,
+     "eig_top_noise_corrected": [
+      2.526185537498586,
+      0.28294821865373776,
+      0.12162642694597148,
+      0.04045782026178679,
+      0.011283022295949026,
+      0.006151518392040399
+     ],
+     "q_eig_noise_corrected": 0.33467314109404966,
+     "frac_outside_top2_noise_corrected": 0.06821069497738774,
+     "noise_trace_frac_of_centroid_var": 0.2686781474712524,
+     "note": "variance top-2 plane of the 1024-D centroids; when the k = 2 (saddle) axis outranks the ring's minor axis, sqrt(l2/l1) is NOT an axis ratio"
+    },
+    "k1_chart_axis_ratio": {
+     "a": 2.2659653173624066,
+     "b": 0.7785879240824204,
+     "q": 0.34360098899867547,
+     "q_noise_corrected": 0.3354958001016073,
+     "noise_e_over_b2": 0.05253463880989799
+    },
+    "harmonic_variance": {
+     "k": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+     ],
+     "var": [
+      2.87039898750814,
+      0.2727721057821211,
+      0.022185956471486138,
+      0.03809163929309022,
+      0.037676268111338,
+      0.0077011497263192235,
+      0.00984968595808582,
+      0.021563659299179097
+     ],
+     "share": [
+      0.7687816025443253,
+      0.07305680413252118,
+      0.005942085140203663,
+      0.010202118808822653,
+      0.010090869562934568,
+      0.0020626060188145517,
+      0.002638050455135231,
+      0.005775414715824672
+     ],
+     "share_k_gt_kmax": 0.12145044862141807,
+     "bend_ratio_k2_over_k1": 0.3082682834594055,
+     "share_noise_corrected": [
+      1.0395588958766322,
+      0.08823384520825225,
+      0.0,
+      0.0022871650887384435,
+      0.00213504431523303,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "bend_ratio_k2_over_k1_noise_corrected": 0.29133526230615253
+    },
+    "radius_fourier": {
+     "power_k": [
+      3.4037958360802683,
+      0.008517305058678619,
+      0.1665395309743786,
+      0.023888919107019634,
+      0.007781536567953134,
+      0.0021573964999979595,
+      0.0004360938408444231,
+      0.013515344576894205,
+      0.001727332069157066
+     ],
+     "p2_over_p0": 0.04892759113489064,
+     "share_2theta_of_k_ge_1": 0.741614561613195,
+     "q_from_r2": 0.5190406632199808,
+     "q_from_r2_noise_corrected": 0.33976354574101386
+    },
+    "centroid_axis_harmonics": {
+     "axis1": {
+      "dominant_k": 1,
+      "share_k1": 0.9713200356405413,
+      "share_k2": 0.01747470658696713,
+      "share_k3": 0.002158742432999983
+     },
+     "axis2": {
+      "dominant_k": 1,
+      "share_k1": 0.47005880007564593,
+      "share_k2": 0.3271158940173572,
+      "share_k3": 0.011572997538261935
+     },
+     "axis3": {
+      "dominant_k": 1,
+      "share_k1": 0.7109361410711641,
+      "share_k2": 0.26559873874308176,
+      "share_k3": 0.0038096663934588807
+     },
+     "axis4": {
+      "dominant_k": 2,
+      "share_k1": 0.12802798920102207,
+      "share_k2": 0.7004530375408946,
+      "share_k3": 0.04089012832275701
+     }
+    },
+    "k2_axis_rank": 4
+   },
+   "angle": {
+    "pipeline_plane": {
+     "plane": "activation",
+     "pipeline_angle_source": "labels",
+     "orientation": -1,
+     "offset_rad": 2.9589267635335665,
+     "resid_rms_deg": 51.18252465666586,
+     "mean_abs_dev_deg": 39.43947889469145,
+     "eps_2theta": 0.7863693841113348,
+     "r2_2theta": 0.38746475094760646,
+     "q_linear": 0.1195892729626801,
+     "q_exact": 0.05516975364473928,
+     "exact_resid_rms_deg": 34.41994593048051
+    },
+    "stored_checks_recomputed": {
+     "activation": {
+      "mean_dev_deg": 39.43947889469145,
+      "circular_corr": -0.3018558004685281
+     },
+     "centroid": {
+      "mean_dev_deg": 32.06384361475278,
+      "circular_corr": 0.5553886876666123
+     }
+    },
+    "flag": "pipeline fell back to the labels angle at this point (atan2 in both PCA planes fails the circular-corr / order check); its atan2 fit is reported but is not a ring angle"
+   },
+   "summary": {
+    "q_conic": 0.4275313325653076,
+    "q_polar": 0.3954278576024466,
+    "q_chart_plane": 0.3435510699577721,
+    "q_k1_chart_full": 0.34360098899867547,
+    "q_k1_chart_full_noise_corrected": 0.3354958001016073,
+    "q_eig_top2_full": 0.4230712709849494,
+    "q_eig_top2_full_noise_corrected": 0.33467314109404966,
+    "q_r2_fourier_noise_corrected": 0.33976354574101386,
+    "q_angle_exact": 0.3441768168853845,
+    "q_angle_linear": 0.36533898199420295,
+    "r2_2theta_angle": 0.5699270092784007,
+    "q_angle_pipeline_plane": 0.05516975364473928,
+    "r2_2theta_angle_pipeline_plane": 0.38746475094760646,
+    "share_2theta_of_radius_power": 0.741614561613195,
+    "p2_over_p0": 0.04892759113489064,
+    "var_share_k1": 1.0395588958766322,
+    "var_share_k2": 0.08823384520825225,
+    "bend_ratio_k2_over_k1": 0.29133526230615253,
+    "k2_axis_rank": 4,
+    "frac_outside_top2_noise_corrected": 0.06821069497738774,
+    "q_conic_variance_top2_plane": 0.6383694582910997,
+    "q_angle_variance_top2_plane": 0.14545627558803753,
+    "resid_geo_over_noise": {
+     "ellipse_conic": 0.8216973315431823,
+     "circle": 1.503892946020772,
+     "spline_smooth": 1.0618122949011226
+    }
+   }
+  },
+  "4": {
+   "n_train": 1200,
+   "n_values": 64,
+   "min_count": 18,
+   "ring_plane": {
+    "noise_unit_per_axis_centroid_se": 0.2642781631155139,
+    "conic": {
+     "a": 1.7938832997707204,
+     "b": 0.6731736162260075,
+     "q": 0.37526054025479083,
+     "ecc": 0.9269193745562138,
+     "angle": 3.1079021293944686,
+     "center": [
+      0.03714121102097434,
+      -0.04005765897424026
+     ]
+    },
+    "polar_fit": {
+     "a": 1.7984188911387515,
+     "b": 0.6478926670404799,
+     "q": 0.3602568179375812,
+     "ecc": 0.9328531637559517,
+     "angle": 3.1284954694188576,
+     "center": [
+      0.09972749575798742,
+      -0.016058453891832164
+     ],
+     "rms_radial": 0.23630081814657955
+    },
+    "chart": {
+     "a": 1.7541731776105094,
+     "b": 0.6383643981784854,
+     "q": 0.3639118453789434,
+     "angle": 0.0
+    },
+    "circle": {
+     "R": 1.2875097835150338,
+     "center": [
+      0.07338860748480266,
+      -0.07221094477769197
+     ]
+    },
+    "geometric_rms_over_noise": {
+     "ellipse_conic": 0.7087319092184531,
+     "ellipse_polar": 0.6874911572963961,
+     "circle": 1.7401473267205294,
+     "spline_smooth": 0.9750938229108592
+    },
+    "vector_rms_at_true_angle_over_noise": {
+     "circle_chart": 2.4740821408332616,
+     "ellipse_chart": 1.2901747017037999,
+     "spline_smooth": 1.4117678574236259
+    },
+    "angle_distortion": {
+     "orientation": -1,
+     "offset_rad": 1.1636612075008175,
+     "resid_rms_deg": 22.416850273014294,
+     "mean_abs_dev_deg": 19.449921762727236,
+     "eps_2theta": 0.4387510604787836,
+     "r2_2theta": 0.6287882370875697,
+     "q_linear": 0.39009454445471997,
+     "q_exact": 0.3707682951581045,
+     "exact_resid_rms_deg": 12.578751644878604
+    },
+    "params": {
+     "circle": 3,
+     "ellipse": 5,
+     "circle_chart": 4,
+     "ellipse_chart": 6,
+     "spline_smooth": "count-weighted, s = 64 (chi-square = number of knots by construction)"
+    },
+    "residual_note": "geometric = distance to the fitted closed curve (a correct model with pure centroid noise gives ~1); vector = distance to the model point at the true angle (~sqrt(2)); the smoothing spline is tuned to chi-square = m, so ~1 / ~sqrt(2) by construction",
+    "summary": {
+     "q_conic": 0.37526054025479083,
+     "q_polar": 0.3602568179375812,
+     "q_chart": 0.3639118453789434,
+     "q_angle_exact": 0.3707682951581045,
+     "q_angle_linear": 0.39009454445471997,
+     "r2_2theta_angle": 0.6287882370875697,
+     "resid_geo_over_noise": {
+      "ellipse_conic": 0.7087319092184531,
+      "circle": 1.7401473267205294,
+      "spline_smooth": 0.9750938229108592
+     }
+    }
+   },
+   "variance_top2_plane": {
+    "noise_unit_per_axis_centroid_se": 0.3818329188879874,
+    "conic": {
+     "a": 1.7014068013390358,
+     "b": 0.7690351887163549,
+     "q": 0.45199959710464965,
+     "ecc": 0.8920181411928988,
+     "angle": 3.117703349818791,
+     "center": [
+      -0.18294590254987458,
+      0.05966769321349033
+     ]
+    },
+    "polar_fit": {
+     "a": 1.6638811495450938,
+     "b": 0.7338774542504707,
+     "q": 0.4410636267206424,
+     "ecc": 0.8974758365460508,
+     "angle": 3.078177311021191,
+     "center": [
+      -0.1905526848576613,
+      0.04447399409296088
+     ],
+     "rms_radial": 0.3760242407042843
+    },
+    "chart": {
+     "a": 1.752798387010563,
+     "b": 0.49375191040251293,
+     "q": 0.2816934988425097,
+     "angle": 0.021000865606231045
+    },
+    "circle": {
+     "R": 1.999468510895038,
+     "center": [
+      -0.20429421301805645,
+      1.5058696284715125
+     ]
+    },
+    "geometric_rms_over_noise": {
+     "ellipse_conic": 0.7991000217233468,
+     "ellipse_polar": 0.8008992141752791,
+     "circle": 1.1674185308134328,
+     "spline_smooth": 1.1697305825506847
+    },
+    "vector_rms_at_true_angle_over_noise": {
+     "circle_chart": 2.0712021870541375,
+     "ellipse_chart": 1.2536775322069265,
+     "spline_smooth": 1.412964303358439
+    },
+    "angle_distortion": {
+     "orientation": -1,
+     "offset_rad": -1.946785729969734,
+     "resid_rms_deg": 33.66750438317523,
+     "mean_abs_dev_deg": 26.176072114426628,
+     "eps_2theta": 0.5699863413158894,
+     "r2_2theta": 0.4705964035121858,
+     "q_linear": 0.2738964329611257,
+     "q_exact": 0.24603047208585702,
+     "exact_resid_rms_deg": 22.70364997429445
+    },
+    "params": {
+     "circle": 3,
+     "ellipse": 5,
+     "circle_chart": 4,
+     "ellipse_chart": 6,
+     "spline_smooth": "count-weighted, s = 64 (chi-square = number of knots by construction)"
+    },
+    "residual_note": "geometric = distance to the fitted closed curve (a correct model with pure centroid noise gives ~1); vector = distance to the model point at the true angle (~sqrt(2)); the smoothing spline is tuned to chi-square = m, so ~1 / ~sqrt(2) by construction",
+    "summary": {
+     "q_conic": 0.45199959710464965,
+     "q_polar": 0.4410636267206424,
+     "q_chart": 0.2816934988425097,
+     "q_angle_exact": 0.24603047208585702,
+     "q_angle_linear": 0.2738964329611257,
+     "r2_2theta_angle": 0.4705964035121858,
+     "resid_geo_over_noise": {
+      "ellipse_conic": 0.7991000217233468,
+      "circle": 1.1674185308134328,
+      "spline_smooth": 1.1697305825506847
+     }
+    }
+   },
+   "principal_angles_ring_vs_top2_plane_deg": [
+    2.1127057552949142,
+    39.341289077798066
+   ],
+   "full_space": {
+    "top2_eigen": {
+     "eig_top": [
+      1.642012351989743,
+      0.24552555545754373,
+      0.2033736801390346,
+      0.13803578876570605,
+      0.05566280283507985,
+      0.022370573795445145
+     ],
+     "q_eig": 0.38668750700631666,
+     "frac_outside_top2": 0.2226715726396732,
+     "eig_top_noise_corrected": [
+      1.531007010675777,
+      0.19706007654913849,
+      0.06837216604972922,
+      0.06062663569108047,
+      0.025535961526295614,
+      0.008376689020136911
+     ],
+     "q_eig_noise_corrected": 0.35876555006364463,
+     "frac_outside_top2_noise_corrected": 0.1074449711140204,
+     "noise_trace_frac_of_centroid_var": 0.2870872743040956,
+     "note": "variance top-2 plane of the 1024-D centroids; when the k = 2 (saddle) axis outranks the ring's minor axis, sqrt(l2/l1) is NOT an axis ratio"
+    },
+    "k1_chart_axis_ratio": {
+     "a": 1.7542671534238798,
+     "b": 0.6385446364779921,
+     "q": 0.363995093467786,
+     "q_noise_corrected": 0.35525877374938974,
+     "noise_e_over_b2": 0.0542765203534342
+    },
+    "harmonic_variance": {
+     "k": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+     ],
+     "var": [
+      1.7425962491783697,
+      0.1539096259465425,
+      0.016462934607573323,
+      0.053056942237039446,
+      0.017849762744472406,
+      0.017640069353296838,
+      0.014056050308537859,
+      0.021222792690246753
+     ],
+     "share": [
+      0.7176383565878952,
+      0.06338327141436925,
+      0.006779788113261109,
+      0.021849982088805987,
+      0.007350913562144271,
+      0.00726455734468912,
+      0.0057885817488084,
+      0.008739999340418254
+     ],
+     "share_k_gt_kmax": 0.1612045497996084,
+     "bend_ratio_k2_over_k1": 0.29719021344843505,
+     "share_noise_corrected": [
+      0.9938446170565052,
+      0.0761234688824709,
+      0.0,
+      0.01786488009795897,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "bend_ratio_k2_over_k1_noise_corrected": 0.2767579087761299
+    },
+    "radius_fourier": {
+     "power_k": [
+      2.2277864843036994,
+      0.007232271589758591,
+      0.11672604966694429,
+      0.015018511509313416,
+      0.0016498025118277496,
+      0.0005689588512818006,
+      0.0009579814075388952,
+      0.008850101681320185,
+      0.0020165843807801835
+     ],
+     "p2_over_p0": 0.05239552824714588,
+     "share_2theta_of_k_ge_1": 0.7628143387508513,
+     "q_from_r2": 0.4856369026757451,
+     "q_from_r2_noise_corrected": 0.25882353623500337
+    },
+    "centroid_axis_harmonics": {
+     "axis1": {
+      "dominant_k": 1,
+      "share_k1": 0.9657928383604838,
+      "share_k2": 0.020496881077846772,
+      "share_k3": 0.002023391363364741
+     },
+     "axis2": {
+      "dominant_k": 1,
+      "share_k1": 0.7412580417166296,
+      "share_k2": 0.16472860568290112,
+      "share_k3": 0.010608655397613975
+     },
+     "axis3": {
+      "dominant_k": 1,
+      "share_k1": 0.5232906261790233,
+      "share_k2": 0.07699284342200305,
+      "share_k3": 0.009467212723839845
+     },
+     "axis4": {
+      "dominant_k": 2,
+      "share_k1": 0.30617122925750145,
+      "share_k2": 0.4172772557163324,
+      "share_k3": 0.006091335318910092
+     }
+    },
+    "k2_axis_rank": 4
+   },
+   "angle": {
+    "pipeline_plane": {
+     "plane": "activation",
+     "pipeline_angle_source": "labels",
+     "orientation": 1,
+     "offset_rad": -2.374218187882182,
+     "resid_rms_deg": 49.33983952220689,
+     "mean_abs_dev_deg": 37.462324975731626,
+     "eps_2theta": 0.7883403086869142,
+     "r2_2theta": 0.41903289117079867,
+     "q_linear": 0.11835537692962733,
+     "q_exact": 0.07648851980770242,
+     "exact_resid_rms_deg": 34.703798241541996
+    },
+    "stored_checks_recomputed": {
+     "activation": {
+      "mean_dev_deg": 37.46232497573162,
+      "circular_corr": 0.3590827671385501
+     },
+     "centroid": {
+      "mean_dev_deg": 26.17607211442664,
+      "circular_corr": -0.7344029964303115
+     }
+    },
+    "flag": "pipeline fell back to the labels angle at this point (atan2 in both PCA planes fails the circular-corr / order check); its atan2 fit is reported but is not a ring angle"
+   },
+   "summary": {
+    "q_conic": 0.37526054025479083,
+    "q_polar": 0.3602568179375812,
+    "q_chart_plane": 0.3639118453789434,
+    "q_k1_chart_full": 0.363995093467786,
+    "q_k1_chart_full_noise_corrected": 0.35525877374938974,
+    "q_eig_top2_full": 0.38668750700631666,
+    "q_eig_top2_full_noise_corrected": 0.35876555006364463,
+    "q_r2_fourier_noise_corrected": 0.25882353623500337,
+    "q_angle_exact": 0.3707682951581045,
+    "q_angle_linear": 0.39009454445471997,
+    "r2_2theta_angle": 0.6287882370875697,
+    "q_angle_pipeline_plane": 0.07648851980770242,
+    "r2_2theta_angle_pipeline_plane": 0.41903289117079867,
+    "share_2theta_of_radius_power": 0.7628143387508513,
+    "p2_over_p0": 0.05239552824714588,
+    "var_share_k1": 0.9938446170565052,
+    "var_share_k2": 0.0761234688824709,
+    "bend_ratio_k2_over_k1": 0.2767579087761299,
+    "k2_axis_rank": 4,
+    "frac_outside_top2_noise_corrected": 0.1074449711140204,
+    "q_conic_variance_top2_plane": 0.45199959710464965,
+    "q_angle_variance_top2_plane": 0.24603047208585702,
+    "resid_geo_over_noise": {
+     "ellipse_conic": 0.7087319092184531,
+     "circle": 1.7401473267205294,
+     "spline_smooth": 0.9750938229108592
+    }
+   }
+  },
+  "6": {
+   "n_train": 1200,
+   "n_values": 64,
+   "min_count": 18,
+   "ring_plane": {
+    "noise_unit_per_axis_centroid_se": 0.35237300260898224,
+    "conic": {
+     "a": 3.668125477511038,
+     "b": 2.602369722894264,
+     "q": 0.7094549351839704,
+     "ecc": 0.704750803435589,
+     "angle": 0.03310052549418829,
+     "center": [
+      -0.01695195505682291,
+      0.10139985959631988
+     ]
+    },
+    "polar_fit": {
+     "a": 3.608019161220802,
+     "b": 2.635527805804715,
+     "q": 0.7304639160821317,
+     "ecc": 0.6829512920420874,
+     "angle": 0.06384554462557565,
+     "center": [
+      -0.03497496991148211,
+      0.11829949721658736
+     ],
+     "rms_radial": 0.27511886943018815
+    },
+    "chart": {
+     "a": 3.631954207514658,
+     "b": 2.578060407468472,
+     "q": 0.709827343674753,
+     "angle": 3.141592653589792
+    },
+    "circle": {
+     "R": 3.156126838020769,
+     "center": [
+      0.006917160698800867,
+      0.14823752287947548
+     ]
+    },
+    "geometric_rms_over_noise": {
+     "ellipse_conic": 0.7702409380532991,
+     "ellipse_polar": 0.7625122765703649,
+     "circle": 1.2444894539926017,
+     "spline_smooth": 0.959538380259205
+    },
+    "vector_rms_at_true_angle_over_noise": {
+     "circle_chart": 1.9872360973408316,
+     "ellipse_chart": 1.3087458109877235,
+     "spline_smooth": 1.4162834534010982
+    },
+    "angle_distortion": {
+     "orientation": -1,
+     "offset_rad": -2.326880425573377,
+     "resid_rms_deg": 9.772511456117247,
+     "mean_abs_dev_deg": 7.924529052176993,
+     "eps_2theta": 0.18101693873460245,
+     "r2_2theta": 0.5631740510585371,
+     "q_linear": 0.6934558128716551,
+     "q_exact": 0.6867120924743526,
+     "exact_resid_rms_deg": 6.309443164828146
+    },
+    "params": {
+     "circle": 3,
+     "ellipse": 5,
+     "circle_chart": 4,
+     "ellipse_chart": 6,
+     "spline_smooth": "count-weighted, s = 64 (chi-square = number of knots by construction)"
+    },
+    "residual_note": "geometric = distance to the fitted closed curve (a correct model with pure centroid noise gives ~1); vector = distance to the model point at the true angle (~sqrt(2)); the smoothing spline is tuned to chi-square = m, so ~1 / ~sqrt(2) by construction",
+    "summary": {
+     "q_conic": 0.7094549351839704,
+     "q_polar": 0.7304639160821317,
+     "q_chart": 0.709827343674753,
+     "q_angle_exact": 0.6867120924743526,
+     "q_angle_linear": 0.6934558128716551,
+     "r2_2theta_angle": 0.5631740510585371,
+     "resid_geo_over_noise": {
+      "ellipse_conic": 0.7702409380532991,
+      "circle": 1.2444894539926017,
+      "spline_smooth": 0.959538380259205
+     }
+    }
+   },
+   "variance_top2_plane": {
+    "noise_unit_per_axis_centroid_se": 0.37640735630594174,
+    "conic": {
+     "a": 3.692464660786689,
+     "b": 2.5922752909037383,
+     "q": 0.7020447124201988,
+     "ecc": 0.7121328680540173,
+     "angle": 3.1001105242225337,
+     "center": [
+      0.0228198375488826,
+      0.11478600887763854
+     ]
+    },
+    "polar_fit": {
+     "a": 3.616233204713539,
+     "b": 2.6328066235216983,
+     "q": 0.7280522229844015,
+     "ecc": 0.6855216704141972,
+     "angle": 3.064543420689085,
+     "center": [
+      0.05319912696258812,
+      0.13572767954377557
+     ],
+     "rms_radial": 0.315295636118962
+    },
+    "chart": {
+     "a": 3.6226520776654585,
+     "b": 2.5777053438127835,
+     "q": 0.7115520034907495,
+     "angle": 0.0030973556570166316
+    },
+    "circle": {
+     "R": 3.1570678575622346,
+     "center": [
+      0.00015535521464749184,
+      0.162607329236524
+     ]
+    },
+    "geometric_rms_over_noise": {
+     "ellipse_conic": 0.8264504084172434,
+     "ellipse_polar": 0.8164813293924718,
+     "circle": 1.2432809729850818,
+     "spline_smooth": 0.9301572598667506
+    },
+    "vector_rms_at_true_angle_over_noise": {
+     "circle_chart": 1.967630412708619,
+     "ellipse_chart": 1.3945889215731213,
+     "spline_smooth": 1.4164875787834574
+    },
+    "angle_distortion": {
+     "orientation": 1,
+     "offset_rad": -0.8133128076515664,
+     "resid_rms_deg": 10.21343784735136,
+     "mean_abs_dev_deg": 8.271024367590737,
+     "eps_2theta": 0.1794335852665386,
+     "r2_2theta": 0.5066175845047054,
+     "q_linear": 0.6957292254383469,
+     "q_exact": 0.6880218371642591,
+     "exact_resid_rms_deg": 7.028892847625561
+    },
+    "params": {
+     "circle": 3,
+     "ellipse": 5,
+     "circle_chart": 4,
+     "ellipse_chart": 6,
+     "spline_smooth": "count-weighted, s = 64 (chi-square = number of knots by construction)"
+    },
+    "residual_note": "geometric = distance to the fitted closed curve (a correct model with pure centroid noise gives ~1); vector = distance to the model point at the true angle (~sqrt(2)); the smoothing spline is tuned to chi-square = m, so ~1 / ~sqrt(2) by construction",
+    "summary": {
+     "q_conic": 0.7020447124201988,
+     "q_polar": 0.7280522229844015,
+     "q_chart": 0.7115520034907495,
+     "q_angle_exact": 0.6880218371642591,
+     "q_angle_linear": 0.6957292254383469,
+     "r2_2theta_angle": 0.5066175845047054,
+     "resid_geo_over_noise": {
+      "ellipse_conic": 0.8264504084172434,
+      "circle": 1.2432809729850818,
+      "spline_smooth": 0.9301572598667506
+     }
+    }
+   },
+   "principal_angles_ring_vs_top2_plane_deg": [
+    0.6762932653933933,
+    4.155614116755953
+   ],
+   "full_space": {
+    "top2_eigen": {
+     "eig_top": [
+      6.815579891001459,
+      3.3444561816183507,
+      1.5181514251828248,
+      0.4058470397405003,
+      0.298683215532327,
+      0.21337988744213107
+     ],
+     "q_eig": 0.70050517613937,
+     "frac_outside_top2": 0.24633427475337555,
+     "eig_top_noise_corrected": [
+      6.574975546553613,
+      3.321976928355694,
+      1.10238251679068,
+      0.3398598664524043,
+      0.25258904580609126,
+      0.0465728935915843
+     ],
+     "q_eig_noise_corrected": 0.7108062453159872,
+     "frac_outside_top2_noise_corrected": 0.16664171370389358,
+     "noise_trace_frac_of_centroid_var": 0.18516774239160383,
+     "note": "variance top-2 plane of the 1024-D centroids; when the k = 2 (saddle) axis outranks the ring's minor axis, sqrt(l2/l1) is NOT an axis ratio"
+    },
+    "k1_chart_axis_ratio": {
+     "a": 3.631998506648836,
+     "b": 2.57814447131401,
+     "q": 0.7098418313207971,
+     "q_noise_corrected": 0.7077266703041343,
+     "noise_e_over_b2": 0.01192220985656972
+    },
+    "harmonic_variance": {
+     "k": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+     ],
+     "var": [
+      9.919121033633186,
+      0.7687528546183309,
+      0.12944416746224852,
+      0.7351210440461862,
+      0.06709134900031878,
+      0.074087720905232,
+      0.0488282660281957,
+      0.1882131793373631
+     ],
+     "share": [
+      0.7357947840134544,
+      0.05702565163845334,
+      0.009602095076442512,
+      0.054530862965948494,
+      0.00497679829487666,
+      0.00549578520280915,
+      0.0036220531369812467,
+      0.013961547113847016
+     ],
+     "share_k_gt_kmax": 0.11499042255718717,
+     "bend_ratio_k2_over_k1": 0.2783920159657345,
+     "share_noise_corrected": [
+      0.8957873674853251,
+      0.06277035565610802,
+      0.004569963956835942,
+      0.05970863510048438,
+      0.0,
+      0.0,
+      0.0,
+      0.0099200860177861
+     ],
+     "bend_ratio_k2_over_k1_noise_corrected": 0.26471273053576394
+    },
+    "radius_fourier": {
+     "power_k": [
+      13.160228054956157,
+      0.02851983476283264,
+      0.08745611666591724,
+      0.012986114782847412,
+      0.03329605246066544,
+      0.003098899993936406,
+      0.0011629944004762185,
+      0.001029298960550561,
+      0.02335535261140146
+     ],
+     "p2_over_p0": 0.006645486408039955,
+     "share_2theta_of_k_ge_1": 0.45811408972885564,
+     "q_from_r2": 0.800221950131619,
+     "q_from_r2_noise_corrected": 0.7575986227512753
+    },
+    "centroid_axis_harmonics": {
+     "axis1": {
+      "dominant_k": 1,
+      "share_k1": 0.982515096136476,
+      "share_k2": 0.004720023486659598,
+      "share_k3": 0.003865339016111176
+     },
+     "axis2": {
+      "dominant_k": 1,
+      "share_k1": 0.9984245096309808,
+      "share_k2": 0.00037274891889970573,
+      "share_k3": 0.0004616742443568337
+     },
+     "axis3": {
+      "dominant_k": 4,
+      "share_k1": 0.030390556019076573,
+      "share_k2": 0.16123059847815568,
+      "share_k3": 0.04083762921889741
+     },
+     "axis4": {
+      "dominant_k": 2,
+      "share_k1": 0.0022967607041154982,
+      "share_k2": 0.8626970228344013,
+      "share_k3": 0.010216528193901394
+     }
+    },
+    "k2_axis_rank": 4
+   },
+   "angle": {
+    "pipeline_plane": {
+     "plane": "centroid",
+     "pipeline_angle_source": "unsupervised",
+     "orientation": 1,
+     "offset_rad": -0.8133128076515665,
+     "resid_rms_deg": 10.213437847351361,
+     "mean_abs_dev_deg": 8.271024367590739,
+     "eps_2theta": 0.1794335852665387,
+     "r2_2theta": 0.5066175845047054,
+     "q_linear": 0.6957292254383467,
+     "q_exact": 0.6880218389311891,
+     "exact_resid_rms_deg": 7.028892847625555
+    },
+    "stored_checks_recomputed": {
+     "activation": {
+      "mean_dev_deg": 39.34610386611703,
+      "circular_corr": 0.3386100043634187
+     },
+     "centroid": {
+      "mean_dev_deg": 8.271024367590737,
+      "circular_corr": 0.9787179603345681
+     }
+    }
+   },
+   "summary": {
+    "q_conic": 0.7094549351839704,
+    "q_polar": 0.7304639160821317,
+    "q_chart_plane": 0.709827343674753,
+    "q_k1_chart_full": 0.7098418313207971,
+    "q_k1_chart_full_noise_corrected": 0.7077266703041343,
+    "q_eig_top2_full": 0.70050517613937,
+    "q_eig_top2_full_noise_corrected": 0.7108062453159872,
+    "q_r2_fourier_noise_corrected": 0.7575986227512753,
+    "q_angle_exact": 0.6867120924743526,
+    "q_angle_linear": 0.6934558128716551,
+    "r2_2theta_angle": 0.5631740510585371,
+    "q_angle_pipeline_plane": 0.6880218389311891,
+    "r2_2theta_angle_pipeline_plane": 0.5066175845047054,
+    "share_2theta_of_radius_power": 0.45811408972885564,
+    "p2_over_p0": 0.006645486408039955,
+    "var_share_k1": 0.8957873674853251,
+    "var_share_k2": 0.06277035565610802,
+    "bend_ratio_k2_over_k1": 0.26471273053576394,
+    "k2_axis_rank": 4,
+    "frac_outside_top2_noise_corrected": 0.16664171370389358,
+    "q_conic_variance_top2_plane": 0.7020447124201988,
+    "q_angle_variance_top2_plane": 0.6880218371642591,
+    "resid_geo_over_noise": {
+     "ellipse_conic": 0.7702409380532991,
+     "circle": 1.2444894539926017,
+     "spline_smooth": 0.959538380259205
+    }
+   }
+  },
+  "8": {
+   "n_train": 1200,
+   "n_values": 64,
+   "min_count": 18,
+   "ring_plane": {
+    "noise_unit_per_axis_centroid_se": 0.4204551088752105,
+    "conic": {
+     "a": 3.792259040900486,
+     "b": 2.792242705873736,
+     "q": 0.7363006260275688,
+     "ecc": 0.6766545559673786,
+     "angle": 3.104519260006483,
+     "center": [
+      0.31590593059368655,
+      -0.339201151259542
+     ]
+    },
+    "polar_fit": {
+     "a": 3.7565484249005507,
+     "b": 2.7878832688458886,
+     "q": 0.742139579611487,
+     "ecc": 0.6702453613223185,
+     "angle": 3.0831494328728835,
+     "center": [
+      0.2639698382798442,
+      -0.4053375065428483
+     ],
+     "rms_radial": 0.3902860854440453
+    },
+    "chart": {
+     "a": 3.642050701677887,
+     "b": 2.712173053721897,
+     "q": 0.7446829481183234,
+     "angle": 8.881784197001252e-16
+    },
+    "circle": {
+     "R": 3.3071193004615456,
+     "center": [
+      0.237354871721047,
+      -0.48538750020853483
+     ]
+    },
+    "geometric_rms_over_noise": {
+     "ellipse_conic": 0.9166558526755884,
+     "ellipse_polar": 0.9066827235160494,
+     "circle": 1.2163770901099467,
+     "spline_smooth": 0.9256182099393803
+    },
+    "vector_rms_at_true_angle_over_noise": {
+     "circle_chart": 2.1439999999546484,
+     "ellipse_chart": 1.8368300547682908,
+     "spline_smooth": 1.4156849740304494
+    },
+    "angle_distortion": {
+     "orientation": 1,
+     "offset_rad": 2.2769178544808235,
+     "resid_rms_deg": 11.277934380601245,
+     "mean_abs_dev_deg": 8.748883345567299,
+     "eps_2theta": 0.13837211741858918,
+     "r2_2theta": 0.24709046611042296,
+     "q_linear": 0.7568947529523712,
+     "q_exact": 0.7558840483392474,
+     "exact_resid_rms_deg": 9.77155482274909
+    },
+    "params": {
+     "circle": 3,
+     "ellipse": 5,
+     "circle_chart": 4,
+     "ellipse_chart": 6,
+     "spline_smooth": "count-weighted, s = 64 (chi-square = number of knots by construction)"
+    },
+    "residual_note": "geometric = distance to the fitted closed curve (a correct model with pure centroid noise gives ~1); vector = distance to the model point at the true angle (~sqrt(2)); the smoothing spline is tuned to chi-square = m, so ~1 / ~sqrt(2) by construction",
+    "summary": {
+     "q_conic": 0.7363006260275688,
+     "q_polar": 0.742139579611487,
+     "q_chart": 0.7446829481183234,
+     "q_angle_exact": 0.7558840483392474,
+     "q_angle_linear": 0.7568947529523712,
+     "r2_2theta_angle": 0.24709046611042296,
+     "resid_geo_over_noise": {
+      "ellipse_conic": 0.9166558526755884,
+      "circle": 1.2163770901099467,
+      "spline_smooth": 0.9256182099393803
+     }
+    }
+   },
+   "variance_top2_plane": {
+    "noise_unit_per_axis_centroid_se": 0.4536234684330313,
+    "conic": {
+     "a": 3.882420545605701,
+     "b": 2.899140110803715,
+     "q": 0.7467352072626684,
+     "ecc": 0.6651214402155291,
+     "angle": 0.15361551150754904,
+     "center": [
+      0.6813264352153683,
+      0.23318531635862388
+     ]
+    },
+    "polar_fit": {
+     "a": 3.787561830056887,
+     "b": 2.957799834373303,
+     "q": 0.7809245015886325,
+     "ecc": 0.6246254260102978,
+     "angle": 3.0062705747570133,
+     "center": [
+      0.8076953812848843,
+      0.61429971559487
+     ],
+     "rms_radial": 0.8210952737756223
+    },
+    "chart": {
+     "a": 3.579299937990413,
+     "b": 2.4113597893367493,
+     "q": 0.673695926888597,
+     "angle": 2.886678294395365
+    },
+    "circle": {
+     "R": 3.403324030187639,
+     "center": [
+      0.730572109519171,
+      0.657659252346196
+     ]
+    },
+    "geometric_rms_over_noise": {
+     "ellipse_conic": 1.9181865007332384,
+     "ellipse_polar": 1.7702912495272611,
+     "circle": 1.9047575809329402,
+     "spline_smooth": 1.0225735984083402
+    },
+    "vector_rms_at_true_angle_over_noise": {
+     "circle_chart": 3.4086946527928856,
+     "ellipse_chart": 3.1562542863395344,
+     "spline_smooth": 1.4160453110854219
+    },
+    "angle_distortion": {
+     "orientation": -1,
+     "offset_rad": -2.4346105606761395,
+     "resid_rms_deg": 21.187061391541096,
+     "mean_abs_dev_deg": 17.00575318465076,
+     "eps_2theta": 0.2520462373098014,
+     "r2_2theta": 0.23232790562777283,
+     "q_linear": 0.5973850968134238,
+     "q_exact": 0.5866283769780503,
+     "exact_resid_rms_deg": 18.420023812368058
+    },
+    "params": {
+     "circle": 3,
+     "ellipse": 5,
+     "circle_chart": 4,
+     "ellipse_chart": 6,
+     "spline_smooth": "count-weighted, s = 64 (chi-square = number of knots by construction)"
+    },
+    "residual_note": "geometric = distance to the fitted closed curve (a correct model with pure centroid noise gives ~1); vector = distance to the model point at the true angle (~sqrt(2)); the smoothing spline is tuned to chi-square = m, so ~1 / ~sqrt(2) by construction",
+    "summary": {
+     "q_conic": 0.7467352072626684,
+     "q_polar": 0.7809245015886325,
+     "q_chart": 0.673695926888597,
+     "q_angle_exact": 0.5866283769780503,
+     "q_angle_linear": 0.5973850968134238,
+     "r2_2theta_angle": 0.23232790562777283,
+     "resid_geo_over_noise": {
+      "ellipse_conic": 1.9181865007332384,
+      "circle": 1.9047575809329402,
+      "spline_smooth": 1.0225735984083402
+     }
+    }
+   },
+   "principal_angles_ring_vs_top2_plane_deg": [
+    1.930292283761928,
+    29.041858520963572
+   ],
+   "full_space": {
+    "top2_eigen": {
+     "eig_top": [
+      7.438811038746449,
+      3.925641905779748,
+      3.002646405105436,
+      1.092123743439777,
+      0.414303550193145,
+      0.28290645761332184
+     ],
+     "q_eig": 0.7264464019789305,
+     "frac_outside_top2": 0.35812725085605635,
+     "eig_top_noise_corrected": [
+      7.107883717808216,
+      3.8704336380203563,
+      2.9377539585310064,
+      0.9063741568116516,
+      0.35727168193391606,
+      0.10065128045931551
+     ],
+     "q_eig_noise_corrected": 0.7379206360125313,
+     "frac_outside_top2_noise_corrected": 0.3119845346246065,
+     "noise_trace_frac_of_centroid_var": 0.1711310374249945,
+     "note": "variance top-2 plane of the 1024-D centroids; when the k = 2 (saddle) axis outranks the ring's minor axis, sqrt(l2/l1) is NOT an axis ratio"
+    },
+    "k1_chart_axis_ratio": {
+     "a": 3.64215551622258,
+     "b": 2.7124173221029126,
+     "q": 0.7447285844938508,
+     "q_noise_corrected": 0.7425413180442222,
+     "noise_e_over_b2": 0.013073889429013547
+    },
+    "harmonic_variance": {
+     "k": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+     ],
+     "var": [
+      10.311252266797261,
+      4.149474678631734,
+      0.14021677744132433,
+      0.7196063616989279,
+      0.08203020527754241,
+      0.11970138285897076,
+      0.07950483198189523,
+      0.171431572046586
+     ],
+     "share": [
+      0.5823871920551839,
+      0.23436541402192196,
+      0.007919547808565424,
+      0.040643902169319866,
+      0.004633126964523092,
+      0.006760823074112573,
+      0.004490492003755137,
+      0.009682582608836506
+     ],
+     "share_k_gt_kmax": 0.10911691929378176,
+     "bend_ratio_k2_over_k1": 0.6343673952348136,
+     "share_noise_corrected": [
+      0.6960743938534785,
+      0.2761988842770552,
+      0.0030002528433620388,
+      0.042480986033191385,
+      0.0,
+      0.0016022939538735243,
+      0.0,
+      0.005127289660851198
+     ],
+     "bend_ratio_k2_over_k1_noise_corrected": 0.6299167126609393
+    },
+    "radius_fourier": {
+     "power_k": [
+      17.1796857882042,
+      0.1052268819073659,
+      0.03812327016639204,
+      0.050194525985175084,
+      0.18780097379291505,
+      0.0028075251237081648,
+      0.0010705565859955375,
+      0.0020403157695114546,
+      0.02524058964024263
+     ],
+     "p2_over_p0": 0.0022190900716337887,
+     "share_2theta_of_k_ge_1": 0.09241900954486944,
+     "q_from_r2": 0.8829700388282786,
+     "q_from_r2_noise_corrected": 0.8592833398521259
+    },
+    "centroid_axis_harmonics": {
+     "axis1": {
+      "dominant_k": 1,
+      "share_k1": 0.8493397134743315,
+      "share_k2": 0.14434193530446754,
+      "share_k3": 0.0020147420655666475
+     },
+     "axis2": {
+      "dominant_k": 1,
+      "share_k1": 0.8052909999419782,
+      "share_k2": 0.19125528155766253,
+      "share_k3": 9.619551313605198e-05
+     },
+     "axis3": {
+      "dominant_k": 2,
+      "share_k1": 0.3325934326348043,
+      "share_k2": 0.6624456849933147,
+      "share_k3": 0.00021601647666552568
+     },
+     "axis4": {
+      "dominant_k": 4,
+      "share_k1": 0.006503163205486158,
+      "share_k2": 0.08616181335602405,
+      "share_k3": 0.014042899192585815
+     }
+    },
+    "k2_axis_rank": 3
+   },
+   "angle": {
+    "pipeline_plane": {
+     "plane": "activation",
+     "pipeline_angle_source": "labels",
+     "orientation": -1,
+     "offset_rad": 1.4716307726858149,
+     "resid_rms_deg": 53.678684376777504,
+     "mean_abs_dev_deg": 39.848179518315014,
+     "eps_2theta": 0.7757873248436998,
+     "r2_2theta": 0.34547674329727907,
+     "q_linear": 0.12626099534528146,
+     "q_exact": 0.12730570716864,
+     "exact_resid_rms_deg": 42.534331131016636
+    },
+    "stored_checks_recomputed": {
+     "activation": {
+      "mean_dev_deg": 39.848179518315014,
+      "circular_corr": -0.2864051573805019
+     },
+     "centroid": {
+      "mean_dev_deg": 17.005753184650764,
+      "circular_corr": -0.8772089945908971
+     }
+    },
+    "flag": "pipeline fell back to the labels angle at this point (atan2 in both PCA planes fails the circular-corr / order check); its atan2 fit is reported but is not a ring angle"
+   },
+   "summary": {
+    "q_conic": 0.7363006260275688,
+    "q_polar": 0.742139579611487,
+    "q_chart_plane": 0.7446829481183234,
+    "q_k1_chart_full": 0.7447285844938508,
+    "q_k1_chart_full_noise_corrected": 0.7425413180442222,
+    "q_eig_top2_full": 0.7264464019789305,
+    "q_eig_top2_full_noise_corrected": 0.7379206360125313,
+    "q_r2_fourier_noise_corrected": 0.8592833398521259,
+    "q_angle_exact": 0.7558840483392474,
+    "q_angle_linear": 0.7568947529523712,
+    "r2_2theta_angle": 0.24709046611042296,
+    "q_angle_pipeline_plane": 0.12730570716864,
+    "r2_2theta_angle_pipeline_plane": 0.34547674329727907,
+    "share_2theta_of_radius_power": 0.09241900954486944,
+    "p2_over_p0": 0.0022190900716337887,
+    "var_share_k1": 0.6960743938534785,
+    "var_share_k2": 0.2761988842770552,
+    "bend_ratio_k2_over_k1": 0.6299167126609393,
+    "k2_axis_rank": 3,
+    "frac_outside_top2_noise_corrected": 0.3119845346246065,
+    "q_conic_variance_top2_plane": 0.7467352072626684,
+    "q_angle_variance_top2_plane": 0.5866283769780503,
+    "resid_geo_over_noise": {
+     "ellipse_conic": 0.9166558526755884,
+     "circle": 1.2163770901099467,
+     "spline_smooth": 0.9256182099393803
+    }
+   }
+  },
+  "10": {
+   "n_train": 1200,
+   "n_values": 64,
+   "min_count": 18,
+   "ring_plane": {
+    "noise_unit_per_axis_centroid_se": 0.30146440193709617,
+    "conic": {
+     "a": 5.051132440092114,
+     "b": 4.4762659156965565,
+     "q": 0.8861905659347404,
+     "ecc": 0.4633209264087523,
+     "angle": 2.8611280686234046,
+     "center": [
+      -0.4444483037646286,
+      0.37617968713590405
+     ]
+    },
+    "polar_fit": {
+     "a": 5.032468335108937,
+     "b": 4.469141930726918,
+     "q": 0.8880616097567906,
+     "ecc": 0.45972445799215184,
+     "angle": 2.9064135659341863,
+     "center": [
+      -0.458692063768835,
+      0.3913615732693061
+     ],
+     "rms_radial": 0.3682396062515329
+    },
+    "chart": {
+     "a": 4.890589037373918,
+     "b": 4.438652445943327,
+     "q": 0.9075905605691078,
+     "angle": 3.141592653589792
+    },
+    "circle": {
+     "R": 4.751186975498537,
+     "center": [
+      -0.430640681464418,
+      0.40135337742667077
+     ]
+    },
+    "geometric_rms_over_noise": {
+     "ellipse_conic": 1.2203211292716454,
+     "ellipse_polar": 1.21674543750189,
+     "circle": 1.3828787158369222,
+     "spline_smooth": 1.0069223497448547
+    },
+    "vector_rms_at_true_angle_over_noise": {
+     "circle_chart": 2.6585832184165406,
+     "ellipse_chart": 2.550727624494974,
+     "spline_smooth": 1.416114384142533
+    },
+    "angle_distortion": {
+     "orientation": 1,
+     "offset_rad": -0.636139248039227,
+     "resid_rms_deg": 6.749397744927403,
+     "mean_abs_dev_deg": 5.331849623133463,
+     "eps_2theta": 0.05112285562082418,
+     "r2_2theta": 0.0941707835950144,
+     "q_linear": 0.9027271543997976,
+     "q_exact": 0.9039392953933668,
+     "exact_resid_rms_deg": 6.427934281874775
+    },
+    "params": {
+     "circle": 3,
+     "ellipse": 5,
+     "circle_chart": 4,
+     "ellipse_chart": 6,
+     "spline_smooth": "count-weighted, s = 64 (chi-square = number of knots by construction)"
+    },
+    "residual_note": "geometric = distance to the fitted closed curve (a correct model with pure centroid noise gives ~1); vector = distance to the model point at the true angle (~sqrt(2)); the smoothing spline is tuned to chi-square = m, so ~1 / ~sqrt(2) by construction",
+    "summary": {
+     "q_conic": 0.8861905659347404,
+     "q_polar": 0.8880616097567906,
+     "q_chart": 0.9075905605691078,
+     "q_angle_exact": 0.9039392953933668,
+     "q_angle_linear": 0.9027271543997976,
+     "r2_2theta_angle": 0.0941707835950144,
+     "resid_geo_over_noise": {
+      "ellipse_conic": 1.2203211292716454,
+      "circle": 1.3828787158369222,
+      "spline_smooth": 1.0069223497448547
+     }
+    }
+   },
+   "variance_top2_plane": {
+    "noise_unit_per_axis_centroid_se": 0.3454723188107949,
+    "conic": {
+     "a": 5.200411347967958,
+     "b": 4.549157531388183,
+     "q": 0.8747687878893946,
+     "ecc": 0.4845405738785137,
+     "angle": 0.18735076923122662,
+     "center": [
+      -0.8323446662878923,
+      -0.5172294799770062
+     ]
+    },
+    "polar_fit": {
+     "a": 5.1046184012772,
+     "b": 4.597334826988624,
+     "q": 0.9006226255499038,
+     "ecc": 0.43460198612937534,
+     "angle": 3.1366407783775374,
+     "center": [
+      -0.9473461342755511,
+      -0.5999509845875807
+     ],
+     "rms_radial": 0.7061904819676882
+    },
+    "chart": {
+     "a": 4.763217500422584,
+     "b": 4.351576429844289,
+     "q": 0.9135791992404765,
+     "angle": 2.7658971485485737
+    },
+    "circle": {
+     "R": 4.862690330022771,
+     "center": [
+      -0.909072702270349,
+      -0.644458520065045
+     ]
+    },
+    "geometric_rms_over_noise": {
+     "ellipse_conic": 2.0807567338747166,
+     "ellipse_polar": 2.037218613046977,
+     "circle": 2.1029965479725505,
+     "spline_smooth": 1.0466414691238028
+    },
+    "vector_rms_at_true_angle_over_noise": {
+     "circle_chart": 4.25611904320147,
+     "ellipse_chart": 4.214215540098459,
+     "spline_smooth": 1.4157795033924725
+    },
+    "angle_distortion": {
+     "orientation": -1,
+     "offset_rad": 0.5034248461574934,
+     "resid_rms_deg": 12.659537324927642,
+     "mean_abs_dev_deg": 9.932280915182792,
+     "eps_2theta": 0.07015480675513301,
+     "r2_2theta": 0.0504081773352516,
+     "q_linear": 0.868888489193722,
+     "q_exact": 0.8691522050379292,
+     "exact_resid_rms_deg": 12.336524665696684
+    },
+    "params": {
+     "circle": 3,
+     "ellipse": 5,
+     "circle_chart": 4,
+     "ellipse_chart": 6,
+     "spline_smooth": "count-weighted, s = 64 (chi-square = number of knots by construction)"
+    },
+    "residual_note": "geometric = distance to the fitted closed curve (a correct model with pure centroid noise gives ~1); vector = distance to the model point at the true angle (~sqrt(2)); the smoothing spline is tuned to chi-square = m, so ~1 / ~sqrt(2) by construction",
+    "summary": {
+     "q_conic": 0.8747687878893946,
+     "q_polar": 0.9006226255499038,
+     "q_chart": 0.9135791992404765,
+     "q_angle_exact": 0.8691522050379292,
+     "q_angle_linear": 0.868888489193722,
+     "r2_2theta_angle": 0.0504081773352516,
+     "resid_geo_over_noise": {
+      "ellipse_conic": 2.0807567338747166,
+      "circle": 2.1029965479725505,
+      "spline_smooth": 1.0466414691238028
+     }
+    }
+   },
+   "principal_angles_ring_vs_top2_plane_deg": [
+    1.1421462696418847,
+    17.24635793749037
+   ],
+   "full_space": {
+    "top2_eigen": {
+     "eig_top": [
+      12.881993815171274,
+      10.05183860402218,
+      6.347540950862348,
+      1.2992357509059334,
+      0.7114895265049316,
+      0.6427660508172754
+     ],
+     "q_eig": 0.8833467392443723,
+     "frac_outside_top2": 0.34110722581859965,
+     "eig_top_noise_corrected": [
+      12.740312493010107,
+      9.969953031010492,
+      6.23891879881884,
+      1.141772714714183,
+      0.6581603655890708,
+      0.22535765577550707
+     ],
+     "q_eig_noise_corrected": 0.8846195152385249,
+     "frac_outside_top2_noise_corrected": 0.2993389204448521,
+     "noise_trace_frac_of_centroid_var": 0.14032102246094066,
+     "note": "variance top-2 plane of the 1024-D centroids; when the k = 2 (saddle) axis outranks the ring's minor axis, sqrt(l2/l1) is NOT an axis ratio"
+    },
+    "k1_chart_axis_ratio": {
+     "a": 4.890722260689883,
+     "b": 4.438891828953696,
+     "q": 0.9076147841459203,
+     "q_noise_corrected": 0.906981110429387,
+     "noise_e_over_b2": 0.007869097981641655
+    },
+    "harmonic_variance": {
+     "k": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+     ],
+     "var": [
+      21.811462450179757,
+      7.804557543120897,
+      0.33448680524812346,
+      0.9445610668885953,
+      0.13262332715964115,
+      0.20123931212506185,
+      0.11788455446482801,
+      0.3012468320876276
+     ],
+     "share": [
+      0.62664690052958,
+      0.2242262207576621,
+      0.00960986088188921,
+      0.027137394673953805,
+      0.0038102899836422784,
+      0.0057816385075470005,
+      0.0033868426220583906,
+      0.008654870990574541
+     ],
+     "share_k_gt_kmax": 0.09074598105309273,
+     "bend_ratio_k2_over_k1": 0.5981798101796174,
+     "share_noise_corrected": [
+      0.7237495404121711,
+      0.2556437820000038,
+      0.005996686417720769,
+      0.026385150309485805,
+      0.0,
+      0.0015436027965521045,
+      0.0,
+      0.004885818388763669
+     ],
+     "bend_ratio_k2_over_k1_noise_corrected": 0.5943242711892838
+    },
+    "radius_fourier": {
+     "power_k": [
+      34.187639681235694,
+      0.14212413476263594,
+      0.009126679300521513,
+      0.05344452592604263,
+      0.25116430815079355,
+      0.003850810797796547,
+      0.003024236787729848,
+      0.007542434996106318,
+      0.0302757594962979
+     ],
+     "p2_over_p0": 0.00026695845006026556,
+     "share_2theta_of_k_ge_1": 0.018233196688861503,
+     "q_from_r2": 0.9476966357538424,
+     "q_from_r2_noise_corrected": 0.9394306432072288
+    },
+    "centroid_axis_harmonics": {
+     "axis1": {
+      "dominant_k": 1,
+      "share_k1": 0.8659902314992212,
+      "share_k2": 0.13195764247442718,
+      "share_k3": 0.0009866123718803481
+     },
+     "axis2": {
+      "dominant_k": 1,
+      "share_k1": 0.9731216347560673,
+      "share_k2": 0.0241703622617313,
+      "share_k3": 0.0015893407812643747
+     },
+     "axis3": {
+      "dominant_k": 2,
+      "share_k1": 0.15847796322573687,
+      "share_k2": 0.8331854050938776,
+      "share_k3": 0.002786761986808865
+     },
+     "axis4": {
+      "dominant_k": 4,
+      "share_k1": 0.00428768461422089,
+      "share_k2": 0.02354766266919404,
+      "share_k3": 0.0034290642308101383
+     }
+    },
+    "k2_axis_rank": 3
+   },
+   "angle": {
+    "pipeline_plane": {
+     "plane": "centroid",
+     "pipeline_angle_source": "unsupervised",
+     "orientation": -1,
+     "offset_rad": 0.5034248461574933,
+     "resid_rms_deg": 12.659537324927632,
+     "mean_abs_dev_deg": 9.932280915182783,
+     "eps_2theta": 0.0701548067551329,
+     "r2_2theta": 0.05040817733525149,
+     "q_linear": 0.8688884891937221,
+     "q_exact": 0.8691522001440023,
+     "exact_resid_rms_deg": 12.336524665696675
+    },
+    "stored_checks_recomputed": {
+     "activation": {
+      "mean_dev_deg": 30.18543159479519,
+      "circular_corr": 0.5359828092406276
+     },
+     "centroid": {
+      "mean_dev_deg": 9.932280915182787,
+      "circular_corr": -0.9527947200352208
+     }
+    }
+   },
+   "summary": {
+    "q_conic": 0.8861905659347404,
+    "q_polar": 0.8880616097567906,
+    "q_chart_plane": 0.9075905605691078,
+    "q_k1_chart_full": 0.9076147841459203,
+    "q_k1_chart_full_noise_corrected": 0.906981110429387,
+    "q_eig_top2_full": 0.8833467392443723,
+    "q_eig_top2_full_noise_corrected": 0.8846195152385249,
+    "q_r2_fourier_noise_corrected": 0.9394306432072288,
+    "q_angle_exact": 0.9039392953933668,
+    "q_angle_linear": 0.9027271543997976,
+    "r2_2theta_angle": 0.0941707835950144,
+    "q_angle_pipeline_plane": 0.8691522001440023,
+    "r2_2theta_angle_pipeline_plane": 0.05040817733525149,
+    "share_2theta_of_radius_power": 0.018233196688861503,
+    "p2_over_p0": 0.00026695845006026556,
+    "var_share_k1": 0.7237495404121711,
+    "var_share_k2": 0.2556437820000038,
+    "bend_ratio_k2_over_k1": 0.5943242711892838,
+    "k2_axis_rank": 3,
+    "frac_outside_top2_noise_corrected": 0.2993389204448521,
+    "q_conic_variance_top2_plane": 0.8747687878893946,
+    "q_angle_variance_top2_plane": 0.8691522050379292,
+    "resid_geo_over_noise": {
+     "ellipse_conic": 1.2203211292716454,
+     "circle": 1.3828787158369222,
+     "spline_smooth": 1.0069223497448547
+    }
+   }
+  },
+  "12": {
+   "n_train": 1200,
+   "n_values": 64,
+   "min_count": 18,
+   "ring_plane": {
+    "noise_unit_per_axis_centroid_se": 0.27582445193577343,
+    "conic": {
+     "a": 5.982527656393425,
+     "b": 5.205107716147585,
+     "q": 0.8700515927552754,
+     "ecc": 0.49296067383109615,
+     "angle": 0.08865854555730213,
+     "center": [
+      0.05971822439040209,
+      0.27516728486426173
+     ]
+    },
+    "polar_fit": {
+     "a": 5.990919584630138,
+     "b": 5.17962294359837,
+     "q": 0.8645789465922443,
+     "ecc": 0.502497010050254,
+     "angle": 0.10619823857947865,
+     "center": [
+      0.04349747811656086,
+      0.2793780638471457
+     ],
+     "rms_radial": 0.31888714241986926
+    },
+    "chart": {
+     "a": 6.123962850632225,
+     "b": 5.00274795958585,
+     "q": 0.8169135054549486,
+     "angle": 4.440892098500626e-16
+    },
+    "circle": {
+     "R": 5.614763639217142,
+     "center": [
+      0.0388051818817206,
+      0.3122483070976135
+     ]
+    },
+    "geometric_rms_over_noise": {
+     "ellipse_conic": 1.1537200986821143,
+     "ellipse_polar": 1.1504703993388863,
+     "circle": 1.5500215050655366,
+     "spline_smooth": 0.9247860145521106
+    },
+    "vector_rms_at_true_angle_over_noise": {
+     "circle_chart": 2.941855113966081,
+     "ellipse_chart": 2.126861548686244,
+     "spline_smooth": 1.4165010114281555
+    },
+    "angle_distortion": {
+     "orientation": -1,
+     "offset_rad": -1.8653301261579371,
+     "resid_rms_deg": 6.718427324465543,
+     "mean_abs_dev_deg": 5.740809619119896,
+     "eps_2theta": 0.13006948294275147,
+     "r2_2theta": 0.6152207088014499,
+     "q_linear": 0.7698026804439586,
+     "q_exact": 0.7615875372370332,
+     "exact_resid_rms_deg": 4.016814306293596
+    },
+    "params": {
+     "circle": 3,
+     "ellipse": 5,
+     "circle_chart": 4,
+     "ellipse_chart": 6,
+     "spline_smooth": "count-weighted, s = 64 (chi-square = number of knots by construction)"
+    },
+    "residual_note": "geometric = distance to the fitted closed curve (a correct model with pure centroid noise gives ~1); vector = distance to the model point at the true angle (~sqrt(2)); the smoothing spline is tuned to chi-square = m, so ~1 / ~sqrt(2) by construction",
+    "summary": {
+     "q_conic": 0.8700515927552754,
+     "q_polar": 0.8645789465922443,
+     "q_chart": 0.8169135054549486,
+     "q_angle_exact": 0.7615875372370332,
+     "q_angle_linear": 0.7698026804439586,
+     "r2_2theta_angle": 0.6152207088014499,
+     "resid_geo_over_noise": {
+      "ellipse_conic": 1.1537200986821143,
+      "circle": 1.5500215050655366,
+      "spline_smooth": 0.9247860145521106
+     }
+    }
+   },
+   "variance_top2_plane": {
+    "noise_unit_per_axis_centroid_se": 0.2915034687001027,
+    "conic": {
+     "a": 5.996393588911075,
+     "b": 5.262530025583621,
+     "q": 0.8776158448497173,
+     "ecc": 0.4793646095288188,
+     "angle": 0.0973128232626137,
+     "center": [
+      0.15174164775599427,
+      0.5233689772850869
+     ]
+    },
+    "polar_fit": {
+     "a": 6.017734431991335,
+     "b": 5.201819777620239,
+     "q": 0.8644149781629528,
+     "ecc": 0.5027790225611465,
+     "angle": 0.10059677356301362,
+     "center": [
+      0.13420283167857142,
+      0.5375421250388438
+     ],
+     "rms_radial": 0.4861346732727141
+    },
+    "chart": {
+     "a": 6.115734464689431,
+     "b": 4.952123885036877,
+     "q": 0.8097349408528246,
+     "angle": 3.1079397218321407
+    },
+    "circle": {
+     "R": 5.638835169649932,
+     "center": [
+      0.1114339441333596,
+      0.5893238042961287
+     ]
+    },
+    "geometric_rms_over_noise": {
+     "ellipse_conic": 1.6665712890070523,
+     "ellipse_polar": 1.6590837787288,
+     "circle": 1.9358545742522282,
+     "spline_smooth": 1.0319135574467413
+    },
+    "vector_rms_at_true_angle_over_noise": {
+     "circle_chart": 3.647974698540005,
+     "ellipse_chart": 3.0535538922115757,
+     "spline_smooth": 1.4157475777316608
+    },
+    "angle_distortion": {
+     "orientation": -1,
+     "offset_rad": -1.8816172385149152,
+     "resid_rms_deg": 8.33184019915872,
+     "mean_abs_dev_deg": 7.487576706140714,
+     "eps_2theta": 0.13904444752219422,
+     "r2_2theta": 0.4571312652259202,
+     "q_linear": 0.7558577317598751,
+     "q_exact": 0.7468666672022104,
+     "exact_resid_rms_deg": 6.0160313290852745
+    },
+    "params": {
+     "circle": 3,
+     "ellipse": 5,
+     "circle_chart": 4,
+     "ellipse_chart": 6,
+     "spline_smooth": "count-weighted, s = 64 (chi-square = number of knots by construction)"
+    },
+    "residual_note": "geometric = distance to the fitted closed curve (a correct model with pure centroid noise gives ~1); vector = distance to the model point at the true angle (~sqrt(2)); the smoothing spline is tuned to chi-square = m, so ~1 / ~sqrt(2) by construction",
+    "summary": {
+     "q_conic": 0.8776158448497173,
+     "q_polar": 0.8644149781629528,
+     "q_chart": 0.8097349408528246,
+     "q_angle_exact": 0.7468666672022104,
+     "q_angle_linear": 0.7558577317598751,
+     "r2_2theta_angle": 0.4571312652259202,
+     "resid_geo_over_noise": {
+      "ellipse_conic": 1.6665712890070523,
+      "circle": 1.9358545742522282,
+      "spline_smooth": 1.0319135574467413
+     }
+    }
+   },
+   "principal_angles_ring_vs_top2_plane_deg": [
+    0.5818828126425137,
+    8.659070938911528
+   ],
+   "full_space": {
+    "top2_eigen": {
+     "eig_top": [
+      18.983354108490868,
+      12.7733557240228,
+      7.259663443703875,
+      1.4529097344859514,
+      0.8744828835973203,
+      0.7659170122475215
+     ],
+     "q_eig": 0.8202873780141092,
+     "frac_outside_top2": 0.29286260707927525,
+     "eig_top_noise_corrected": [
+      18.91732582333392,
+      12.677173136255263,
+      7.159512721532672,
+      1.2927676431823227,
+      0.8155732048338465,
+      0.26673953073106427
+     ],
+     "q_eig_noise_corrected": 0.8186180924257753,
+     "frac_outside_top2_noise_corrected": 0.25738462822058406,
+     "noise_trace_frac_of_centroid_var": 0.10215321221328955,
+     "note": "variance top-2 plane of the 1024-D centroids; when the k = 2 (saddle) axis outranks the ring's minor axis, sqrt(l2/l1) is NOT an axis ratio"
+    },
+    "k1_chart_axis_ratio": {
+     "a": 6.124131508730685,
+     "b": 5.002898879596971,
+     "q": 0.8169156512176033,
+     "q_noise_corrected": 0.8161215721090419,
+     "noise_e_over_b2": 0.0058187503156467224
+    },
+    "harmonic_variance": {
+     "k": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+     ],
+     "var": [
+      31.266991967850334,
+      8.266618366147446,
+      0.49237873465630105,
+      1.0399308134829335,
+      0.11836345399827888,
+      0.18101114896866835,
+      0.1016408249107154,
+      0.24458332100992575
+     ],
+     "share": [
+      0.6962326796833922,
+      0.18407558561759796,
+      0.010963963728949755,
+      0.023156490963410426,
+      0.0026356390419180246,
+      0.004030636443333253,
+      0.002263270607085621,
+      0.005446219488196948
+     ],
+     "share_k_gt_kmax": 0.07119551442611605,
+     "bend_ratio_k2_over_k1": 0.5141867643031112,
+     "share_noise_corrected": [
+      0.7718351616246294,
+      0.2014069983426546,
+      0.008599467878145068,
+      0.022179209322135275,
+      0.0,
+      0.0008772959219387037,
+      0.0,
+      0.0024539380218155213
+     ],
+     "bend_ratio_k2_over_k1_noise_corrected": 0.5108283583058039
+    },
+    "radius_fourier": {
+     "power_k": [
+      44.49390192330487,
+      0.0498546621417032,
+      0.028088344087277256,
+      0.028165909536603893,
+      0.15570765507033996,
+      0.005347725313128983,
+      0.001080511692398586,
+      0.0015073894016098177,
+      0.024233050202516773
+     ],
+     "p2_over_p0": 0.0006312852519811313,
+     "share_2theta_of_k_ge_1": 0.09554337957885752,
+     "q_from_r2": 0.9343713991283567,
+     "q_from_r2_noise_corrected": 0.9266246321579319
+    },
+    "centroid_axis_harmonics": {
+     "axis1": {
+      "dominant_k": 1,
+      "share_k1": 0.9861949292556778,
+      "share_k2": 0.008463198058797512,
+      "share_k3": 0.004004462318322053
+     },
+     "axis2": {
+      "dominant_k": 1,
+      "share_k1": 0.965688915609422,
+      "share_k2": 0.03218434840002649,
+      "share_k3": 0.0009983342879419839
+     },
+     "axis3": {
+      "dominant_k": 2,
+      "share_k1": 0.04177944036958709,
+      "share_k2": 0.9512909677219102,
+      "share_k3": 0.0022624369108352085
+     },
+     "axis4": {
+      "dominant_k": 4,
+      "share_k1": 0.0009123005869106348,
+      "share_k2": 0.14407353869761252,
+      "share_k3": 0.016688100728803824
+     }
+    },
+    "k2_axis_rank": 3
+   },
+   "angle": {
+    "pipeline_plane": {
+     "plane": "centroid",
+     "pipeline_angle_source": "unsupervised",
+     "orientation": -1,
+     "offset_rad": -1.8816172385149155,
+     "resid_rms_deg": 8.331840199158718,
+     "mean_abs_dev_deg": 7.4875767061407155,
+     "eps_2theta": 0.13904444752219383,
+     "r2_2theta": 0.45713126522591796,
+     "q_linear": 0.7558577317598757,
+     "q_exact": 0.7468666658258236,
+     "exact_resid_rms_deg": 6.016031329085235
+    },
+    "stored_checks_recomputed": {
+     "activation": {
+      "mean_dev_deg": 30.837644142383134,
+      "circular_corr": -0.5828928565499976
+     },
+     "centroid": {
+      "mean_dev_deg": 7.4875767061407155,
+      "circular_corr": -0.9832120935375787
+     }
+    }
+   },
+   "summary": {
+    "q_conic": 0.8700515927552754,
+    "q_polar": 0.8645789465922443,
+    "q_chart_plane": 0.8169135054549486,
+    "q_k1_chart_full": 0.8169156512176033,
+    "q_k1_chart_full_noise_corrected": 0.8161215721090419,
+    "q_eig_top2_full": 0.8202873780141092,
+    "q_eig_top2_full_noise_corrected": 0.8186180924257753,
+    "q_r2_fourier_noise_corrected": 0.9266246321579319,
+    "q_angle_exact": 0.7615875372370332,
+    "q_angle_linear": 0.7698026804439586,
+    "r2_2theta_angle": 0.6152207088014499,
+    "q_angle_pipeline_plane": 0.7468666658258236,
+    "r2_2theta_angle_pipeline_plane": 0.45713126522591796,
+    "share_2theta_of_radius_power": 0.09554337957885752,
+    "p2_over_p0": 0.0006312852519811313,
+    "var_share_k1": 0.7718351616246294,
+    "var_share_k2": 0.2014069983426546,
+    "bend_ratio_k2_over_k1": 0.5108283583058039,
+    "k2_axis_rank": 3,
+    "frac_outside_top2_noise_corrected": 0.25738462822058406,
+    "q_conic_variance_top2_plane": 0.8776158448497173,
+    "q_angle_variance_top2_plane": 0.7468666672022104,
+    "resid_geo_over_noise": {
+     "ellipse_conic": 1.1537200986821143,
+     "circle": 1.5500215050655366,
+     "spline_smooth": 0.9247860145521106
+    }
+   }
+  },
+  "14": {
+   "n_train": 1200,
+   "n_values": 64,
+   "min_count": 18,
+   "ring_plane": {
+    "noise_unit_per_axis_centroid_se": 0.20794009589082402,
+    "conic": {
+     "a": 4.011374802267943,
+     "b": 3.245755390233674,
+     "q": 0.8091379016487305,
+     "ecc": 0.5876188017035273,
+     "angle": 3.081446558973159,
+     "center": [
+      0.05671992382378512,
+      -0.03543427517117545
+     ]
+    },
+    "polar_fit": {
+     "a": 4.000517255311395,
+     "b": 3.2439883568728987,
+     "q": 0.8108922296400372,
+     "ecc": 0.5851955159683038,
+     "angle": 3.1048590822490403,
+     "center": [
+      0.06232345066595056,
+      -0.018832729751307155
+     ],
+     "rms_radial": 0.21066372396524224
+    },
+    "chart": {
+     "a": 4.096762970717391,
+     "b": 3.1441390147947703,
+     "q": 0.7674691060401269,
+     "angle": 8.881784197001254e-16
+    },
+    "circle": {
+     "R": 3.6534159267361734,
+     "center": [
+      0.06327654447564868,
+      -0.038798154909712744
+     ]
+    },
+    "geometric_rms_over_noise": {
+     "ellipse_conic": 1.0057499071851135,
+     "ellipse_polar": 1.0016855329219578,
+     "circle": 1.5942605918065313,
+     "spline_smooth": 0.9679814707069199
+    },
+    "vector_rms_at_true_angle_over_noise": {
+     "circle_chart": 2.8213044281183817,
+     "ellipse_chart": 1.6470620823243125,
+     "spline_smooth": 1.415709795816535
+    },
+    "angle_distortion": {
+     "orientation": -1,
+     "offset_rad": 1.615237385408406,
+     "resid_rms_deg": 7.633532495824806,
+     "mean_abs_dev_deg": 6.405635244666675,
+     "eps_2theta": 0.1601228219096654,
+     "r2_2theta": 0.7222218645807807,
+     "q_linear": 0.7239553969879,
+     "q_exact": 0.712498803671813,
+     "exact_resid_rms_deg": 3.7163941232722375
+    },
+    "params": {
+     "circle": 3,
+     "ellipse": 5,
+     "circle_chart": 4,
+     "ellipse_chart": 6,
+     "spline_smooth": "count-weighted, s = 64 (chi-square = number of knots by construction)"
+    },
+    "residual_note": "geometric = distance to the fitted closed curve (a correct model with pure centroid noise gives ~1); vector = distance to the model point at the true angle (~sqrt(2)); the smoothing spline is tuned to chi-square = m, so ~1 / ~sqrt(2) by construction",
+    "summary": {
+     "q_conic": 0.8091379016487305,
+     "q_polar": 0.8108922296400372,
+     "q_chart": 0.7674691060401269,
+     "q_angle_exact": 0.712498803671813,
+     "q_angle_linear": 0.7239553969879,
+     "r2_2theta_angle": 0.7222218645807807,
+     "resid_geo_over_noise": {
+      "ellipse_conic": 1.0057499071851135,
+      "circle": 1.5942605918065313,
+      "spline_smooth": 0.9679814707069199
+     }
+    }
+   },
+   "variance_top2_plane": {
+    "noise_unit_per_axis_centroid_se": 0.26687260710409333,
+    "conic": {
+     "a": 7.348613816641094,
+     "b": 3.6625402342654723,
+     "q": 0.49839878998289056,
+     "ecc": 0.8669478912504434,
+     "angle": 1.316668397666372,
+     "center": [
+      -0.9086869483943901,
+      -3.4488345807389296
+     ]
+    },
+    "polar_fit": {
+     "a": 8.76169757309861,
+     "b": 3.674995211278735,
+     "q": 0.4194387195652837,
+     "ecc": 0.9077836529313773,
+     "angle": 1.3225423606949647,
+     "center": [
+      -1.1634868485541339,
+      -4.684064183373505
+     ],
+     "rms_radial": 0.48939448363444776
+    },
+    "chart": {
+     "a": 4.096178582113126,
+     "b": 0.12147759543114676,
+     "q": 0.029656323081617017,
+     "angle": 2.928055284185781
+    },
+    "circle": {
+     "R": 3.9773426000112204,
+     "center": [
+      -0.2366652798396457,
+      -0.836242918211726
+     ]
+    },
+    "geometric_rms_over_noise": {
+     "ellipse_conic": 1.7212830641828714,
+     "ellipse_polar": 1.5689117429887396,
+     "circle": 3.050022581521989,
+     "spline_smooth": 0.9392019919402634
+    },
+    "vector_rms_at_true_angle_over_noise": {
+     "circle_chart": 12.584548153271863,
+     "ellipse_chart": 10.144743621786711,
+     "spline_smooth": 1.4161014698295071
+    },
+    "angle_distortion": {
+     "orientation": -1,
+     "offset_rad": -1.7809094898161726,
+     "resid_rms_deg": 69.2398953195256,
+     "mean_abs_dev_deg": 52.30987536827302,
+     "eps_2theta": 0.9960672844301316,
+     "r2_2theta": 0.3398589830631281,
+     "q_linear": 0.001970231965898474,
+     "q_exact": 0.0010709159950087848,
+     "exact_resid_rms_deg": 46.34230170648354
+    },
+    "params": {
+     "circle": 3,
+     "ellipse": 5,
+     "circle_chart": 4,
+     "ellipse_chart": 6,
+     "spline_smooth": "count-weighted, s = 64 (chi-square = number of knots by construction)"
+    },
+    "residual_note": "geometric = distance to the fitted closed curve (a correct model with pure centroid noise gives ~1); vector = distance to the model point at the true angle (~sqrt(2)); the smoothing spline is tuned to chi-square = m, so ~1 / ~sqrt(2) by construction",
+    "summary": {
+     "q_conic": 0.49839878998289056,
+     "q_polar": 0.4194387195652837,
+     "q_chart": 0.029656323081617017,
+     "q_angle_exact": 0.0010709159950087848,
+     "q_angle_linear": 0.001970231965898474,
+     "r2_2theta_angle": 0.3398589830631281,
+     "resid_geo_over_noise": {
+      "ellipse_conic": 1.7212830641828714,
+      "circle": 3.050022581521989,
+      "spline_smooth": 0.9392019919402634
+     }
+    }
+   },
+   "principal_angles_ring_vs_top2_plane_deg": [
+    0.9313431448395075,
+    87.78578081675232
+   ],
+   "full_space": {
+    "top2_eigen": {
+     "eig_top": [
+      8.530421567391329,
+      7.196713045229454,
+      4.985841749544836,
+      1.4876421869846586,
+      0.599152523479381,
+      0.3836422751583064
+     ],
+     "q_eig": 0.9185056795282973,
+     "frac_outside_top2": 0.37066506005706834,
+     "eig_top_noise_corrected": [
+      8.50169999314008,
+      7.095439500279434,
+      4.944325261085144,
+      1.3598690027167937,
+      0.32239879596600884,
+      0.1875538222962122
+     ],
+     "q_eig_noise_corrected": 0.9135593417001235,
+     "frac_outside_top2_noise_corrected": 0.3287766967155864,
+     "noise_trace_frac_of_centroid_var": 0.12955688746534083,
+     "note": "variance top-2 plane of the 1024-D centroids; when the k = 2 (saddle) axis outranks the ring's minor axis, sqrt(l2/l1) is NOT an axis ratio"
+    },
+    "k1_chart_axis_ratio": {
+     "a": 4.096836359569402,
+     "b": 3.144240338909047,
+     "q": 0.7674800902322401,
+     "q_noise_corrected": 0.7658286104563234,
+     "noise_e_over_b2": 0.01039647806853085
+    },
+    "harmonic_variance": {
+     "k": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+     ],
+     "var": [
+      13.335157732956393,
+      7.406002436667774,
+      0.25326375708759163,
+      1.1958006922646067,
+      0.07300500474731905,
+      0.19680201285481724,
+      0.06128666602277922,
+      0.19633988723979012
+     ],
+     "share": [
+      0.5336179092830394,
+      0.2963576146259504,
+      0.010134569028774918,
+      0.0478510024480966,
+      0.002921358620617236,
+      0.007875203334321509,
+      0.0024524391270738244,
+      0.007856710976791498
+     ],
+     "share_k_gt_kmax": 0.09093319255533461,
+     "bend_ratio_k2_over_k1": 0.7452343194695483,
+     "share_noise_corrected": [
+      0.6083165971395562,
+      0.33574244353840194,
+      0.006917915576181183,
+      0.05024806877768623,
+      0.0,
+      0.00432226554240204,
+      0.0,
+      0.00430102077951781
+     ],
+     "bend_ratio_k2_over_k1_noise_corrected": 0.7429135688824307
+    },
+    "radius_fourier": {
+     "power_k": [
+      24.345670102477758,
+      0.0068482556591532625,
+      0.019484234212552597,
+      0.00396039302811465,
+      0.4090739680363916,
+      0.005859739148492275,
+      0.00788355679629125,
+      0.002472348813683649,
+      0.054194384477726544
+     ],
+     "p2_over_p0": 0.0008003162012192717,
+     "share_2theta_of_k_ge_1": 0.03822110215348145,
+     "q_from_r2": 0.9330698306265925,
+     "q_from_r2_noise_corrected": 0.9234798818085352
+    },
+    "centroid_axis_harmonics": {
+     "axis1": {
+      "dominant_k": 1,
+      "share_k1": 0.9412160990666083,
+      "share_k2": 0.05398884411893035,
+      "share_k3": 0.002504846444768495
+     },
+     "axis2": {
+      "dominant_k": 2,
+      "share_k1": 0.05410567269166627,
+      "share_k2": 0.9307819040234276,
+      "share_k3": 0.0013347782973232552
+     },
+     "axis3": {
+      "dominant_k": 1,
+      "share_k1": 0.9938543339760992,
+      "share_k2": 0.001781990718611867,
+      "share_k3": 5.978136720181154e-06
+     },
+     "axis4": {
+      "dominant_k": 4,
+      "share_k1": 0.005348589069269282,
+      "share_k2": 0.029195031911245076,
+      "share_k3": 0.006356180849725074
+     }
+    },
+    "k2_axis_rank": 2
+   },
+   "angle": {
+    "pipeline_plane": {
+     "plane": "activation",
+     "pipeline_angle_source": "labels",
+     "orientation": -1,
+     "offset_rad": -0.16908166498088523,
+     "resid_rms_deg": 49.9673284133908,
+     "mean_abs_dev_deg": 38.79717929791671,
+     "eps_2theta": 0.8459172974277245,
+     "r2_2theta": 0.4708671601024388,
+     "q_linear": 0.08347215922782072,
+     "q_exact": 0.020284332728927677,
+     "exact_resid_rms_deg": 31.608706843510838
+    },
+    "stored_checks_recomputed": {
+     "activation": {
+      "mean_dev_deg": 38.79717929791671,
+      "circular_corr": -0.3248192978135928
+     },
+     "centroid": {
+      "mean_dev_deg": 52.30987536827302,
+      "circular_corr": -0.005163382105070347
+     }
+    },
+    "flag": "pipeline fell back to the labels angle at this point (atan2 in both PCA planes fails the circular-corr / order check); its atan2 fit is reported but is not a ring angle"
+   },
+   "summary": {
+    "q_conic": 0.8091379016487305,
+    "q_polar": 0.8108922296400372,
+    "q_chart_plane": 0.7674691060401269,
+    "q_k1_chart_full": 0.7674800902322401,
+    "q_k1_chart_full_noise_corrected": 0.7658286104563234,
+    "q_eig_top2_full": 0.9185056795282973,
+    "q_eig_top2_full_noise_corrected": 0.9135593417001235,
+    "q_r2_fourier_noise_corrected": 0.9234798818085352,
+    "q_angle_exact": 0.712498803671813,
+    "q_angle_linear": 0.7239553969879,
+    "r2_2theta_angle": 0.7222218645807807,
+    "q_angle_pipeline_plane": 0.020284332728927677,
+    "r2_2theta_angle_pipeline_plane": 0.4708671601024388,
+    "share_2theta_of_radius_power": 0.03822110215348145,
+    "p2_over_p0": 0.0008003162012192717,
+    "var_share_k1": 0.6083165971395562,
+    "var_share_k2": 0.33574244353840194,
+    "bend_ratio_k2_over_k1": 0.7429135688824307,
+    "k2_axis_rank": 2,
+    "frac_outside_top2_noise_corrected": 0.3287766967155864,
+    "q_conic_variance_top2_plane": 0.49839878998289056,
+    "q_angle_variance_top2_plane": 0.0010709159950087848,
+    "resid_geo_over_noise": {
+     "ellipse_conic": 1.0057499071851135,
+     "circle": 1.5942605918065313,
+     "spline_smooth": 0.9679814707069199
+    }
+   }
+  },
+  "16": {
+   "n_train": 1200,
+   "n_values": 64,
+   "min_count": 18,
+   "ring_plane": {
+    "noise_unit_per_axis_centroid_se": 0.20222231030647322,
+    "conic": {
+     "a": 3.928550188312871,
+     "b": 2.700769339673511,
+     "q": 0.6874722760849761,
+     "ecc": 0.7262106234519999,
+     "angle": 0.014683512667408749,
+     "center": [
+      -0.007686924817332776,
+      -0.13013822822931267
+     ]
+    },
+    "polar_fit": {
+     "a": 3.9625807817705945,
+     "b": 2.656382396970503,
+     "q": 0.6703667491627906,
+     "ecc": 0.7420299331003516,
+     "angle": 0.027399743944368497,
+     "center": [
+      -0.002224327619649132,
+      -0.0990620914756501
+     ],
+     "rms_radial": 0.2560828142296688
+    },
+    "chart": {
+     "a": 3.97782138882345,
+     "b": 2.6208622807546638,
+     "q": 0.658868768748276,
+     "angle": 0.0
+    },
+    "circle": {
+     "R": 3.353971570387012,
+     "center": [
+      -0.04226969982447095,
+      -0.1541964728440477
+     ]
+    },
+    "geometric_rms_over_noise": {
+     "ellipse_conic": 1.2350841606574892,
+     "ellipse_polar": 1.218629368893228,
+     "circle": 2.5015218822930225,
+     "spline_smooth": 1.0460215098376031
+    },
+    "vector_rms_at_true_angle_over_noise": {
+     "circle_chart": 3.810590390871096,
+     "ellipse_chart": 1.8065955879112576,
+     "spline_smooth": 1.4156759451857024
+    },
+    "angle_distortion": {
+     "orientation": -1,
+     "offset_rad": 1.475295295842684,
+     "resid_rms_deg": 10.103455398763849,
+     "mean_abs_dev_deg": 8.64631395928621,
+     "eps_2theta": 0.21784861940819972,
+     "r2_2theta": 0.7631063396999184,
+     "q_linear": 0.6422402325930117,
+     "q_exact": 0.6285371589825351,
+     "exact_resid_rms_deg": 4.407806092588773
+    },
+    "params": {
+     "circle": 3,
+     "ellipse": 5,
+     "circle_chart": 4,
+     "ellipse_chart": 6,
+     "spline_smooth": "count-weighted, s = 64 (chi-square = number of knots by construction)"
+    },
+    "residual_note": "geometric = distance to the fitted closed curve (a correct model with pure centroid noise gives ~1); vector = distance to the model point at the true angle (~sqrt(2)); the smoothing spline is tuned to chi-square = m, so ~1 / ~sqrt(2) by construction",
+    "summary": {
+     "q_conic": 0.6874722760849761,
+     "q_polar": 0.6703667491627906,
+     "q_chart": 0.658868768748276,
+     "q_angle_exact": 0.6285371589825351,
+     "q_angle_linear": 0.6422402325930117,
+     "r2_2theta_angle": 0.7631063396999184,
+     "resid_geo_over_noise": {
+      "ellipse_conic": 1.2350841606574892,
+      "circle": 2.5015218822930225,
+      "spline_smooth": 1.0460215098376031
+     }
+    }
+   },
+   "variance_top2_plane": {
+    "noise_unit_per_axis_centroid_se": 0.28937040903587286,
+    "conic": {
+     "a": 5.55296631857364,
+     "b": 3.461063301633037,
+     "q": 0.6232818827041007,
+     "ecc": 0.781997247241211,
+     "angle": 1.6322313300689266,
+     "center": [
+      0.1500669768997011,
+      -1.9233705985011977
+     ]
+    },
+    "polar_fit": {
+     "a": 7.172420946010266,
+     "b": 3.393486719652873,
+     "q": 0.4731298881084964,
+     "ecc": 0.880992683839339,
+     "angle": 1.666479841415042,
+     "center": [
+      0.3067724742826182,
+      -3.375749015139503
+     ],
+     "rms_radial": 0.6443343031849881
+    },
+    "chart": {
+     "a": 3.97697962420895,
+     "b": 0.34451360818008697,
+     "q": 0.08662694827072774,
+     "angle": 0.0838205435614543
+    },
+    "circle": {
+     "R": 3.7814044753158944,
+     "center": [
+      0.0600683363470013,
+      -0.7054617991490305
+     ]
+    },
+    "geometric_rms_over_noise": {
+     "ellipse_conic": 2.2361758802271177,
+     "ellipse_polar": 1.9861472623524281,
+     "circle": 3.006948351475324,
+     "spline_smooth": 0.9062522867165519
+    },
+    "vector_rms_at_true_angle_over_noise": {
+     "circle_chart": 10.865673595486548,
+     "ellipse_chart": 8.869522322937858,
+     "spline_smooth": 1.414441143070049
+    },
+    "angle_distortion": {
+     "orientation": -1,
+     "offset_rad": -1.5545344883902035,
+     "resid_rms_deg": 67.61650725456548,
+     "mean_abs_dev_deg": 50.31365226696106,
+     "eps_2theta": 0.9511124624561987,
+     "r2_2theta": 0.3248142489883794,
+     "q_linear": 0.02505623765134387,
+     "q_exact": 0.0034165339132239923,
+     "exact_resid_rms_deg": 45.816232267190976
+    },
+    "params": {
+     "circle": 3,
+     "ellipse": 5,
+     "circle_chart": 4,
+     "ellipse_chart": 6,
+     "spline_smooth": "count-weighted, s = 64 (chi-square = number of knots by construction)"
+    },
+    "residual_note": "geometric = distance to the fitted closed curve (a correct model with pure centroid noise gives ~1); vector = distance to the model point at the true angle (~sqrt(2)); the smoothing spline is tuned to chi-square = m, so ~1 / ~sqrt(2) by construction",
+    "summary": {
+     "q_conic": 0.6232818827041007,
+     "q_polar": 0.4731298881084964,
+     "q_chart": 0.08662694827072774,
+     "q_angle_exact": 0.0034165339132239923,
+     "q_angle_linear": 0.02505623765134387,
+     "r2_2theta_angle": 0.3248142489883794,
+     "resid_geo_over_noise": {
+      "ellipse_conic": 2.2361758802271177,
+      "circle": 3.006948351475324,
+      "spline_smooth": 0.9062522867165519
+     }
+    }
+   },
+   "principal_angles_ring_vs_top2_plane_deg": [
+    1.1753209509013773,
+    82.4465911949099
+   ],
+   "full_space": {
+    "top2_eigen": {
+     "eig_top": [
+      7.982678329029395,
+      6.572638769314131,
+      3.46904409421711,
+      1.5036389953020073,
+      0.4419223729947986,
+      0.288822933060132
+     ],
+     "q_eig": 0.9073932985018863,
+     "frac_outside_top2": 0.33261146403970476,
+     "eig_top_noise_corrected": [
+      7.929831324833548,
+      6.471563956911052,
+      3.4316487456980713,
+      1.3351875384672458,
+      0.22369002159240498,
+      0.1480794072187645
+     ],
+     "q_eig_noise_corrected": 0.9033845295539737,
+     "frac_outside_top2_noise_corrected": 0.2868994734036767,
+     "noise_trace_frac_of_centroid_var": 0.13013051018838365,
+     "note": "variance top-2 plane of the 1024-D centroids; when the k = 2 (saddle) axis outranks the ring's minor axis, sqrt(l2/l1) is NOT an axis ratio"
+    },
+    "k1_chart_axis_ratio": {
+     "a": 3.97787019271997,
+     "b": 2.6209467628553442,
+     "q": 0.6588819232090641,
+     "q_noise_corrected": 0.6564182362255542,
+     "noise_e_over_b2": 0.013115809753671983
+    },
+    "harmonic_variance": {
+     "k": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+     ],
+     "var": [
+      11.346406601925972,
+      6.524422754358394,
+      0.21742684211462793,
+      1.2524422300143672,
+      0.0636471566754938,
+      0.15969547770916065,
+      0.052098815085207514,
+      0.18787750452407048
+     ],
+     "share": [
+      0.5202539827408771,
+      0.2991569967591316,
+      0.009969427725752945,
+      0.05742682077048408,
+      0.0029183412786333257,
+      0.007322336596838965,
+      0.0023888281986614935,
+      0.00861453528198729
+     ],
+     "share_k_gt_kmax": 0.0919487306476332,
+     "bend_ratio_k2_over_k1": 0.7583014310009236,
+     "share_noise_corrected": [
+      0.5933336684162629,
+      0.3391610729046909,
+      0.006711696968989662,
+      0.061268608782287966,
+      0.0,
+      0.003668606988345268,
+      0.0,
+      0.005154115677043124
+     ],
+     "bend_ratio_k2_over_k1_noise_corrected": 0.7560551983647265
+    },
+    "radius_fourier": {
+     "power_k": [
+      21.162757549490305,
+      0.016540330238163318,
+      0.025046495020656534,
+      0.0004488030310224458,
+      0.3808863915255702,
+      0.011649306551650387,
+      0.020363131514333072,
+      0.0005417467512671215,
+      0.05999931808872119
+     ],
+     "p2_over_p0": 0.0011835175525724325,
+     "share_2theta_of_k_ge_1": 0.04858910640107003,
+     "q_from_r2": 0.9199262081268313,
+     "q_from_r2_noise_corrected": 0.9078572074891431
+    },
+    "centroid_axis_harmonics": {
+     "axis1": {
+      "dominant_k": 1,
+      "share_k1": 0.9888335310825311,
+      "share_k2": 0.006588467346295863,
+      "share_k3": 0.0014759201922154264
+     },
+     "axis2": {
+      "dominant_k": 2,
+      "share_k1": 0.0176890373472895,
+      "share_k2": 0.9520658640520077,
+      "share_k3": 0.0018880462962442923
+     },
+     "axis3": {
+      "dominant_k": 1,
+      "share_k1": 0.9779806596173769,
+      "share_k2": 0.012676327159102932,
+      "share_k3": 0.000762153701324484
+     },
+     "axis4": {
+      "dominant_k": 4,
+      "share_k1": 0.019092420527754905,
+      "share_k2": 0.051072032978861724,
+      "share_k3": 0.012779200445526294
+     }
+    },
+    "k2_axis_rank": 2
+   },
+   "angle": {
+    "pipeline_plane": {
+     "plane": "activation",
+     "pipeline_angle_source": "labels",
+     "orientation": -1,
+     "offset_rad": -0.28622500159013,
+     "resid_rms_deg": 56.965208433511165,
+     "mean_abs_dev_deg": 43.45875037294396,
+     "eps_2theta": 0.9274170280731754,
+     "r2_2theta": 0.43627580741299843,
+     "q_linear": 0.037658156418481616,
+     "q_exact": 0.02978776228178099,
+     "exact_resid_rms_deg": 38.30520067997222
+    },
+    "stored_checks_recomputed": {
+     "activation": {
+      "mean_dev_deg": 43.45875037294396,
+      "circular_corr": -0.1617818339839376
+     },
+     "centroid": {
+      "mean_dev_deg": 50.31365226696106,
+      "circular_corr": -0.04178049950963745
+     }
+    },
+    "flag": "pipeline fell back to the labels angle at this point (atan2 in both PCA planes fails the circular-corr / order check); its atan2 fit is reported but is not a ring angle"
+   },
+   "summary": {
+    "q_conic": 0.6874722760849761,
+    "q_polar": 0.6703667491627906,
+    "q_chart_plane": 0.658868768748276,
+    "q_k1_chart_full": 0.6588819232090641,
+    "q_k1_chart_full_noise_corrected": 0.6564182362255542,
+    "q_eig_top2_full": 0.9073932985018863,
+    "q_eig_top2_full_noise_corrected": 0.9033845295539737,
+    "q_r2_fourier_noise_corrected": 0.9078572074891431,
+    "q_angle_exact": 0.6285371589825351,
+    "q_angle_linear": 0.6422402325930117,
+    "r2_2theta_angle": 0.7631063396999184,
+    "q_angle_pipeline_plane": 0.02978776228178099,
+    "r2_2theta_angle_pipeline_plane": 0.43627580741299843,
+    "share_2theta_of_radius_power": 0.04858910640107003,
+    "p2_over_p0": 0.0011835175525724325,
+    "var_share_k1": 0.5933336684162629,
+    "var_share_k2": 0.3391610729046909,
+    "bend_ratio_k2_over_k1": 0.7560551983647265,
+    "k2_axis_rank": 2,
+    "frac_outside_top2_noise_corrected": 0.2868994734036767,
+    "q_conic_variance_top2_plane": 0.6232818827041007,
+    "q_angle_variance_top2_plane": 0.0034165339132239923,
+    "resid_geo_over_noise": {
+     "ellipse_conic": 1.2350841606574892,
+     "circle": 2.5015218822930225,
+     "spline_smooth": 1.0460215098376031
+    }
+   }
+  },
+  "18": {
+   "n_train": 1200,
+   "n_values": 64,
+   "min_count": 18,
+   "ring_plane": {
+    "noise_unit_per_axis_centroid_se": 0.2516065860014855,
+    "conic": {
+     "a": 4.722270929572638,
+     "b": 3.223436005288987,
+     "q": 0.6826029368841625,
+     "ecc": 0.7307894570648348,
+     "angle": 3.125483474169012,
+     "center": [
+      -0.06737315657004407,
+      0.018727858197467192
+     ]
+    },
+    "polar_fit": {
+     "a": 4.705213249480031,
+     "b": 3.220348870375815,
+     "q": 0.6844214490664569,
+     "ecc": 0.7290866066920798,
+     "angle": 3.140405774421674,
+     "center": [
+      -0.055873293269336245,
+      0.0336671417292675
+     ],
+     "rms_radial": 0.2811098497603995
+    },
+    "chart": {
+     "a": 4.725794050637775,
+     "b": 3.177734939409657,
+     "q": 0.6724234922977234,
+     "angle": 0.0
+    },
+    "circle": {
+     "R": 4.014053737615594,
+     "center": [
+      -0.10168360569288189,
+      -0.00017033973489224277
+     ]
+    },
+    "geometric_rms_over_noise": {
+     "ellipse_conic": 1.0778503118484564,
+     "ellipse_polar": 1.0746368861000561,
+     "circle": 2.2358749076677773,
+     "spline_smooth": 0.9968260776554492
+    },
+    "vector_rms_at_true_angle_over_noise": {
+     "circle_chart": 3.5600146117933824,
+     "ellipse_chart": 1.7915869068865005,
+     "spline_smooth": 1.4150572777158739
+    },
+    "angle_distortion": {
+     "orientation": -1,
+     "offset_rad": 1.5235209336270463,
+     "resid_rms_deg": 10.128508370761885,
+     "mean_abs_dev_deg": 8.483044592373572,
+     "eps_2theta": 0.21165667994090026,
+     "r2_2theta": 0.7167839175948856,
+     "q_linear": 0.6506325868624369,
+     "q_exact": 0.6345415824026309,
+     "exact_resid_rms_deg": 4.8789876244228205
+    },
+    "params": {
+     "circle": 3,
+     "ellipse": 5,
+     "circle_chart": 4,
+     "ellipse_chart": 6,
+     "spline_smooth": "count-weighted, s = 64 (chi-square = number of knots by construction)"
+    },
+    "residual_note": "geometric = distance to the fitted closed curve (a correct model with pure centroid noise gives ~1); vector = distance to the model point at the true angle (~sqrt(2)); the smoothing spline is tuned to chi-square = m, so ~1 / ~sqrt(2) by construction",
+    "summary": {
+     "q_conic": 0.6826029368841625,
+     "q_polar": 0.6844214490664569,
+     "q_chart": 0.6724234922977234,
+     "q_angle_exact": 0.6345415824026309,
+     "q_angle_linear": 0.6506325868624369,
+     "r2_2theta_angle": 0.7167839175948856,
+     "resid_geo_over_noise": {
+      "ellipse_conic": 1.0778503118484564,
+      "circle": 2.2358749076677773,
+      "spline_smooth": 0.9968260776554492
+     }
+    }
+   },
+   "variance_top2_plane": {
+    "noise_unit_per_axis_centroid_se": 0.30781496099479094,
+    "conic": {
+     "a": 5.69712810288251,
+     "b": 4.172208502109713,
+     "q": 0.7323353849106446,
+     "ecc": 0.6809441122498806,
+     "angle": 1.6830797238708348,
+     "center": [
+      0.13752017738661507,
+      -2.2941966437363064
+     ]
+    },
+    "polar_fit": {
+     "a": 7.999827893337827,
+     "b": 4.261735449580361,
+     "q": 0.5327283919607183,
+     "ecc": 0.8462862756768228,
+     "angle": 1.6842495245399023,
+     "center": [
+      0.44036286624740684,
+      -4.393412329575038
+     ],
+     "rms_radial": 0.5483114403489523
+    },
+    "chart": {
+     "a": 4.7241892758548305,
+     "b": 0.37549376945074925,
+     "q": 0.07948321871223175,
+     "angle": 0.05686491883849938
+    },
+    "circle": {
+     "R": 4.302590791996723,
+     "center": [
+      0.09446961153526807,
+      -1.2601636770013442
+     ]
+    },
+    "geometric_rms_over_noise": {
+     "ellipse_conic": 1.903757122717825,
+     "ellipse_polar": 1.6428964264643406,
+     "circle": 2.342014634296967,
+     "spline_smooth": 0.9373514856021861
+    },
+    "vector_rms_at_true_angle_over_noise": {
+     "circle_chart": 10.742051144705817,
+     "ellipse_chart": 8.092848012593032,
+     "spline_smooth": 1.414557163471813
+    },
+    "angle_distortion": {
+     "orientation": 1,
+     "offset_rad": 1.657560960656892,
+     "resid_rms_deg": 65.27671258917597,
+     "mean_abs_dev_deg": 47.7300745967269,
+     "eps_2theta": 0.9009368904476314,
+     "r2_2theta": 0.31371039974483506,
+     "q_linear": 0.052112781886747075,
+     "q_exact": 0.0023439593251048333,
+     "exact_resid_rms_deg": 43.31761807236828
+    },
+    "params": {
+     "circle": 3,
+     "ellipse": 5,
+     "circle_chart": 4,
+     "ellipse_chart": 6,
+     "spline_smooth": "count-weighted, s = 64 (chi-square = number of knots by construction)"
+    },
+    "residual_note": "geometric = distance to the fitted closed curve (a correct model with pure centroid noise gives ~1); vector = distance to the model point at the true angle (~sqrt(2)); the smoothing spline is tuned to chi-square = m, so ~1 / ~sqrt(2) by construction",
+    "summary": {
+     "q_conic": 0.7323353849106446,
+     "q_polar": 0.5327283919607183,
+     "q_chart": 0.07948321871223175,
+     "q_angle_exact": 0.0023439593251048333,
+     "q_angle_linear": 0.052112781886747075,
+     "r2_2theta_angle": 0.31371039974483506,
+     "resid_geo_over_noise": {
+      "ellipse_conic": 1.903757122717825,
+      "circle": 2.342014634296967,
+      "spline_smooth": 0.9373514856021861
+     }
+    }
+   },
+   "principal_angles_ring_vs_top2_plane_deg": [
+    1.4290392673449006,
+    83.21404298479429
+   ],
+   "full_space": {
+    "top2_eigen": {
+     "eig_top": [
+      11.316510418249782,
+      6.11902027269733,
+      5.120236379507174,
+      1.4232571235419893,
+      0.401648065447528,
+      0.37222422331356925
+     ],
+     "q_eig": 0.7353340594423261,
+     "frac_outside_top2": 0.33727426564841456,
+     "eig_top_noise_corrected": [
+      11.234237227044282,
+      6.023758400550017,
+      5.061880114007718,
+      1.2732258672802188,
+      0.21864531573211374,
+      0.1412602014468493
+     ],
+     "q_eig_noise_corrected": 0.7322543786202067,
+     "frac_outside_top2_noise_corrected": 0.2970319354472414,
+     "noise_trace_frac_of_centroid_var": 0.11693662564593103,
+     "note": "variance top-2 plane of the 1024-D centroids; when the k = 2 (saddle) axis outranks the ring's minor axis, sqrt(l2/l1) is NOT an axis ratio"
+    },
+    "k1_chart_axis_ratio": {
+     "a": 4.725826686663102,
+     "b": 3.1777921736691233,
+     "q": 0.672430959568887,
+     "q_noise_corrected": 0.670639358072671,
+     "noise_e_over_b2": 0.009671422525574161
+    },
+    "harmonic_variance": {
+     "k": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+     ],
+     "var": [
+      16.215900485704942,
+      6.144001561507437,
+      0.21425467260340308,
+      1.2080369231294885,
+      0.08737396025297106,
+      0.14493712745959242,
+      0.06103141861878111,
+      0.15579290022654177
+     ],
+     "share": [
+      0.6163675054147303,
+      0.23353392672019216,
+      0.008143835008880692,
+      0.04591756747734135,
+      0.0033210903068136574,
+      0.0055090702963426705,
+      0.0023198084669514363,
+      0.005921698974325264
+     ],
+     "share_k_gt_kmax": 0.0789654973344226,
+     "bend_ratio_k2_over_k1": 0.6155383605026769,
+     "share_noise_corrected": [
+      0.6937839903425246,
+      0.2602549936557717,
+      0.00501839540349261,
+      0.047794184282847804,
+      0.0,
+      0.002034731049317281,
+      0.0,
+      0.002502000658686391
+     ],
+     "bend_ratio_k2_over_k1_noise_corrected": 0.6124736353233924
+    },
+    "radius_fourier": {
+     "power_k": [
+      25.79012374608235,
+      0.0031874366026684265,
+      0.06690655595476838,
+      0.0022885231192304564,
+      0.24754090473313925,
+      0.022416077815229016,
+      0.008238107932455555,
+      0.001536392493804762,
+      0.044861176997513186
+     ],
+     "p2_over_p0": 0.0025942704507159187,
+     "share_2theta_of_k_ge_1": 0.16854090648216863,
+     "q_from_r2": 0.8669902900063424,
+     "q_from_r2_noise_corrected": 0.8499228619437771
+    },
+    "centroid_axis_harmonics": {
+     "axis1": {
+      "dominant_k": 1,
+      "share_k1": 0.9888579227405893,
+      "share_k2": 0.003967576933550642,
+      "share_k3": 0.0021833096250322924
+     },
+     "axis2": {
+      "dominant_k": 2,
+      "share_k1": 0.01768053708018971,
+      "share_k2": 0.962214684297461,
+      "share_k3": 0.0028945858728140874
+     },
+     "axis3": {
+      "dominant_k": 1,
+      "share_k1": 0.9797313416995505,
+      "share_k2": 0.009429493253698483,
+      "share_k3": 0.0005724485614529983
+     },
+     "axis4": {
+      "dominant_k": 4,
+      "share_k1": 0.014542312833083984,
+      "share_k2": 0.060616469101743425,
+      "share_k3": 0.00641639333041234
+     }
+    },
+    "k2_axis_rank": 2
+   },
+   "angle": {
+    "pipeline_plane": {
+     "plane": "activation",
+     "pipeline_angle_source": "labels",
+     "orientation": -1,
+     "offset_rad": -0.4689714716561229,
+     "resid_rms_deg": 53.24381430277659,
+     "mean_abs_dev_deg": 42.038112537257604,
+     "eps_2theta": 0.9098003365386998,
+     "r2_2theta": 0.4793008048736903,
+     "q_linear": 0.04722989190837456,
+     "q_exact": 0.039470793351738635,
+     "exact_resid_rms_deg": 33.41699939099012
+    },
+    "stored_checks_recomputed": {
+     "activation": {
+      "mean_dev_deg": 42.0381125372576,
+      "circular_corr": -0.19379760471183669
+     },
+     "centroid": {
+      "mean_dev_deg": 47.730074596726894,
+      "circular_corr": 0.0801591685290012
+     }
+    },
+    "flag": "pipeline fell back to the labels angle at this point (atan2 in both PCA planes fails the circular-corr / order check); its atan2 fit is reported but is not a ring angle"
+   },
+   "summary": {
+    "q_conic": 0.6826029368841625,
+    "q_polar": 0.6844214490664569,
+    "q_chart_plane": 0.6724234922977234,
+    "q_k1_chart_full": 0.672430959568887,
+    "q_k1_chart_full_noise_corrected": 0.670639358072671,
+    "q_eig_top2_full": 0.7353340594423261,
+    "q_eig_top2_full_noise_corrected": 0.7322543786202067,
+    "q_r2_fourier_noise_corrected": 0.8499228619437771,
+    "q_angle_exact": 0.6345415824026309,
+    "q_angle_linear": 0.6506325868624369,
+    "r2_2theta_angle": 0.7167839175948856,
+    "q_angle_pipeline_plane": 0.039470793351738635,
+    "r2_2theta_angle_pipeline_plane": 0.4793008048736903,
+    "share_2theta_of_radius_power": 0.16854090648216863,
+    "p2_over_p0": 0.0025942704507159187,
+    "var_share_k1": 0.6937839903425246,
+    "var_share_k2": 0.2602549936557717,
+    "bend_ratio_k2_over_k1": 0.6124736353233924,
+    "k2_axis_rank": 2,
+    "frac_outside_top2_noise_corrected": 0.2970319354472414,
+    "q_conic_variance_top2_plane": 0.7323353849106446,
+    "q_angle_variance_top2_plane": 0.0023439593251048333,
+    "resid_geo_over_noise": {
+     "ellipse_conic": 1.0778503118484564,
+     "circle": 2.2358749076677773,
+     "spline_smooth": 0.9968260776554492
+    }
+   }
+  },
+  "20": {
+   "n_train": 1200,
+   "n_values": 64,
+   "min_count": 18,
+   "ring_plane": {
+    "noise_unit_per_axis_centroid_se": 0.36798960862239904,
+    "conic": {
+     "a": 6.33752427611514,
+     "b": 4.2973666416718626,
+     "q": 0.678082868710701,
+     "ecc": 0.734985457788837,
+     "angle": 3.1122237714359744,
+     "center": [
+      0.06220807327319034,
+      -0.011483330401202236
+     ]
+    },
+    "polar_fit": {
+     "a": 6.24839108409052,
+     "b": 4.3385425034614435,
+     "q": 0.6943455435284965,
+     "ecc": 0.7196417623943991,
+     "angle": 3.1181001894584846,
+     "center": [
+      0.01961593824564837,
+      -0.043806927499011813
+     ],
+     "rms_radial": 0.45216873524744255
+    },
+    "chart": {
+     "a": 6.310600918087063,
+     "b": 4.2472127116137175,
+     "q": 0.6730282530528294,
+     "angle": 3.3306690738754706e-16
+    },
+    "circle": {
+     "R": 5.368118436269832,
+     "center": [
+      0.09416803629585171,
+      0.03347256403230026
+     ]
+    },
+    "geometric_rms_over_noise": {
+     "ellipse_conic": 1.1904422266509866,
+     "ellipse_polar": 1.1831569191836124,
+     "circle": 2.1070823290030014,
+     "spline_smooth": 0.9426246022829725
+    },
+    "vector_rms_at_true_angle_over_noise": {
+     "circle_chart": 3.3734619393837733,
+     "ellipse_chart": 1.8761919731367247,
+     "spline_smooth": 1.414424331087158
+    },
+    "angle_distortion": {
+     "orientation": -1,
+     "offset_rad": -1.4788794051561225,
+     "resid_rms_deg": 10.51024153258273,
+     "mean_abs_dev_deg": 8.805193508893103,
+     "eps_2theta": 0.21720607160946415,
+     "r2_2theta": 0.7010256074533265,
+     "q_linear": 0.6431071505874745,
+     "q_exact": 0.622467544558622,
+     "exact_resid_rms_deg": 5.119119072672285
+    },
+    "params": {
+     "circle": 3,
+     "ellipse": 5,
+     "circle_chart": 4,
+     "ellipse_chart": 6,
+     "spline_smooth": "count-weighted, s = 64 (chi-square = number of knots by construction)"
+    },
+    "residual_note": "geometric = distance to the fitted closed curve (a correct model with pure centroid noise gives ~1); vector = distance to the model point at the true angle (~sqrt(2)); the smoothing spline is tuned to chi-square = m, so ~1 / ~sqrt(2) by construction",
+    "summary": {
+     "q_conic": 0.678082868710701,
+     "q_polar": 0.6943455435284965,
+     "q_chart": 0.6730282530528294,
+     "q_angle_exact": 0.622467544558622,
+     "q_angle_linear": 0.6431071505874745,
+     "r2_2theta_angle": 0.7010256074533265,
+     "resid_geo_over_noise": {
+      "ellipse_conic": 1.1904422266509866,
+      "circle": 2.1070823290030014,
+      "spline_smooth": 0.9426246022829725
+     }
+    }
+   },
+   "variance_top2_plane": {
+    "noise_unit_per_axis_centroid_se": 0.356511330572569,
+    "conic": {
+     "a": 7.2171747121969805,
+     "b": 5.555368136327301,
+     "q": 0.7697427813322523,
+     "ecc": 0.638354173313599,
+     "angle": 1.818674405863874,
+     "center": [
+      -0.1353409281977883,
+      2.808914703044204
+     ]
+    },
+    "polar_fit": {
+     "a": 9.319216228325994,
+     "b": 5.688042260731114,
+     "q": 0.6103562919210057,
+     "ecc": 0.7921270080690597,
+     "angle": 1.6919678712820618,
+     "center": [
+      -0.2224319415828979,
+      4.824107021660151
+     ],
+     "rms_radial": 0.7238610822354334
+    },
+    "chart": {
+     "a": 6.306454717318497,
+     "b": 0.5062629819955649,
+     "q": 0.0802769550703803,
+     "angle": 3.140239685517696
+    },
+    "circle": {
+     "R": 5.7916089240285284,
+     "center": [
+      0.04969407907261723,
+      1.975185037612552
+     ]
+    },
+    "geometric_rms_over_noise": {
+     "ellipse_conic": 2.121251313574095,
+     "ellipse_polar": 1.91608896198476,
+     "circle": 2.4985334743524517,
+     "spline_smooth": 1.044088934559757
+    },
+    "vector_rms_at_true_angle_over_noise": {
+     "circle_chart": 12.171416813253677,
+     "ellipse_chart": 9.05377337044336,
+     "spline_smooth": 1.4156114839208251
+    },
+    "angle_distortion": {
+     "orientation": -1,
+     "offset_rad": -1.5022497231447574,
+     "resid_rms_deg": 64.00388617035959,
+     "mean_abs_dev_deg": 47.83148545977699,
+     "eps_2theta": 0.9005033251254745,
+     "r2_2theta": 0.32650608950100746,
+     "q_linear": 0.052352802312490856,
+     "q_exact": 0.0055399905631301994,
+     "exact_resid_rms_deg": 42.50267900780603
+    },
+    "params": {
+     "circle": 3,
+     "ellipse": 5,
+     "circle_chart": 4,
+     "ellipse_chart": 6,
+     "spline_smooth": "count-weighted, s = 64 (chi-square = number of knots by construction)"
+    },
+    "residual_note": "geometric = distance to the fitted closed curve (a correct model with pure centroid noise gives ~1); vector = distance to the model point at the true angle (~sqrt(2)); the smoothing spline is tuned to chi-square = m, so ~1 / ~sqrt(2) by construction",
+    "summary": {
+     "q_conic": 0.7697427813322523,
+     "q_polar": 0.6103562919210057,
+     "q_chart": 0.0802769550703803,
+     "q_angle_exact": 0.0055399905631301994,
+     "q_angle_linear": 0.052352802312490856,
+     "r2_2theta_angle": 0.32650608950100746,
+     "resid_geo_over_noise": {
+      "ellipse_conic": 2.121251313574095,
+      "circle": 2.4985334743524517,
+      "spline_smooth": 1.044088934559757
+     }
+    }
+   },
+   "principal_angles_ring_vs_top2_plane_deg": [
+    2.07014428266639,
+    83.1541603930591
+   ],
+   "full_space": {
+    "top2_eigen": {
+     "eig_top": [
+      20.287581351885596,
+      10.1452388646394,
+      9.133884455787927,
+      2.178520091125413,
+      0.6341097508658631,
+      0.5151953103807506
+     ],
+     "q_eig": 0.7071572547981473,
+     "frac_outside_top2": 0.3274878899315722,
+     "eig_top_noise_corrected": [
+      20.13200523991847,
+      10.05794490768158,
+      9.011814315072213,
+      1.9841626083922375,
+      0.3565837702181931,
+      0.22249017931266352
+     ],
+     "q_eig_noise_corrected": 0.7068237093510056,
+     "frac_outside_top2_noise_corrected": 0.29156950013997085,
+     "noise_trace_frac_of_centroid_var": 0.09806846439286256,
+     "note": "variance top-2 plane of the 1024-D centroids; when the k = 2 (saddle) axis outranks the ring's minor axis, sqrt(l2/l1) is NOT an axis ratio"
+    },
+    "k1_chart_axis_ratio": {
+     "a": 6.310626741557783,
+     "b": 4.247294639990224,
+     "q": 0.6730384815853925,
+     "q_noise_corrected": 0.6715941931076386,
+     "noise_e_over_b2": 0.0078097320433744314
+    },
+    "harmonic_variance": {
+     "k": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+     ],
+     "var": [
+      28.931760815076952,
+      10.319761776699393,
+      0.3965978583010219,
+      1.9656142957405984,
+      0.16323650032019116,
+      0.23320440972712514,
+      0.09687764932228497,
+      0.20775781585787614
+     ],
+     "share": [
+      0.6393413221419864,
+      0.22804868948961604,
+      0.00876411915284186,
+      0.04343663874080873,
+      0.0036072412116083716,
+      0.005153409659276044,
+      0.0021408266437568588,
+      0.004591084432257794
+     ],
+     "share_k_gt_kmax": 0.06491666852784783,
+     "bend_ratio_k2_over_k1": 0.5972379595238578,
+     "share_noise_corrected": [
+      0.7054061338811127,
+      0.24939299273342272,
+      0.00626525888701473,
+      0.04470777721478002,
+      0.0005476653251462865,
+      0.0022619511513169662,
+      0.0,
+      0.0016384833992555885
+     ],
+     "bend_ratio_k2_over_k1_noise_corrected": 0.5945967177631125
+    },
+    "radius_fourier": {
+     "power_k": [
+      44.37103436597637,
+      0.002494706726179121,
+      0.1976192987557161,
+      0.039804096883828896,
+      0.3743197763474294,
+      0.04334072115605931,
+      7.950121208556269e-05,
+      0.0019646025254109038,
+      0.06259847090291296
+     ],
+     "p2_over_p0": 0.004453790667256795,
+     "share_2theta_of_k_ge_1": 0.2736271182991786,
+     "q_from_r2": 0.8256389459789113,
+     "q_from_r2_noise_corrected": 0.8077281831628393
+    },
+    "centroid_axis_harmonics": {
+     "axis1": {
+      "dominant_k": 1,
+      "share_k1": 0.9859872405402473,
+      "share_k2": 8.788101400047141e-06,
+      "share_k3": 0.003973818714129423
+     },
+     "axis2": {
+      "dominant_k": 2,
+      "share_k1": 0.012764741377046824,
+      "share_k2": 0.9789088237502692,
+      "share_k3": 0.0005550512811798356
+     },
+     "axis3": {
+      "dominant_k": 1,
+      "share_k1": 0.9812907035020092,
+      "share_k2": 0.013049017887131921,
+      "share_k3": 0.0011534920894576033
+     },
+     "axis4": {
+      "dominant_k": 4,
+      "share_k1": 0.014153410364506859,
+      "share_k2": 0.02351500521903671,
+      "share_k3": 0.005682122215575761
+     }
+    },
+    "k2_axis_rank": 2
+   },
+   "angle": {
+    "pipeline_plane": {
+     "plane": "activation",
+     "pipeline_angle_source": "labels",
+     "orientation": 1,
+     "offset_rad": -1.0685215302565412,
+     "resid_rms_deg": 55.85539124533727,
+     "mean_abs_dev_deg": 43.98915714707266,
+     "eps_2theta": 0.909101681571885,
+     "r2_2theta": 0.4394697401297474,
+     "q_linear": 0.04761313622293426,
+     "q_exact": 0.0011608581917152089,
+     "exact_resid_rms_deg": 32.40970879855059
+    },
+    "stored_checks_recomputed": {
+     "activation": {
+      "mean_dev_deg": 43.98915714707266,
+      "circular_corr": 0.0955099090397489
+     },
+     "centroid": {
+      "mean_dev_deg": 47.831485459776985,
+      "circular_corr": -0.08487426770604865
+     }
+    },
+    "flag": "pipeline fell back to the labels angle at this point (atan2 in both PCA planes fails the circular-corr / order check); its atan2 fit is reported but is not a ring angle"
+   },
+   "summary": {
+    "q_conic": 0.678082868710701,
+    "q_polar": 0.6943455435284965,
+    "q_chart_plane": 0.6730282530528294,
+    "q_k1_chart_full": 0.6730384815853925,
+    "q_k1_chart_full_noise_corrected": 0.6715941931076386,
+    "q_eig_top2_full": 0.7071572547981473,
+    "q_eig_top2_full_noise_corrected": 0.7068237093510056,
+    "q_r2_fourier_noise_corrected": 0.8077281831628393,
+    "q_angle_exact": 0.622467544558622,
+    "q_angle_linear": 0.6431071505874745,
+    "r2_2theta_angle": 0.7010256074533265,
+    "q_angle_pipeline_plane": 0.0011608581917152089,
+    "r2_2theta_angle_pipeline_plane": 0.4394697401297474,
+    "share_2theta_of_radius_power": 0.2736271182991786,
+    "p2_over_p0": 0.004453790667256795,
+    "var_share_k1": 0.7054061338811127,
+    "var_share_k2": 0.24939299273342272,
+    "bend_ratio_k2_over_k1": 0.5945967177631125,
+    "k2_axis_rank": 2,
+    "frac_outside_top2_noise_corrected": 0.29156950013997085,
+    "q_conic_variance_top2_plane": 0.7697427813322523,
+    "q_angle_variance_top2_plane": 0.0055399905631301994,
+    "resid_geo_over_noise": {
+     "ellipse_conic": 1.1904422266509866,
+     "circle": 2.1070823290030014,
+     "spline_smooth": 0.9426246022829725
+    }
+   }
+  },
+  "22": {
+   "n_train": 1200,
+   "n_values": 64,
+   "min_count": 18,
+   "ring_plane": {
+    "noise_unit_per_axis_centroid_se": 0.7792753579595035,
+    "conic": {
+     "a": 8.466254100092964,
+     "b": 6.2794217925377405,
+     "q": 0.7417001330575217,
+     "ecc": 0.6707316248861795,
+     "angle": 0.03888810602919124,
+     "center": [
+      -0.1710543652925666,
+      0.18422683221705083
+     ]
+    },
+    "polar_fit": {
+     "a": 8.248823549964019,
+     "b": 6.3721134180757995,
+     "q": 0.7724875407358658,
+     "ecc": 0.6350299200886949,
+     "angle": 0.006910984832392102,
+     "center": [
+      -0.17156948135702432,
+      0.13377907007811377
+     ],
+     "rms_radial": 0.8751403722319424
+    },
+    "chart": {
+     "a": 8.426810698686666,
+     "b": 6.112321283064691,
+     "q": 0.7253421847980172,
+     "angle": 3.1415926535897927
+    },
+    "circle": {
+     "R": 7.410118768870673,
+     "center": [
+      -0.25146207412183263,
+      0.23122690497624157
+     ]
+    },
+    "geometric_rms_over_noise": {
+     "ellipse_conic": 1.1099801716605027,
+     "ellipse_polar": 1.1031066164055947,
+     "circle": 1.3631343276993393,
+     "spline_smooth": 0.9686753498361186
+    },
+    "vector_rms_at_true_angle_over_noise": {
+     "circle_chart": 2.2502402370242627,
+     "ellipse_chart": 1.6906439143807945,
+     "spline_smooth": 1.4166949720801512
+    },
+    "angle_distortion": {
+     "orientation": 1,
+     "offset_rad": -1.6100289380631145,
+     "resid_rms_deg": 10.802000382680127,
+     "mean_abs_dev_deg": 8.834974234844003,
+     "eps_2theta": 0.18905959749172133,
+     "r2_2theta": 0.5028105319195955,
+     "q_linear": 0.6820014776542138,
+     "q_exact": 0.6620009650708946,
+     "exact_resid_rms_deg": 7.263905456417158
+    },
+    "params": {
+     "circle": 3,
+     "ellipse": 5,
+     "circle_chart": 4,
+     "ellipse_chart": 6,
+     "spline_smooth": "count-weighted, s = 64 (chi-square = number of knots by construction)"
+    },
+    "residual_note": "geometric = distance to the fitted closed curve (a correct model with pure centroid noise gives ~1); vector = distance to the model point at the true angle (~sqrt(2)); the smoothing spline is tuned to chi-square = m, so ~1 / ~sqrt(2) by construction",
+    "summary": {
+     "q_conic": 0.7417001330575217,
+     "q_polar": 0.7724875407358658,
+     "q_chart": 0.7253421847980172,
+     "q_angle_exact": 0.6620009650708946,
+     "q_angle_linear": 0.6820014776542138,
+     "r2_2theta_angle": 0.5028105319195955,
+     "resid_geo_over_noise": {
+      "ellipse_conic": 1.1099801716605027,
+      "circle": 1.3631343276993393,
+      "spline_smooth": 0.9686753498361186
+     }
+    }
+   },
+   "variance_top2_plane": {
+    "noise_unit_per_axis_centroid_se": 0.8103203804359972,
+    "conic": {
+     "a": 8.48489026311994,
+     "b": 6.373591617124138,
+     "q": 0.7511695990727562,
+     "ecc": 0.6601092587056137,
+     "angle": 3.0976853758579956,
+     "center": [
+      0.04786861197486592,
+      0.7636134578290286
+     ]
+    },
+    "polar_fit": {
+     "a": 8.1810605173474,
+     "b": 6.479080751943388,
+     "q": 0.7919609857676673,
+     "ecc": 0.6105716968726153,
+     "angle": 0.009248531168337237,
+     "center": [
+      0.21232205883181657,
+      0.6905618855304504
+     ],
+     "rms_radial": 1.1153310057453927
+    },
+    "chart": {
+     "a": 8.413585568769973,
+     "b": 5.977258018430463,
+     "q": 0.7104293371208098,
+     "angle": 0.016896664487512727
+    },
+    "circle": {
+     "R": 7.4363241880325575,
+     "center": [
+      0.28370364406027576,
+      0.8193190182824243
+     ]
+    },
+    "geometric_rms_over_noise": {
+     "ellipse_conic": 1.3764881049644702,
+     "ellipse_polar": 1.3582942716467075,
+     "circle": 1.5365108216709324,
+     "spline_smooth": 0.9971530657020845
+    },
+    "vector_rms_at_true_angle_over_noise": {
+     "circle_chart": 2.5659485489031812,
+     "ellipse_chart": 2.0794583731443224,
+     "spline_smooth": 1.4160842083474239
+    },
+    "angle_distortion": {
+     "orientation": -1,
+     "offset_rad": -1.5282103661610076,
+     "resid_rms_deg": 12.760868551616444,
+     "mean_abs_dev_deg": 10.933188600486073,
+     "eps_2theta": 0.2051995951138946,
+     "r2_2theta": 0.4244322605174641,
+     "q_linear": 0.6594761632084639,
+     "q_exact": 0.6371395593349333,
+     "exact_resid_rms_deg": 9.33482957233196
+    },
+    "params": {
+     "circle": 3,
+     "ellipse": 5,
+     "circle_chart": 4,
+     "ellipse_chart": 6,
+     "spline_smooth": "count-weighted, s = 64 (chi-square = number of knots by construction)"
+    },
+    "residual_note": "geometric = distance to the fitted closed curve (a correct model with pure centroid noise gives ~1); vector = distance to the model point at the true angle (~sqrt(2)); the smoothing spline is tuned to chi-square = m, so ~1 / ~sqrt(2) by construction",
+    "summary": {
+     "q_conic": 0.7511695990727562,
+     "q_polar": 0.7919609857676673,
+     "q_chart": 0.7104293371208098,
+     "q_angle_exact": 0.6371395593349333,
+     "q_angle_linear": 0.6594761632084639,
+     "r2_2theta_angle": 0.4244322605174641,
+     "resid_geo_over_noise": {
+      "ellipse_conic": 1.3764881049644702,
+      "circle": 1.5365108216709324,
+      "spline_smooth": 0.9971530657020845
+     }
+    }
+   },
+   "principal_angles_ring_vs_top2_plane_deg": [
+    3.028189656875849,
+    12.113552655985002
+   ],
+   "full_space": {
+    "top2_eigen": {
+     "eig_top": [
+      36.89083098712488,
+      19.207482133608767,
+      18.121005627288618,
+      4.368776343616724,
+      1.6482328540799176,
+      1.1026184162995596
+     ],
+     "q_eig": 0.7215658982110035,
+     "frac_outside_top2": 0.3476771250219757,
+     "eig_top_noise_corrected": [
+      36.136109907125196,
+      18.71626217308507,
+      17.966444135100264,
+      4.017246086128592,
+      0.8845785081630525,
+      0.4240476705858632
+     ],
+     "q_eig_noise_corrected": 0.7196790505485938,
+     "frac_outside_top2_noise_corrected": 0.31219422254141427,
+     "noise_trace_frac_of_centroid_var": 0.10966469741388746,
+     "note": "variance top-2 plane of the 1024-D centroids; when the k = 2 (saddle) axis outranks the ring's minor axis, sqrt(l2/l1) is NOT an axis ratio"
+    },
+    "k1_chart_axis_ratio": {
+     "a": 8.426846813080845,
+     "b": 6.112409423707183,
+     "q": 0.7253495357503115,
+     "q_noise_corrected": 0.7239651952695804,
+     "noise_e_over_b2": 0.008013433027526154
+    },
+    "harmonic_variance": {
+     "k": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+     ],
+     "var": [
+      54.18664808707757,
+      18.701820106258346,
+      0.7369814374187614,
+      4.078634528496158,
+      0.4481510519696019,
+      0.5069502674844901,
+      0.21899327944148916,
+      0.4715854256360551
+     ],
+     "share": [
+      0.630093635605609,
+      0.21746866136207124,
+      0.008569773729698135,
+      0.04742721222093064,
+      0.005211193819965144,
+      0.005894923350808168,
+      0.0025464994881163345,
+      0.005483693600315225
+     ],
+     "share_k_gt_kmax": 0.07730440682248618,
+     "bend_ratio_k2_over_k1": 0.5874836630554867,
+     "share_noise_corrected": [
+      0.7037935200592402,
+      0.2403445553321237,
+      0.005715099411871019,
+      0.04935870017482543,
+      0.0019428352997129463,
+      0.002710781408170097,
+      0.0,
+      0.002248899520190968
+     ],
+     "bend_ratio_k2_over_k1_noise_corrected": 0.584378880588148
+    },
+    "radius_fourier": {
+     "power_k": [
+      83.8967700402867,
+      0.04590641488190576,
+      0.1714933961231148,
+      0.12323298536754353,
+      0.9252836327811422,
+      0.130093481623538,
+      0.0058319721613403815,
+      0.010670880452832418,
+      0.14967405209689866
+     ],
+     "p2_over_p0": 0.0020441001011214707,
+     "share_2theta_of_k_ge_1": 0.10977777716649628,
+     "q_from_r2": 0.875296868886619,
+     "q_from_r2_noise_corrected": 0.8604014083053693
+    },
+    "centroid_axis_harmonics": {
+     "axis1": {
+      "dominant_k": 1,
+      "share_k1": 0.9754209468790196,
+      "share_k2": 0.0007033010443015399,
+      "share_k3": 0.0043750257564171184
+     },
+     "axis2": {
+      "dominant_k": 1,
+      "share_k1": 0.9448136612420495,
+      "share_k2": 0.047311301540422054,
+      "share_k3": 0.00018232705054258537
+     },
+     "axis3": {
+      "dominant_k": 2,
+      "share_k1": 0.044069986569419996,
+      "share_k2": 0.9405928187683827,
+      "share_k3": 0.00030259665723784214
+     },
+     "axis4": {
+      "dominant_k": 4,
+      "share_k1": 0.028441366493965357,
+      "share_k2": 0.009693163472040526,
+      "share_k3": 0.000929873007918481
+     }
+    },
+    "k2_axis_rank": 3
+   },
+   "angle": {
+    "pipeline_plane": {
+     "plane": "activation",
+     "pipeline_angle_source": "unsupervised",
+     "orientation": 1,
+     "offset_rad": 1.6370550219822135,
+     "resid_rms_deg": 14.743292012605105,
+     "mean_abs_dev_deg": 11.802693238358808,
+     "eps_2theta": 0.18270141631718242,
+     "r2_2theta": 0.2520641177605407,
+     "q_linear": 0.6910438868229364,
+     "q_exact": 0.67537382940625,
+     "exact_resid_rms_deg": 12.58768499129006
+    },
+    "stored_checks_recomputed": {
+     "activation": {
+      "mean_dev_deg": 11.802693238358808,
+      "circular_corr": 0.9479886060601621
+     },
+     "centroid": {
+      "mean_dev_deg": 10.93318860048607,
+      "circular_corr": -0.9641204274051984
+     }
+    }
+   },
+   "summary": {
+    "q_conic": 0.7417001330575217,
+    "q_polar": 0.7724875407358658,
+    "q_chart_plane": 0.7253421847980172,
+    "q_k1_chart_full": 0.7253495357503115,
+    "q_k1_chart_full_noise_corrected": 0.7239651952695804,
+    "q_eig_top2_full": 0.7215658982110035,
+    "q_eig_top2_full_noise_corrected": 0.7196790505485938,
+    "q_r2_fourier_noise_corrected": 0.8604014083053693,
+    "q_angle_exact": 0.6620009650708946,
+    "q_angle_linear": 0.6820014776542138,
+    "r2_2theta_angle": 0.5028105319195955,
+    "q_angle_pipeline_plane": 0.67537382940625,
+    "r2_2theta_angle_pipeline_plane": 0.2520641177605407,
+    "share_2theta_of_radius_power": 0.10977777716649628,
+    "p2_over_p0": 0.0020441001011214707,
+    "var_share_k1": 0.7037935200592402,
+    "var_share_k2": 0.2403445553321237,
+    "bend_ratio_k2_over_k1": 0.584378880588148,
+    "k2_axis_rank": 3,
+    "frac_outside_top2_noise_corrected": 0.31219422254141427,
+    "q_conic_variance_top2_plane": 0.7511695990727562,
+    "q_angle_variance_top2_plane": 0.6371395593349333,
+    "resid_geo_over_noise": {
+     "ellipse_conic": 1.1099801716605027,
+     "circle": 1.3631343276993393,
+     "spline_smooth": 0.9686753498361186
+    }
+   }
+  },
+  "24": {
+   "n_train": 1200,
+   "n_values": 64,
+   "min_count": 18,
+   "ring_plane": {
+    "noise_unit_per_axis_centroid_se": 1.077221930460733,
+    "conic": {
+     "a": 9.30724228076287,
+     "b": 7.285246052377808,
+     "q": 0.782750231766898,
+     "ecc": 0.6223359821421766,
+     "angle": 0.011675108533681477,
+     "center": [
+      0.21925049048998516,
+      -0.2384767154710365
+     ]
+    },
+    "polar_fit": {
+     "a": 9.026444857830956,
+     "b": 7.420580840374822,
+     "q": 0.8220934107781144,
+     "ecc": 0.5693526358551495,
+     "angle": 3.0964266534559908,
+     "center": [
+      0.2608591144765314,
+      -0.26485487576314193
+     ],
+     "rms_radial": 1.116201548404942
+    },
+    "chart": {
+     "a": 9.356009747775554,
+     "b": 6.912470776038019,
+     "q": 0.7388268035613685,
+     "angle": 3.141592653589793
+    },
+    "circle": {
+     "R": 8.33836132830078,
+     "center": [
+      0.33607854645803154,
+      -0.25977076464858007
+     ]
+    },
+    "geometric_rms_over_noise": {
+     "ellipse_conic": 1.0285346290032615,
+     "ellipse_polar": 1.0245676247648232,
+     "circle": 1.1353972260103398,
+     "spline_smooth": 0.9751624973184658
+    },
+    "vector_rms_at_true_angle_over_noise": {
+     "circle_chart": 2.007796493177096,
+     "ellipse_chart": 1.656764927902425,
+     "spline_smooth": 1.4162193086337898
+    },
+    "angle_distortion": {
+     "orientation": 1,
+     "offset_rad": 1.6525603373967557,
+     "resid_rms_deg": 12.267244003070957,
+     "mean_abs_dev_deg": 9.940557696503294,
+     "eps_2theta": 0.19826579318955595,
+     "r2_2theta": 0.4287625672133578,
+     "q_linear": 0.6690787731462983,
+     "q_exact": 0.6435236991127109,
+     "exact_resid_rms_deg": 8.884569065526735
+    },
+    "params": {
+     "circle": 3,
+     "ellipse": 5,
+     "circle_chart": 4,
+     "ellipse_chart": 6,
+     "spline_smooth": "count-weighted, s = 64 (chi-square = number of knots by construction)"
+    },
+    "residual_note": "geometric = distance to the fitted closed curve (a correct model with pure centroid noise gives ~1); vector = distance to the model point at the true angle (~sqrt(2)); the smoothing spline is tuned to chi-square = m, so ~1 / ~sqrt(2) by construction",
+    "summary": {
+     "q_conic": 0.782750231766898,
+     "q_polar": 0.8220934107781144,
+     "q_chart": 0.7388268035613685,
+     "q_angle_exact": 0.6435236991127109,
+     "q_angle_linear": 0.6690787731462983,
+     "r2_2theta_angle": 0.4287625672133578,
+     "resid_geo_over_noise": {
+      "ellipse_conic": 1.0285346290032615,
+      "circle": 1.1353972260103398,
+      "spline_smooth": 0.9751624973184658
+     }
+    }
+   },
+   "variance_top2_plane": {
+    "noise_unit_per_axis_centroid_se": 0.9494797987282143,
+    "conic": {
+     "a": 10.499637729551807,
+     "b": 8.383781693389311,
+     "q": 0.79848294858714,
+     "ecc": 0.6020174256743627,
+     "angle": 1.2938906928372456,
+     "center": [
+      -0.032311917259942376,
+      -3.035535602001278
+     ]
+    },
+    "polar_fit": {
+     "a": 13.332413103294611,
+     "b": 8.209656015528381,
+     "q": 0.6157666996906711,
+     "ecc": 0.7879285320078584,
+     "angle": 1.435119619110374,
+     "center": [
+      -0.05510578568427035,
+      -5.560054437108339
+     ],
+     "rms_radial": 1.5845086495219805
+    },
+    "chart": {
+     "a": 9.33257065992809,
+     "b": 1.147606036623687,
+     "q": 0.1229678379560782,
+     "angle": 0.021603231841861525
+    },
+    "circle": {
+     "R": 8.836242800612224,
+     "center": [
+      0.3072623878426633,
+      -2.5335351499683707
+     ]
+    },
+    "geometric_rms_over_noise": {
+     "ellipse_conic": 1.760179337292058,
+     "ellipse_polar": 1.572893598906029,
+     "circle": 1.9749903124985082,
+     "spline_smooth": 1.097266822269299
+    },
+    "vector_rms_at_true_angle_over_noise": {
+     "circle_chart": 7.268196150431384,
+     "ellipse_chart": 5.852225060986919,
+     "spline_smooth": 1.4146520647487795
+    },
+    "angle_distortion": {
+     "orientation": -1,
+     "offset_rad": -1.6171091487723201,
+     "resid_rms_deg": 63.54434651514802,
+     "mean_abs_dev_deg": 49.06445986844454,
+     "eps_2theta": 0.8819800918066649,
+     "r2_2theta": 0.3174579033561047,
+     "q_linear": 0.06271049768652878,
+     "q_exact": 0.010056098277843813,
+     "exact_resid_rms_deg": 43.36141136407005
+    },
+    "params": {
+     "circle": 3,
+     "ellipse": 5,
+     "circle_chart": 4,
+     "ellipse_chart": 6,
+     "spline_smooth": "count-weighted, s = 64 (chi-square = number of knots by construction)"
+    },
+    "residual_note": "geometric = distance to the fitted closed curve (a correct model with pure centroid noise gives ~1); vector = distance to the model point at the true angle (~sqrt(2)); the smoothing spline is tuned to chi-square = m, so ~1 / ~sqrt(2) by construction",
+    "summary": {
+     "q_conic": 0.79848294858714,
+     "q_polar": 0.6157666996906711,
+     "q_chart": 0.1229678379560782,
+     "q_angle_exact": 0.010056098277843813,
+     "q_angle_linear": 0.06271049768652878,
+     "r2_2theta_angle": 0.3174579033561047,
+     "resid_geo_over_noise": {
+      "ellipse_conic": 1.760179337292058,
+      "circle": 1.9749903124985082,
+      "spline_smooth": 1.097266822269299
+     }
+    }
+   },
+   "principal_angles_ring_vs_top2_plane_deg": [
+    4.050638217926131,
+    80.44359653555115
+   ],
+   "full_space": {
+    "top2_eigen": {
+     "eig_top": [
+      46.31516989470693,
+      28.768564243247333,
+      24.66668146784871,
+      6.326858012023373,
+      3.8482703376562903,
+      1.645512431366446
+     ],
+     "q_eig": 0.7881292816000317,
+     "frac_outside_top2": 0.36772255530551834,
+     "eig_top_noise_corrected": [
+      44.882818934346155,
+      28.48600001702308,
+      23.779205701206557,
+      5.861072928732359,
+      1.5528936718589885,
+      0.6887115512180694
+     ],
+     "q_eig_noise_corrected": 0.7966648800788775,
+     "frac_outside_top2_noise_corrected": 0.31915925279406787,
+     "noise_trace_frac_of_centroid_var": 0.1348272635759027,
+     "note": "variance top-2 plane of the 1024-D centroids; when the k = 2 (saddle) axis outranks the ring's minor axis, sqrt(l2/l1) is NOT an axis ratio"
+    },
+    "k1_chart_axis_ratio": {
+     "a": 9.356048815367377,
+     "b": 6.912626682451886,
+     "q": 0.7388403821811882,
+     "q_noise_corrected": 0.7370433200092817,
+     "noise_e_over_b2": 0.01063699937022543
+    },
+    "harmonic_variance": {
+     "k": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+     ],
+     "var": [
+      67.66002854324154,
+      29.526864890791757,
+      1.442799004803321,
+      6.081170007904436,
+      0.720434506507855,
+      0.8929826750718233,
+      0.3328811921911208,
+      0.7688086974594768
+     ],
+     "share": [
+      0.5697626849068967,
+      0.24864467513945723,
+      0.01214975891167951,
+      0.05120931553944818,
+      0.006066753259868268,
+      0.007519775227394389,
+      0.0028031806356186777,
+      0.006474110594918462
+     ],
+     "share_k_gt_kmax": 0.09536974578471857,
+     "bend_ratio_k2_over_k1": 0.6606061006801447,
+     "share_noise_corrected": [
+      0.6536064192850304,
+      0.28244584493004815,
+      0.009095904194224128,
+      0.05424244543777777,
+      0.0020649317702047198,
+      0.003744390572306717,
+      0.0,
+      0.002535771081131078
+     ],
+     "bend_ratio_k2_over_k1_noise_corrected": 0.6573693341314233
+    },
+    "radius_fourier": {
+     "power_k": [
+      115.25545162410086,
+      0.0783794513240318,
+      0.06546508867748912,
+      0.16953585599189525,
+      1.7260692583734545,
+      0.20261891768777876,
+      0.01952159789195471,
+      0.018283471398089484,
+      0.22813805469786755
+     ],
+     "p2_over_p0": 0.000567999931933804,
+     "share_2theta_of_k_ge_1": 0.026102385718849604,
+     "q_from_r2": 0.9292835782482448,
+     "q_from_r2_noise_corrected": 0.9180633896300376
+    },
+    "centroid_axis_harmonics": {
+     "axis1": {
+      "dominant_k": 1,
+      "share_k1": 0.9634485304704503,
+      "share_k2": 0.0018039256662516108,
+      "share_k3": 0.00816147694486159
+     },
+     "axis2": {
+      "dominant_k": 2,
+      "share_k1": 0.023842393073021436,
+      "share_k2": 0.9586534851946596,
+      "share_k3": 6.419155561601929e-06
+     },
+     "axis3": {
+      "dominant_k": 1,
+      "share_k1": 0.9612911006498901,
+      "share_k2": 0.025259661514797468,
+      "share_k3": 0.0005146287793776083
+     },
+     "axis4": {
+      "dominant_k": 4,
+      "share_k1": 0.03862793152194679,
+      "share_k2": 0.006267421310829723,
+      "share_k3": 0.0029907679025491973
+     }
+    },
+    "k2_axis_rank": 2
+   },
+   "angle": {
+    "pipeline_plane": {
+     "plane": "activation",
+     "pipeline_angle_source": "labels",
+     "orientation": 1,
+     "offset_rad": -0.8265847490209954,
+     "resid_rms_deg": 45.88362770948165,
+     "mean_abs_dev_deg": 35.42190171872476,
+     "eps_2theta": 0.7293136238435677,
+     "r2_2theta": 0.41471162426381547,
+     "q_linear": 0.15652821583328852,
+     "q_exact": 0.14957950615803803,
+     "exact_resid_rms_deg": 32.487455244752695
+    },
+    "stored_checks_recomputed": {
+     "activation": {
+      "mean_dev_deg": 35.42190171872476,
+      "circular_corr": 0.4420129555904681
+     },
+     "centroid": {
+      "mean_dev_deg": 49.064459868444544,
+      "circular_corr": -0.08818045042876313
+     }
+    },
+    "flag": "pipeline fell back to the labels angle at this point (atan2 in both PCA planes fails the circular-corr / order check); its atan2 fit is reported but is not a ring angle"
+   },
+   "summary": {
+    "q_conic": 0.782750231766898,
+    "q_polar": 0.8220934107781144,
+    "q_chart_plane": 0.7388268035613685,
+    "q_k1_chart_full": 0.7388403821811882,
+    "q_k1_chart_full_noise_corrected": 0.7370433200092817,
+    "q_eig_top2_full": 0.7881292816000317,
+    "q_eig_top2_full_noise_corrected": 0.7966648800788775,
+    "q_r2_fourier_noise_corrected": 0.9180633896300376,
+    "q_angle_exact": 0.6435236991127109,
+    "q_angle_linear": 0.6690787731462983,
+    "r2_2theta_angle": 0.4287625672133578,
+    "q_angle_pipeline_plane": 0.14957950615803803,
+    "r2_2theta_angle_pipeline_plane": 0.41471162426381547,
+    "share_2theta_of_radius_power": 0.026102385718849604,
+    "p2_over_p0": 0.000567999931933804,
+    "var_share_k1": 0.6536064192850304,
+    "var_share_k2": 0.28244584493004815,
+    "bend_ratio_k2_over_k1": 0.6573693341314233,
+    "k2_axis_rank": 2,
+    "frac_outside_top2_noise_corrected": 0.31915925279406787,
+    "q_conic_variance_top2_plane": 0.79848294858714,
+    "q_angle_variance_top2_plane": 0.010056098277843813,
+    "resid_geo_over_noise": {
+     "ellipse_conic": 1.0285346290032615,
+     "circle": 1.1353972260103398,
+     "spline_smooth": 0.9751624973184658
+    }
+   }
+  }
+ },
+ "random_init": {
+  "2": {
+   "summary": {
+    "q_conic": 0.9456177524685221,
+    "q_polar": 0.9428443014506503,
+    "q_chart_plane": 0.930888772266866,
+    "q_k1_chart_full": 0.9310220238442434,
+    "q_k1_chart_full_noise_corrected": 0.9288041890447841,
+    "q_eig_top2_full": 0.9303429038375391,
+    "q_eig_top2_full_noise_corrected": 0.9321925307928773,
+    "q_r2_fourier_noise_corrected": 0.9004042455578458,
+    "q_angle_exact": 0.9164943332806964,
+    "q_angle_linear": 0.9158359503319785,
+    "r2_2theta_angle": 0.20776245340286714,
+    "q_angle_pipeline_plane": 0.9204469920788949,
+    "r2_2theta_angle_pipeline_plane": 0.12485264536440377,
+    "share_2theta_of_radius_power": 0.02277596356881972,
+    "p2_over_p0": 0.00016889934572252322,
+    "var_share_k1": 1.036462947318303,
+    "var_share_k2": 0.03614307214826763,
+    "bend_ratio_k2_over_k1": 0.18673926358484805,
+    "k2_axis_rank": 0,
+    "frac_outside_top2_noise_corrected": 0.28595531658866413,
+    "q_conic_variance_top2_plane": 0.9198109191149281,
+    "q_angle_variance_top2_plane": 0.9204469903306179,
+    "resid_geo_over_noise": {
+     "ellipse_conic": 0.9593337237011269,
+     "circle": 0.9685552811275925,
+     "spline_smooth": 1.2695867788632689
+    }
+   },
+   "angle_source": "unsupervised"
+  },
+  "4": {
+   "summary": {
+    "q_conic": 0.9123803279555945,
+    "q_polar": 0.9045405272917589,
+    "q_chart_plane": 0.8929648794519933,
+    "q_k1_chart_full": 0.8931111200410364,
+    "q_k1_chart_full_noise_corrected": 0.8905168080048441,
+    "q_eig_top2_full": 0.8936859997753017,
+    "q_eig_top2_full_noise_corrected": 0.8941130175634808,
+    "q_r2_fourier_noise_corrected": 0.9053460161033079,
+    "q_angle_exact": 0.878717761001687,
+    "q_angle_linear": 0.8783628599495841,
+    "r2_2theta_angle": 0.39991154502578175,
+    "q_angle_pipeline_plane": 0.879469835221428,
+    "r2_2theta_angle_pipeline_plane": 0.3199666286774463,
+    "share_2theta_of_radius_power": 0.05198144243234953,
+    "p2_over_p0": 0.00029552824732827367,
+    "var_share_k1": 1.0249570740195826,
+    "var_share_k2": 0.035313862721027905,
+    "bend_ratio_k2_over_k1": 0.18561786523671006,
+    "k2_axis_rank": 4,
+    "frac_outside_top2_noise_corrected": 0.24105369695838363,
+    "q_conic_variance_top2_plane": 0.9050999221473083,
+    "q_angle_variance_top2_plane": 0.8794698363771711,
+    "resid_geo_over_noise": {
+     "ellipse_conic": 0.940998964904246,
+     "circle": 0.989147359450077,
+     "spline_smooth": 1.2641084218462784
+    }
+   },
+   "angle_source": "unsupervised"
+  },
+  "6": {
+   "summary": {
+    "q_conic": 0.9304982317270367,
+    "q_polar": 0.9144812405838914,
+    "q_chart_plane": 0.9043086973059783,
+    "q_k1_chart_full": 0.9043961292831274,
+    "q_k1_chart_full_noise_corrected": 0.9022867778135251,
+    "q_eig_top2_full": 0.9056936597711502,
+    "q_eig_top2_full_noise_corrected": 0.9057406830920041,
+    "q_r2_fourier_noise_corrected": 0.932529739829337,
+    "q_angle_exact": 0.8911845710734078,
+    "q_angle_linear": 0.8912006624678087,
+    "r2_2theta_angle": 0.35675200321015554,
+    "q_angle_pipeline_plane": 0.8922777958265309,
+    "r2_2theta_angle_pipeline_plane": 0.30297898501022213,
+    "share_2theta_of_radius_power": 0.0329805186057339,
+    "p2_over_p0": 0.0001648253362812589,
+    "var_share_k1": 1.0224917016717285,
+    "var_share_k2": 0.034332278371201064,
+    "bend_ratio_k2_over_k1": 0.1832404782391291,
+    "k2_axis_rank": 4,
+    "frac_outside_top2_noise_corrected": 0.22359680589578868,
+    "q_conic_variance_top2_plane": 0.928144535925601,
+    "q_angle_variance_top2_plane": 0.8922777990300343,
+    "resid_geo_over_noise": {
+     "ellipse_conic": 0.9011374724796738,
+     "circle": 0.9447761586803981,
+     "spline_smooth": 1.1496599328313872
+    }
+   },
+   "angle_source": "unsupervised"
+  },
+  "8": {
+   "summary": {
+    "q_conic": 0.9234716852162932,
+    "q_polar": 0.9077802346589853,
+    "q_chart_plane": 0.8924465103397236,
+    "q_k1_chart_full": 0.8925192859358152,
+    "q_k1_chart_full_noise_corrected": 0.8902785063155504,
+    "q_eig_top2_full": 0.8951174909643494,
+    "q_eig_top2_full_noise_corrected": 0.8935061153156674,
+    "q_r2_fourier_noise_corrected": 0.93070156629029,
+    "q_angle_exact": 0.8748188117114739,
+    "q_angle_linear": 0.8748818822553959,
+    "r2_2theta_angle": 0.44622368232205256,
+    "q_angle_pipeline_plane": 0.8741634243344338,
+    "r2_2theta_angle_pipeline_plane": 0.394030411156425,
+    "share_2theta_of_radius_power": 0.041537159071059954,
+    "p2_over_p0": 0.00021244178682647573,
+    "var_share_k1": 1.0221433493349967,
+    "var_share_k2": 0.033415132250746854,
+    "bend_ratio_k2_over_k1": 0.18080718661415351,
+    "k2_axis_rank": 4,
+    "frac_outside_top2_noise_corrected": 0.21609271389992935,
+    "q_conic_variance_top2_plane": 0.9251684049013106,
+    "q_angle_variance_top2_plane": 0.8741634235784776,
+    "resid_geo_over_noise": {
+     "ellipse_conic": 0.8947186375540164,
+     "circle": 0.9482082566786184,
+     "spline_smooth": 1.156496573595348
+    }
+   },
+   "angle_source": "unsupervised"
+  },
+  "10": {
+   "summary": {
+    "q_conic": 0.9184114139843761,
+    "q_polar": 0.9049134324982447,
+    "q_chart_plane": 0.8932551557756905,
+    "q_k1_chart_full": 0.8933091333545243,
+    "q_k1_chart_full_noise_corrected": 0.8912066425893252,
+    "q_eig_top2_full": 0.8955170403667058,
+    "q_eig_top2_full_noise_corrected": 0.8937159527891814,
+    "q_r2_fourier_noise_corrected": 0.9247088095903512,
+    "q_angle_exact": 0.8777796979068772,
+    "q_angle_linear": 0.8781154882676823,
+    "r2_2theta_angle": 0.3921657150013471,
+    "q_angle_pipeline_plane": 0.8779620835479486,
+    "r2_2theta_angle_pipeline_plane": 0.3443655453796147,
+    "share_2theta_of_radius_power": 0.048685293664971,
+    "p2_over_p0": 0.00025701336160925876,
+    "var_share_k1": 1.0183060879625583,
+    "var_share_k2": 0.0336972805789274,
+    "bend_ratio_k2_over_k1": 0.18191070497685874,
+    "k2_axis_rank": 4,
+    "frac_outside_top2_noise_corrected": 0.2084708669305374,
+    "q_conic_variance_top2_plane": 0.9180385246260294,
+    "q_angle_variance_top2_plane": 0.8779620855132985,
+    "resid_geo_over_noise": {
+     "ellipse_conic": 0.9083989490510226,
+     "circle": 0.9597742084702121,
+     "spline_smooth": 1.253681619627002
+    }
+   },
+   "angle_source": "unsupervised"
+  },
+  "12": {
+   "summary": {
+    "q_conic": 0.9238896431445995,
+    "q_polar": 0.9065705929643082,
+    "q_chart_plane": 0.9024921809855968,
+    "q_k1_chart_full": 0.9025210019040298,
+    "q_k1_chart_full_noise_corrected": 0.9006409132380906,
+    "q_eig_top2_full": 0.9047726539175145,
+    "q_eig_top2_full_noise_corrected": 0.9023904080115968,
+    "q_r2_fourier_noise_corrected": 0.933314631596647,
+    "q_angle_exact": 0.8922203787811795,
+    "q_angle_linear": 0.8926686842497432,
+    "r2_2theta_angle": 0.3556482301644318,
+    "q_angle_pipeline_plane": 0.8923635770657816,
+    "r2_2theta_angle_pipeline_plane": 0.3143792265417369,
+    "share_2theta_of_radius_power": 0.04486436581556083,
+    "p2_over_p0": 0.00022993932298198696,
+    "var_share_k1": 1.0171087906420293,
+    "var_share_k2": 0.03418738310742263,
+    "bend_ratio_k2_over_k1": 0.18333662212623947,
+    "k2_axis_rank": 4,
+    "frac_outside_top2_noise_corrected": 0.20543513915412925,
+    "q_conic_variance_top2_plane": 0.9259236988968558,
+    "q_angle_variance_top2_plane": 0.8923635737484631,
+    "resid_geo_over_noise": {
+     "ellipse_conic": 0.8751945592405306,
+     "circle": 0.930318992128038,
+     "spline_smooth": 1.1851469946873658
+    }
+   },
+   "angle_source": "unsupervised"
+  },
+  "14": {
+   "summary": {
+    "q_conic": 0.9266757610273749,
+    "q_polar": 0.9044028368820478,
+    "q_chart_plane": 0.9045186292086322,
+    "q_k1_chart_full": 0.904476635015947,
+    "q_k1_chart_full_noise_corrected": 0.9026543613692106,
+    "q_eig_top2_full": 0.9083777510850962,
+    "q_eig_top2_full_noise_corrected": 0.903029661546462,
+    "q_r2_fourier_noise_corrected": 0.9367951040922918,
+    "q_angle_exact": 0.8993776775459725,
+    "q_angle_linear": 0.8996584131966033,
+    "r2_2theta_angle": 0.31640989247587736,
+    "q_angle_pipeline_plane": 0.8986514097484238,
+    "r2_2theta_angle_pipeline_plane": 0.27438858999803606,
+    "share_2theta_of_radius_power": 0.0452794024139072,
+    "p2_over_p0": 0.00024224254625303804,
+    "var_share_k1": 1.0158831054262147,
+    "var_share_k2": 0.03430635213350556,
+    "bend_ratio_k2_over_k1": 0.1837661012842756,
+    "k2_axis_rank": 4,
+    "frac_outside_top2_noise_corrected": 0.20410943088467182,
+    "q_conic_variance_top2_plane": 0.9314607017199014,
+    "q_angle_variance_top2_plane": 0.8986514088443934,
+    "resid_geo_over_noise": {
+     "ellipse_conic": 0.8785589327042143,
+     "circle": 0.9328904926958094,
+     "spline_smooth": 1.188339319977018
+    }
+   },
+   "angle_source": "unsupervised"
+  },
+  "16": {
+   "summary": {
+    "q_conic": 0.9178479611203137,
+    "q_polar": 0.896950315427979,
+    "q_chart_plane": 0.8984540539809158,
+    "q_k1_chart_full": 0.8984812074845667,
+    "q_k1_chart_full_noise_corrected": 0.8966306229168991,
+    "q_eig_top2_full": 0.9015162148074025,
+    "q_eig_top2_full_noise_corrected": 0.8974986696654036,
+    "q_r2_fourier_noise_corrected": 0.9262439970969112,
+    "q_angle_exact": 0.8940286880611059,
+    "q_angle_linear": 0.8941265305964102,
+    "r2_2theta_angle": 0.37312214652458675,
+    "q_angle_pipeline_plane": 0.8938362022153965,
+    "r2_2theta_angle_pipeline_plane": 0.3325405235711614,
+    "share_2theta_of_radius_power": 0.0668242316482361,
+    "p2_over_p0": 0.0003216224848197361,
+    "var_share_k1": 1.0151843005108094,
+    "var_share_k2": 0.03207825666347486,
+    "bend_ratio_k2_over_k1": 0.17775954604106062,
+    "k2_axis_rank": 4,
+    "frac_outside_top2_noise_corrected": 0.19767817858089842,
+    "q_conic_variance_top2_plane": 0.9207938404128493,
+    "q_angle_variance_top2_plane": 0.8938362020075399,
+    "resid_geo_over_noise": {
+     "ellipse_conic": 0.8748807977411595,
+     "circle": 0.9420663536813562,
+     "spline_smooth": 1.1968470358529808
+    }
+   },
+   "angle_source": "unsupervised"
+  },
+  "18": {
+   "summary": {
+    "q_conic": 0.9468868228823819,
+    "q_polar": 0.9249420968844188,
+    "q_chart_plane": 0.9250718488079599,
+    "q_k1_chart_full": 0.9250738453339555,
+    "q_k1_chart_full_noise_corrected": 0.92372100036564,
+    "q_eig_top2_full": 0.9277374448624727,
+    "q_eig_top2_full_noise_corrected": 0.9237022385737232,
+    "q_r2_fourier_noise_corrected": 0.9592758317617927,
+    "q_angle_exact": 0.9176739580221679,
+    "q_angle_linear": 0.9177613708817343,
+    "r2_2theta_angle": 0.23326645418127245,
+    "q_angle_pipeline_plane": 0.9174447071631812,
+    "r2_2theta_angle_pipeline_plane": 0.20682361235298796,
+    "share_2theta_of_radius_power": 0.023880644850048437,
+    "p2_over_p0": 0.0001075049232836221,
+    "var_share_k1": 1.0138163065478438,
+    "var_share_k2": 0.03226306912036666,
+    "bend_ratio_k2_over_k1": 0.17839110808571396,
+    "k2_axis_rank": 4,
+    "frac_outside_top2_noise_corrected": 0.19531925140799722,
+    "q_conic_variance_top2_plane": 0.9498075424420687,
+    "q_angle_variance_top2_plane": 0.9174447062498161,
+    "resid_geo_over_noise": {
+     "ellipse_conic": 0.8627135523595167,
+     "circle": 0.895931389171802,
+     "spline_smooth": 1.1909900546193275
+    }
+   },
+   "angle_source": "unsupervised"
+  },
+  "20": {
+   "summary": {
+    "q_conic": 0.9341156219538528,
+    "q_polar": 0.915643812646669,
+    "q_chart_plane": 0.9234221561959873,
+    "q_k1_chart_full": 0.9233631518138068,
+    "q_k1_chart_full_noise_corrected": 0.9220356646750463,
+    "q_eig_top2_full": 0.9249331774976329,
+    "q_eig_top2_full_noise_corrected": 0.9221465992547724,
+    "q_r2_fourier_noise_corrected": 0.9495184007772088,
+    "q_angle_exact": 0.922353626860426,
+    "q_angle_linear": 0.9222472691018531,
+    "r2_2theta_angle": 0.22158534984723588,
+    "q_angle_pipeline_plane": 0.9223124113860216,
+    "r2_2theta_angle_pipeline_plane": 0.199520218826315,
+    "share_2theta_of_radius_power": 0.03821556428513492,
+    "p2_over_p0": 0.00017083667444424123,
+    "var_share_k1": 1.0092502490287178,
+    "var_share_k2": 0.03142796991989061,
+    "bend_ratio_k2_over_k1": 0.1764650614834463,
+    "k2_axis_rank": 4,
+    "frac_outside_top2_noise_corrected": 0.1917792719943242,
+    "q_conic_variance_top2_plane": 0.9366239724103547,
+    "q_angle_variance_top2_plane": 0.9223124112605734,
+    "resid_geo_over_noise": {
+     "ellipse_conic": 0.8671557458544731,
+     "circle": 0.913889101430231,
+     "spline_smooth": 1.1536717107834322
+    }
+   },
+   "angle_source": "unsupervised"
+  },
+  "22": {
+   "summary": {
+    "q_conic": 0.9350537288102577,
+    "q_polar": 0.9167707428303,
+    "q_chart_plane": 0.9203484310452282,
+    "q_k1_chart_full": 0.9203087195014602,
+    "q_k1_chart_full_noise_corrected": 0.918944650255727,
+    "q_eig_top2_full": 0.9223007304407916,
+    "q_eig_top2_full_noise_corrected": 0.9191189305264789,
+    "q_r2_fourier_noise_corrected": 0.9474803982783666,
+    "q_angle_exact": 0.91648055663029,
+    "q_angle_linear": 0.9162133742191821,
+    "r2_2theta_angle": 0.2682533097551061,
+    "q_angle_pipeline_plane": 0.9164007900143468,
+    "r2_2theta_angle_pipeline_plane": 0.24415695766791445,
+    "share_2theta_of_radius_power": 0.043201916490306,
+    "p2_over_p0": 0.00018481470358875323,
+    "var_share_k1": 1.006468384157753,
+    "var_share_k2": 0.03223759937694875,
+    "bend_ratio_k2_over_k1": 0.17897042870873053,
+    "k2_axis_rank": 4,
+    "frac_outside_top2_noise_corrected": 0.1911267922966302,
+    "q_conic_variance_top2_plane": 0.9373689730967218,
+    "q_angle_variance_top2_plane": 0.9164007993641227,
+    "resid_geo_over_noise": {
+     "ellipse_conic": 0.856087972747778,
+     "circle": 0.9027176545139727,
+     "spline_smooth": 1.1647165444296301
+    }
+   },
+   "angle_source": "unsupervised"
+  },
+  "24": {
+   "summary": {
+    "q_conic": 0.9462097159014198,
+    "q_polar": 0.9266843428645081,
+    "q_chart_plane": 0.9258846216688758,
+    "q_k1_chart_full": 0.9258556260715253,
+    "q_k1_chart_full_noise_corrected": 0.9245840625373076,
+    "q_eig_top2_full": 0.9276402012243574,
+    "q_eig_top2_full_noise_corrected": 0.9248306275756591,
+    "q_r2_fourier_noise_corrected": 0.9599471994807552,
+    "q_angle_exact": 0.920424030558221,
+    "q_angle_linear": 0.9200274459400244,
+    "r2_2theta_angle": 0.26600060707889417,
+    "q_angle_pipeline_plane": 0.9203862443605327,
+    "r2_2theta_angle_pipeline_plane": 0.2434752610264611,
+    "share_2theta_of_radius_power": 0.02749257833004469,
+    "p2_over_p0": 0.00011160734432530346,
+    "var_share_k1": 1.0075003689495614,
+    "var_share_k2": 0.03249990732887497,
+    "bend_ratio_k2_over_k1": 0.17960501307563848,
+    "k2_axis_rank": 4,
+    "frac_outside_top2_noise_corrected": 0.19072020766628517,
+    "q_conic_variance_top2_plane": 0.9478460186116223,
+    "q_angle_variance_top2_plane": 0.9203862436353241,
+    "resid_geo_over_noise": {
+     "ellipse_conic": 0.8675242016738509,
+     "circle": 0.9032281355881726,
+     "spline_smooth": 1.1922186339222098
+    }
+   },
+   "angle_source": "unsupervised"
+  }
+ },
+ "stored_angle_check": {
+  "8": {
+   "activation": {
+    "stored_mean_dev_deg": 39.84817951831501,
+    "recomputed_mean_dev_deg": 39.848179518315014
+   },
+   "centroid": {
+    "stored_mean_dev_deg": 17.00575318465076,
+    "recomputed_mean_dev_deg": 17.005753184650764
+   },
+   "stored_source": "labels_angle (fallback, flagged)"
+  },
+  "12": {
+   "activation": {
+    "stored_mean_dev_deg": 30.837644142383134,
+    "recomputed_mean_dev_deg": 30.837644142383134
+   },
+   "centroid": {
+    "stored_mean_dev_deg": 7.487576706140712,
+    "recomputed_mean_dev_deg": 7.4875767061407155
+   },
+   "stored_source": "unsupervised, centroid plane"
+  },
+  "22": {
+   "activation": {
+    "stored_mean_dev_deg": 11.802693238358813,
+    "recomputed_mean_dev_deg": 11.802693238358808
+   },
+   "centroid": {
+    "stored_mean_dev_deg": 10.933188600486455,
+    "recomputed_mean_dev_deg": 10.93318860048607
+   },
+   "stored_source": "unsupervised, activation plane"
+  }
+ },
+ "arcs": {
+  "12": {
+   "n_distinct_arcs": 15,
+   "chart64_q": 0.8169135054549486,
+   "rows": [
+    {
+     "block_start_index": 8,
+     "seeds": [
+      11
+     ],
+     "mid_deg": 64.6875,
+     "kappa_ellipse_chart64": 0.2409087108566971,
+     "kappa_ellipse_norm": 1.3334388037087483,
+     "kappa_spline_smooth": 0.796045432784477,
+     "kappa_k12_harmonic": 0.17314491046572925,
+     "mean_stored_sagitta": 0.47112009589300974,
+     "gap_probe_radius_min": 0.19925195057568193
+    },
+    {
+     "block_start_index": 9,
+     "seeds": [
+      14
+     ],
+     "mid_deg": 70.3125,
+     "kappa_ellipse_chart64": 0.24428578329301207,
+     "kappa_ellipse_norm": 1.3521310270555258,
+     "kappa_spline_smooth": 0.2103321425302576,
+     "kappa_k12_harmonic": 0.24653457614734378,
+     "mean_stored_sagitta": 1.1829859786881047,
+     "gap_probe_radius_min": 0.23653942154988883
+    },
+    {
+     "block_start_index": 26,
+     "seeds": [
+      9
+     ],
+     "mid_deg": 165.9375,
+     "kappa_ellipse_chart64": 0.13357041517131324,
+     "kappa_ellipse_norm": 0.7393172873805426,
+     "kappa_spline_smooth": 0.7897955841392527,
+     "kappa_k12_harmonic": 0.212500175576784,
+     "mean_stored_sagitta": 2.6851518046819693,
+     "gap_probe_radius_min": 0.27672028744284655
+    },
+    {
+     "block_start_index": 28,
+     "seeds": [
+      6
+     ],
+     "mid_deg": 177.1875,
+     "kappa_ellipse_chart64": 0.137493067527442,
+     "kappa_ellipse_norm": 0.7610293161673848,
+     "kappa_spline_smooth": 0.558468025217574,
+     "kappa_k12_harmonic": 0.34174113417535074,
+     "mean_stored_sagitta": 3.7154042791445248,
+     "gap_probe_radius_min": 0.19366493248517394
+    },
+    {
+     "block_start_index": 30,
+     "seeds": [
+      1
+     ],
+     "mid_deg": 188.4375,
+     "kappa_ellipse_chart64": 0.14668380224094807,
+     "kappa_ellipse_norm": 0.8119003795589944,
+     "kappa_spline_smooth": 0.28117400065061443,
+     "kappa_k12_harmonic": 0.34365475761312797,
+     "mean_stored_sagitta": 3.214855246148672,
+     "gap_probe_radius_min": 0.2966579537577174
+    },
+    {
+     "block_start_index": 34,
+     "seeds": [
+      16
+     ],
+     "mid_deg": 210.9375,
+     "kappa_ellipse_chart64": 0.18074210784971104,
+     "kappa_ellipse_norm": 1.000414386071239,
+     "kappa_spline_smooth": 0.3031490004338438,
+     "kappa_k12_harmonic": 0.1307764361535765,
+     "mean_stored_sagitta": 1.1740079266652215,
+     "gap_probe_radius_min": 0.22895572154144186
+    },
+    {
+     "block_start_index": 39,
+     "seeds": [
+      12
+     ],
+     "mid_deg": 239.0625,
+     "kappa_ellipse_chart64": 0.23443707257178412,
+     "kappa_ellipse_norm": 1.2976180416367478,
+     "kappa_spline_smooth": 0.4514618471115702,
+     "kappa_k12_harmonic": 0.11528212959879426,
+     "mean_stored_sagitta": 1.3285659573969462,
+     "gap_probe_radius_min": 0.212481375315991
+    },
+    {
+     "block_start_index": 42,
+     "seeds": [
+      5
+     ],
+     "mid_deg": 255.9375,
+     "kappa_ellipse_chart64": 0.24421198230507407,
+     "kappa_ellipse_norm": 1.3517225358028906,
+     "kappa_spline_smooth": 0.4550797611217613,
+     "kappa_k12_harmonic": 0.26285042396206426,
+     "mean_stored_sagitta": 1.1128306029938555,
+     "gap_probe_radius_min": 0.2907115522534022
+    },
+    {
+     "block_start_index": 46,
+     "seeds": [
+      4,
+      8
+     ],
+     "mid_deg": 278.4375,
+     "kappa_ellipse_chart64": 0.21445193968263263,
+     "kappa_ellipse_norm": 1.1869995770868194,
+     "kappa_spline_smooth": 0.26954706240512444,
+     "kappa_k12_harmonic": 0.4042517438445792,
+     "mean_stored_sagitta": 1.3430112846146058,
+     "gap_probe_radius_min": 0.2969373137955523
+    },
+    {
+     "block_start_index": 49,
+     "seeds": [
+      10
+     ],
+     "mid_deg": 295.3125,
+     "kappa_ellipse_chart64": 0.18028941782293303,
+     "kappa_ellipse_norm": 0.9979087296937209,
+     "kappa_spline_smooth": 0.5936877764199971,
+     "kappa_k12_harmonic": 0.16821346824484024,
+     "mean_stored_sagitta": 0.5943559728063676,
+     "gap_probe_radius_min": 0.3072672500613109
+    },
+    {
+     "block_start_index": 51,
+     "seeds": [
+      3
+     ],
+     "mid_deg": 306.5625,
+     "kappa_ellipse_chart64": 0.16087498496280306,
+     "kappa_ellipse_norm": 0.8904491113360651,
+     "kappa_spline_smooth": 0.19163263568712788,
+     "kappa_k12_harmonic": 0.10369077225482794,
+     "mean_stored_sagitta": 0.26605311144121,
+     "gap_probe_radius_min": 0.2843894931183761
+    },
+    {
+     "block_start_index": 53,
+     "seeds": [
+      2
+     ],
+     "mid_deg": 317.8125,
+     "kappa_ellipse_chart64": 0.14643534710749498,
+     "kappa_ellipse_norm": 0.8105251710214997,
+     "kappa_spline_smooth": 0.3543607565678758,
+     "kappa_k12_harmonic": 0.09032995090955188,
+     "mean_stored_sagitta": 0.6448831973085615,
+     "gap_probe_radius_min": 0.2859423624676607
+    },
+    {
+     "block_start_index": 57,
+     "seeds": [
+      13
+     ],
+     "mid_deg": 340.3125,
+     "kappa_ellipse_chart64": 0.13354343041233763,
+     "kappa_ellipse_norm": 0.7391679257215189,
+     "kappa_spline_smooth": 0.31240506124052003,
+     "kappa_k12_harmonic": 0.19737999162868278,
+     "mean_stored_sagitta": 1.1702836810834527,
+     "gap_probe_radius_min": 0.28330877913058705
+    },
+    {
+     "block_start_index": 59,
+     "seeds": [
+      15
+     ],
+     "mid_deg": 351.5625,
+     "kappa_ellipse_chart64": 0.13488311260727306,
+     "kappa_ellipse_norm": 0.7465831172146453,
+     "kappa_spline_smooth": 0.272816554126337,
+     "kappa_k12_harmonic": 0.3291799079016923,
+     "mean_stored_sagitta": 7.7193745175035815,
+     "gap_probe_radius_min": 0.28656224946930203
+    },
+    {
+     "block_start_index": 60,
+     "seeds": [
+      7
+     ],
+     "mid_deg": 357.1875,
+     "kappa_ellipse_chart64": 0.13749306752744203,
+     "kappa_ellipse_norm": 0.7610293161673849,
+     "kappa_spline_smooth": 0.39034137350870335,
+     "kappa_k12_harmonic": 0.37524342838471614,
+     "mean_stored_sagitta": 8.828059886559,
+     "gap_probe_radius_min": 0.12585169173308228
+    }
+   ],
+   "spearman_vs_gap": {
+    "kappa_ellipse_chart64": {
+     "spearman_rho": 0.05357142857142857,
+     "p": 0.8496099367776072,
+     "n": 15
+    },
+    "kappa_k12_harmonic": {
+     "spearman_rho": 0.06071428571428571,
+     "p": 0.8298120954425187,
+     "n": 15
+    },
+    "kappa_spline_smooth": {
+     "spearman_rho": -0.2821428571428571,
+     "p": 0.30828445682005545,
+     "n": 15
+    },
+    "mean_stored_sagitta": {
+     "spearman_rho": -0.2321428571428571,
+     "p": 0.40509874069364904,
+     "n": 15
+    }
+   },
+   "gap_field": "gaps.manifold_minus_linear.probe_radius_min.mean (duplicate arcs averaged)"
+  },
+  "22": {
+   "n_distinct_arcs": 15,
+   "chart64_q": 0.7253421847980172,
+   "rows": [
+    {
+     "block_start_index": 8,
+     "seeds": [
+      11
+     ],
+     "mid_deg": 64.6875,
+     "kappa_ellipse_chart64": 0.17302658755542633,
+     "kappa_ellipse_norm": 1.2417882572229424,
+     "kappa_spline_smooth": 0.7618734345787562,
+     "kappa_k12_harmonic": 0.08837599354224933,
+     "mean_stored_sagitta": 1.7362592674312411,
+     "gap_probe_radius_min": 0.2581243091773418
+    },
+    {
+     "block_start_index": 9,
+     "seeds": [
+      14
+     ],
+     "mid_deg": 70.3125,
+     "kappa_ellipse_chart64": 0.18874463255661797,
+     "kappa_ellipse_norm": 1.3545945258129017,
+     "kappa_spline_smooth": 0.2881833725138386,
+     "kappa_k12_harmonic": 0.14160359980230344,
+     "mean_stored_sagitta": 1.651906474301961,
+     "gap_probe_radius_min": 0.25633763474090193
+    },
+    {
+     "block_start_index": 26,
+     "seeds": [
+      9
+     ],
+     "mid_deg": 165.9375,
+     "kappa_ellipse_chart64": 0.09116180027870197,
+     "kappa_ellipse_norm": 0.6542558267649604,
+     "kappa_spline_smooth": 0.21642603406248495,
+     "kappa_k12_harmonic": 0.18180716087518708,
+     "mean_stored_sagitta": 0.7025409233779113,
+     "gap_probe_radius_min": 0.13277606827588823
+    },
+    {
+     "block_start_index": 28,
+     "seeds": [
+      6
+     ],
+     "mid_deg": 177.1875,
+     "kappa_ellipse_chart64": 0.08656121925614686,
+     "kappa_ellipse_norm": 0.6212380832440024,
+     "kappa_spline_smooth": 1.5974699059929987,
+     "kappa_k12_harmonic": 0.28806791481209726,
+     "mean_stored_sagitta": 1.1715417709674123,
+     "gap_probe_radius_min": 0.25284098970637614
+    },
+    {
+     "block_start_index": 30,
+     "seeds": [
+      1
+     ],
+     "mid_deg": 188.4375,
+     "kappa_ellipse_chart64": 0.08678264068867406,
+     "kappa_ellipse_norm": 0.6228271947134849,
+     "kappa_spline_smooth": 0.2075558593262509,
+     "kappa_k12_harmonic": 0.2383795608927095,
+     "mean_stored_sagitta": 1.190691536530621,
+     "gap_probe_radius_min": 0.23280008509399253
+    },
+    {
+     "block_start_index": 34,
+     "seeds": [
+      16
+     ],
+     "mid_deg": 210.9375,
+     "kappa_ellipse_chart64": 0.1023334515000314,
+     "kappa_ellipse_norm": 0.734433246295894,
+     "kappa_spline_smooth": 0.3649214765662095,
+     "kappa_k12_harmonic": 0.06981570336045581,
+     "mean_stored_sagitta": 1.3735443844683493,
+     "gap_probe_radius_min": 0.2952283091283117
+    },
+    {
+     "block_start_index": 39,
+     "seeds": [
+      12
+     ],
+     "mid_deg": 239.0625,
+     "kappa_ellipse_chart64": 0.1575200531305608,
+     "kappa_ellipse_norm": 1.130499971237108,
+     "kappa_spline_smooth": 1.1833580284673844,
+     "kappa_k12_harmonic": 0.0705971428351473,
+     "mean_stored_sagitta": 1.2675425723860991,
+     "gap_probe_radius_min": 0.2670014364582018
+    },
+    {
+     "block_start_index": 42,
+     "seeds": [
+      5
+     ],
+     "mid_deg": 255.9375,
+     "kappa_ellipse_chart64": 0.20339489361878801,
+     "kappa_ellipse_norm": 1.459737454476542,
+     "kappa_spline_smooth": 0.9929361469121999,
+     "kappa_k12_harmonic": 0.23015466903758477,
+     "mean_stored_sagitta": 1.1932122552146254,
+     "gap_probe_radius_min": 0.29847468126775883
+    },
+    {
+     "block_start_index": 46,
+     "seeds": [
+      4,
+      8
+     ],
+     "mid_deg": 278.4375,
+     "kappa_ellipse_chart64": 0.22210091476964097,
+     "kappa_ellipse_norm": 1.5939880210089956,
+     "kappa_spline_smooth": 0.2219287533384777,
+     "kappa_k12_harmonic": 0.34949722105643,
+     "mean_stored_sagitta": 1.8883505180907285,
+     "gap_probe_radius_min": 0.10993557070743801
+    },
+    {
+     "block_start_index": 49,
+     "seeds": [
+      10
+     ],
+     "mid_deg": 295.3125,
+     "kappa_ellipse_chart64": 0.1858459707157007,
+     "kappa_ellipse_norm": 1.3337912245020078,
+     "kappa_spline_smooth": 0.059781984589078525,
+     "kappa_k12_harmonic": 0.09592848552541769,
+     "mean_stored_sagitta": 0.7563669053343018,
+     "gap_probe_radius_min": 0.189283753687065
+    },
+    {
+     "block_start_index": 51,
+     "seeds": [
+      3
+     ],
+     "mid_deg": 306.5625,
+     "kappa_ellipse_chart64": 0.15472396972824257,
+     "kappa_ellipse_norm": 1.1104328614115586,
+     "kappa_spline_smooth": 0.29929899243316277,
+     "kappa_k12_harmonic": 0.05477095457582272,
+     "mean_stored_sagitta": 1.2947030328147728,
+     "gap_probe_radius_min": 0.3208567449019947
+    },
+    {
+     "block_start_index": 53,
+     "seeds": [
+      2
+     ],
+     "mid_deg": 317.8125,
+     "kappa_ellipse_chart64": 0.1280389935899843,
+     "kappa_ellipse_norm": 0.9189184214579382,
+     "kappa_spline_smooth": 2.525639676533313,
+     "kappa_k12_harmonic": 0.04900413016202547,
+     "mean_stored_sagitta": 1.8487626776017783,
+     "gap_probe_radius_min": 0.2928763999982054
+    },
+    {
+     "block_start_index": 57,
+     "seeds": [
+      13
+     ],
+     "mid_deg": 340.3125,
+     "kappa_ellipse_chart64": 0.09541269555059369,
+     "kappa_ellipse_norm": 0.684763923271393,
+     "kappa_spline_smooth": 0.1435533831139525,
+     "kappa_k12_harmonic": 0.1350582141157586,
+     "mean_stored_sagitta": 1.6179269935638478,
+     "gap_probe_radius_min": 0.29873047166232564
+    },
+    {
+     "block_start_index": 59,
+     "seeds": [
+      15
+     ],
+     "mid_deg": 351.5625,
+     "kappa_ellipse_chart64": 0.08823858628174877,
+     "kappa_ellipse_norm": 0.6332763179735534,
+     "kappa_spline_smooth": 0.7825285552356763,
+     "kappa_k12_harmonic": 0.2706677691893683,
+     "mean_stored_sagitta": 1.6699809197544964,
+     "gap_probe_radius_min": 0.29360227325789257
+    },
+    {
+     "block_start_index": 60,
+     "seeds": [
+      7
+     ],
+     "mid_deg": 357.1875,
+     "kappa_ellipse_chart64": 0.08656121925614686,
+     "kappa_ellipse_norm": 0.6212380832440024,
+     "kappa_spline_smooth": 0.3604853421415958,
+     "kappa_k12_harmonic": 0.32778731706197345,
+     "mean_stored_sagitta": 1.2450029671999074,
+     "gap_probe_radius_min": 0.2656782627322509
+    }
+   ],
+   "spearman_vs_gap": {
+    "kappa_ellipse_chart64": {
+     "spearman_rho": -0.048257391923802746,
+     "p": 0.8643937728170601,
+     "n": 15
+    },
+    "kappa_k12_harmonic": {
+     "spearman_rho": -0.475,
+     "p": 0.07357086204591355,
+     "n": 15
+    },
+    "kappa_spline_smooth": {
+     "spearman_rho": 0.3321428571428571,
+     "p": 0.22647175907072437,
+     "n": 15
+    },
+    "mean_stored_sagitta": {
+     "spearman_rho": 0.23928571428571427,
+     "p": 0.3903793119202356,
+     "n": 15
+    }
+   },
+   "gap_field": "gaps.manifold_minus_linear.probe_radius_min.mean (duplicate arcs averaged)"
+  }
+ },
+ "controls": {
+  "planted_circle_in_real_L12": {
+   "planted_q": 1.0,
+   "planted_bend_over_radius": 0.0,
+   "planted_major_radius": 4.468403006130783,
+   "recipe": "geometry_checks.planted_ring_control (seed 0 Q, within-SD, stratified theta), r = 16",
+   "summary": {
+    "q_conic": 0.9920132106314352,
+    "q_polar": 0.9923617055562882,
+    "q_chart_plane": 0.9920267355740479,
+    "q_k1_chart_full": 0.9920272092191932,
+    "q_k1_chart_full_noise_corrected": 0.9919407331832784,
+    "q_eig_top2_full": 0.9917517074954469,
+    "q_eig_top2_full_noise_corrected": 0.9919140384873968,
+    "q_r2_fourier_noise_corrected": 0.991850426176675,
+    "q_angle_exact": 0.9894017361386025,
+    "q_angle_linear": 0.9894020842149104,
+    "r2_2theta_angle": 0.031491115197651576,
+    "q_angle_pipeline_plane": 0.9893193278099193,
+    "r2_2theta_angle_pipeline_plane": 0.028955990626391315,
+    "share_2theta_of_radius_power": 0.007966071376911878,
+    "p2_over_p0": 2.9562969679226273e-06,
+    "var_share_k1": 1.1389813333109298,
+    "var_share_k2": 0.0,
+    "bend_ratio_k2_over_k1": 0.0,
+    "k2_axis_rank": 0,
+    "frac_outside_top2_noise_corrected": 0.06549705329402067,
+    "q_conic_variance_top2_plane": 0.9920058531807046,
+    "q_angle_variance_top2_plane": 0.9893193251692376,
+    "resid_geo_over_noise": {
+     "ellipse_conic": 0.9598321773787819,
+     "circle": 0.9705022893939594,
+     "spline_smooth": 0.9114143582106677
+    }
+   }
+  },
+  "planted_ellipse_q0.5_in_real_L12": {
+   "planted_q": 0.5,
+   "planted_bend_over_radius": 0.0,
+   "planted_major_radius": 4.468403006130783,
+   "recipe": "geometry_checks.planted_ring_control (seed 0 Q, within-SD, stratified theta), r = 16",
+   "summary": {
+    "q_conic": 0.5081628465073811,
+    "q_polar": 0.5095675928895291,
+    "q_chart_plane": 0.5091897773337396,
+    "q_k1_chart_full": 0.5091997008302679,
+    "q_k1_chart_full_noise_corrected": 0.5011787555920392,
+    "q_eig_top2_full": 0.5106768725476556,
+    "q_eig_top2_full_noise_corrected": 0.5094711995652829,
+    "q_r2_fourier_noise_corrected": 0.3582574222775237,
+    "q_angle_exact": 0.5129460839359736,
+    "q_angle_linear": 0.5138363587877808,
+    "r2_2theta_angle": 0.9486326645545387,
+    "q_angle_pipeline_plane": 0.5124773791193253,
+    "r2_2theta_angle_pipeline_plane": 0.9415561188618266,
+    "share_2theta_of_radius_power": 0.9630365407266396,
+    "p2_over_p0": 0.02793390925283942,
+    "var_share_k1": 1.2437302744966017,
+    "var_share_k2": 0.0,
+    "bend_ratio_k2_over_k1": 0.0,
+    "k2_axis_rank": 0,
+    "frac_outside_top2_noise_corrected": 0.10037769047430023,
+    "q_conic_variance_top2_plane": 0.5087346431114065,
+    "q_angle_variance_top2_plane": 0.5124773810710127,
+    "resid_geo_over_noise": {
+     "ellipse_conic": 1.079646426799779,
+     "circle": 7.970072068694775,
+     "spline_smooth": 1.0238751398069468
+    }
+   }
+  },
+  "planted_saddle_circle_bend1.2_in_real_L12": {
+   "planted_q": 1.0,
+   "planted_bend_over_radius": 1.2,
+   "planted_major_radius": 4.468403006130783,
+   "recipe": "geometry_checks.planted_ring_control (seed 0 Q, within-SD, stratified theta), r = 16",
+   "summary": {
+    "q_conic": 0.9920032463282348,
+    "q_polar": 0.9923550955328904,
+    "q_chart_plane": 0.9920267450661974,
+    "q_k1_chart_full": 0.9920272092191934,
+    "q_k1_chart_full_noise_corrected": 0.9919407331832787,
+    "q_eig_top2_full": 0.8413103107410623,
+    "q_eig_top2_full_noise_corrected": 0.8411413814552262,
+    "q_r2_fourier_noise_corrected": 0.9947074862245492,
+    "q_angle_exact": 0.9894027466650599,
+    "q_angle_linear": 0.9894030799342585,
+    "r2_2theta_angle": 0.03143300938974902,
+    "q_angle_pipeline_plane": 0.0010000000001138395,
+    "r2_2theta_angle_pipeline_plane": 0.02549766696132194,
+    "share_2theta_of_radius_power": 0.0001451716589871857,
+    "p2_over_p0": 2.5026756348068524e-06,
+    "var_share_k1": 0.6273615435946112,
+    "var_share_k2": 0.44787722632561383,
+    "bend_ratio_k2_over_k1": 0.8449296358610399,
+    "k2_axis_rank": 1,
+    "frac_outside_top2_noise_corrected": 0.31677751926626474,
+    "q_conic_variance_top2_plane": 0.7643378221119296,
+    "q_angle_variance_top2_plane": 0.0012329888649317904,
+    "resid_geo_over_noise": {
+     "ellipse_conic": 0.9619799612926512,
+     "circle": 0.972657719505285,
+     "spline_smooth": 0.9113772250212753
+    }
+   }
+  },
+  "dims_clean_ring": {
+   "planted": {},
+   "chart_full_space_q": 0.9789938890293549,
+   "summary": {
+    "q_conic": 0.9757120747206195,
+    "q_polar": 0.9581599638918449,
+    "q_chart_plane": 0.9821920071797077,
+    "q_k1_chart_full": 0.9821920071797071,
+    "q_k1_chart_full_noise_corrected": 0.9802020658358281,
+    "q_eig_top2_full": 0.983938182222083,
+    "q_eig_top2_full_noise_corrected": 0.9837881992124845,
+    "q_r2_fourier_noise_corrected": 0.827727798419558,
+    "q_angle_exact": 0.9912173720173818,
+    "q_angle_linear": 0.9910522800423605,
+    "r2_2theta_angle": 0.0012966189090231062,
+    "q_angle_pipeline_plane": 0.9960105726614323,
+    "r2_2theta_angle_pipeline_plane": 0.00017200185164145676,
+    "share_2theta_of_radius_power": 0.004884256173817084,
+    "p2_over_p0": 2.460221240304853e-05,
+    "var_share_k1": 0.9253807570066044,
+    "var_share_k2": 0.0,
+    "bend_ratio_k2_over_k1": 0.0,
+    "k2_axis_rank": 0,
+    "frac_outside_top2_noise_corrected": 0.5790901876688345,
+    "q_conic_variance_top2_plane": 0.9661342483470252,
+    "q_angle_variance_top2_plane": 0.9960107035242879,
+    "resid_geo_over_noise": {
+     "ellipse_conic": 1.010986052835361,
+     "circle": 1.0196191058011246,
+     "spline_smooth": 1.0669941037767483
+    }
+   }
+  },
+  "dims_sheared_ring_x30": {
+   "planted": {
+    "shear": "30"
+   },
+   "chart_full_space_q": 0.7456811492239819,
+   "summary": {
+    "q_conic": 0.8264865946172203,
+    "q_polar": 0.7232250085225246,
+    "q_chart_plane": 0.7636295480070137,
+    "q_k1_chart_full": 0.7636295480070135,
+    "q_k1_chart_full_noise_corrected": 0.7405135067635618,
+    "q_eig_top2_full": 0.8350730764277972,
+    "q_eig_top2_full_noise_corrected": 0.7750338574829713,
+    "q_r2_fourier_noise_corrected": 0.6327403127254955,
+    "q_angle_exact": 0.8102983216073932,
+    "q_angle_linear": 0.8100677274761398,
+    "r2_2theta_angle": 0.03712874024062707,
+    "q_angle_pipeline_plane": 0.001000000000036728,
+    "r2_2theta_angle_pipeline_plane": 0.06621752728801122,
+    "share_2theta_of_radius_power": 0.13763650302788916,
+    "p2_over_p0": 0.001206666374270819,
+    "var_share_k1": 0.6609320613121652,
+    "var_share_k2": 0.0,
+    "bend_ratio_k2_over_k1": 0.0,
+    "k2_axis_rank": 0,
+    "frac_outside_top2_noise_corrected": 0.49015851340863015,
+    "q_conic_variance_top2_plane": 0.7997409059322802,
+    "q_angle_variance_top2_plane": 0.44299243217033907,
+    "resid_geo_over_noise": {
+     "ellipse_conic": 0.9159188481840203,
+     "circle": 0.9683949495924433,
+     "spline_smooth": 0.9576996908276417
+    }
+   }
+  }
+ }
+}
