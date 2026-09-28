@@ -50,7 +50,7 @@ with our matched-support edit, lands closer than the smoothing spline: 4.7° aga
 10.7° at point 22 on the headline arc (clip-bootstrap gap +5.0° [3.9, 6.1] and +7.0° [6.0, 8.1]). The headline arc is the
 extreme case at point 12 and second-largest at point 22 (one arc, seed 16, reaches +8.3°): over the 16 held-out arcs the raw chord's lead is +1.3° ± 1.8 SD at point 12, with the spline ahead on 3,
 and +2.3° ± 2.0 at point 22, with the spline ahead on none. The spline ties only the chord between its own smoothed knots, which was our line arm until
-the parity audit[^rawchord]. Speed and acceleration are straight, and there the spline
+the parity audit[^rawchord]. A diagnosis run after the fact (§4.3) traces most of that endpoint loss to our own FITPACK smoothing spline: with the paper's interpolating spline the two methods are within about 1° at the endpoint over 16 arcs, and a cross-validated smoother wins by under 1°. Speed and acceleration are straight, and there the spline
 adds nothing; in extrapolation our smoothing spline, continued along its end tangent as the authors' code does, trails
 the chord by 0.02–0.06, while the authors' own interpolating arm beats the chord on speed and trails it on
 acceleration[^ext].
@@ -889,6 +889,32 @@ the data and the spline's lies among it, at points 12 and 22; in unwhitened spac
 difference, consistent with the null 5-NN results above (those are held-out arcs, so the match is not exact). This is a density statement about all-value paths; the
 held-out endpoint verdict does not move.
 
+**Why the spline lost the held-out endpoint (diagnosis after the fact)**[^epd]. Most of the loss was our spline, not
+the method. We smoothed each PCA coordinate separately with FITPACK (`splrep`, s = m, its own knot subset), which
+neither the paper (an interpolating periodic cubic, A.3) nor its code (causalab's Reinsch smoother, one λ for all
+coordinates) does. That spline reads 3.4° off at its own knots against 1.9° for the raw centroids at point 22, its
+aim point reads 4.3° off against 1.5° for the chord's, and our additive edit counts that error twice, once at the
+target and once at the source anchor (the source term alone costs 1.0–1.7° over the 16 arcs). Run on the same knots,
+the authors' own code (identical to our interpolating spline to 1e-13; cosine 1.0 with our edit vector) turns the
+point-22 headline arc from +7.05° to −0.48° (spline minus raw chord), but over the 16 arcs the interpolating spline
+still trails the chord (+0.84° at point 22, +1.56° at point 12 on value-ordered knots; +27° on the label-free knot
+order) and loses nearest-real R on every arc, because across a 45° gap the interpolant overshoots to 12 PCA units
+from the true held-out centroids against 5 for the chord. Norm is not the mechanism: the spline's edit is shorter,
+and the chord rescaled to the spline's norm still wins by 2.4°. The `aim="arc"` option of 42b30fe makes the spline
+worse (+3.2°); the real fix for the point-12 knot problem is value-ordered knots (+1.32° → +0.81°). With Reinsch
+smoothing and λ chosen by leave-block-out cross-validation on the kept knots alone, the spline beats the chord on all
+16 arcs at both points, by 0.45° ± 0.21 (point 22) and 0.85° ± 0.34 (point 12, value-ordered), and on the MLP and
+nearest-real readers too; that rule is not in the paper, it was written after seeing the λ sweep on the headline arc
+(before scoring the 16 arcs), and about half of the gain is denoised knots rather than curvature (a chord through the
+smoothed knots gets −0.21° and −0.52°). The ring's bend across the gap is real (the true held-out centroids sit 0.78 /
+0.90 of the way from the chord to the smoothed curve) but smaller than the held-out centroids' own noise (2.0 / 1.4
+against 3.9 / 2.6 PCA units), and the ridge probe reads chord points almost exactly by construction (the chord's aim
+point reads 1.5° off, the true held-out centroid 2.9°); steering to the true held-out centroid does not beat the chord
+either (+0.3°). So at this gap width the endpoint cannot separate the two methods by more than about 1°, the earlier
+"chord beats spline" numbers in this section overstate the method's loss by 5–7° on the headline arc and 1–2° over 16
+arcs, and the spline's advantage is on the path (readout radius, ordering, and the forecast following it in §4.5),
+not at the endpoint. The predictor-level results of §4.5 used the interpolating spline and are unaffected.
+
 ### 4.4 Controls and the comparison with Part 1
 
 - **Random curves** (20 endpoint-matched draws, point 12 contiguous). Endpoint readouts match by construction. On the
@@ -1690,3 +1716,4 @@ Planned in the spec and not run: the last-frame-only control of the layer curves
 [^geo]: `results/p2_geodesic_direction_L{12,22}.json` and `results/GEODESIC_NOTES.md` (path metrics per arm: min readout radius, A.7 E_BC, excess nearest-real distance, L_G under each energy, in-plane share and cosine of the bend, closest-point distances; `targets_run` is empty in the lite files and the shards live outside the repo; no git commit recorded); `scripts/run_geodesic.py` (`length`, `g_sqrt`), `tests/test_geodesic.py`. CPU on box 53235298, 16:05–16:33 ET.
 [^mak]: `results/p5_makelov_ranking_L22.json` (`spearman_inlp_order_vs_move.{angle_move,by_round_angle_move,rel_l2_move}.{rho,ci95}`, `extension_all_planned_directions`, `controls.{inlp_mean_move_deg,random_mean_move_deg,rawchord_move_deg,frac_inlp_dirs_above_random_p95,inlp_mean_rel_l2,random_mean_rel_l2,rawchord_rel_l2}`, `top5_by_move`, `bottom5_by_move`); `scripts/run_makelov_ranking.py`, `src/wm/makelov.py`, `tests/test_makelov.py`; plan built at 4bbd141, scored at fb3c9cb, dirty tree both times; 185 GPU-s on box 53235298 at 17:02 ET; frames 1–8, edit added to every token at point 22; bootstrap CIs resample the 16 carriers only.
 [^c16]: `results/p2_conceptor_direction_16arc_L{12,22}.json` (`arms.<arm>.endpoint_err_deg.{mean,ci95}`, `arms.<arm>.gap_vs_raw_chord_deg`, `arms.<arm>.n_arcs_better_than_raw_chord`, `stored_16arc.{legacy_coord_aim,aim_fixed_on_8_misaimed_arcs}`, `reproduction_check`, `provenance.arc_files`); per-arc files `results/arcs_conceptor16/L{12,22}_s{1..16}/`; `scripts/aggregate_conceptor_16arc.py`, `scripts/run_conceptor.py --aim arc --lite` (4 random-projector draws per arc, not aggregated); point 12 default angle rule, point 22 `--labels-angle`; CPU on box 53030966, 17:13–17:18 ET; aggregate computed at c00e48e on a dirty tree, per-arc files record no commit.
+[^epd]: `results/p2_endpoint_diagnosis.json` (`decomposition.<config>.{headline_seed0,arcs16}` for configs L22_labels, L12_unsup, L12_labels; `paper_vs_ours_steps` with causalab file:line; `foreign_knot_split`; `verdict`; `exploratory_note`); per-arc outputs `results/endpoint_diagnosis_raw/`; `figures/fig_p2_endpoint_diagnosis.png`; `scripts/run_endpoint_diagnosis.py`, `scripts/summarize_endpoint_diagnosis.py`; CPU on the Mac, 16:58–17:25 ET; reproduces the stored raw-chord arc files to 3e-13° on the endpoint gap.
