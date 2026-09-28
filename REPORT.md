@@ -590,7 +590,7 @@ label-free recovery here is my extension, the centroid-plane fallback, and it wo
   plane at every layer, narrowly (point 12: 0.445 vs 0.428; point 22: 0.435 vs 0.421; point 8: 0.285 vs 0.285). The
   sharp test is to take a chord between opposite directions: a velocity plane predicts the speed readout at the
   midpoint collapses (ratio cos 90° = 0), and a ring predicts it is unchanged. Measured MLP-speed ratios at Δθ = 180°
-  are 0.989 / 0.993 / 1.071 at points 8 / 12 / 22, and Eq. 9 speed ratios 0.991 / 0.963 / 0.953. **Verdict: ring,
+  are 0.989 / 0.993 / 1.071 at points 8 / 12 / 22, and Eq. 10 speed ratios 0.991 / 0.963 / 0.953. **Verdict: ring,
   with a radius that saturates in speed, not a velocity plane**[^vp] (`figures/fig4_ring_radius_vs_speed.png`).
 - **Is the ring occupied?** (780 held-out clips, chart plane, ring radius 1)[^p2b]. Yes, along its whole length: the
   largest angular gap between clips is 2.9° and neighbouring directions overlap (spread 2.2× the spacing at point 12,
@@ -626,7 +626,7 @@ Three leaks and the separation used for each:
    at a chord point and the spline at a curve point, and they differ by the sagitta: 0.13–0.45 of centroid noise on
    the direction arc at point 12[^steer].
 2. **The readout is the intervention.** The data are split three ways: knot clips (folds 0–2, 632 clips) build the
-   spline, probe clips (folds 3–4, 480 clips) fit the evaluation probe, the MLP and the Eq. 9 reference, and test
+   spline, probe clips (folds 3–4, 480 clips) fit the evaluation probe, the MLP and the Eq. 10 reference, and test
    clips are steered (48 per target, 384 steers). Beside the probe there are two readouts that did not build the edit:
    agreement R with real-clip centroids at the target value (`nearest_real_R`), and an MLP on disjoint clips (§4.4).
 3. **The edit looks right only at layer L.** This leak needs the propagation and predictor readouts (§4.5).
@@ -652,7 +652,7 @@ A.6), so no arm has to infer where the carrier sits.
 
 **The verdict rule is post hoc.** The rule that turns gaps into a call (`verdict.call` in each steering JSON) was
 iterated during development, after looking at results. An early energy-based comparison was dropped as a deciding metric
-once it was seen to reward residual erasure (the replace arms are on-curve by construction, so Eq. 9 favours them). The
+once it was seen to reward residual erasure (the replace arms are on-curve by construction, so Eq. 10 favours them). The
 final rule is symmetric: a gain or a loss counts only beyond the same practical margin, and an endpoint loss beyond that
 margin overrides path gains ("negative_endpoint"). It was frozen at commit 8d3cac8, before the multi-arc sweep and the
 70/30 reruns. The frozen rule was applied unchanged to all 32 arc runs and to every steering file cited here.
@@ -673,7 +673,7 @@ clip bootstrap):
 | reflected arm: radius / energy / ordering | 0.53 / 1.64 / 0.52 | | | 0.51 / 1.12 / 0.50 | | |
 
 Source: `p2_steer_direction_direction_L{12,22}_contiguous.json`. Figures:
-`figures/fig4_waypoint_readout_direction_direction_L12_contiguous.png` (radius and Eq. 9 distance along the path) and
+`figures/fig4_waypoint_readout_direction_direction_L12_contiguous.png` (radius and Eq. 10 distance along the path) and
 `figures/fig4_path_energy_direction_direction_L12_contiguous.png`.
 
 **Sixteen held-out arcs** (the contiguous design repeated with seeds 1–16, each holding out a different 45° arc of 8
@@ -720,7 +720,7 @@ Position sheet (speed set, start (x, y), thin-plate spline vs chord to a held-ou
 "negative: TPS path indistinguishable from chord". At point 19 "chord better than the TPS path on err_path and
 excess_to_nearest_real". Endpoint error is 0.178 m for both vs 0.197 for a Delaunay interpolation (point 12)[^sheet].
 
-**Reading.** At the encoder layer the spline stays on the ring (the Eq. 9 distribution walks the arc in order) and the
+**Reading.** At the encoder layer the spline stays on the ring (the Eq. 10 distribution walks the arc in order) and the
 line cuts across the ring's interior in the chart plane. The reflected arm is worst on every path metric, so it matters
 which way the path bends. All of §4.1–§4.4 edits the pooled vector and reads it at the same point with probes and
 distances, with no forward pass through the rest of the network; whether the model uses the edit is tested in §4.5. The radius gap grows with angular shift: at
@@ -743,7 +743,7 @@ not the method's, gives large extrapolation losses.
 ### 4.4 Controls and the comparison with Part 1
 
 - **Random curves** (20 endpoint-matched draws, point 12 contiguous). Endpoint readouts match by construction. On the
-  path, the spline ranks 1/21 on off-curve excess (0.15 vs a band of 0.68–0.88) and on Eq. 9 energy (0.92 vs 1.48–1.75).
+  path, the spline ranks 1/21 on off-curve excess (0.15 vs a band of 0.68–0.88) and on Eq. 10 energy (0.92 vs 1.48–1.75).
   Unmatched random curves have endpoint error 87.9°. **BF16**: the winner on both energy metrics is unchanged.
   **Dose-matched line**: endpoint 9.41°, energy 1.27, radius 0.61, so the line's deficit is not a matter of dose.
 - **Goodfire's own linear baseline** (the whole activation replaced by a chord point). Nearest-real R is 0.625 and
@@ -797,7 +797,7 @@ point-22 endpoint on 1 of 16 arcs (+3.7°) and on the headline arc (+3.80°), an
   0.86 / 0.96 / 0.69 at points 8 / 12 / 22 with distances along the smoothing spline and 0.80 / 0.90 / 0.78 with chord
   distances, reversed at point 22 on the stored coordinate (see below). The forecast and encoder-output spaces give the same r within 0.02 as the bare angle
   difference, so on a ring this test measures whether arc length is proportional to angle change. Goodfire's world-model
-  behaviour manifold is built from activations (its Eq. 10), so its 0.996 isometry has the same circularity as our Eq. 9
+  behaviour manifold is built from activations (its Eq. 10), so its 0.996 isometry has the same circularity as our Eq. 10
   figures. With the authors' recipe (behaviour manifold = an interpolating spline through the per-value forecast
   centroids in the full 1,024-d forecast space) on the label-free knot order, r is 0.84 / 0.93 / 0.67 along the
   interpolating activation spline against 0.73 / 0.87 / 0.75 for the chord, and 0.885 / 0.979 / 0.758 against 0.800 /
@@ -972,13 +972,16 @@ distance from the spline (p = 0.003, chord closer on 8 of 8), along a route of n
 converged and the loss was still falling. Those figures were scored against a ring fitted on full-clip activations, while the edited
 activation is the carrier's context-only (frames 1–8) point-22 vector, which sits 0.56 from that ring before any edit.
 Rescored against a ring fitted on context-only activations of the same knot clips (same PCA-64, centroids, spline and
-chord recipe)[^ctx], the carrier mean sits within the chord's own offset from the ring (0.14 ± 0.01 against the chord's
-0.16 from the spline; individual carriers sit 0.45–0.54 off it, and the scored path is the carrier mean; distances in full-clip natural units, on which context-only centroid spacings run 0.61–0.75×),
-the full-clip chord start is 0.57 off it, and the optimised paths end 0.81 ± 0.08 from the spline and 0.81 ± 0.08 from
-the chord (paired −0.006 [−0.023, 0.012]; intrinsic R² 0 against both). So the run started 0.57 off the ring it edits,
+chord recipe)[^ctx], the carrier mean starts 0.14 ± 0.01 off the ring where the chord starts on it (the chord's path-averaged
+distance from the spline is 0.16; individual carriers sit 0.45–0.54 off, and the scored path is the carrier mean; distances in full-clip natural units, on which context-only centroid spacings run 0.61–0.75×),
+the full-clip chord initialisation averages 0.57 from it along its length, and the optimised paths average 0.81 ± 0.08
+from the spline and 0.81 ± 0.08 from the chord along theirs (end points 0.76 from the spline; paired −0.006 [−0.023,
+0.012]; intrinsic R² 0 against both). So the run began about 0.57 off the ring it edits,
 because its PCA basis, replaced components, centroids and chord start all came from full-clip activations, and the
 optimiser added +0.23 on 8 of 8 pairs; the rescoring changes the ruler, not that anchoring, and a rerun with
-context-only geometry throughout is in progress. Our earlier angle-only paths score 1.20 / 1.27 on the same ring
+context-only geometry throughout is in progress. Data separation in these pullback runs is not clean: 3–5 of each pair's 16
+carriers are knot clips, 5 are test clips, the readout's softmax sharpness was fitted on test clips, and the behaviour
+centroids use all clips (`data_separation` in both files); a leak here would favour recovery, and the result is negative. Our earlier angle-only paths score 1.20 / 1.27 on the same ring
 (closer to the spline by 0.07, 19 of 20; no per-carrier zero-edit baseline is stored for them yet). So neither our angle-only test nor an unconverged run of Goodfire's
 recipe recovers the ring from the forecast; both find a route off it, and neither is a test the paper would count as
 complete. A negative, as run, on both protocols.
@@ -1047,7 +1050,7 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
   That is the natural test of when precision and the ring appear.
 - **Predictor readout is a probe; the edit overshoots.** A probe of the pooled forecast, not a rendered future;
   point-22 edits overshoot in position (R 1.3–1.8); one stimulus, four targets in one 45° arc. The spline's lead is in
-  angle only and the smoothing spline (the Part 2 default) is the worst real arm.
+  angle only and the smoothing spline (the Part 2 default) is the worst real arm at the endpoint (over the path the chord is).
 - **The hollow is in the ring plane.** In the 64-D edit subspace and full space the chord is no farther from real clips
   than the spline (§4.3). Along the path the forecast follows the intermediate directions along the spline and jumps
   along the chord (−13.4° paired, −31.3° at large shifts); the reverse test does not recover the ring under our protocol or an unconverged run of Goodfire's (§4.5).
@@ -1079,7 +1082,7 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
   Part 2 files at 677b305, 8e552c1, 8829195, 8f08444 or fbf4f72; all with `git_dirty_src_or_scripts: false`. Most
   Part 2 files record split and source paths inside the frozen scratchpad worktree that ran them; the split sha256 and
   the commit are the same as the repository's. The session 2 files were scored at b9c53d0 or 0f34ec2 (the native
-  readout at 8734f4b, the norm-matched rerun at 494afe2, along-path and reverse at 21b27b6) with the dirty flag set;
+  readout at 8734f4b, the norm-matched rerun at 494afe2, along-path and reverse at 21b27b6); the Goodfire-recipe pullback at d0e459c (dirty scripts, committed as cab0dfa) and its context-ring rescoring at 03c6b2b (clean) with the dirty flag set;
   the encoder-output and point-12 labels-order files at 3f4c8de (forward at b7d09fc), clean. The per-patch files record
   commit 4413937; the grouped-CV, raw-coordinate, sawtooth and evaluation-probe files 46a33da, the velocity-only and
   Cartesian-angle files 6fc2529, the labels isometry and all-centroid angle files 7de664a, all clean.
@@ -1094,7 +1097,7 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
   time with no separate cost recorded (`session2_encoder_output.json`, `forward.seconds_total`); the Goodfire-recipe
   pullback ≈ 62 GPU-min and the context-only extraction 2.0 GPU-min on the same box at $0.198/h (≈ $0.21, not in the
   $1.19 total). No other box's cost is recorded.
-- **Tests.** `pytest --collect-only` collects 219 tests at the commit of this report.
+- **Tests.** `pytest --collect-only` collects 221 tests at the commit of this report.
 
 [^gpu]: `artifacts/gpu_session1.json`.
 [^ptxt]: Line numbers in `refs/physics_paper.txt` (text of arXiv 2602.07050): (a) 1211 vs 1172; (b) 1207 vs 1243 and 1266; (c) 1245–1246; (d) 430–431 vs 1256 and 1269; (e) 669 vs 1243; (f) 245 vs 671; (g) 1244 vs 1256 and 1269, Table 3 at 958, 1217 vs 970–973, 402–403; (h) Table 3 rows 949–951. Our numbers: `p1b_*` (`K`, `K_loose`), `results/split70/COMPARISON.md`, `p1c_direction_L9_strict.json` (`strict_eval`), `p1c_direction_L9.json`.
