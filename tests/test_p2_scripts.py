@@ -204,7 +204,7 @@ def test_bakeoff_end_to_end(tmp_path):
     assert res["probe_basis"]["rows"] == "knot folds at kept values only" and res["probe_basis"]["folds"] == [0, 1, 2]
     assert res["provenance"]["holdout"] == "contiguous"
     arms = res["arms"]
-    assert set(arms) == {"spline", "chord", "centroid_transport", "snap", "ring_rotation", "probe_qr"}
+    assert set(arms) == {"spline", "chord", "centroid_transport", "snap", "ring_rotation", "probe_qr", "chord_raw"}
     assert arms["ring_rotation"]["nominal_rank"] == 2 and arms["ring_rotation"]["effective_rank"] < 2.5
     assert arms["probe_qr"]["nominal_rank"] % 2 == 0
     for e in ("probe", "mlp"):

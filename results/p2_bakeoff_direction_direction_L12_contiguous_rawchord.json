@@ -1,0 +1,131 @@
+{
+ "dataset": "direction",
+ "variable": "direction",
+ "layer": 12,
+ "holdout": {
+  "design": "contiguous",
+  "seed": 0,
+  "block_start_index": 54,
+  "block_first_value": 303.75,
+  "block_last_value": 343.125,
+  "arc_width_deg": 45.0,
+  "held_out_values": [
+   303.75,
+   309.375,
+   315.0,
+   320.625,
+   326.25,
+   331.875,
+   337.5,
+   343.125
+  ]
+ },
+ "layer_role": "exploratory",
+ "all_roles": [],
+ "source": "/private/tmp/claude-501/-Users-stevenyang/ae13a11f-788a-4ea6-a4fa-c5d4c3df1c0e/scratchpad/wt_rawchord/results/p1a_direction_direction_meanpool.json",
+ "provenance": {
+  "split_file": "/private/tmp/claude-501/-Users-stevenyang/ae13a11f-788a-4ea6-a4fa-c5d4c3df1c0e/scratchpad/wt_rawchord/splits/split_v1.json",
+  "split_sha256": "98e6310c40bf29e81bd8b6bf4b1ac603b89e4104d40ac1047b15dd5dc2be2df2",
+  "seeds": {
+   "seed": 0
+  },
+  "commit": "33b59b81c4c6388a994a56a2e2e85263222a5844",
+  "dirty": false,
+  "git_commit": "33b59b81c4c6388a994a56a2e2e85263222a5844",
+  "git_dirty_src_or_scripts": false,
+  "timestamp_utc": "2026-09-28T16:32:33+00:00",
+  "layer": 12,
+  "pool": "meanpool",
+  "holdout": "contiguous",
+  "spline": "smooth",
+  "k": 64
+ },
+ "spline": "smoothing",
+ "k": 64,
+ "probe_basis": {
+  "rows": "knot folds at kept values only",
+  "n_rows": 632,
+  "alpha": 31.622776601683793,
+  "n_probes": 17,
+  "folds": [
+   0,
+   1,
+   2
+  ]
+ },
+ "norm_matching": "every arm's edit rescaled per clip to the spline arm's ||delta|| ('matched'); 'unmatched' = each arm's own norm",
+ "evaluators": {
+  "probe": "ridge on probe folds (shares filter geometry with probe_qr)",
+  "mlp": "one-hidden-layer MLP (64) on probe folds"
+ },
+ "arms": {
+  "spline": {
+   "nominal_rank": 64,
+   "effective_rank": 2.5497511031384255,
+   "mean_norm_unmatched": 7.455242070073119,
+   "err_probe_matched": 9.731167946051656,
+   "err_mlp_matched": 30.894104549622984,
+   "err_probe_unmatched": 9.731167946051656,
+   "err_mlp_unmatched": 30.894104549622984
+  },
+  "chord": {
+   "nominal_rank": 64,
+   "effective_rank": 2.590810472995457,
+   "mean_norm_unmatched": 7.1907481974499765,
+   "err_probe_matched": 9.412952852755573,
+   "err_mlp_matched": 32.61187975824243,
+   "err_probe_unmatched": 9.616929137525267,
+   "err_mlp_unmatched": 33.383819318169806
+  },
+  "centroid_transport": {
+   "nominal_rank": 1024,
+   "effective_rank": 2.8405360322530226,
+   "mean_norm_unmatched": 8.314346923689541,
+   "err_probe_matched": 6.437100954745996,
+   "err_mlp_matched": 32.00159765130815,
+   "err_probe_unmatched": 4.991077735765049,
+   "err_mlp_unmatched": 28.001665294685044
+  },
+  "snap": {
+   "nominal_rank": 1024,
+   "effective_rank": 6.6291062724469265,
+   "mean_norm_unmatched": 12.607251186669833,
+   "err_probe_matched": 21.925531089204373,
+   "err_mlp_matched": 29.061352025951834,
+   "err_probe_unmatched": 1.522415819827124,
+   "err_mlp_unmatched": 10.210515984582226
+  },
+  "ring_rotation": {
+   "nominal_rank": 2,
+   "effective_rank": 1.9276660150215494,
+   "mean_norm_unmatched": 7.303107458335933,
+   "err_probe_matched": 16.87524045975363,
+   "err_mlp_matched": 36.726311356119965,
+   "err_probe_unmatched": 18.787944628982537,
+   "err_mlp_unmatched": 33.35413323099593
+  },
+  "probe_qr": {
+   "nominal_rank": 34,
+   "effective_rank": 1.8795020989654,
+   "mean_norm_unmatched": 7.420676130242935,
+   "err_probe_matched": 5.614596957475694,
+   "err_mlp_matched": 23.067429560597756,
+   "err_probe_unmatched": 4.246640928703253,
+   "err_mlp_unmatched": 20.31707508837025
+  },
+  "chord_raw": {
+   "nominal_rank": 64,
+   "effective_rank": 2.8040376280382597,
+   "mean_norm_unmatched": 8.259332090216438,
+   "err_probe_matched": 6.376336687177172,
+   "err_mlp_matched": 31.570551145928224,
+   "err_probe_unmatched": 4.711556220282386,
+   "err_mlp_unmatched": 27.723848249980122
+  }
+ },
+ "unsteered_err": {
+  "probe": 88.85362412997833,
+  "mlp": 92.30087520940772
+ },
+ "n_steered": 384
+}
