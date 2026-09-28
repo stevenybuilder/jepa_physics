@@ -16,11 +16,12 @@ holds under every fold grouping and at the paper's clip count, so it is not a sa
 App. C.5 puts the sharp step in per-patch probes and says mean-pooled probes rise gradually, so the pooled curve was
 the wrong comparison. Per patch, three things hold. On the supplied clips the per-patch code is early as well: mean
 per-position R² is 0.56 at block 1, 0.89 at block 5 and 0.96 at block 6, with no step at the paper's transition. That
-code is training-selective: the random-init network pools to 0.86–0.88 at every depth, but its per-position R² never
-exceeds 0.39, the paper's "fragmented local signal that pooling adds up" regime, which V-JEPA 2 leaves within six
-blocks. On a harder rendered set (textured floor, shading, smaller disk; 392 clips, 8 directions) the paper's sharp
-transition appears at its depth: per-position onset 9 [9, 9], and half-frame transfer goes from −1.42 to 0.08 across
-points 8→9 (§3.1). VideoMAE (pixel reconstruction) matches V-JEPA 2 on the pooled curves for all three variables.
+code is training-selective: the random-init network pools to 0.86–0.88 at every depth, but its mean per-position R² never
+exceeds 0.39 (best single position 0.76–0.86), the paper's "fragmented local signal that pooling adds up" regime, which V-JEPA 2 leaves within six
+blocks. On a harder rendered set (textured floor, shading, smaller disk; 392 clips, 8 directions) the per-position curve
+rises in two steps: its largest rise is between points 4 and 6 (0.52 → 0.81), and it clears the 90% rule only at point 9
+(0.851 → 0.944 across points 8→9), where half-frame transfer changes sign (−1.42 at 8, 0.08 at 9, after 0.69 at point 1).
+The sign change sits at the paper's depth; the largest rise is earlier (§3.1). VideoMAE (pixel reconstruction) matches V-JEPA 2 on the pooled curves for all three variables.
 **Step 2 reproduces in part.** Every variable needs tens of probes at the paper's layer, far outside a random-removal
 band. Measured four ways, that count reflects anisotropy: a whitened erasure needs one probe at every point; the code
 is rank-2 linear plus a second harmonic and a nonlinear residual (§3.2). Speed does not need fewer probes than
@@ -28,9 +29,9 @@ direction (in raw coordinates and under one common R² stop too, except the pape
 recipe both variables' curves are jagged and K roughly doubles, with no direction-specific sawtooth. **Step 3
 reproduces in shape** (one probe fails, a few probes reach the target, MAE-to-true rises), with 3–5 probes to 10°
 where the paper needs about 20. How it compares with a random orthonormal basis of fixed rank 2K depends on the
-evaluation probe: with the paper's near-unregularised probe the learned basis beats all 20 draws from N = 5, with my
-CV-chosen one only from N = 14. Against a rank-matched random basis it first beats all 20 draws at N = 2–7 (by variable
-and layer; N = 3 under the paper's probe); at N = 1 it separates from neither. The same curve appears in an untrained
+evaluation probe: with a near-unregularised probe (α = 1e-3, or the C.11 Adam recipe; C.12 gives no recipe) the learned basis
+beats all 20 draws from N = 5, with my CV-chosen one only from N = 14. Against a rank-matched random basis it first beats all 20 draws at N = 2–7 (by variable
+and layer; N = 3 under the near-unregularised probes); at N = 1 it separates from neither. The same curve appears in an untrained
 network, and at the onset layer the learned basis never beats the rank-2K random basis for N ≤ 20. Rerunning Parts 1
 and 2 at the paper's literal 70/30 split changes no qualitative verdict. **Part 2.** Direction lies on a ring.
 My centroid-plane angle recovers it without labels at point 12 but not at point 22; Goodfire's own label-free angle
@@ -244,11 +245,14 @@ block 5 and 0.96 at block 6 (onset 5 [5, 5]; constant-velocity subset 0.54 → 0
 pooled-patch probe works at every position from block 1 (0.83, R² ≥ 0.5 at all 256 positions). Half-frame transfer
 is 0.82 at block 1, peaks at 0.96 at point 9 and falls to 0.81 at point 22, the opposite of the paper's late
 generalisation. There is no step at the paper's transition (points 8 → 9: 0.958 → 0.975). (2) The per-patch code is
-training-selective. The random-init network pools to 0.86–0.88 at every point, but its per-position R² never exceeds
-0.39 and its cross-half R² is 0.61–0.74. That is the paper's regime of fragmented local signal that pooling adds up;
-V-JEPA 2 leaves it within six blocks on these clips. (3) On the hard set the paper's sharp transition appears at its
-depth. Per-position onset is 9 [9, 9] (0.851 → 0.944 across points 8 → 9), pooled-patch onset 9 [8, 9], and
-cross-half transfer is −0.73 at point 4 and −1.42 at point 8, then 0.08 at 9, 0.42 at 12 and 0.75 at 22. The negative
+training-selective. The random-init network pools to 0.86–0.88 at every point, but its mean per-position R² never exceeds
+0.39 (best single position 0.76–0.86) and its cross-half R² is 0.61–0.74. That is the paper's regime of fragmented local signal that pooling adds up;
+V-JEPA 2 leaves it within six blocks on these clips. (3) On the hard set the per-position curve has two rises. The
+largest is between points 4 and 6 (0.52 → 0.81, the largest jump between consecutive sampled points; every position
+is above R² 0.5 from point 6); the 90%-of-max onset is 9 [9, 9] (0.851 → 0.944 across points 8 → 9, the second-largest
+jump), and pooled-patch onset is 9 [8, 9]. Cross-half transfer is 0.69 at point 1, −0.73 at point 4 and −1.42 at point
+8, then 0.08 at 9 (about chance), 0.42 at 12 and 0.75 at 22: transfer exists before the zone, is lost at points 4–8,
+changes sign across 8 → 9 (the curve's largest jump, +1.50, at the paper's depth) and is recovered from point 12. The negative
 values are a between-half miscalibration, not a mirror flip: at point 8 the cross-half MAE is 56° against 11° within a
 half, where a left-right mirror of 8 directions would give 90°. On the paper-layout set the per-position onset is 6 and
 cross-half transfer is already 0.81 at block 1, so the step on the hard set comes from the rendering. Caveats: per-position
@@ -256,10 +260,13 @@ features are averaged over the 8 time steps; the half-frame test is one pooled p
 points 1, 4, 6, 7, 8, 9, 10, 12, 16 and 22 only, so their onsets of 4 and 6 are upper bounds; they reuse 7 start
 positions across all (θ, v) pairs; the hard set is 392 clips and one render seed.
 
-**Verdict.** The emergence zone reproduces as a per-patch phenomenon on a harder stimulus, at the paper's depth. On the
-supplied clips it does not: the per-patch code forms by block 6 with no step at points 8 → 9, while the mean-pooled
-curve is early under every fold grouping and at the paper's clip count. What training changes on every stimulus is
-the per-patch code (V-JEPA 2 0.96–0.98 against 0.39 for the random network), not pooled availability.
+**Verdict.** On a harder stimulus the per-patch readout shows the paper's signature in part: the half-frame sign
+change and the 90%-rule onset fall at the paper's depth (points 8 → 9), but the largest per-position rise is earlier
+(points 4 → 6) and transfer already exists at point 1 (one render seed, stratified folds; seed and fold reruns in
+progress). On the supplied clips it does not: the per-patch code forms by block 6 with no step at points 8 → 9, while the mean-pooled
+curve is early under every fold grouping and at the paper's clip count. What training changes on the supplied clips is
+the per-patch code (V-JEPA 2 0.96–0.98 against a mean of 0.39 for the random network; the random-init control has
+been run on the supplied set only), not pooled availability.
 
 **Objective axis: VideoMAE** (v1 ViT-L, `MCG-NJU/videomae-large`, pixel reconstruction; 224-px input, 1,568 tokens; the paper used the VideoMAE-v2 family)[^obj]. VideoMAE matches V-JEPA 2
 on every variable. Direction: block 1 0.886 vs 0.875, peak 0.992 (point 21) vs 0.991 (22), onset 2 for both. Speed:
@@ -308,7 +315,9 @@ and `p1b_*_random_L{pt}.json`.
   columns. Removing one column per round (alternating sin/cos, or the top singular vector) takes 72–73 rounds nested
   and 84–92 under the paper protocol at point 9, about twice the stored 37 / 46, so the removed dimension count is
   about the same. Under ridge it creates no sawtooth (R² drop autocorrelation 0.82–0.84 nested, no isolated dips);
-  under Adam the drops stay negatively autocorrelated, as with two columns[^onecol].
+  under Adam the drops stay negatively autocorrelated, as with two columns, and one-column removal gives direction 1–2
+  isolated dips (alternating: 1 on R²; top singular vector: 2 on acc15; two-column: 0) against speed's 2, so still no
+  direction-specific sawtooth[^onecol].
 - **Sawtooth.** Under ridge there is none. There are no isolated dips at any direction layer under either protocol.
   The lag-1 autocorrelation of per-round drops in R² is positive everywhere (0.42–0.95; a sawtooth gives negative
   values). On within-15° accuracy it is positive under the nested protocol (0.26–0.78) and mixed under the paper
@@ -349,8 +358,9 @@ term shared by opposite directions), not on tens of independent axes, and (ii) t
 al.'s sheared circle. "Tens of dimensions" is a conditioning count of an anisotropic rank-2 linear code, not an
 intrinsic rank; beyond that code lies a nonlinear residual that grows toward the output.
 
-**Verdict.** The "tens of dimensions" claim reproduces at the paper's layer against a random band. The claims that
-speed needs fewer and that direction's curve has a sawtooth do not reproduce under ridge. Under Adam both curves are
+**Verdict.** The "tens of dimensions" claim reproduces at the paper's layer against a random band. The claim that
+speed needs fewer probes does not reproduce under ridge (counts are equal; in the paper's own unit, dimensions, 2K for
+direction, speed does need fewer in every cell), and direction's sawtooth does not appear under ridge. Under Adam both curves are
 jagged, speed's as much as direction's on a metric both share, so the jaggedness tracks the recipe, not the variable.
 The absolute counts depend on the coordinates (1.4–1.6× larger raw) and on which stop rule fires, which is looser for
 the scalars.
@@ -411,9 +421,10 @@ p = 0.048 at every N (mean 87.4° at N = 1). Source: `p1c_direction_L{2,9,22}.js
   floor from N = 14), and the rank-matched null from N = 3 (stored: N = 6). The
   null reading therefore depends on how the evaluation probe is regularised, which C.12 does not fix.
 
-**Verdict.** Fig. 24's shape reproduces with 3–5 probes under the paper's evaluation probe and 5 under mine, rather
-than 20. The probes beat a random subspace of their own rank from N = 2–7 (N = 3 under the paper's probe). Against a
-rank-2K random basis they win from N = 5 under the paper's probe but only from N = 14 under mine, and an untrained
+**Verdict.** Fig. 24's shape reproduces with 3–4 probes under the near-unregularised and Adam evaluation probes and
+5 under my CV-chosen one (C.12 gives no recipe; mine is the closest to its R² = 0.99), rather than 20. The probes beat
+a random subspace of their own rank from N = 2–7 (N = 3 under the near-unregularised probes). Against a rank-2K
+random basis they win from N = 5 under those probes but only from N = 14 under mine, and an untrained
 network shows the same curve.
 
 ### 3.4 The paper's 70/30 split
@@ -884,8 +895,8 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
   control shows that pooled linear availability is architectural and that carrying direction into disk-free tokens is
   not a training effect. The per-patch probes show what training does add: the random network never gets past a mean
   per-position R² of 0.39, the regime of fragmented local signal that pooling adds up, while V-JEPA 2 reaches 0.96 by
-  block 6 on the supplied clips and, on a harder stimulus, forms that code with a sharp step at the paper's depth
-  (§3.1). So the emergence zone is a claim about the per-patch readout, which the paper's C.5 says, and a mean-pooled
+  block 6 on the supplied clips and, on a harder stimulus, forms that code in two rises, the larger at points 4 → 6 and
+  a second at the paper's depth, where half-frame transfer changes sign (§3.1). So the emergence zone is a claim about the per-patch readout, which the paper's C.5 says, and a mean-pooled
   curve can neither confirm nor refute it. VideoMAE matches V-JEPA 2 on every pooled Part 1 measure (I did not run it
   per patch), so none of this is specific to latent prediction or shows that the variables are used to predict. The authors' OpenReview response states that "all 13 models encode motion direction
   (R²≥.43), regardless of objective", classification CNNs included, so availability is their own finding; training buys
