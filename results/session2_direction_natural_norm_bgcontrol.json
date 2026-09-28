@@ -1,0 +1,260 @@
+{
+ "question": "is the disk-token point-12 chord effect about the object tokens or about a large per-token dose? background-token controls matched on token count + per-token dose, and on total energy",
+ "n_carriers": 200,
+ "n_targets": 4,
+ "forward": {
+  "seconds": 425.93342757225037,
+  "n_carriers": 200,
+  "arms": [
+   "disk12",
+   "bg_count",
+   "bg_energy",
+   "disk16",
+   "disk19"
+  ],
+  "gpu": "NVIDIA GeForce RTX 4060 Ti",
+  "torch": "2.2.2"
+ },
+ "bg_plan": {
+  "16": {
+   "angle_choice": {
+    "angle": "labels",
+    "plane": "activation"
+   },
+   "chord_norm_median": 6.313125659961074
+  },
+  "19": {
+   "angle_choice": {
+    "angle": "labels",
+    "plane": "activation"
+   },
+   "chord_norm_median": 8.140353846300268
+  }
+ },
+ "arms": {
+  "disk12": "chord unit direction x twin per-token change n_i on obj tokens at point 12 (reproduction)",
+  "bg_count": "same number of tokens as obj, random non-obj subset (seed 1000*c+j), magnitudes = a random permutation of the obj tokens' n_i",
+  "bg_energy": "all non-obj tokens, equal magnitude sqrt(sum_obj n_i^2 / |bg|): total energy matched",
+  "disk16": "disk-token chord edited at point 16 (chord planned at 16, per-token twin change at 16)",
+  "disk19": "disk-token chord edited at point 19"
+ },
+ "parity_src_forecast_vs_session2_cache_rel_maxabs": 0.00039903982542455196,
+ "references": {
+  "unedited_err": {
+   "mean": 92.1359196651028,
+   "ci95": [
+    84.91964632446592,
+    98.66836577454721
+   ],
+   "n": 200
+  },
+  "twin_ceiling": {
+   "err_to_target": {
+    "mean": 9.107052529406685,
+    "ci95": [
+     8.14834474355287,
+     10.094900883830324
+    ],
+    "n": 200
+   },
+   "R": {
+    "mean": 0.964186024086812,
+    "ci95": [
+     0.9199755745218919,
+     1.0094616135930035
+    ],
+    "n": 200
+   }
+  },
+  "pooled_natural_chord_L12": {
+   "err_to_target": {
+    "mean": 79.74343464663889,
+    "ci95": [
+     72.53636623896296,
+     86.63097213259762
+    ],
+    "n": 200
+   },
+   "R": {
+    "mean": 0.29368346590853794,
+    "ci95": [
+     0.26079026479326967,
+     0.3266812163877825
+    ],
+    "n": 200
+   },
+   "applied_norm_median": 14.2059326171875,
+   "applied_over_natural_median": 1.0
+  },
+  "disk_token_chord_L12_previous_run": {
+   "err_to_target": {
+    "mean": 40.84678422878539,
+    "ci95": [
+     35.567821310641044,
+     46.26954748816345
+    ],
+    "n": 200
+   },
+   "R": {
+    "mean": 0.6183088711529559,
+    "ci95": [
+     0.5713232866961282,
+     0.6640112768970589
+    ],
+    "n": 200
+   }
+  }
+ },
+ "table": {
+  "disk12": {
+   "err_to_target": {
+    "mean": 40.84678422878539,
+    "ci95": [
+     35.567821310641044,
+     46.26954748816345
+    ],
+    "n": 200
+   },
+   "R": {
+    "mean": 0.6183088711529559,
+    "ci95": [
+     0.5713232866961282,
+     0.6640112768970589
+    ],
+    "n": 200
+   },
+   "edit_energy_median": 322039.65625,
+   "edited_tokens_median": 87.0
+  },
+  "bg_count": {
+   "err_to_target": {
+    "mean": 88.8775552995342,
+    "ci95": [
+     81.65942168411333,
+     95.61959605352119
+    ],
+    "n": 200
+   },
+   "R": {
+    "mean": 0.09219429581990339,
+    "ci95": [
+     0.08203005193080094,
+     0.10162548208051862
+    ],
+    "n": 200
+   },
+   "edit_energy_median": 322039.65625,
+   "edited_tokens_median": 87.0
+  },
+  "bg_energy": {
+   "err_to_target": {
+    "mean": 80.12545133052797,
+    "ci95": [
+     73.15080386346331,
+     87.13115496941752
+    ],
+    "n": 200
+   },
+   "R": {
+    "mean": 0.25166727027808755,
+    "ci95": [
+     0.23390870644852044,
+     0.2693683502466039
+    ],
+    "n": 200
+   },
+   "edit_energy_median": 322039.6875,
+   "edited_tokens_median": 937.0
+  },
+  "disk16": {
+   "err_to_target": {
+    "mean": 66.99164790866958,
+    "ci95": [
+     61.580594968100776,
+     72.63603099921569
+    ],
+    "n": 200
+   },
+   "R": {
+    "mean": 0.30576493431216123,
+    "ci95": [
+     0.2671112618921653,
+     0.3447206228970945
+    ],
+    "n": 200
+   },
+   "edit_energy_median": 427437.9375,
+   "edited_tokens_median": 87.0
+  },
+  "disk19": {
+   "err_to_target": {
+    "mean": 70.60938375455949,
+    "ci95": [
+     63.64368018380944,
+     77.64373794295203
+    ],
+    "n": 200
+   },
+   "R": {
+    "mean": 0.5874108997792575,
+    "ci95": [
+     0.508186866556296,
+     0.6695176930768914
+    ],
+    "n": 200
+   },
+   "edit_energy_median": 626728.125,
+   "edited_tokens_median": 87.0
+  }
+ },
+ "paired_vs_disk12": {
+  "bg_count_minus_disk12_err": {
+   "mean": 48.03077107074881,
+   "ci95": [
+    41.85314688020758,
+    54.59193885798512
+   ],
+   "n": 200
+  },
+  "bg_energy_minus_disk12_err": {
+   "mean": 39.278667101742585,
+   "ci95": [
+    32.93193400522652,
+    46.02681721867633
+   ],
+   "n": 200
+  },
+  "disk16_minus_disk12_err": {
+   "mean": 26.144863679884196,
+   "ci95": [
+    20.94632841049205,
+    31.253468064999204
+   ],
+   "n": 200
+  },
+  "disk19_minus_disk12_err": {
+   "mean": 29.762599525774103,
+   "ci95": [
+    22.52406684399436,
+    36.930671615157145
+   ],
+   "n": 200
+  }
+ },
+ "disk12_reproduction_maxabs_err_deg": 0.0,
+ "provenance": {
+  "split_file": "/Users/stevenyang/Documents/world_mechanics_takehome/splits/split_v1.json",
+  "split_sha256": "98e6310c40bf29e81bd8b6bf4b1ac603b89e4104d40ac1047b15dd5dc2be2df2",
+  "seeds": {
+   "bootstrap": 0,
+   "bg_subset": "1000*c+j"
+  },
+  "commit": "98ca80824c58f0380d35850a1c7e557e2f758f57",
+  "dirty": true,
+  "git_commit": "98ca80824c58f0380d35850a1c7e557e2f758f57",
+  "git_dirty_src_or_scripts": true,
+  "timestamp_utc": "2026-09-28T22:04:31+00:00",
+  "stage": "natural_norm_bgcontrol_score",
+  "cache": "/Users/stevenyang/Documents/world_mechanics_takehome/artifacts/session2/natural_norm/bg_pred.npz"
+ }
+}

@@ -22,7 +22,16 @@ Stages:
            own/natural, full-clip suffix own norm) -> forward/group_*.npz
   score    CPU, local -> results/session3_speed_predictor.json, figures/fig_session3_speed.png
 
-  python scripts/session3_speed_predictor.py plan|extract|forward|score [--out DIR]
+  python scripts/session3_speed_predictor.py plan|extract|forward|score [--out DIR] [--variable speed|acceleration]
+
+--variable acceleration (the acceleration analogue; the speed path is unchanged): acceleration set (clips start at rest,
+  64 accelerations 0.25-10 m/s^2), held-out block of p2_steer_acceleration_acceleration_L21_contiguous.json (seed 0,
+  7.52-8.61 m/s^2), edit points 21 (the Part 2 point, three norm conditions) and 12 (own + natural); twins re-rendered
+  with acceleration_mps2 replaced (render_twin draws p0 + (v t + a t^2 / 2) u for any clip); the displacement readout
+  is a quadratic fit to the four read-out forecast positions (accel_from_positions). Unlike the speed run, every
+  readout (probes, calibration, propagation readers) is fit on probe clips OUTSIDE the held-out block, so no fitting
+  step sees a clip at a target value. Off-target: direction change and the change in the forecast's mean speed over
+  steps 4-7 (which physics couples to acceleration: a twin's expected change is delta_a * t_mid).
 """
 import argparse
 import fcntl
@@ -38,13 +47,31 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from wm.data import PROJECT_ROOT, decode, disk_pixels, frame_hash, load_table  # noqa: E402
 
-ART = PROJECT_ROOT / "artifacts" / "session3_speed"
 RES = PROJECT_ROOT / "results"
 FIG = PROJECT_ROOT / "figures"
-DATASET = "speed"
-POINTS = (12, 22)
 ARMS = ("spline", "chord", "linear_raw", "null")
-CONDS = {22: ("own", "chord_norm", "natural_norm"), 12: ("own", "natural_norm")}
+VARIABLES = {
+    "speed": {"dataset": "speed", "col": "speed_mps", "hi": 22, "art": "session3_speed",
+              "ref": "p2_steer_speed_speed_L19_contiguous.json", "result": "session3_speed_predictor.json",
+              "fig": "fig_session3_speed.png", "unit": "m/s", "excl_held_readouts": False},
+    "acceleration": {"dataset": "acceleration", "col": "acceleration_mps2", "hi": 21, "art": "session3_acceleration",
+                     "ref": "p2_steer_acceleration_acceleration_L21_contiguous.json",
+                     "result": "session3_acceleration_predictor.json", "fig": "fig_session3_acceleration.png",
+                     "unit": "m/s^2", "excl_held_readouts": True},
+}
+
+
+def configure(variable):
+    """Set the module-level design constants for one variable (speed = the original session-3 design)."""
+    global VAR, CFG, DATASET, POINTS, CONDS, ART
+    VAR, CFG = variable, VARIABLES[variable]
+    DATASET = CFG["dataset"]
+    POINTS = (12, CFG["hi"])
+    CONDS = {CFG["hi"]: ("own", "chord_norm", "natural_norm"), 12: ("own", "natural_norm")}
+    ART = PROJECT_ROOT / "artifacts" / CFG["art"]
+
+
+configure("speed")
 FPS, FRAMES_PER_STEP, PX_PER_M = 24.0, 2, 32.0
 D = 1024
 LOCK = "/tmp/wm_gpu.lock"
@@ -55,6 +82,15 @@ LOCK = "/tmp/wm_gpu.lock"
 def speed_twin_meta(meta, speed):
     """Clip metadata with speed_mps replaced (same start, theta, acceleration, frames): the speed twin."""
     return {**meta, "speed_mps": float(speed)}
+
+
+def acceleration_twin_meta(meta, acc):
+    """Clip metadata with acceleration_mps2 replaced (same start, theta, initial speed, frames): the acceleration twin."""
+    return {**meta, "acceleration_mps2": float(acc)}
+
+
+def twin_meta(meta, value):
+    return (speed_twin_meta if VAR == "speed" else acceleration_twin_meta)(meta, value)
 
 
 def far_end_value(values, held):
@@ -70,6 +106,26 @@ def speed_from_positions(pos, px_per_m=PX_PER_M, fps=FPS, frames_per_step=FRAMES
     pos = np.asarray(pos, float)
     step_px = np.linalg.norm(pos[..., -1, :] - pos[..., 0, :], axis=-1) / (pos.shape[-2] - 1)
     return step_px / px_per_m * fps / frames_per_step
+
+
+def accel_from_positions(pos, px_per_m=PX_PER_M, fps=FPS, frames_per_step=FRAMES_PER_STEP):
+    """Per-tubelet disk positions [..., S, 2] (px, S >= 3) -> acceleration (m/s^2) along the motion: least-squares
+    fit p(t) = c0 + c1 t + c2 t^2 / 2 per coordinate (t = step * frames_per_step / fps), acceleration vector c2
+    projected on the unit first-to-last displacement. A per-tubelet two-frame average shifts positions by a constant
+    (a dt^2 / 8) and leaves c2 unchanged."""
+    pos = np.asarray(pos, float)
+    S = pos.shape[-2]
+    t = np.arange(S) * frames_per_step / fps
+    A = np.stack([np.ones(S), t, t ** 2 / 2], 1)                                  # [S, 3]
+    c2 = np.einsum("s,...sc->...c", np.linalg.pinv(A)[2], pos)                   # [..., 2] px/s^2
+    u = pos[..., -1, :] - pos[..., 0, :]
+    u = u / np.maximum(np.linalg.norm(u, axis=-1, keepdims=True), 1e-12)
+    return np.sum(c2 * u, -1) / px_per_m
+
+
+def motion_from_positions(pos):
+    """The displacement readout of the configured variable (speed: first-to-last; acceleration: quadratic fit)."""
+    return (speed_from_positions if VAR == "speed" else accel_from_positions)(pos)
 
 
 def rescale(delta, ref_norm, eps=1e-6):
@@ -170,8 +226,8 @@ def plan(args):
     df, y = d0["df"], d0["y"]
     values = np.unique(y)
     mask, hinfo = mf.heldout_design(values, "contiguous", False, seed=0)
-    ref = json.loads((RES / "p2_steer_speed_speed_L19_contiguous.json").read_text())["holdout"]
-    assert np.allclose(values[mask], ref["held_out_values"]), "held-out block differs from the Part 2 speed run"
+    ref = json.loads((RES / CFG["ref"]).read_text())["holdout"]
+    assert np.allclose(values[mask], ref["held_out_values"]), f"held-out block differs from the Part 2 run {CFG['ref']}"
     held = values[mask]
     rng = np.random.default_rng(args.seed)
     test = np.flatnonzero(d0["role"] == "test")
@@ -179,11 +235,12 @@ def plan(args):
     tg = np.stack([rng.choice(held[~np.isclose(held, y[c])], size=args.n_targets, replace=False) for c in carriers])
     C, T = tg.shape
     arrays = {"carrier_rows": carriers, "carrier_ids": df["id"].to_numpy()[carriers], "targets": tg}
-    full = np.load(PROJECT_ROOT / "artifacts/activations/speed/vjepa2/meanpool.npy", mmap_mode="r")
+    full = np.load(PROJECT_ROOT / f"artifacts/activations/{DATASET}/vjepa2/meanpool.npy", mmap_mode="r")
     arrays["carrier_stored_meanpool"] = np.asarray(full[carriers], np.float32)
-    info = {"dataset": DATASET, "points": list(POINTS), "arms": list(ARMS), "conditions": {str(k): v for k, v in CONDS.items()},
+    info = {"variable": VAR, "dataset": DATASET, "points": list(POINTS), "arms": list(ARMS), "conditions": {str(k): v for k, v in CONDS.items()},
             "holdout": hinfo, "held_values": held.tolist(), "n_carriers": C, "n_targets": T, "seed": args.seed,
-            "carrier_pool": "test clips (split_v1 fold -1), any speed; targets = 4 held-out values != own speed",
+            "carrier_pool": f"test clips (split_v1 fold -1), any {VAR}; targets = 4 held-out values != own {VAR}",
+            "readouts_exclude_held_values": CFG["excl_held_readouts"],
             "per_point": {}}
     sweep = load_sweep(DATASET, DATASET)
     for L in POINTS:
@@ -192,6 +249,8 @@ def plan(args):
         arrays[f"deltas_L{L}"] = dl
         X = d["X"].astype(np.float64)
         probe = d["role"] == "probe"
+        if CFG["excl_held_readouts"]:
+            probe = probe & ~np.isin(y, held)
         st = Standardizer().fit(X[probe])
         W, b = fit_ridge(st.transform(X[probe]), y[probe], sweep["layers"][L]["alpha"])
         rd = lambda Z: predict(st.transform(Z.reshape(-1, D)), W, b).reshape(Z.shape[:-1])   # noqa: E731
@@ -200,23 +259,23 @@ def plan(args):
         geo["same_point_probe_err_unedited"] = float(np.abs(rd(X[carriers])[:, None] - tg).mean())
         info["per_point"][str(L)] = geo
         print(f"L{L}: {json.dumps(geo['same_point_probe_err_to_target'])} unedited {geo['same_point_probe_err_unedited']:.3f}")
-    # speed twins, rendered here and shipped as MP4 (the box decodes them: its PyAV cannot change the encoding)
+    # twins (speed or acceleration replaced), rendered here and shipped as MP4 (the box decodes them: its PyAV cannot change the encoding)
     hashes, cen_tw, vis = [], np.zeros((C, T, 8, 2)), []
     for i, c in enumerate(carriers):
         meta = load_meta(DATASET, int(df["id"].iloc[c]))
         for j in range(T):
-            fr = write_twin(speed_twin_meta(meta, tg[i, j]), None, out / "twins" / f"twin_{i:04d}_{j}.mp4")
+            fr = write_twin(twin_meta(meta, tg[i, j]), None, out / "twins" / f"twin_{i:04d}_{j}.mp4")
             hashes.append(frame_hash(fr))
             cen_tw[i, j] = tubelet_centroids(fr)
             vis.append(float((disk_pixels(fr).reshape(16, -1).sum(1) > 0).mean()))
     arrays["twin_frame_hash"] = np.array(hashes).reshape(C, T)
     np.save(out / "centroids_twins.npy", cen_tw)
     info["twins"] = {"dir": "twins/twin_{carrier:04d}_{target}.mp4", "visible_frac_mean": float(np.mean(vis))}
-    cache = out / "centroids_speed.npy"
+    cache = out / f"centroids_{DATASET}.npy"
     if not cache.exists():
         np.save(cache, np.stack([tubelet_centroids(decode(v)) for v in df["video"]]))
     val = validate(DATASET, n=20, seed=0)
-    info["renderer_validation_speed"] = {k: val[k] for k in ("codec", "mask_twin_iou_mean", "verdict")}
+    info[f"renderer_validation_{DATASET}"] = {k: val[k] for k in ("codec", "mask_twin_iou_mean", "verdict")}
     np.savez(out / "plan.npz", **arrays)
     (out / "plan.json").write_text(json.dumps(info, indent=1))
     print("plan written", out, "renderer IoU", val["codec"]["iou_mean"], val["codec"]["iou_min"])
@@ -276,12 +335,16 @@ def forward(args):
     C, T = tg.shape
     A = len(ARMS)
     groups = [list(range(s, min(s + args.group, C))) for s in range(0, C, args.group)]
+    if VAR != "speed":      # carriers are sorted by row = by value: stride groups so any finished prefix spans all values
+        ng = len(groups)
+        groups = [list(range(g, C, ng)) for g in range(ng)]
     model, device, torch = _model()
     bs = args.batch_size
     log = []
+    only = {int(x) - 1 for x in args.groups.split(",")} if getattr(args, "groups", None) else None
     for g, idx in enumerate(groups):
         path = fdir / f"group_{g:03d}.npz"
-        if path.exists():
+        if path.exists() or (only is not None and g not in only):     # --groups: shard across boxes, same groups
             continue
         G = len(idx)
         frames = [decode(df["video"].iloc[rows[i]]) for i in idx]
@@ -357,14 +420,17 @@ def score(args):
     rows, tg = arrays["carrier_rows"][idx], arrays["targets"][idx]
     C, T = tg.shape
     df = load_table(DATASET)
-    y = df["speed_mps"].to_numpy(float)
+    y = df[CFG["col"]].to_numpy(float)
     th = df["theta_degrees"].to_numpy(float)
     d0 = load_inputs(DATASET, 0)
     probe, test = d0["role"] == "probe", d0["role"] == "test"
     assert not probe[rows].any() and test[rows].all()
+    all_probe = probe
+    if CFG["excl_held_readouts"]:                                  # no readout sees a clip at a held-out value
+        probe = probe & ~np.isin(y, info["held_values"])
     folds5 = np.random.default_rng(0).permutation(np.arange(probe.sum()) % 5)
     Zall = np.load(out / "native" / "pred_pooled_all.npy").astype(np.float64)       # [1536, 4, D]
-    cen = np.load(out / "centroids_speed.npy")                                      # [1536, 8, 2]
+    cen = np.load(out / f"centroids_{DATASET}.npy")                                 # [1536, 8, 2]
     cen_tw = np.load(out / "centroids_twins.npy")[idx]                              # [C, T, 8, 2]
 
     def fit(X, Yt, fl, kind):
@@ -386,28 +452,37 @@ def score(args):
         e = np.linalg.norm(apply(pos[k], Zall[test & ok, k]) - cen[test & ok, t], axis=1)
         pos_rows[str(t)] = {"alpha": cv["alpha"], "cv_r2": cv["cv_mean"], "test_px_mean": float(e.mean())}
     read_pos = lambda Z: np.stack([apply(pos[k], Z[..., k, :]) for k in range(4)], -2)   # noqa: E731
-    disp_all = speed_from_positions(read_pos(Zall))                                     # uncalibrated m/s
+    disp_all = motion_from_positions(read_pos(Zall))                                    # uncalibrated
     cal = np.polyfit(disp_all[probe], y[probe], 1)                                      # linear calibration, probe clips
-    read_disp = lambda Z: np.polyval(cal, speed_from_positions(read_pos(Z)))            # noqa: E731
+    read_disp = lambda Z: np.polyval(cal, motion_from_positions(read_pos(Z)))           # noqa: E731
+    read_vbar = lambda Z: speed_from_positions(read_pos(Z))                             # noqa: E731  mean speed, m/s
     sp_dir, cvs = fit(Zall.mean(1)[probe], y[probe, None], folds5, "linear")
     read_direct = lambda Z: apply(sp_dir, Z.mean(-2))[..., 0]                           # noqa: E731
     Yd = targets(df, "direction")[0]
     dirp, cvd = fit(Zall.mean(1)[probe], Yd[probe], folds5, "circular")
     read_dir = lambda Z: angle_of(apply(dirp, Z.mean(-2)))                              # noqa: E731
-    true_disp = speed_from_positions(cen[:, 4:8])
+    true_disp = motion_from_positions(cen[:, 4:8])
     readouts = {
-        "displacement": {"what": "per-step disk position probes (ridge, one per forecast tubelet 4-7) -> |p7 - p4| / 3 "
-                                 "px per tubelet -> m/s, then a linear calibration fit on probe clips' forecasts",
+        "displacement": {"what": ("per-step disk position probes (ridge, one per forecast tubelet 4-7) -> |p7 - p4| / 3 "
+                                  "px per tubelet -> m/s" if VAR == "speed" else
+                                  "per-step disk position probes (ridge, one per forecast tubelet 4-7) -> least-squares "
+                                  "quadratic p(t) = c0 + c1 t + c2 t^2/2, c2 projected on the p4->p7 direction -> m/s^2")
+                                 + ", then a linear calibration fit on probe clips' forecasts",
                          "position_probes": pos_rows, "calibration_a_b": cal.tolist(),
                          "test_mae_mps": float(np.abs(read_disp(Zall[test]) - y[test]).mean()),
                          "test_r2": pscore(y[test, None], read_disp(Zall[test])[:, None], "linear")["r2"],
-                         "true_centroid_speed_test_mae_mps": float(np.abs(true_disp[test] - y[test]).mean())},
-        "direct": {"what": "ridge speed probe on the step-mean pooled forecast", "alpha": cvs["alpha"],
+                         f"true_centroid_{VAR}_test_mae_mps": float(np.abs(true_disp[test] - y[test]).mean())},
+        "direct": {"what": f"ridge {VAR} probe on the step-mean pooled forecast", "alpha": cvs["alpha"],
                    "cv_r2": cvs["cv_mean"], "test_mae_mps": float(np.abs(read_direct(Zall[test]) - y[test]).mean()),
                    "test_r2": pscore(y[test, None], read_direct(Zall[test])[:, None], "linear")["r2"]},
         "direction": {"what": "ridge [sin, cos] probe on the step-mean forecast (off-target check)", "alpha": cvd["alpha"],
                       "test_circ_mae_deg": float(wrap(read_dir(Zall[test]) - th[test]).mean())},
         "fit_rows": f"{int(probe.sum())} probe clips (folds 3-4), alpha by 5-fold CV inside them; test = {int(test.sum())} clips"}
+    if VAR != "speed":
+        readouts["fit_rows"] = (f"{int(probe.sum())} of {int(all_probe.sum())} probe clips (folds 3-4), held-out-block "
+                                f"values excluded; alpha by 5-fold CV inside them; test = {int(test.sum())} clips")
+        readouts["displacement"]["true_centroid_test_r2"] = pscore(y[test, None], true_disp[test][:, None], "linear")["r2"]
+        readouts["units_note"] = "*_mps fields of this readout block are in m/s^2 (key names kept from the speed run)"
     parity = {"src_pred_vs_native_extract_rel_maxabs": float(np.abs(F["src_pred_pooled"] - Zall[rows]).max()
                                                               / np.abs(Zall[rows]).max()),
               "src_meanpool_vs_stored_rel_maxabs": float(np.abs(F["src_meanpool"] - arrays["carrier_stored_meanpool"][idx]).max()
@@ -424,8 +499,13 @@ def score(args):
     for r in ("displacement", "direct"):
         twin_ref[r] = {"unedited_err_to_target": per_clip_ci(np.abs(s0[r][:, None] - tg).mean(1)),
                        "twin_forecast_err_to_target": per_clip_ci(np.abs(stw[r] - tg).mean(1)),
-                       "twin_forecast_R_speed": per_clip_ci(projection_R(stw[r] - s0[r][:, None], dtrue)),
+                       f"twin_forecast_R_{VAR}": per_clip_ci(projection_R(stw[r] - s0[r][:, None], dtrue)),
                        "unedited_err_to_true": per_clip_ci(np.abs(s0[r] - src))}
+    vs0, vtw = read_vbar(Zs), read_vbar(Zt)
+    if VAR != "speed":
+        t_mid = float(np.mean((2 * np.arange(4, 8) + 0.5) / FPS))
+        twin_ref["twin_mean_speed_change_mps"] = per_clip_ci((vtw - vs0[:, None]).mean(1))
+        twin_ref["physical_mean_speed_change_mps"] = per_clip_ci((dtrue * t_mid).mean(1))
     twin_ref["twin_dir_change_deg"] = per_clip_ci(wrap(atw - a0[:, None]).mean(1))
     twin_ref["twin_px_to_twin_true"] = per_clip_ci(np.nanmean(dist(pt, cen_tw[:, :, 4:8]), (1, 2)))
     twin_ref["unedited_px_to_twin_true"] = per_clip_ci(np.nanmean(dist(ps[:, None], cen_tw[:, :, 4:8]), (1, 2)))
@@ -439,12 +519,14 @@ def score(args):
             pc[r] = np.abs(se - tg).mean(1)
             m[f"{r}_err_to_target"] = per_clip_ci(pc[r])
             m[f"{r}_err_to_twin_forecast"] = per_clip_ci(np.abs(se - stw[r]).mean(1))
-            m[f"{r}_R_speed"] = per_clip_ci(projection_R(se - s0[r][:, None], dtrue))
+            m[f"{r}_R_{VAR}"] = per_clip_ci(projection_R(se - s0[r][:, None], dtrue))
             m[f"{r}_err_to_far_end"] = per_clip_ci(np.abs(se - v_far[L]).mean(1))
         m["R_token_twin_forecast"] = per_clip_ci(projection_R(Z - Zs[:, None], Zt - Zs[:, None], (-1, -2)).mean(1))
         m["px_to_twin_true"] = per_clip_ci(np.nanmean(dist(pe, cen_tw[:, :, 4:8]), (1, 2)))
         m["px_to_twin_forecast"] = per_clip_ci(np.nanmean(dist(pe, pt), (1, 2)))
         m["dir_change_deg"] = per_clip_ci(wrap(read_dir(Z) - a0[:, None]).mean(1))
+        if VAR != "speed":
+            m["mean_speed_change_mps"] = per_clip_ci((read_vbar(Z) - vs0[:, None]).mean(1))
         return m, pc
 
     pred, paired = {}, {}
@@ -465,7 +547,7 @@ def score(args):
                                                  ("null", "chord"))
                                     for r in ("displacement", "direct")}
     # ---- propagation through the encoder (full-clip edits, own norm), speed probe refit per read point
-    full = np.load(PROJECT_ROOT / "artifacts/activations/speed/vjepa2/meanpool.npy", mmap_mode="r")
+    full = np.load(PROJECT_ROOT / f"artifacts/activations/{DATASET}/vjepa2/meanpool.npy", mmap_mode="r")
     sweep = load_sweep(DATASET, DATASET)
     readers = {}
     for p in range(min(POINTS), 26):
@@ -483,7 +565,7 @@ def score(args):
                "twin_err_to_target": [per_clip_ci(np.abs(rp(tw_mp[:, :, p], p) - tg).mean(1))["mean"] for p in pts]}
         for i, arm in enumerate(ARMS):
             row[arm] = {"err_to_target": [per_clip_ci(np.abs(rp(E[:, i, :, q], p) - tg).mean(1)) for q, p in enumerate(pts)],
-                        "R_speed": [per_clip_ci(projection_R(rp(E[:, i, :, q], p) - rp(src_mp[:, p], p)[:, None], dtrue))
+                        f"R_{VAR}": [per_clip_ci(projection_R(rp(E[:, i, :, q], p) - rp(src_mp[:, p], p)[:, None], dtrue))
                                     for q, p in enumerate(pts)],
                         "R_act_twin_change": [per_clip_ci(projection_R(E[:, i, :, q] - src_mp[:, None, p],
                                                                        tw_mp[:, :, p] - src_mp[:, None, p]).mean(1))
@@ -495,7 +577,7 @@ def score(args):
     cost = json.loads(args.cost) if args.cost else {}
     gpu_total = gpu_s + ext["gpu_seconds"]
     res = {"design": {k: info[k] for k in ("points", "arms", "conditions", "holdout", "held_values", "n_targets",
-                                           "carrier_pool", "twins", "renderer_validation_speed")},
+                                           "carrier_pool", "twins", f"renderer_validation_{DATASET}")},
            "n_carriers": int(C), "geometry": info["per_point"], "readouts": readouts, "parity": parity,
            "twin_reference": twin_ref, "predictor": pred, "paired": paired, "propagation": prop,
            "compute": {"gpu_seconds_forward": gpu_s, "gpu_seconds_extract": ext["gpu_seconds"],
@@ -521,7 +603,24 @@ def score(args):
                                       "(Part 1 sweep alpha); R_act_twin_change = projection on the twin's real change",
                "twin_reference": "the predictor's forecast from the rendered twin's own context (what a perfect edit "
                                  "could reach) and the unedited forecast"}}
-    write(RES / "session3_speed_predictor.json", res, stage="session3_speed_score", seeds={"plan": info["seed"],
+    if (out / "forward_provenance.json").exists():                 # forward sharded across boxes (--groups)
+        res["compute"]["group_provenance"] = json.loads((out / "forward_provenance.json").read_text())
+        res["compute"]["box"] = "RTX 4060 Ti x3 (vast 53030966 extract + groups 1-6; 53252443, 53255819 shards)"
+    if VAR != "speed":
+        u = CFG["unit"]
+        res["keys"].update({
+            "<readout>_err_to_target": f"|acceleration read from the forecast - target acceleration| ({u})",
+            "<readout>_err_to_twin_forecast": f"|acceleration read from the edited forecast - from the twin's own forecast| ({u})",
+            "<readout>_R_acceleration": "per carrier sum_t (a_edit - a_unedited)(target - source) / sum_t (target - source)^2",
+            "<readout>_err_to_far_end": f"|read acceleration - {v_far[POINTS[1]]}| (the null's aim)",
+            "mean_speed_change_mps": "off-target/coupled: forecast mean speed over steps 4-7 (|p7 - p4| / 3 from the "
+                                     "position probes, m/s) edited minus unedited; physics predicts delta_a * t_mid for a "
+                                     "true acceleration change (twin_reference.physical_mean_speed_change_mps)",
+            "propagation.<point>": "full 16-frame clip edited at the point (own norm), meanpool at every later point read "
+                                   "by an acceleration ridge probe refit there on probe clips' stored meanpool outside the "
+                                   "held-out block (Part 1 sweep alpha); R_act_twin_change = projection on the twin's change"})
+        res["variable"] = VAR
+    write(RES / CFG["result"], res, stage=f"session3_{VAR}_score", seeds={"plan": info["seed"],
           "bootstrap": 0, "cv_folds": 0}, plan_sha256=sha256_file(out / "plan.npz"))
     figure(res)
     return res
@@ -534,7 +633,8 @@ def figure(res):
     cols = {"spline": "#3b6fb6", "chord": "#d9822b", "linear_raw": "#6aa84f", "null": "#999999"}
     fig, ax = plt.subplots(1, 3, figsize=(15, 4.2))
     labels, x = [], 0
-    for L, conds in ((22, CONDS[22]), (12, CONDS[12])):
+    hi = POINTS[1]
+    for L, conds in ((hi, CONDS[hi]), (12, CONDS[12])):
         for cond in conds:
             for i, arm in enumerate(ARMS):
                 r = res["predictor"][str(L)][cond][arm]["displacement_err_to_target"]
@@ -546,41 +646,45 @@ def figure(res):
     ax[0].axhline(tr["unedited_err_to_target"]["mean"], ls="--", c="k", lw=1, label="unedited")
     ax[0].axhline(tr["twin_forecast_err_to_target"]["mean"], ls=":", c="k", lw=1, label="twin's own forecast")
     ax[0].set_xticks([p for p, _ in labels], [s for _, s in labels], fontsize=8)
-    ax[0].set_ylabel("speed error to target (m/s), displacement readout")
-    ax[0].set_title("Forecast speed error (95% clip-bootstrap CI)")
+    ax[0].set_ylabel(f"{VAR} error to target ({CFG['unit']}), displacement readout")
+    ax[0].set_title(f"Forecast {VAR} error (95% clip-bootstrap CI)")
     ax[0].legend(fontsize=7)
     for i, arm in enumerate(ARMS):
-        r = res["predictor"]["22"]["natural_norm"][arm]
+        r = res["predictor"][str(hi)]["natural_norm"][arm]
         ax[1].bar(i, r["R_token_twin_forecast"]["mean"], color=cols[arm])
         ax[1].text(i, r["R_token_twin_forecast"]["mean"], f"{r['dir_change_deg']['mean']:.1f}°", ha="center",
                    va="bottom", fontsize=8)
     ax[1].set_xticks(range(len(ARMS)), ARMS)
-    ax[1].set_title("Point 22, natural norm: token R on twin forecast\n(labels: off-target direction change)")
-    for L, ls in ((12, "-"), (22, "--")):
+    ax[1].set_title(f"Point {hi}, natural norm: token R on twin forecast\n(labels: off-target direction change)")
+    for L, ls in ((12, "-"), (hi, "--")):
         pr = res["propagation"][str(L)]
         for arm in ARMS:
             ax[2].plot(pr["read_points"], [v["mean"] for v in pr[arm]["err_to_target"]], ls, c=cols[arm],
                        label=f"{arm} @{L}")
         ax[2].plot(pr["read_points"], pr["unedited_err_to_target"], ls, c="k", lw=0.8, label=f"unedited @{L}")
     ax[2].set_xlabel("read point")
-    ax[2].set_ylabel("speed error to target (m/s), probe refit per point")
+    ax[2].set_ylabel(f"{VAR} error to target ({CFG['unit']}), probe refit per point")
     ax[2].set_title("Propagation through the encoder (own norm)")
     ax[2].legend(fontsize=6, ncol=2)
     fig.tight_layout()
     FIG.mkdir(exist_ok=True)
-    fig.savefig(FIG / "fig_session3_speed.png", dpi=130)
-    print("wrote", FIG / "fig_session3_speed.png")
+    fig.savefig(FIG / CFG["fig"], dpi=130)
+    print("wrote", FIG / CFG["fig"])
 
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("stage", choices=("plan", "extract", "forward", "score"))
-    ap.add_argument("--out", default=str(ART))
+    ap.add_argument("--out", default=None, help="default artifacts/session3_<variable> (speed: artifacts/session3_speed)")
+    ap.add_argument("--variable", choices=tuple(VARIABLES), default="speed")
     ap.add_argument("--n-carriers", type=int, default=128)
     ap.add_argument("--n-targets", type=int, default=4)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--group", type=int, default=8)
     ap.add_argument("--batch-size", type=int, default=16)
+    ap.add_argument("--groups", default=None, help="forward only: comma list of 1-based group numbers (box sharding)")
     ap.add_argument("--cost", default=None, help="JSON with dph_total etc. from `vastai show instances --raw`")
     a = ap.parse_args()
+    configure(a.variable)
+    a.out = a.out or str(ART)
     {"plan": plan, "extract": extract, "forward": forward, "score": score}[a.stage](a)
