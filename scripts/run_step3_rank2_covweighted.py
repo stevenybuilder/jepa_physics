@@ -20,11 +20,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from sklearn.covariance import ledoit_wolf  # noqa: E402
 from wm.inlp import basis_path, load_basis  # noqa: E402
 from wm.metrics import readout_radius  # noqa: E402
-from wm.probes import (RESULTS, drop_nan_clips, load_activations, load_table, predict, split_rows,  # noqa: E402
+from wm.adam_probe import fit_adam  # noqa: E402
+from wm.probes import (RESULTS, drop_nan_clips, fit_ridge, load_activations, load_table, predict, split_rows,  # noqa: E402
                        standardized_layer, targets, write_json)
 from wm.splits import load_split  # noqa: E402
 from wm.steer import (_band, build_basis, cov_weighted_delta, decode, distance, empirical_p, encode,  # noqa: E402
-                      eval_probe_cv, off_target_probe, steer)
+                      eval_probe_cv, off_target_probe, steer, stratified_halves)
 
 DATASET, POINT, SINGLE, N_DRAWS, SEED = "direction", 9, 90.0, 20, 0
 
@@ -52,10 +53,15 @@ Sigma = Xtr.T @ Xtr / (len(Xtr) - 1)             # Xtr is train-standardised: me
 Sigma_lw, lw_shrink = ledoit_wolf(Xtr, assume_centered=True)
 
 
-def scores(dx_fn):
-    """run_steering's single-target scores (held-out evaluation probe), off-target speed, and the all-targets sweep."""
+def stored_read(Xs):
+    return predict(Xs, eval_W, eval_b)
+
+
+def scores(dx_fn, read=stored_read):
+    """run_steering's single-target scores (held-out evaluation probe; read(Xs) -> its (sin, cos) readout), off-target
+    speed, and the all-targets sweep."""
     Xs = Xte + dx_fn(y_single)
-    P = predict(Xs, eval_W, eval_b)
+    P = read(Xs)
     r = decode(P, kind)
     r_off = decode(predict(Xs[off["mask"]], off["W"], off["b"]), off["kind"])
     dxn = np.linalg.norm(Xs - Xte, axis=1)
@@ -65,13 +71,13 @@ def scores(dx_fn):
                           "mean_abs_change": float(distance(r_off, r_off0, off["kind"]).mean())},
            "norm_ratio_median": float(np.median(np.linalg.norm(Xs, axis=1) / x_norm)),
            "edit_norm_median": float(np.median(dxn)), "radius_median": float(np.median(readout_radius(P)))}
-    err = [distance(decode(predict(Xte + dx_fn(encode(t, kind)), eval_W, eval_b), kind), t, kind) for t in all_targets]
+    err = [distance(decode(read(Xte + dx_fn(encode(t, kind))), kind), t, kind) for t in all_targets]
     out["all_targets_mae_to_target"] = float(np.mean(err))
     return out
 
 
-def null(W, b, S, draws):
-    rows = [scores(lambda y, U=U: cov_weighted_delta(Xte, W, b, S, y, U)) for U in draws]
+def null(W, b, S, draws, read=stored_read):
+    rows = [scores(lambda y, U=U: cov_weighted_delta(Xte, W, b, S, y, U), read) for U in draws]
     return {"mae_to_target": _band([r["mae_to_target"] for r in rows]),
             "mae_to_true": _band([r["mae_to_true"] for r in rows]),
             "off_target_mean_abs_change": _band([r["off_target"]["mean_abs_change"] for r in rows]),
@@ -112,11 +118,64 @@ for name, W, b, S, desc in (
           f"{learned['off_target']['mean_abs_change']:.4f}; null {nl['mae_to_target']['mean']:.2f} "
           f"p={edits[name]['rank_matched_null']['empirical_p_to_target']:.3f}")
 
+# evaluation-probe variants (as p1c_direction_evalprobe_recipe.json, plus p1c_direction_L9_strict.json's split halves):
+# the alpha = 100 probe's shrinkage favours high-variance directions, where Σ-weighted edits push
+in_a = stratified_halves(groups, labels)
+W_A, b_A, rep_A = eval_probe_cv(Xte[in_a], Y[te][in_a], kind, groups=groups[in_a])
+W_B, b_B, rep_B = eval_probe_cv(Xte[~in_a], Y[te][~in_a], kind, groups=groups[~in_a])
+W_r, b_r = fit_ridge(Xte, Y[te], 1e-3)
+W_ad, b_ad = fit_adam(Xte, Y[te], 1e-3, 1e-4, 100, 64, 0)
+readers = {"ridge_alpha_100_stored": ("stored: ridge, alpha by grouped 5-fold CV inside test (alpha = 100)", stored_read),
+           "ridge_alpha_1e-3": ("closed-form ridge on the test activations, alpha = 1e-3 (as evalprobe_recipe)",
+                                lambda Xs: predict(Xs, W_r, b_r)),
+           "adam_c11": ("Adam lr 1e-3, coupled wd 1e-4, 100 epochs, batch 64, init seed 0, standardised targets "
+                        "(wm.adam_probe.fit_adam, as evalprobe_recipe)", lambda Xs: predict(Xs, W_ad, b_ad)),
+           "split_half": ("test split into stratified halves A/B (wm.steer.stratified_halves, identical clips together, "
+                          "as strict_eval); probe fit on one half (alpha by grouped CV inside it) reads the other "
+                          f"half's steered clips, both directions pooled over all {len(te)} clips; alpha_A = "
+                          f"{rep_A['alpha']}, alpha_B = {rep_B['alpha']}",
+                          lambda Xs: np.where(in_a[:, None], predict(Xs, W_B, b_B), predict(Xs, W_A, b_A)))}
+variant_edits = {"euclidean_N1": (W1, b1, np.eye(d)), "covweighted_probe1": (W1, b1, Sigma),
+                 "covweighted_oracle_evalprobe": (eval_W, eval_b, Sigma)}
+KEYS = ("mae_to_target", "mae_to_true", "edit_norm_median")
+variants = {}
+for vname, (vdesc, read) in readers.items():
+    base = decode(read(Xte), kind)
+    variants[vname] = {"probe": vdesc, "unsteered": {"mae_to_target": float(distance(base, SINGLE, kind).mean()),
+                                                      "mae_to_true": float(distance(base, labels, kind).mean())}}
+    for ename, (W, b, S) in variant_edits.items():
+        if ename == "euclidean_N1":
+            lrn = scores(lambda y: steer(Xte, V, probes, y, 1) - Xte, read)
+        else:
+            lrn = scores(lambda y, W=W, b=b, S=S: cov_weighted_delta(Xte, W, b, S, y), read)
+        nl = null(W, b, S, U_draws, read)
+        variants[vname][ename] = {
+            **{k: lrn[k] for k in KEYS}, "off_target_speed_mean_abs_change": lrn["off_target"]["mean_abs_change"],
+            "all_targets_mae_to_target": lrn["all_targets_mae_to_target"],
+            "null": {**{k: nl[k]["mean"] for k in KEYS},
+                     "off_target_speed_mean_abs_change": nl["off_target_mean_abs_change"]["mean"],
+                     "mae_to_target_draws": nl["mae_to_target"]["draws"],
+                     "empirical_p_to_target": empirical_p(lrn["mae_to_target"], nl["mae_to_target"]["draws"]),
+                     "empirical_p_off_target_change": empirical_p(lrn["off_target"]["mean_abs_change"],
+                                                                  nl["off_target_mean_abs_change"]["draws"]),
+                     "empirical_p_edit_norm": empirical_p(lrn["edit_norm_median"], nl["edit_norm_median"]["draws"])}}
+        e = variants[vname][ename]
+        print(f"[{vname}] {ename}: to target {e['mae_to_target']:.2f}, to true {e['mae_to_true']:.2f}, off "
+              f"{e['off_target_speed_mean_abs_change']:.4f}, |dx| {e['edit_norm_median']:.2f}; null "
+              f"{e['null']['mae_to_target']:.2f} p={e['null']['empirical_p_to_target']:.3f}")
+evalprobe_variants = {"rule": "each evaluation probe reads the same steered clips; off-target speed and edit norm do "
+                              "not depend on the evaluation probe (repeated per variant for completeness); null = the "
+                              "Σ-weighted (Σ = I for euclidean_N1) random 2-D subspace null, same 20 draws; the oracle "
+                              "edit is built from the alpha = 100 probe under every variant",
+                      "split_half_eval_probes": {"A": rep_A, "B": rep_B, "n_A": int(in_a.sum()),
+                                                 "n_B": int((~in_a).sum())},
+                      **variants}
+
 stored = RESULTS / "p1c_direction_L9.json"
 out = {"dataset": DATASET, "variable": DATASET, "kind": kind, "pool": "meanpool", "model": "vjepa2", "point": POINT,
        "n_test": len(te), "single_target": SINGLE, "all_nan_clips_excluded": n_nan, "K_stored_basis": K,
        "space": "train-standardised activations", "eval_probe": eval_report, "off_target_probe": off_info,
-       "paper": "§7.1 l.405-412: manipulating only the unit-circle subspace does not effectively steer direction; "
+       "paper": "§7.1 l.383-385: manipulating only the unit-circle subspace does not effectively steer direction; "
                 "C.12 l.1240-1262 steering protocol",
        "protocol": "run_steering's paper protocol (C.12): same split, train standardisation, evaluation probe (ridge, "
                    "alpha by grouped 5-fold CV inside test, fit on the steered test clips), off-target speed probe "
@@ -136,5 +195,5 @@ out = {"dataset": DATASET, "variable": DATASET, "kind": kind, "pool": "meanpool"
        "stored_reference": {"file": "results/p1c_direction_L9.json",
                             "euclidean_N1_single": next(r for r in json.loads(stored.read_text())["single"]
                                                         if r["n"] == 1)},
-       "edits": edits}
+       "edits": edits, "evalprobe_variants": evalprobe_variants}
 write_json(RESULTS / "p1c_direction_L9_rank2_covweighted.json", out)

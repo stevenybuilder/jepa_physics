@@ -90,6 +90,10 @@ for n in list(N_REPORT) + [K]:
                     "ridge_p_rank2K": ridge_nulls[n]["random_basis"]["empirical_p_to_target"]})
     table.append(row)
 comparison = {"rule": "single target 90 deg, paper arm; beats a null = empirical p at the 1/21 floor",
+              "null_dimension_note": f"the Adam-basis rank-2K null (random_nulls.random_basis) is {2 * K}-dimensional "
+                                     f"(2 x {K}), so its draws differ from the ridge file's {2 * stored_ridge['K']}-"
+                                     f"dimensional null (2 x {stored_ridge['K']}); the rank-matched nulls also draw "
+                                     f"R_j from [d, 2K] Gaussians, so their R_j[:, :2N] differ between the files too",
               "n_to_10deg": {"adam": first_n(out["single"]), "ridge_stored": first_n(stored_ridge["single"])},
               "K": {"adam": K, "ridge_stored": stored_ridge["K"]}, "table": table}
 obj = json.loads((RESULTS / "p1c_direction_L9_adam_basis.json").read_text())
