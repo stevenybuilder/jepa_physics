@@ -11,7 +11,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from wm.probes import VARIABLES, load_sweep  # noqa: E402
 from wm.provenance import step_layers  # noqa: E402
-from wm.steer import run_steering  # noqa: E402
+from wm.steer import run_rank_matched_null, run_steering  # noqa: E402
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset", choices=list(VARIABLES), default=None)
@@ -32,6 +32,9 @@ parser.add_argument("--null-draws", type=int, default=20, help="draws per random
 parser.add_argument("--n-max", type=int, default=None,
                     help="cap the probe-count sweep at this N (default K); N grid = 1..25, 30, 40, 55, 75, 100, "
                          "140, 200, top")
+parser.add_argument("--rank-matched-null", action="store_true",
+                    help="extra arm only: random-basis null of rank m*N (the learned basis' rank at N) beside the "
+                         "rank-K*m null; writes p1c_{dataset}_L{layer}_rankmatched.json, leaves p1c files untouched")
 args = parser.parse_args()
 
 for dataset in [args.dataset] if args.dataset else VARIABLES:
@@ -40,5 +43,9 @@ for dataset in [args.dataset] if args.dataset else VARIABLES:
              else step_layers(load_sweep(dataset, variable, args.pool, args.results, args.model), args.layer_role,
                               alt=False))
     for point, role in roles.items():
+        if args.rank_matched_null:
+            run_rank_matched_null(dataset, args.variable, point, args.pool, args.act_root, args.results,
+                                  args.inlp_dir, args.null_draws, role, args.model, args.n_max)
+            continue
         run_steering(dataset, args.variable, point, args.pool, args.act_root, args.results, args.inlp_dir,
                      args.null_draws, role, args.model, args.strict_eval, args.n_max)

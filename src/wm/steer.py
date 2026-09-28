@@ -282,6 +282,57 @@ def random_nulls(Xte, labels, probes, eval_W, eval_b, kind, single_target, n_dra
             "rows": rows}
 
 
+def rank_matched_null(Xte, labels, probes, eval_W, eval_b, kind, single_target, n_draws=20, seed=0, n_max=None):
+    """Rank-matched random-basis null for the single-target steer (paper arm), at every n in n_grid(K, n_max).
+
+    random_nulls' random_basis uses rank K·m at every n, while the learned basis at n probes spans only the first
+    n·m probe columns; this null matches that rank. Draw j is R_j = QR(G_j) with G_j [d, K·m] Gaussian from the same
+    rng stream as random_nulls (same seed = identical R_j); at n it uses R_j[:, :n·m], a uniformly random rank-n·m
+    subspace (nested across n), with its own least-squares solve x* = x + R (W̃ᵀR)⁺ (y* − ŷ(x)). The full-rank R_j is
+    scored too (random_basis_full_rank: reproduces random_nulls' random_basis draws). At n = K the two coincide.
+    Same held-out evaluation probe and scores as random_nulls; bands add the sd over draws.
+    """
+    V = build_basis(probes["W"])
+    K, d, r = len(probes["W"]), Xte.shape[1], V.shape[1]
+    m = probes["W"].shape[2]
+    y = encode(single_target, kind)
+    rng = np.random.default_rng(seed)
+    R_draws = [np.linalg.qr(rng.standard_normal((d, r)))[0] for _ in range(n_draws)]
+    x_norm = np.linalg.norm(Xte, axis=1)
+
+    def scores(Xs):
+        P = predict(Xs, eval_W, eval_b)
+        ang = decode(P, kind)
+        return {"mae_to_target": float(distance(ang, single_target, kind).mean()),
+                "mae_to_true": float(distance(ang, labels, kind).mean()),
+                "norm_ratio_median": float(np.median(np.linalg.norm(Xs, axis=1) / x_norm))}
+
+    def band(draws):
+        out = {}
+        for key in draws[0]:
+            vals = np.array([s[key] for s in draws])
+            out[key] = {**_band(vals), "sd": float(vals.std(ddof=1))}
+        return out
+
+    rows = []
+    for n in n_grid(K, n_max):
+        learned = scores(steer(Xte, V, probes, y, n))
+        row = {"n": n, "rank_learned": n * m, "learned": learned}
+        for name, draws in (("rank_matched", [scores(steer(Xte, R[:, :n * m], probes, y, n)) for R in R_draws]),
+                            ("random_basis_full_rank", [scores(steer(Xte, R, probes, y, n)) for R in R_draws])):
+            row[name] = band(draws)
+            row[name]["rank"] = n * m if name == "rank_matched" else r
+            row[name]["empirical_p_to_target"] = empirical_p(learned["mae_to_target"],
+                                                             [s["mae_to_target"] for s in draws])
+        rows.append(row)
+    return {"n_draws": n_draws, "seed": seed, "m": m, "K": K, "full_rank": r, "n_grid": n_grid(K, n_max),
+            "rank_rule": "rank_matched: rank m*n (= rank of the learned basis at n); random_basis_full_rank: rank K*m "
+                         "at every n (the existing random_nulls.random_basis); draw j nests R_j[:, :m*n]",
+            "p_rule": "empirical_p_to_target = (1 + #{null draws with MAE-to-target <= learned}) / (n_draws + 1); "
+                      "resolution 1/(n_draws + 1), small = learned beats the null",
+            "rows": rows}
+
+
 def grouped_folds(groups, k=5, seed=0):
     """Fold per row with identical clips (same group, e.g. frame hash) kept in one fold."""
     uniq, inv = np.unique(np.asarray(groups), return_inverse=True)
@@ -416,4 +467,48 @@ def run_steering(dataset, variable=None, point=None, pool="meanpool", act_root=N
     suffix = (("" if variable == dataset else f"_{variable}") + ("" if pool == "meanpool" else f"_{pool}")
               + ("" if model == "vjepa2" else f"_{model}"))
     write_json(Path(results_dir or RESULTS) / f"p1c_{dataset}_L{point}{suffix}.json", out)
+    return out
+
+
+def run_rank_matched_null(dataset, variable=None, point=None, pool="meanpool", act_root=None, results_dir=None,
+                          inlp_dir=None, n_draws=20, layer_role=None, model="vjepa2", n_max=None):
+    """Extra arm (run_step3.py --rank-matched-null): rank_matched_null under exactly run_steering's paper protocol
+    (same basis, split, standardisation, evaluation probe, single target). Writes
+    results/p1c_{dataset}_L{point}[suffix]_rankmatched.json; the p1c file itself is not touched."""
+    variable = variable or dataset
+    sweep = load_sweep(dataset, variable, pool, results_dir, model)
+    point = sweep["availability"]["peak"] if point is None else point
+    probes = load_basis(basis_path(dataset, variable, point, pool, inlp_dir, model))
+    assert len(probes["W"]) > 0, "step 2 found no probe above chance at this layer"
+    df = load_table(dataset)
+    Y, kind, _ = targets(df, variable)
+    assert kind in ("circular", "scalar"), "steering is defined for direction, speed and acceleration"
+    tr, te, folds = split_rows(dataset, df)
+    acts = load_activations(dataset, pool, model, act_root)
+    tr, te, folds, n_nan = drop_nan_clips(acts, tr, te, folds)
+    Xtr, Xte = standardized_layer(acts, point, tr, te)
+    label_all = df["theta_degrees"].to_numpy(float) if kind == "circular" else Y[:, 0]
+    labels = label_all[te]
+    all_targets = np.unique(label_all)
+    single = 90.0 if kind == "circular" else float(all_targets[len(all_targets) // 2])
+    hashes = load_split(dataset)["frame_hash"]
+    groups = np.array([hashes[str(i)] for i in df["id"].to_numpy()[te]])
+    eval_W, eval_b, eval_report = eval_probe_cv(Xte, Y[te], kind, groups=groups)
+    null = rank_matched_null(Xte, labels, probes, eval_W, eval_b, kind, single, n_draws, n_max=n_max)
+    out = {"dataset": dataset, "variable": variable, "kind": kind, "pool": pool, "model": model, "point": point,
+           "frac": layer_fraction(point), "n_test": len(te), "layer_role": layer_role,
+           "is_peak": point == sweep["availability"]["peak"], "is_onset": point == sweep["availability"]["onset"],
+           "eval_probe": eval_report, "space": "train-standardised activations", "all_nan_clips_excluded": n_nan,
+           "protocol": "paper protocol (C.12): evaluation probe fit on the same test clips it steers; single target, "
+                       "paper arm (unit target / true value required of every probe)",
+           "single_target": single, "rank_matched_null": null}
+    for row in null["rows"]:
+        if row["n"] in (1, 5, 10, 20):
+            print(f"{dataset} point {point} N={row['n']}: learned {row['learned']['mae_to_target']:.2f} | "
+                  f"rank {null['full_rank']} {row['random_basis_full_rank']['mae_to_target']['mean']:.2f} | "
+                  f"rank {row['rank_matched']['rank']} {row['rank_matched']['mae_to_target']['mean']:.2f} "
+                  f"p={row['rank_matched']['empirical_p_to_target']:.3f}")
+    suffix = (("" if variable == dataset else f"_{variable}") + ("" if pool == "meanpool" else f"_{pool}")
+              + ("" if model == "vjepa2" else f"_{model}"))
+    write_json(Path(results_dir or RESULTS) / f"p1c_{dataset}_L{point}{suffix}_rankmatched.json", out)
     return out

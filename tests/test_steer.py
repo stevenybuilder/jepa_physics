@@ -233,3 +233,39 @@ def test_evaluate_and_nulls_score_only_grid_points():
     assert len(r["shift_bins"]["mae_to_target"]) == 27
     nulls = random_nulls(X, theta, probes, eW, eb, "circular", 90.0, n_draws=3, n_max=10)
     assert [row["n"] for row in nulls["rows"]] == list(range(1, 11))
+
+
+@pytest.fixture(scope="module")
+def planted_2d():
+    """Planted 2-dim readout (sin, cos θ) in 4 noisy copies inside d = 200: 4 probes, m = 2."""
+    rng = np.random.default_rng(0)
+    theta = rng.choice(ALL_T, 2000)
+    Y = encode(theta, "circular")
+    X = copies_code(Y, 4, d=200, seed=0)
+    tr, te, folds = split(len(Y))
+    _, Q, W, b = inlp(X[tr], Y[tr], X[te], Y[te], folds, 1.0, partial(score, kind="circular"), "circular")
+    eval_W, eval_b = fit_ridge(X[te], Y[te], 1.0)
+    return X[te], theta[te], {"Q": Q, "W": W, "b": b}, eval_W, eval_b
+
+
+def test_rank_matched_null_weak_at_n1_equals_full_rank_null_at_K(planted_2d):
+    """At N = 1 a rank-2 random basis steers the held-out probe far worse than the learned probe (while the rank-2K
+    null does not); at N = K the rank-matched and rank-2K nulls coincide (same draws, same seed), and with an
+    independent seed their distributions overlap. The full-rank column reproduces random_nulls' random_basis."""
+    from wm.steer import rank_matched_null
+    X, theta, probes, eval_W, eval_b = planted_2d
+    K = len(probes["W"])
+    null = rank_matched_null(X, theta, probes, eval_W, eval_b, "circular", 90.0, n_draws=20)
+    first, last = null["rows"][0], null["rows"][-1]
+    assert first["n"] == 1 and first["rank_matched"]["rank"] == 2 and last["n"] == K > 1
+    assert first["rank_matched"]["empirical_p_to_target"] == 1 / 21
+    assert first["rank_matched"]["mae_to_target"]["mean"] > first["learned"]["mae_to_target"] + 15
+    assert first["rank_matched"]["mae_to_target"]["mean"] > 3 * first["random_basis_full_rank"]["mae_to_target"]["mean"]
+    assert last["rank_matched"]["rank"] == last["random_basis_full_rank"]["rank"] == 2 * K
+    assert last["rank_matched"]["mae_to_target"]["draws"] == last["random_basis_full_rank"]["mae_to_target"]["draws"]
+    full = random_nulls(X, theta, probes, eval_W, eval_b, "circular", 90.0, n_draws=20)["rows"]
+    for row, ref in zip(null["rows"], full):
+        assert row["random_basis_full_rank"]["mae_to_target"]["draws"] == ref["random_basis"]["mae_to_target"]["draws"]
+    other = rank_matched_null(X, theta, probes, eval_W, eval_b, "circular", 90.0, n_draws=20, seed=1)["rows"][-1]
+    a, b = last["rank_matched"]["mae_to_target"], other["rank_matched"]["mae_to_target"]
+    assert abs(a["mean"] - b["mean"]) < 3 * np.hypot(a["sd"], b["sd"]) / np.sqrt(20)
