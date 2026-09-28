@@ -746,13 +746,13 @@ not the method's, gives large extrapolation losses.
 - **Random curves** (20 endpoint-matched draws, point 12 contiguous). Endpoint readouts match by construction. On the
   path, the spline ranks 1/21 on off-curve excess (0.15 vs a band of 0.68–0.88) and on Eq. 10 energy (0.92 vs 1.48–1.75).
   Unmatched random curves have endpoint error 87.9°. **BF16**: the winner on both energy metrics is unchanged.
-  **Dose-matched line**: endpoint 9.41°, energy 1.27, radius 0.61, so the line's deficit is not a matter of dose.
+  **Dose-matched line**: endpoint 9.41°, energy 1.40, radius 0.61, so the line's deficit is not a matter of dose.
 - **Goodfire's own linear baseline** (the whole activation replaced by a chord point). Nearest-real R is 0.625 and
   endpoint error 1.52°, against 0.547 for Goodfire's manifold arm and 0.196 for our additive arms. Erasing the residual
   makes the activation look much more like the target centroid, so Goodfire's comparison mixes "residual erased" with
   "curved vs straight".
 - **Bake-off at matched edit norm** (all arms rescaled per clip to the spline's ‖Δ‖; errors from the linear probe /
-  an MLP on disjoint probe clips; unsteered 88.9° / 92.3°)[^bake]:
+  an MLP on disjoint probe clips; unsteered 88.9° / 92.3° at point 12, 88.7° / 86.4° at point 22)[^bake]:
 
 | Arm (nominal rank) | pt 12 probe / MLP | pt 22 probe / MLP |
 |---|---|---|
@@ -840,18 +840,18 @@ carrier has a pixel twin rendered at the target direction (renderer validated on
 | 12 | 4.1 / 14.3 / 5.1 / 91.2 | 86.5 / 86.8 / 87.3 / 90.6 | 86.8 / 87.2 / 87.6 / 90.5 |
 | 22 | 3.6 / 10.7 / 3.6 / 89.8 | 17.4 / 25.2 / 21.8 / 100.1 | 23.6 / 26.6 / 23.1 / 99.8 |
 
-Edits at points 2–12 wash out: four blocks later the error is 82–88° for every arm but the overshooting spline, and
+Edits at points 2–12 wash out: four blocks later the error is 82–88° for every structured arm but the overshooting spline (random 92°), and
 at point 25 MAE-to-true is back to 4–7°. The steered-point columns are read by a probe of the family that built the
 edit, so they are not independent evidence. Point-22 edits survive the last three blocks (15–25° at point 25) with
 weak target specificity: against the neighbouring target (at most 39° away, 16.5° on average[^s2]) the error rises by
-only 1–6° at point 25 (7–13° at the steered point). The projection on the twin's real activation change at point 25
+only 1–6° at point 25 (7–14° at the steered point). The projection on the twin's real activation change at point 25
 is 0.16 / 0.23 / 0.22 (probe-QR / smoothed spline / chord) vs 0.15 / 0.21 / 0.21 for the shuffled twin (`readout_b`).
 The interpolating spline on the label-free knot order overshoots (‖Δ‖ 7.2× the natural twin change at point 12, vs
 0.5–0.6×) and is excluded; on the labels order its edit is 0.97× the twin change[^il12].
 
 **Predictor** (context frames 1–8 edited at every token; the predictor forecasts tubelets 4–7). *First attempt
 (blind).* Probes fit on the encoder's real future tokens (3.4°, 6.7–8.4 px) read the unedited forecast 61° / 67.9 px
-off[^fpos] (62.6° / 65.7 px when recomputed on the second attempt's test clips); token-space R (`session2_predictor.json`) is 0.0185 [0.0173, 0.0195] for the twin's context, ≤ 0.0025 for
+off[^fpos] (62.6° / 65.7 px when recomputed on the second attempt's test clips); token-space R (`session2_predictor.json`) is 0.0185 [0.0173, 0.0195] for the twin's context, ≤ 0.006 for
 every edit.
 
 *Second attempt, a readout fit on the predictor's own outputs*[^nat]. Ridge probes (α by 5-fold CV) fit on the
@@ -997,7 +997,7 @@ complete. A negative, as run, on both protocols.
 **Time-reversed clips** (the forward-trained probe read on reversed clips)[^trev]. From point 1 on, the direction probe
 reads θ + 180° on the reversed clip: the error to θ + 180° is 20.5° at point 1 and 5.7–10.3° from point 2 on, with
 98–100% of clips closer to the flipped angle. The probe tracks motion direction, not position or occupancy (a reversed
-constant-velocity clip has the same frame set). A speed probe transfers to reversed clips (R² 0.964–0.981 vs
+constant-velocity clip has the same frame set). A speed probe transfers to reversed clips (R² 0.944–0.981 vs
 0.936–0.987 forward at points ≥ 1).
 
 ## 5. Beyond the three variables
