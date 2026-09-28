@@ -297,7 +297,7 @@ cross-half curve on seed 0, along with curves whose inflection sits at the first
 curve with a negative fitted rise, so it does not separate a trained encoder from an untrained one[^sig].
 On the supplied clips neither part appears: the per-patch code forms by block 6 with no step at points 8 → 9, while the mean-pooled
 curve is early under every fold grouping and at the paper's clip count. What training changes on both stimulus sets is
-the per-position code from point 6 on (supplied: V-JEPA 2 0.94–0.98 against a mean of 0.39 for the random network;
+the per-position code from point 6 on (supplied: V-JEPA 2 0.94–0.98 against 0.22–0.39 for the random network;
 hard: 0.80–0.97 against 0.57–0.62 on seed 0 and 0.52–0.61 on seed 1), not pooled availability; the half-frame dip
 and jump are training-specific too (the random network's cross-half has no dip on either seed), though its level at
 point 9 is not.
@@ -398,7 +398,7 @@ K for speed, C.11's unit) speed needs fewer under C.11's thresholds in every cel
 (nested 42 vs 60 at point 8, 46 vs 47 at point 9, 74 vs 102 at the peaks; paper protocol 84 vs 57, 50 vs 50, 78 vs
 118). Direction's sawtooth does not appear under ridge. Under Adam both curves are
 jagged, speed's as much as direction's on a metric both share, so the jaggedness tracks the recipe, not the variable.
-The absolute counts depend on the coordinates (1.4–1.6× larger raw) and on which stop rule fires, which is looser for
+The absolute counts depend on the coordinates (nested K 1.4–1.6× larger raw; paper protocol 0.8–1.8×) and on which stop rule fires, which is looser for
 the scalars.
 
 ### 3.3 Multi-probe subspace steering
