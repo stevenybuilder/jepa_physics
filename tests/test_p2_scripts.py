@@ -549,3 +549,44 @@ def test_isometry_angle_choice_labels():
     assert m.angle_choice(cent, "auto")["angle"] in ("unsupervised", "labels")
     with pytest.raises(ValueError):
         m.angle_choice(cent, "bogus")
+
+
+def _load(name):
+    spec = importlib.util.spec_from_file_location(name[:-3], ROOT / "scripts" / name)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def test_shift_dependence_runs_labels22_swaps_only_point22_rerun_seeds(tmp_path):
+    mod = _load("summarize_shift_dependence.py")
+    f = "p2_steer_direction_direction_L{}_contiguous.json"
+    for L in (12, 22):
+        (tmp_path / f.format(L)).write_text("{}")
+        for s in range(1, 17):
+            for sub in (f"L{L}_s{s}", f"L{L}_s{s}_labels"):
+                (tmp_path / "arcs" / sub).mkdir(parents=True)
+                (tmp_path / "arcs" / sub / f.format(L)).write_text("{}")
+    lab = {n: p.parent.name for n, p in mod.runs(22, mod.LABELS22_SEEDS, tmp_path)}
+    assert len(lab) == 17 and lab["s0"] == tmp_path.name
+    assert {n for n, d in lab.items() if d.endswith("_labels")} == {"s4", "s8", "s9", "s10"}
+    assert not any(p.parent.name.endswith("_labels") for _, p in mod.runs(12, mod.LABELS22_SEEDS, tmp_path))
+    assert not any(p.parent.name.endswith("_labels") for _, p in mod.runs(22, (), tmp_path))
+
+
+def test_ring_occupancy_paths_passes_angle_to_build():
+    mod = _load("run_ring_occupancy.py")
+    seen = []
+
+    class Stop(Exception):
+        pass
+
+    class RP2:
+        def build(self, d, k, angle, design, seed, **kw):
+            seen.append((angle, design, seed))
+            raise Stop
+
+    for angle in ("unsupervised", "labels"):
+        with pytest.raises(Stop):
+            mod.paths(RP2(), {}, 4, angle=angle)
+    assert seen == [("unsupervised", "contiguous", 4), ("labels", "contiguous", 4)]

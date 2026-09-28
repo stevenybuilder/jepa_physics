@@ -23,6 +23,8 @@ B. Density along the contiguous-arc steering paths (run_part2.build / pick_clips
    linear (chord), reflected. Paired gaps vs linear with a clip-grouped bootstrap.
 
   python scripts/run_ring_occupancy.py --layers 12 22 --seeds 0 1 2 ... 16
+  --labels-angle-seeds 4 8 9 10: those seeds build on the labels angle (run_part2 --labels-angle), as the point-22
+  all-labels arc set does; every other seed keeps run_part2's automatic angle choice.
 """
 import argparse
 import importlib.util
@@ -147,8 +149,8 @@ def boot_ci(diff, groups, n=1000, seed=0):
     return [float(np.percentile(means, 2.5)), float(np.percentile(means, 97.5))]
 
 
-def paths(rp2, d, seed, chart_all_knot=None):
-    m = rp2.build(d, 64, "unsupervised", "contiguous", seed, n_controls=0, spline="smooth")
+def paths(rp2, d, seed, chart_all_knot=None, angle="unsupervised"):
+    m = rp2.build(d, 64, angle, "contiguous", seed, n_controls=0, spline="smooth")
     knot, probe, test = m["knot"], d["role"] == "probe", d["role"] == "test"
     chart = gc.fit_circular_chart(d["X"][knot], d["y"][knot])      # kept values only, like the spline
     ref = {"full": d["X"][probe].astype(float), "pca64": m["pca"].project(d["X"][probe]),
@@ -229,9 +231,12 @@ def main(argv=None):
     p.add_argument("--layers", type=int, nargs="+", default=[12, 22])
     p.add_argument("--seeds", type=int, nargs="+", default=[0])
     p.add_argument("--out", default=str(PROJECT_ROOT / "results" / "p2_ring_occupancy.json"))
+    p.add_argument("--labels-angle-seeds", type=int, nargs="*", default=[],
+                   help="seeds built on the labels angle (run_part2 --labels-angle) instead of the automatic choice")
     args = p.parse_args(argv)
     rp2 = load_run_part2()
-    res = {"provenance": provenance(None, seeds={"contiguous_arc_seeds": args.seeds}, layers=args.layers,
+    res = {"provenance": provenance(None, seeds={"contiguous_arc_seeds": args.seeds,
+                                                 "labels_angle_seeds": args.labels_angle_seeds}, layers=args.layers,
                                     pool="meanpool", k=64, K=K, spline="smooth", holdout="contiguous"),
            "question": "is the ring occupied by real clips along its whole length with an empty interior, and do "
                        "steered waypoints sit among real clips (of the intermediate direction)?",
@@ -255,8 +260,9 @@ def main(argv=None):
         chart = gc.fit_circular_chart(d["X"][d["role"] == "knot"], d["y"][d["role"] == "knot"])
         entry = {**layer_role("direction", L, "direction"), "occupancy": occupancy(d, chart, s), "paths": {}}
         for seed in args.seeds:
-            P = paths(rp2, d, seed)
+            P = paths(rp2, d, seed, angle="labels" if seed in args.labels_angle_seeds else "unsupervised")
             entry["paths"][f"s{seed}"] = summarise_paths(P, seed)
+            entry["paths"][f"s{seed}"]["angle_source"] = P["m"]["curve"].coord_source
             o = entry["paths"][f"s{seed}"]["overall"]
             print(f"L{L} s{seed}: mid ratio pca64 spline {o['manifold']['mid_ratio_pca64']:.3f} chord "
                   f"{o['linear']['mid_ratio_pca64']:.3f} | chart2 {o['manifold']['mid_ratio_chart2']:.2f} vs "

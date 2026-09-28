@@ -8,7 +8,9 @@ and SD across runs and the number of runs whose 95% CI excludes 0 in each direct
 both are kept (as in REPORT section 4.3) and the arc is listed.
 
   python scripts/summarize_shift_dependence.py
+  python scripts/summarize_shift_dependence.py --labels22   # point 22 seeds 4, 8, 9, 10 -> their --labels-angle reruns
 """
+import argparse
 import json
 from pathlib import Path
 
@@ -26,20 +28,31 @@ SIGN = {"probe_radius_min": "+ = spline higher (better)", "probe_err_to_target":
         "intermediate_mass": "+ = spline better (Eq. 9, circular)", "ordering_spearman": "+ = spline better (Eq. 9)"}
 
 
-def runs(layer):
-    res = PROJECT_ROOT / "results"
+LABELS22_SEEDS = (4, 8, 9, 10)     # point-22 arcs stored on the label-free angle; reruns in arcs/L22_s{S}_labels/
+
+
+def runs(layer, labels_seeds=(), results_dir=None):
+    """(name, path) per stored arc run; at point 22, seeds in labels_seeds read their --labels-angle rerun instead."""
+    res = Path(results_dir) if results_dir else PROJECT_ROOT / "results"
     out = [("s0", res / f"p2_steer_direction_direction_L{layer}_contiguous.json")]
-    out += [(f"s{s}", res / "arcs" / f"L{layer}_s{s}" / f"p2_steer_direction_direction_L{layer}_contiguous.json")
-            for s in range(1, 17)]
+    for s in range(1, 17):
+        sub = f"L{layer}_s{s}_labels" if layer == 22 and s in labels_seeds else f"L{layer}_s{s}"
+        out.append((f"s{s}", res / "arcs" / sub / f"p2_steer_direction_direction_L{layer}_contiguous.json"))
     return [(n, p) for n, p in out if p.exists()]
 
 
-def main():
-    result = {"provenance": provenance(None, seeds={"seeds": "0-16 as stored"}), "sign_convention": SIGN,
+def main(argv=None):
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--labels22", action="store_true",
+                    help="point 22: seeds 4, 8, 9, 10 read from arcs/L22_s{S}_labels/ (all-labels set)")
+    args = ap.parse_args(argv)
+    labels_seeds = LABELS22_SEEDS if args.labels22 else ()
+    result = {"provenance": provenance(None, seeds={"seeds": "0-16 as stored", "L22_labels_reruns": list(labels_seeds)}),
+              "sign_convention": SIGN,
               "gap": "manifold (smoothing spline, additive) minus linear (chord, same PCA-64 subspace, residual kept)",
               "layers": {}}
     for layer in (12, 22):
-        rs = runs(layer)
+        rs = runs(layer, labels_seeds)
         per = {}
         arcs = {}
         for name, path in rs:
@@ -61,8 +74,10 @@ def main():
                 table[q][key] = {"mean_over_runs": float(v[:, 0].mean()), "sd_over_runs": float(v[:, 0].std(ddof=1)),
                                  "n_runs": len(v), "n_ci_above_0": int((v[:, 1] > 0).sum()),
                                  "n_ci_below_0": int((v[:, 2] < 0).sum())}
-        result["layers"][str(layer)] = {"runs": [n for n, _ in rs], "arcs_deg": arcs, "by_shift": table}
-    out = PROJECT_ROOT / "results" / "p2_shift_dependence.json"
+        result["layers"][str(layer)] = {"runs": [n for n, _ in rs], "sources": [str(p.relative_to(PROJECT_ROOT))
+                                        if p.is_relative_to(PROJECT_ROOT) else str(p) for _, p in rs],
+                                        "arcs_deg": arcs, "by_shift": table}
+    out = PROJECT_ROOT / "results" / ("p2_shift_dependence_labels22.json" if args.labels22 else "p2_shift_dependence.json")
     out.write_text(json.dumps(result, indent=1))
     for layer, v in result["layers"].items():
         print(f"point {layer}: {len(v['runs'])} runs")
