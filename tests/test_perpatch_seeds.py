@@ -40,7 +40,8 @@ def test_onset_table_on_subgrid_matches_subcurve():
 def test_combine_seeds_mean_sd_onsets_jumps():
     def res(pts, a, onset, extra=False):
         c = {m: [a + 0.1 * i for i in range(len(pts))] for m in pp.SEED_METRICS}
-        on = {m: {"onset": onset, "ci95": [onset, onset]} for m in pp.SEED_METRICS}
+        on = {m: {"onset": onset, "ci95": [onset, onset], "largest_jump": 0.1, "from_point": 4, "to_point": 8}
+              for m in pp.SEED_METRICS + ("perpos_frac_ge_0.5",)}
         r = {"points": pts, "curves": c, "onsets": on,
              "layers": [{"point": p, "pooled": {"pooled_r2_all_samples": a}} for p in pts]}
         if extra:
@@ -52,4 +53,5 @@ def test_combine_seeds_mean_sd_onsets_jumps():
     assert np.isclose(row9["per_seed"]["1"], 0.5) and np.isclose(row9["mean"], np.mean([0.2, 0.5, 0.6]))
     assert np.isclose(row9["sd"], np.std([0.2, 0.5, 0.6], ddof=1))
     assert out["onsets"]["1"]["cross_half_r2"]["onset"] == 9 and out["onsets"]["1"]["all_sampled_points"]["cross_half_r2"]["onset"] == 5
+    assert out["onsets"]["0"]["perpos_frac_ge_0.5"]["onset"] == 9 and out["onsets"]["2"]["perpos_mean_r2"]["from_point"] == 4
     assert np.isclose(out["jump_8_to_9"]["0"]["cross_half_r2"], 0.1) and np.isclose(out["jump_8_to_9"]["mean"]["perpos_mean_r2"], 0.1)

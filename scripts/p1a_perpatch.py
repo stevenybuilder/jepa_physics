@@ -655,7 +655,8 @@ SEED_METRICS = ("perpos_mean_r2", "pooled_mean_r2", "within_half_r2", "cross_hal
 def combine_seeds(res):
     """res {seed: probe-stage result JSON}. Per common point: each seed's value of every SEED_METRICS curve and of
     the pooled probe's all-sample R2, their mean and SD (ddof 1); per-seed onsets on the common grid (the probe stage's
-    onsets_stim_grid when a seed has extra points); per-seed jumps 8 -> 9."""
+    onsets_stim_grid when a seed has extra points); per-seed jumps 8 -> 9; per curve (incl. perpos_frac_ge_0.5) the
+    largest consecutive rise on the common grid and its from -> to points."""
     seeds = sorted(res)
     common = [p for p in res[seeds[0]]["points"] if all(p in res[s]["points"] for s in seeds)]
     val = {s: {m: dict(zip(res[s]["points"], res[s]["curves"][m])) for m in SEED_METRICS} for s in seeds}
@@ -674,10 +675,12 @@ def combine_seeds(res):
     for s in seeds:
         r = res[s]
         on = r["onsets"] if r["points"] == common else r.get("onsets_stim_grid") or r["onsets"]
-        onsets[str(s)] = {m: {"onset": on[m]["onset"], "ci95": on[m]["ci95"]} for m in SEED_METRICS}
+        keys = [m for m in SEED_METRICS + ("perpos_frac_ge_0.5",) if m in on]
+        pick = lambda o, m: {k: o[m].get(k) for k in ("onset", "ci95", "largest_jump", "from_point", "to_point",  # noqa: E731
+                                                     "second_largest")}
+        onsets[str(s)] = {m: pick(on, m) for m in keys}
         if r["points"] != common:
-            onsets[str(s)]["all_sampled_points"] = {m: {"onset": r["onsets"][m]["onset"], "ci95": r["onsets"][m]["ci95"]}
-                                                    for m in SEED_METRICS}
+            onsets[str(s)]["all_sampled_points"] = {m: pick(r["onsets"], m) for m in keys}
         jumps[str(s)] = {m: (val[s][m][9] - val[s][m][8]) if {8, 9} <= set(val[s][m]) else None
                          for m in ("perpos_mean_r2", "cross_half_r2")}
     jm = {m: np.array([jumps[str(s)][m] for s in seeds], float) for m in ("perpos_mean_r2", "cross_half_r2")}
