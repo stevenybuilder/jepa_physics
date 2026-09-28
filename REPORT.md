@@ -812,7 +812,9 @@ the chord between the true value neighbours by 2.3–3.8 PCA units. All arms' en
 8.7° vs 7.3°, raw chord 7.8° vs 5.5°). On the 8 clean arcs (seeds 2, 3, 6, 10, 12, 14, 15, 16) the raw-chord gap is
 +1.77° ± 1.32 (1 of 8 favours the spline) and on the 8 affected arcs +0.87° ± 2.12 (2 of 8); the smoothed-knot gaps are
 −0.19 ± 1.22 and +0.35 ± 1.73. The headline arc and every point-22 arc (labels angle, monotone) are clean, so the
-verdict does not move, and the misaimed arcs were not rerun.
+verdict does not move, and the misaimed arcs were not rerun. The validator's later `aim="arc"` option (commit 42b30fe)
+fixes only the chord's target on these arcs; the spline's knot-a-to-knot-b stretch still passes knots of other values
+there (3 on seed 4, 1 on seed 1), so the spline side of the misaim is open, not fixed.
 
 **All designs, endpoint probe error, spline vs line** (source `p2_steer_{var}_{var}_L{pt}_{design}.json`; extrapolation
 column from `p2_extrapolation_linear_ext.json`[^ext]: the smoothing spline continued linearly along its end tangent, and
@@ -826,6 +828,16 @@ in brackets the authors'-code arm, an interpolating natural cubic continued the 
 | speed 19 | 0.083 vs 0.082 | 0.092 vs 0.080 | 0.247 vs 0.226 (0.220 vs 0.243) | |
 | acceleration 12 (m/s²) | 0.345 vs 0.345 | 0.309 vs 0.305 | 0.739 vs 0.674 (0.413 vs 0.348) | |
 | acceleration 21 | 0.279 vs 0.277 | 0.282 vs 0.266 | 0.761 vs 0.739 (1.021 vs 0.709) | |
+
+Cross-render transfer (`p2_steer_direction_direction_L{12,22}_contiguous_ctx-hard.json`): the same splines and chords
+steer 48 held-out clips per target from the textured hard render, read by a probe fit on hard-render probe folds (the
+supplied-render probe reads unsteered hard clips 41.5° / 79.3° off, so it cannot score these edits). Spline minus
+matched chord at the endpoint: −0.03° [−0.42, 0.32] at point 12, +3.83° [2.82, 4.77] at point 22 (chord ahead). The
+point-22 call is on a knife-edge: the spline's endpoint loss over pairs (3.90 ± 0.59°) sits just under the verdict margin
+when that margin is the probe's mean error on unsteered hard clips (4.03°, call "path-geometry positive") and just over
+it under the median (3.57°, call "negative: spline worse at held-out endpoint"). Both floors are on-grid estimates:
+unsteered hard clips exist only at the render's 8 angles, while 7 of the 8 held-out targets lie between them
+(`verdict.margin_floors`, `verdict.margin_note`).
 
 Position sheet (speed set, start (x, y), thin-plate spline vs chord to a held-out interior 2×2 block): at point 12
 "negative: TPS path indistinguishable from chord". At point 19 "chord better than the TPS path on err_path and
@@ -937,7 +949,9 @@ point-12 arcs, and the position sheet.
 | aimed (mine) | 87.8° [80.5, 95.4] | 80.2° [72.3, 88.3] | 0.11 / 0.42 | 0.12 / 0.14 | 0.20 / 0.47 | 0.07 / 0.35 |
 | aimed, at the raw chord's norm | 77.5° [69.4, 85.3] | 69.7° [61.3, 77.5] | 1 / 1 | 0.12 / 0.14 | 1.69 / 1.19 | 0.62 / 0.90 |
 
-  No conceptor arm steers direction here. The best, the uncentred gate at point 22, stops 41.8° from the target with
+  No conceptor arm steers direction here. The best, the uncentred gate at point 22 run out to β = 1 (a dose COAST
+  itself excludes: it keeps β ∈ {0.1, 0.3}, and at its β = 0.3 the same gate sits at 85.7° against 88.7° unsteered,
+  so the COAST-faithful row is a null), stops 41.8° from the target with
   an edit 10× the raw chord's, 1% of it in the ring plane, that moves the start-position readout by 10.5 m (test
   starts lie 1.51 m from their centroid on average); at point 12 the same gate overshoots to 165°, worse than
   unsteered and worse than all 20 random projectors of its rank on the same clips (165.8° against 153.7°), while at
@@ -948,7 +962,9 @@ point-12 arcs, and the position sheet.
   [0.85, 0.95], and here the overlap is 0.40–0.50 at point 12 and 0.50–0.62 at point 22 over α ∈ {0.1, …, 10}, so no
   aperture qualifies and the closest is used (α = 0.1 and 0.5). COAST's pseudoinverse AND is not a valid conceptor
   (eigenvalues outside [0, 1]) for 96–100% of (kept value, target) pairs at every aperture, and for 87% / 90% of the
-  steered pairs at the chosen one, so I used Jaeger's range-intersection AND; the resulting C_steer has trace 0.66 of
+  steered pairs at the chosen one, so I used Jaeger's range-intersection AND (Jaeger 2014, arXiv 1403.3369; the
+  singular-case formula in `src/wm/conceptor.py` was written from memory of that paper and has not been checked
+  against its text); the resulting C_steer has trace 0.66 of
   64 at point 12 and 4.7 at point 22. Why it fails on a ring: a conceptor describes the shape of a condition's cloud
   after centring, not where the cloud sits, and direction is carried by where each value's centroid sits on the ring,
   while neighbouring values have clouds of nearly the same shape (§4.1: the ring is occupied along its whole length).
@@ -1121,7 +1137,7 @@ direction error to target / R dir (unedited 92.1°):
 
 | Edit | at the chord's norm | at the natural norm |
 |---|---|---|
-| twin difference, rank 1 | 59.5° / 0.29 | 43.1° / 0.48 |
+| twin difference, rank 1 | 59.4° / 0.29 | 43.1° / 0.48 |
 | twin difference, rank 2 | 55.0° / 0.35 | 34.9° / 0.56 |
 | twin difference, rank 4 | 50.2° / 0.47 | 30.4° / 0.82 |
 | twin difference, rank 8 | 43.2° / 0.49 | 30.0° / 0.83 |
@@ -1132,7 +1148,9 @@ direction error to target / R dir (unedited 92.1°):
 
 The best twin arm (full) trails the best comparison arm, the interpolating spline, by 21.8° [17.8, 25.9] at the
 chord's norm and 16.4° [13.9, 19.0] at the natural norm (paired over carriers), with R dir lower by 0.17 [0.14, 0.20]
-and 0.35 [0.24, 0.46]. The comparison arm was picked post hoc as the lowest error of three, which can only favour it. The error falls with rank at both norms, so rank truncation
+and 0.35 [0.24, 0.46]. The comparison arm was picked post hoc as the lowest error of three, which can only favour it. The
+asymmetry runs the other way too: the twin edit is built from clips rendered at the held-out target values, which no
+curve arm ever sees, so this negative is conservative for the curves. The error falls with rank at both norms, so rank truncation
 is not the cause. The twin edit is better on position (2.8 px [1.8, 3.7] and 3.5 px [2.4, 4.8] closer to the twin's
 true disk than the spline). Read at the encoder output (the full edited clip propagated to point 25, as in the next paragraph), it ties the spline on
 direction: 25.0° vs 23.9° (+1.1° [−0.02, 2.3]) and 16.1° vs 16.8° (−0.8° [−1.7, 0.2]). It also ties on nearest-real R (+0.004
