@@ -331,7 +331,7 @@ and `p1b_*_random_L{pt}.json`.
   point 22, removing 194 leaves it at 0.990. "Tens of probes" is therefore a real count, far outside the band.
 - **Direction vs speed.** The two counts come from different clip sets (the supplied direction set: 64 θ, half
   accelerating, starts in [−2, 2]², speeds to 7; the speed set: 64 θ, constant velocity, starts in [−1.2, 1.2]²,
-  0.25–4 m/s), where the paper reads both variables off one velocity set; a same-clip rerun is in progress. Probe counts are equal (37 vs 39 at point 9, 88 vs 89 at the peaks). Speed needs fewer
+  0.25–4 m/s), where the paper reads both variables off one velocity set; on the same clips (the direction set's 750 constant-velocity clips, 596 train) direction vs speed K is 28 vs 22, 17 vs 26 and 59 vs 46 at points 8 / 9 / 22 (nested) and 36 vs 34, 36 vs 28 and 75 vs 45 (paper protocol), 54 vs 43 and 63 vs 48 at speed's peak 19, so speed needs fewer dimensions (2K vs K) everywhere and fewer probes in 7 of 8 cells under the C.11 rule, but more probes in every cell under Fig. 22's thresholds (direction 11–35, speed 23–52)[^sameclip]. Probe counts are equal (37 vs 39 at point 9, 88 vs 89 at the peaks). Speed needs fewer
   *dimensions* only because its probes are 1-output. The paper's second claim does not reproduce in probe count.
   Early layers hold each variable in hundreds of weak redundant directions (onset rows), which fits the
   random-feature picture from step 1. The counts depend on the coordinates: C.11 states no normalisation, and in raw
@@ -1170,3 +1170,4 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
 [^il12]: `results/session2_interp_labels_L12.json` (`spline_labels`, `stored_point12.spline`, `stored_spline_edit_norm_recomputed`).
 [^stop]: `results/p1b_stop_rules.json` (`cells.*.{nested,paper}.{K,stored_stop_trigger,r2_at_stored_stop}`, `common_r2_stop_points_8_9`).
 [^onecol]: `results/p1b_one_column_removal.json` (`cells.direction.{two_column_stored,one_col_alternate,one_col_top_sv}.{ridge_nested,ridge_paper,adam_b64,adam_full}`).
+[^sameclip]: `results/p1b_sameclip_direction_vs_speed.json` (`cells.L{8,9,19,22}.comparison.{nested,paper}_{C11,fig22}`, `cells.*.{direction,speed}.stored_cross_set`); `scripts/run_sameclip.py`.

@@ -236,3 +236,23 @@ def test_one_column_removes_one_direction_per_round():
         seq = probe_sequence(X, Y, ridge_fit(1.0), select=one_column(mode))
         assert [next(seq)[3] for _ in range(4)] == [0, 1, 2, 3]
     assert [next(probe_sequence(X, Y, ridge_fit(1.0)))[3]] == [0]
+
+
+def test_sameclip_restrict_and_one_variable():
+    import importlib.util
+    from pathlib import Path
+    spec = importlib.util.spec_from_file_location(
+        "sameclip", Path(__file__).resolve().parents[1] / "scripts" / "run_sameclip.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    tr, te, folds = np.array([0, 2, 3, 5]), np.array([1, 4]), np.array([0, 1, 2, 3])
+    keep = np.array([True, True, False, True, False, True])
+    t2, e2, f2 = mod.restrict(tr, te, folds, keep)
+    assert t2.tolist() == [0, 3, 5] and e2.tolist() == [1] and f2.tolist() == [0, 2, 3]
+    y = np.random.default_rng(0).uniform(-1.7, 1.7, 1200)[:, None]
+    X = copies_code(y, 4, d=40, seed=0)
+    tr, te, folds = split(len(y))
+    out = mod.one_variable(X[tr], y[tr], X[te], y[te], folds, "scalar", partial(score, kind="scalar"), seeds=2)
+    assert out["nested"]["K_C11"] == 4 and out["nested"]["dims_C11"] == 4
+    assert 1 <= out["paper"]["K_C11"] <= 4 and out["paper"]["dims_fig22"] == out["paper"]["K_fig22"]
+    assert out["nested"]["random_band_at_dims_C11"]["cv_r2"] > 0.8
