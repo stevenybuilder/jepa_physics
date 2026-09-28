@@ -34,7 +34,7 @@
   "n_test_clips": 154,
   "fit": "train clips of this dataset with motion == velocity"
  },
- "paper": "\u00a77.1 l.405-412: manipulating only the unit-circle subspace does not effectively steer direction; C.12 l.1240-1262 steering protocol",
+ "paper": "\u00a77.1 l.383-385: manipulating only the unit-circle subspace does not effectively steer direction; C.12 l.1240-1262 steering protocol",
  "protocol": "run_steering's paper protocol (C.12): same split, train standardisation, evaluation probe (ridge, alpha by grouped 5-fold CV inside test, fit on the steered test clips), off-target speed probe (train, constant-speed clips), single target 90 deg and the 64-value all-targets sweep",
  "sigma": {
   "estimator": "sample covariance of the train-standardised train activations at point 9, Xtr\u1d40 Xtr / (n - 1)",
@@ -688,6 +688,525 @@
    }
   }
  },
+ "evalprobe_variants": {
+  "rule": "each evaluation probe reads the same steered clips; off-target speed and edit norm do not depend on the evaluation probe (repeated per variant for completeness); null = the \u03a3-weighted (\u03a3 = I for euclidean_N1) random 2-D subspace null, same 20 draws; the oracle edit is built from the alpha = 100 probe under every variant",
+  "split_half_eval_probes": {
+   "A": {
+    "alpha": 100.0,
+    "alpha_rule": "5-fold CV inside test, folds grouped by frame hash (identical clips together), seed 0, 13 log-spaced values",
+    "in_sample": {
+     "r2": 0.9947563734221403,
+     "mae": 1.866941685508725
+    },
+    "out_of_fold": {
+     "r2_fold_mean": 0.9604900854761634,
+     "r2_fold_sd": 0.0056461277658647535,
+     "mae_fold_mean": 5.136500139587063,
+     "mae_fold_sd": 0.800021528348498
+    }
+   },
+   "B": {
+    "alpha": 316.22776601683796,
+    "alpha_rule": "5-fold CV inside test, folds grouped by frame hash (identical clips together), seed 0, 13 log-spaced values",
+    "in_sample": {
+     "r2": 0.9871530926389493,
+     "mae": 2.6736783002906312
+    },
+    "out_of_fold": {
+     "r2_fold_mean": 0.957618093415008,
+     "r2_fold_sd": 0.01012655962156875,
+     "mae_fold_mean": 5.210070604550866,
+     "mae_fold_sd": 0.7946587603479852
+    }
+   },
+   "n_A": 150,
+   "n_B": 150
+  },
+  "ridge_alpha_100_stored": {
+   "probe": "stored: ridge, alpha by grouped 5-fold CV inside test (alpha = 100)",
+   "unsteered": {
+    "mae_to_target": 87.36192468012887,
+    "mae_to_true": 2.265139969623279
+   },
+   "euclidean_N1": {
+    "mae_to_target": 78.38324534639848,
+    "mae_to_true": 9.064759370113789,
+    "edit_norm_median": 5.0485247836780776,
+    "off_target_speed_mean_abs_change": 0.06934067500496172,
+    "all_targets_mae_to_target": 80.95452974922986,
+    "null": {
+     "mae_to_target": 72.59990486038835,
+     "mae_to_true": 44.56619676641595,
+     "edit_norm_median": 329.8893655722597,
+     "off_target_speed_mean_abs_change": 3.613379533514901,
+     "mae_to_target_draws": [
+      84.6582,
+      97.1886,
+      33.4327,
+      81.0339,
+      97.605,
+      68.609,
+      67.0671,
+      106.4667,
+      55.6776,
+      48.8786,
+      82.409,
+      20.0404,
+      25.0332,
+      97.4591,
+      81.7171,
+      43.3296,
+      100.4608,
+      89.3917,
+      77.4581,
+      94.0818
+     ],
+     "empirical_p_to_target": 0.47619047619047616,
+     "empirical_p_off_target_change": 0.047619047619047616,
+     "empirical_p_edit_norm": 0.047619047619047616
+    }
+   },
+   "covweighted_probe1": {
+    "mae_to_target": 3.2012578852754543,
+    "mae_to_true": 85.95709005635159,
+    "edit_norm_median": 19.804091141527657,
+    "off_target_speed_mean_abs_change": 0.03347899872070991,
+    "all_targets_mae_to_target": 3.1235611463444455,
+    "null": {
+     "mae_to_target": 9.589366319699753,
+     "mae_to_true": 86.17306057556543,
+     "edit_norm_median": 111.34849000469157,
+     "off_target_speed_mean_abs_change": 13.002899344005417,
+     "mae_to_target_draws": [
+      4.286,
+      16.3954,
+      3.1731,
+      4.4926,
+      10.0585,
+      7.544,
+      7.812,
+      5.1353,
+      3.0663,
+      4.1085,
+      3.7394,
+      2.9939,
+      3.8412,
+      80.8492,
+      10.7787,
+      9.1257,
+      3.1155,
+      4.0031,
+      3.7325,
+      3.5365
+     ],
+     "empirical_p_to_target": 0.23809523809523808,
+     "empirical_p_off_target_change": 0.047619047619047616,
+     "empirical_p_edit_norm": 0.047619047619047616
+    }
+   },
+   "covweighted_oracle_evalprobe": {
+    "mae_to_target": 1.3168725369420523e-14,
+    "mae_to_true": 87.3,
+    "edit_norm_median": 20.39035958678272,
+    "off_target_speed_mean_abs_change": 0.07055742559260533,
+    "all_targets_mae_to_target": 1.1676002165248378e-14,
+    "null": {
+     "mae_to_target": 4.352784799266374e-14,
+     "mae_to_true": 87.29999999999998,
+     "edit_norm_median": 199.44576970669186,
+     "off_target_speed_mean_abs_change": 26.436388392902064,
+     "mae_to_target_draws": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "empirical_p_to_target": 1.0,
+     "empirical_p_off_target_change": 0.09523809523809523,
+     "empirical_p_edit_norm": 0.047619047619047616
+    }
+   }
+  },
+  "ridge_alpha_1e-3": {
+   "probe": "closed-form ridge on the test activations, alpha = 1e-3 (as evalprobe_recipe)",
+   "unsteered": {
+    "mae_to_target": 87.30000319533642,
+    "mae_to_true": 0.00016270364661442896
+   },
+   "euclidean_N1": {
+    "mae_to_target": 57.97054866097541,
+    "mae_to_true": 29.582979067945345,
+    "edit_norm_median": 5.0485247836780776,
+    "off_target_speed_mean_abs_change": 0.06934067500496172,
+    "all_targets_mae_to_target": 62.13279016782741,
+    "null": {
+     "mae_to_target": 75.81310388613086,
+     "mae_to_true": 70.55286887591546,
+     "edit_norm_median": 329.8893655722597,
+     "off_target_speed_mean_abs_change": 3.613379533514901,
+     "mae_to_target_draws": [
+      88.164,
+      104.195,
+      43.8758,
+      77.3051,
+      76.5778,
+      77.4606,
+      22.9226,
+      113.7847,
+      49.9181,
+      96.0977,
+      14.8321,
+      93.4274,
+      26.2345,
+      122.8011,
+      84.7603,
+      44.6669,
+      81.9076,
+      91.224,
+      98.5474,
+      107.5595
+     ],
+     "empirical_p_to_target": 0.3333333333333333,
+     "empirical_p_off_target_change": 0.047619047619047616,
+     "empirical_p_edit_norm": 0.047619047619047616
+    }
+   },
+   "covweighted_probe1": {
+    "mae_to_target": 4.050880451918313,
+    "mae_to_true": 86.05549851354354,
+    "edit_norm_median": 19.804091141527657,
+    "off_target_speed_mean_abs_change": 0.03347899872070991,
+    "all_targets_mae_to_target": 3.942426550536809,
+    "null": {
+     "mae_to_target": 10.928402788516832,
+     "mae_to_true": 83.68005804376143,
+     "edit_norm_median": 111.34849000469157,
+     "off_target_speed_mean_abs_change": 13.002899344005417,
+     "mae_to_target_draws": [
+      4.3584,
+      5.9837,
+      3.9606,
+      3.996,
+      4.9781,
+      8.9354,
+      13.2262,
+      4.2427,
+      3.7128,
+      5.656,
+      9.2412,
+      3.7905,
+      4.326,
+      106.9935,
+      10.3676,
+      8.1738,
+      3.8641,
+      3.8225,
+      4.3107,
+      4.6283
+     ],
+     "empirical_p_to_target": 0.3333333333333333,
+     "empirical_p_off_target_change": 0.047619047619047616,
+     "empirical_p_edit_norm": 0.047619047619047616
+    }
+   },
+   "covweighted_oracle_evalprobe": {
+    "mae_to_target": 2.6369422143580126,
+    "mae_to_true": 87.31553213043473,
+    "edit_norm_median": 20.39035958678272,
+    "off_target_speed_mean_abs_change": 0.07055742559260533,
+    "all_targets_mae_to_target": 2.713383760007253,
+    "null": {
+     "mae_to_target": 7.298175293093131,
+     "mae_to_true": 84.4949824546824,
+     "edit_norm_median": 199.44576970669186,
+     "off_target_speed_mean_abs_change": 26.436388392902064,
+     "mae_to_target_draws": [
+      4.189,
+      9.4122,
+      2.5388,
+      4.5165,
+      8.4845,
+      3.9066,
+      7.5292,
+      3.9697,
+      2.5609,
+      2.914,
+      8.1439,
+      2.6945,
+      2.9172,
+      64.4326,
+      2.6712,
+      2.6284,
+      2.8276,
+      3.6154,
+      2.9893,
+      3.022
+     ],
+     "empirical_p_to_target": 0.19047619047619047,
+     "empirical_p_off_target_change": 0.09523809523809523,
+     "empirical_p_edit_norm": 0.047619047619047616
+    }
+   }
+  },
+  "adam_c11": {
+   "probe": "Adam lr 1e-3, coupled wd 1e-4, 100 epochs, batch 64, init seed 0, standardised targets (wm.adam_probe.fit_adam, as evalprobe_recipe)",
+   "unsteered": {
+    "mae_to_target": 87.43700924569468,
+    "mae_to_true": 1.433853529713808
+   },
+   "euclidean_N1": {
+    "mae_to_target": 68.57725371630137,
+    "mae_to_true": 19.047764351686865,
+    "edit_norm_median": 5.0485247836780776,
+    "off_target_speed_mean_abs_change": 0.06934067500496172,
+    "all_targets_mae_to_target": 68.35173783224262,
+    "null": {
+     "mae_to_target": 73.38257548851354,
+     "mae_to_true": 73.48621507077442,
+     "edit_norm_median": 329.8893655722597,
+     "off_target_speed_mean_abs_change": 3.613379533514901,
+     "mae_to_target_draws": [
+      83.7011,
+      115.6679,
+      55.1638,
+      84.6466,
+      56.2434,
+      66.2177,
+      5.9634,
+      118.6008,
+      102.6872,
+      122.8797,
+      4.8206,
+      38.763,
+      38.9859,
+      143.8178,
+      42.2633,
+      67.8538,
+      64.1596,
+      68.0049,
+      112.0891,
+      75.1217
+     ],
+     "empirical_p_to_target": 0.5714285714285714,
+     "empirical_p_off_target_change": 0.047619047619047616,
+     "empirical_p_edit_norm": 0.047619047619047616
+    }
+   },
+   "covweighted_probe1": {
+    "mae_to_target": 3.613145264042909,
+    "mae_to_true": 86.20937711340466,
+    "edit_norm_median": 19.804091141527657,
+    "off_target_speed_mean_abs_change": 0.03347899872070991,
+    "all_targets_mae_to_target": 3.753842425101437,
+    "null": {
+     "mae_to_target": 11.953505376336214,
+     "mae_to_true": 84.44618691804143,
+     "edit_norm_median": 111.34849000469157,
+     "off_target_speed_mean_abs_change": 13.002899344005417,
+     "mae_to_target_draws": [
+      5.3487,
+      16.6527,
+      4.432,
+      3.6558,
+      13.2604,
+      17.4294,
+      7.234,
+      6.1119,
+      3.4614,
+      6.0673,
+      4.5095,
+      4.1677,
+      3.7321,
+      96.7323,
+      14.4483,
+      11.7118,
+      3.5825,
+      5.1601,
+      4.0664,
+      7.3056
+     ],
+     "empirical_p_to_target": 0.14285714285714285,
+     "empirical_p_off_target_change": 0.047619047619047616,
+     "empirical_p_edit_norm": 0.047619047619047616
+    }
+   },
+   "covweighted_oracle_evalprobe": {
+    "mae_to_target": 2.0478613630990066,
+    "mae_to_true": 87.55048628598898,
+    "edit_norm_median": 20.39035958678272,
+    "off_target_speed_mean_abs_change": 0.07055742559260533,
+    "all_targets_mae_to_target": 2.2932545004949207,
+    "null": {
+     "mae_to_target": 7.609926566862666,
+     "mae_to_true": 85.08394580959632,
+     "edit_norm_median": 199.44576970669186,
+     "off_target_speed_mean_abs_change": 26.436388392902064,
+     "mae_to_target_draws": [
+      2.4383,
+      19.0495,
+      2.817,
+      3.9411,
+      5.9205,
+      13.0214,
+      3.0328,
+      2.1516,
+      2.1602,
+      2.8693,
+      2.3118,
+      2.612,
+      2.4015,
+      65.4104,
+      6.0241,
+      3.7665,
+      2.4345,
+      2.3231,
+      2.4454,
+      5.0673
+     ],
+     "empirical_p_to_target": 0.047619047619047616,
+     "empirical_p_off_target_change": 0.09523809523809523,
+     "empirical_p_edit_norm": 0.047619047619047616
+    }
+   }
+  },
+  "split_half": {
+   "probe": "test split into stratified halves A/B (wm.steer.stratified_halves, identical clips together, as strict_eval); probe fit on one half (alpha by grouped CV inside it) reads the other half's steered clips, both directions pooled over all 300 clips; alpha_A = 100.0, alpha_B = 316.22776601683796",
+   "unsteered": {
+    "mae_to_target": 87.48415398953834,
+    "mae_to_true": 5.10093147713464
+   },
+   "euclidean_N1": {
+    "mae_to_target": 82.28044481898158,
+    "mae_to_true": 7.226157764143224,
+    "edit_norm_median": 5.0485247836780776,
+    "off_target_speed_mean_abs_change": 0.06934067500496172,
+    "all_targets_mae_to_target": 84.70475571438658,
+    "null": {
+     "mae_to_target": 72.38285699269721,
+     "mae_to_true": 38.77972967335619,
+     "edit_norm_median": 329.8893655722597,
+     "off_target_speed_mean_abs_change": 3.613379533514901,
+     "mae_to_target_draws": [
+      78.606,
+      88.1852,
+      42.8233,
+      87.9109,
+      97.5528,
+      62.195,
+      89.7834,
+      90.9922,
+      57.2092,
+      39.0047,
+      84.8796,
+      20.5077,
+      50.8376,
+      71.7454,
+      83.9866,
+      51.4923,
+      104.9089,
+      90.9322,
+      70.9199,
+      83.1842
+     ],
+     "empirical_p_to_target": 0.5238095238095238,
+     "empirical_p_off_target_change": 0.047619047619047616,
+     "empirical_p_edit_norm": 0.047619047619047616
+    }
+   },
+   "covweighted_probe1": {
+    "mae_to_target": 5.192277809016516,
+    "mae_to_true": 86.35325047273781,
+    "edit_norm_median": 19.804091141527657,
+    "off_target_speed_mean_abs_change": 0.03347899872070991,
+    "all_targets_mae_to_target": 4.946241642512149,
+    "null": {
+     "mae_to_target": 11.877989897410178,
+     "mae_to_true": 86.6770899237624,
+     "edit_norm_median": 111.34849000469157,
+     "off_target_speed_mean_abs_change": 13.002899344005417,
+     "mae_to_target_draws": [
+      6.4991,
+      26.838,
+      5.1256,
+      6.3825,
+      11.2515,
+      8.1926,
+      8.7128,
+      7.0938,
+      5.3654,
+      5.0296,
+      8.993,
+      5.2175,
+      5.4085,
+      86.6061,
+      8.68,
+      11.6312,
+      5.1128,
+      5.0232,
+      5.3006,
+      5.096
+     ],
+     "empirical_p_to_target": 0.2857142857142857,
+     "empirical_p_off_target_change": 0.047619047619047616,
+     "empirical_p_edit_norm": 0.047619047619047616
+    }
+   },
+   "covweighted_oracle_evalprobe": {
+    "mae_to_target": 3.913565902484789,
+    "mae_to_true": 87.60207549467465,
+    "edit_norm_median": 20.39035958678272,
+    "off_target_speed_mean_abs_change": 0.07055742559260533,
+    "all_targets_mae_to_target": 3.6652571841835173,
+    "null": {
+     "mae_to_target": 7.831783783490268,
+     "mae_to_true": 87.6878924373452,
+     "edit_norm_median": 199.44576970669186,
+     "off_target_speed_mean_abs_change": 26.436388392902064,
+     "mae_to_target_draws": [
+      5.1703,
+      9.7876,
+      3.6788,
+      4.4017,
+      3.7246,
+      6.7501,
+      9.09,
+      5.3274,
+      4.126,
+      4.601,
+      7.5028,
+      4.2033,
+      4.0604,
+      57.2295,
+      7.3062,
+      4.5479,
+      3.8579,
+      3.8924,
+      3.6191,
+      3.7586
+     ],
+     "empirical_p_to_target": 0.3333333333333333,
+     "empirical_p_off_target_change": 0.09523809523809523,
+     "empirical_p_edit_norm": 0.047619047619047616
+    }
+   }
+  }
+ },
  "provenance": {
   "split_file": "splits/split_v1.json",
   "split_sha256": "98e6310c40bf29e81bd8b6bf4b1ac603b89e4104d40ac1047b15dd5dc2be2df2",
@@ -695,11 +1214,11 @@
    "split": 0,
    "other": "all other RNG seeds are 0 (bootstrap, folds, null draws, shuffles); random-removal controls use seeds 0..n-1"
   },
-  "commit": "9543b68cfc5449d63a6ac8b8f819c5a30621d20e",
-  "dirty": false,
-  "git_commit": "9543b68cfc5449d63a6ac8b8f819c5a30621d20e",
+  "commit": "7c34ea008dbc2b9cbea6d1586254592854972d3c",
+  "dirty": true,
+  "git_commit": "7c34ea008dbc2b9cbea6d1586254592854972d3c",
   "git_dirty_src_or_scripts": false,
-  "timestamp_utc": "2026-09-28T07:48:33+00:00",
+  "timestamp_utc": "2026-09-28T08:12:50+00:00",
   "pool": "meanpool",
   "model": "vjepa2",
   "layer": 9
