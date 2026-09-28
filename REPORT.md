@@ -33,9 +33,10 @@ CV-chosen one only from N = 14. Against a rank-matched random basis it first bea
 and layer; N = 3 under the paper's probe); at N = 1 it separates from neither. The same curve appears in an untrained
 network, and at the onset layer the learned basis never beats the rank-2K random basis for N ≤ 20. Rerunning Parts 1
 and 2 at the paper's literal 70/30 split changes no qualitative verdict. **Part 2.** Direction lies on a ring.
-My centroid-plane angle recovers it without labels at point 12 but not at point 22, and Goodfire's published runs take
-this coordinate from the labels[^src]. The ring is an ellipse, not a circle: axis ratio 0.74–0.87 in its own
-plane from point 8 on, bent out of that plane by a cos 2θ saddle that holds 20–34% of the centroid variance. Held-out
+My centroid-plane angle recovers it without labels at point 12 but not at point 22; Goodfire's own label-free angle
+fails its periodicity test on our data, and its alphabet, age and 70B runs take the coordinate from the labels[^src].
+The ring is an ellipse, not a circle: axis ratio 0.68–0.89 in its own plane from point 8 on (0.74 / 0.87 / 0.74 at
+points 8 / 12 / 22), bent out of that plane by a cos 2θ saddle that holds 20–34% of the centroid variance. Held-out
 clips occupy the ring along its whole length and leave it hollow in its plane. At held-out direction values the spline path stays on the ring and the straight path cuts across the
 hollow: the minimum readout radius is higher for the spline by +0.26 ± 0.05 at point 12 and +0.28 ± 0.03 at point 22
 (mean ± SD over 16 runs covering 15 distinct held-out 45° arcs; point 22 on the labels angle[^src]), and it is higher on
@@ -101,14 +102,14 @@ test does not recover the ring. This is a probe of the forecast on one stimulus 
 | Objective axis | VideoMAE-v2 family | VideoMAE v1 ViT-L (`MCG-NJU/videomae-large`), 224² | "not the objective" is shown for v1 only |
 | Part 2: steering site | Goodfire: last-token residual stream (A.2); encoder output for the world model (§5) | mean-pool over 2,048 tokens at point L | the edited vector is not one the model consumes; §4.1–§4.4 read it with probes, §4.5 adds the edit to every token |
 | Part 2: PCA-64 fit set | all prompts in the task (A.3) | knot clips (folds 0–2) at the kept values only | held-out values never shape the subspace; the plane can differ from an all-clip fit (point 22, §4.1) |
-| Part 2: spline | interpolating, no smoothing penalty (A.3) | count-weighted smoothing spline; interpolating run beside it | interpolating rebuilds held-out centroids worse and edits 1.4–1.6× more than the chord (§4.1) |
-| Part 2: direction coordinate | text: unsupervised atan2(PC2, PC1) (A.3); runner configs: labels | our centroid-plane atan2 at point 12; labels at points 2, 8 and 22 | label-free only at point 12, and only through our fallback (§4.1) |
+| Part 2: spline | interpolating, through the centroids exactly (A.3); √count-weighted smoothing spline for the world model (B.1) | count-weighted smoothing spline; interpolating run beside it | interpolating rebuilds held-out centroids worse and its edit is 1.4–1.6× the chord's (§4.1) |
+| Part 2: direction coordinate | unsupervised atan2(PC2, PC1) (A.3; the weekdays/months 8B configs inherit `intrinsic_mode: pca`); labels in the alphabet, age and 70B configs | our centroid-plane atan2 at point 12; labels at points 2, 8 and 22 | label-free only at point 12, and only through our fallback (§4.1) |
 | Part 2: manifold arm | replace the PCA-64 part with the curve point (A.6) | additive, x + γ(t) − γ(t_src), residual kept | theirs run as a labelled arm (§4.4) |
 | Part 2: base pair of arms | manifold vs whole-activation chord replacement (A.6) | spline vs chord in the same PCA-64 subspace (matched support) | their linear arm erases the residual; run separately and labelled (§4.4) |
-| Part 2: waypoints | K = 50 (A.6); 100–250 in the published natural-domain runner configs | K = 50 | E_BC sums over waypoints, so only within-run energy ratios compare |
+| Part 2: waypoints | K = 50 (A.6; the weekdays/months 8B default); alphabet/age 8B configs 150/250, 70B configs 100–150 | K = 50 | E_BC sums over waypoints, so only within-run energy ratios compare |
 | Part 2: Eq. 10 temperature | τ = 0.5 on a LayerNorm'd 64-d latent (B.1) | τ = 0.5 in raw PCA-64 units | absolute energies not comparable; τ 0.25–2 keeps the point-12 ordering (`tau_sensitivity` in `p2_steer_direction_direction_L12_contiguous.json`) |
 | Part 2: behaviour manifold | smoothing spline through 128 bin centroids (B.1) | interpolating spline through the 64 per-value centroids in the Hellinger tangent plane (A.4), F over 128 bins | circular at the steered layer either way (§4.2) |
-| Part 2: carriers | 16 fixed base prompts per task, one set for every pair (A.6) | 48 test clips per target, each steered from its own value | both use an oracle source coordinate; ours averages over sources |
+| Part 2: carriers | 16 fixed base prompts per task, one set for every pair (A.6) | 48 test clips per target, each steered from its own value | Goodfire starts every carrier at the centroid c_a whatever the carrier's own value (A.6); ours starts each carrier at its true value (an oracle source) and averages over sources |
 
 **Places where the paper contradicts itself**[^ptxt]. (a) The INLP stopping
 threshold for direction is R² < 0.1 in C.11 and R² < 0.3 in the Fig. 22 caption: each `p1b` file has both (`K`,
@@ -122,10 +123,12 @@ and reports 20; Table 3 gives a layer-8 direction dimension of 136 (68 probes); 
 at layers 20–23; the main text says 40–50, up to 80. (h) "Speed needs fewer" depends on the layer in the paper's own
 Table 3: at layers 0–2 the direction dimension is 30 / 30 / 14 (15 / 15 / 7 probes) against speed's 25 / 24 / 25, so
 speed needs more probes there, and fewer from layer 3 on. Goodfire's paper
-has one of its own: A.3 derives the cyclic coordinate as atan2(PC2, PC1) "in an unsupervised manner", while its
-published weekdays and months runner configs, and the code default, set `intrinsic_mode: parameter`, the labels
-(`refs/causalab/causalab/configs/runners/{weekdays,months}/*.yaml`, `methods/spline/train.py`); A.6 also says K = 50
-waypoints where the published natural-domain configs use 100–250.
+has a smaller one of its own: A.3 derives the cyclic coordinate as atan2(PC2, PC1) "in an unsupervised manner", and
+the weekdays and months 8B configs do inherit that label-free mode (`intrinsic_mode: pca` in
+`configs/analysis/activation_manifold.yaml`), but the alphabet and age 8B configs, every 70B config and the code
+default set `intrinsic_mode: parameter`, the labels (`refs/causalab/causalab/configs/runners/*/*.yaml`,
+`methods/spline/train.py`); A.6 says K = 50 waypoints where the alphabet and age 8B configs use 150 and 250 and the
+70B configs 100–150.
 
 **Probe-recipe parity** (point = CV-peak layer; pooled out-of-fold R², targets standardised for Adam[^recipe]):
 ridge vs Adam (C.11 recipe) is 0.9905 vs 0.9858 for direction, 0.9940 vs 0.9882 for speed and 0.9925 vs 0.9871 for
@@ -437,8 +440,8 @@ the split of record so that Part 1 and Part 2 read the same clips.
 ### 4.1 The circular structure
 
 Recipe (Goodfire A.3): PCA-64 on train, one centroid per value, a periodic cubic spline for direction and a natural
-spline for scalars. Goodfire's text takes the intrinsic angle as atan2(PC2, PC1) on the centroids, without labels; its
-published runner configs use the labels instead (§2). I compute a label-free angle, check it against θ, and use the
+spline for scalars. Goodfire's text takes the intrinsic angle as atan2(PC2, PC1) on the centroids, without labels, and its weekdays and
+months 8B runs do so; its alphabet, age and 70B configs use the labels instead (§2). I compute a label-free angle, check it against θ, and use the
 labels when the check fails.
 
 | Direction layer | unsupervised angle vs θ: circ. corr (mean / max dev) | supervised circular chart MAE, radius | centroid PR / residual PR | expected sagitta ÷ centroid noise at 45° / 90° gap | LOO cubic beats line |
@@ -488,16 +491,16 @@ label-free recovery here is my extension, the centroid-plane fallback, and it wo
   line; the ring itself is not one, and estimates made in that plane (eigenvalue ratio 0.91 at points 14–16 against
   0.66–0.77 in the ring plane) mislead. Planted controls in real point-12 activations recover a circle as 0.99, an
   ellipse of ratio 0.5 as 0.51, and a circle with a saddle of bend 1.2 as 0.99 in the ring plane but 0.84 by top-2
-  eigenvalues. The random-init encoder's direction code is a cleaner ring: fold share ≤ 0.03, b/a 0.89–0.95 at every point.
+  eigenvalues. The random-init encoder's direction code is a cleaner ring: fold share ≤ 0.04, b/a 0.89–0.95 at every point.
   Local curvature does not predict where the spline beats the chord: Spearman ρ between the ellipse curvature at the
-  arc midpoint and the spline-minus-chord minimum-radius gap over the 15 distinct arcs is 0.05 (p = 0.85) at point 12
-  and −0.05 (p = 0.86) at point 22; the smoothing-spline curvature and the stored sagitta do no better (|ρ| ≤ 0.33, all
+  arc midpoint and the spline-minus-chord minimum-radius gap over the 15 distinct stored arcs (at point 22 four of
+  them still on the label-free angle) is 0.05 (p = 0.85) at point 12 and −0.05 (p = 0.86) at point 22; the smoothing-spline curvature and the stored sagitta do no better (|ρ| ≤ 0.33, all
   p ≥ 0.23), and the curvature of ring-plus-fold reaches only −0.47 (p = 0.07) at point 22, with the wrong sign. With an axis ratio this close to one the spline's advantage is spread around the ring, not concentrated
   near the minor axis. PCA is the right first tool here: it finds the ring's plane, but its top-2 plane is not always
   the ring's plane.
 - **Curvature vs noise.** Over any knot gap up to 45° the chord and the arc differ by less than a quarter of centroid
   noise. Held-out centroids on the contiguous 45° arc are rebuilt best by the chord at every direction layer (point
-  12: chord 2.58, smoothing spline 2.82).
+  12: chord 2.59, smoothing spline 2.76).
 - **Planted-ring positive control** (point 12). A synthetic ring is recovered without labels once its radius is ≥ 0.40
   of the real ring's (circular correlation 0.996). A cubic-over-line gain appears only at 0.80[^planted]. A
   "curvature below noise" result is therefore a real null for this pipeline, not blindness.
@@ -561,7 +564,8 @@ Design of the arms. Both arms edit the same PCA-64 subspace and add back each cl
 controls are a dose-matched line (rescaled to the spline's ‖Δ‖ at each waypoint), a *projected* arm (the chord walked
 with the spline's spacing), a *reflected* arm (the bend flipped), 20 endpoint-matched random curves, 20 shuffled-centroid
 curves, and a BF16 repeat. Each path has K = 50 waypoints. Every arm starts from the carrier's ground-truth value (an
-oracle source coordinate, as Goodfire's centroid a → b path is), so no arm has to infer where the carrier sits.
+oracle source coordinate; Goodfire instead starts every carrier at the centroid c_a whatever the carrier's own value,
+A.6), so no arm has to infer where the carrier sits.
 
 **The verdict rule is post hoc.** The rule that turns gaps into a call (`verdict.call` in each steering JSON) was
 iterated during development, after looking at results. An early energy-based comparison was dropped as a deciding metric
@@ -712,7 +716,7 @@ point-22 endpoint on 1 of 16 arcs (+3.7°) and on the headline arc (+3.80°), an
   figures. With the authors' recipe (behaviour manifold = an interpolating spline through the per-value forecast
   centroids in the full 1,024-d forecast space) on the label-free knot order, r is 0.84 / 0.93 / 0.67 along the
   interpolating activation spline against 0.73 / 0.87 / 0.75 for the chord, and 0.885 / 0.979 / 0.758 against 0.800 /
-  0.876 / 0.752 along the smoothing spline[^iso]. On the labels coordinate, which Goodfire's runners use, the spline
+  0.876 / 0.752 along the smoothing spline[^iso]. On the labels coordinate, which Goodfire's alphabet, age and 70B runners use, the spline
   leads at every point: interpolating 0.986 / 0.982 / 0.984 against chord 0.727 / 0.867 / 0.749 at points 8 / 12 / 22,
   smoothing 0.984 / 0.994 / 0.979 against 0.858 / 0.890 / 0.831[^isol]. The point-22 reversal came from the label-free
   angle's scrambled knot order and is withdrawn.
@@ -745,7 +749,7 @@ The interpolating spline on the label-free knot order overshoots (‖Δ‖ 7.2×
 
 **Predictor** (context frames 1–8 edited at every token; the predictor forecasts tubelets 4–7). *First attempt
 (blind).* Probes fit on the encoder's real future tokens (3.4°, 6.7–8.4 px) read the unedited forecast 61° / 67.9 px
-off[^fpos]; token-space R (`session2_predictor.json`) is 0.0185 [0.0173, 0.0195] for the twin's context, ≤ 0.0025 for
+off[^fpos] (62.6° / 65.7 px when recomputed on the second attempt's test clips); token-space R (`session2_predictor.json`) is 0.0185 [0.0173, 0.0195] for the twin's context, ≤ 0.0025 for
 every edit.
 
 *Second attempt, a readout fit on the predictor's own outputs*[^nat]. Ridge probes (α by 5-fold CV) fit on the
@@ -805,7 +809,8 @@ and at the natural twin change:
 | smoothing spline | 27.3° / 0.74 / 38.5 | 23.8° / 0.75 / 39.5 | 31.1° / 1.65 / 64.6 |
 | random | 109.4° / −0.29 / 81.1 | 99.9° / −0.13 / 65.5 | 108.0° / −0.26 / 76.7 |
 
-Unedited: 92.1°, 60.2 px; the 180° flip null of the structured arms is 153–168° (≈ 165° for the best arms), again
+Unedited: 92.1°, 60.2 px; the 180° flip null of the structured arms is 153–168° at each arm's own norm (130–168° across the three norm
+conditions; ≈ 165° for the best arms), again
 180° minus the target error. Edits at the predictor's input reach the forecast as point-22 edits do, so the wash-out
 picture holds: edits at points ≤ 12 are repaired, edits at point 22 or later reach the forecast. The route effect does not carry over.
 Paired spline − chord is +3.1° [2.1, 4.2] at own norms, +10.8° [9.4, 12.6] at the chord's norm (point 22: −7.7° [−10.6,
@@ -832,7 +837,7 @@ chord 29.7° [26.4, 33.1], random 53.2°; paired spline − chord −13.4° [−
 directions; at large shifts the chord's stays near the source until about t = 0.5, then jumps (largest step 68°, spline
 57°), and its radius collapses (minimum 0.26 vs 0.53 for the spline at ≥ 135°, 0.36 vs 0.81 at t = 0.5). Caveats: edit
 size is matched only at the endpoint (spline 0.40, chord 0.25 of the natural change at t = 0.25); along the path the
-chord is closer to real clips in full space (1.21 vs 1.32× the 5-NN floor), while in the ring plane it dips to radius
+chord is closer to real clips in full space (1.21 vs 1.32× the 5-NN floor), while in the ring plane, at shifts ≥ 135°, it dips to radius
 0.69 and the spline stays ≈ 1.26; mid-path position favours the chord (38.9 vs 47.7 px at t = 0.5) because the twin is
 the endpoint; at exactly 180° (12 pairs) the ideal direction follows the spline's arc. The intermediate-state claim now
 comes from the model's own forecast, not from the geometry of the edit.
@@ -914,7 +919,7 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
   CIs are the evidence.
 - **Label-free coordinate.** Found only at point 12 and only through my centroid-plane fallback; Goodfire's own
   label-free angle fails its periodicity test at point 12, and point-22 steering and session 2 at points 2, 8 and 22 use
-  the labels, as Goodfire's published runs do (§4.1).
+  the labels, as Goodfire's alphabet, age and 70B runs do (§4.1).
 - **Encoder-output steering.** At point 25, the predictor's input and Goodfire's site, edits reach the forecast
   (chord 12.5°, interpolating spline 15.7°) but the spline's matched-norm lead over the chord from point 22 does not
   carry over (+10.8° worse at the chord's norm, 2.1° better at the natural norm; §4.5). The route effect in the forecast
@@ -986,7 +991,7 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
 [^p2b]: `results/p2_ring_occupancy_L{12,22}.json` (`occupancy`; `over_arcs.manifold_minus_linear.{knn_mid_err,knn_mid_rbar,mid_ratio_pca64}`), `results/p2_shift_dependence.json` (`by_shift.{probe_radius_min,probe_err_to_target,nearest_real_R,excess_to_nearest_real}`), `results/p2_isometry_linear.json` (`correlations["smooth.{geo,lin}.{predictor,encoder_out,concept}"]`); 17 arc runs (seeds 0–16); scripts at 33a2cbd.
 [^cost]: `results/session2_cost.json` (`cost_start_to_session2_done_usd`, `session2_run_cost_usd`, `cost_so_far_usd`, `billed_hours_so_far`, `as_of_utc` 02:44 UTC, `runs[0..3]`, `pull_egress_usd`, `status: running`).
 [^ap]: `results/session2_predictor_along_path.json` (`by_t.{all,shift_ge_135}`, `summary`, `spline_minus_chord`, `applied_norms`, `n_exact_180`; unedited radius `by_t.all.spline.forecast_radius[0]`) and `results/session2_reverse_path.json` (`reverse`, `by_t`, `over_t`, `paired_over_t`, `loss_curve_mean` every 10 steps); `scripts/session2_along_path.py`.
-[^src]: `results/p2_angle_source_audit.json` (`angle_source_counts`, `headline_angle_source`, `headline_L22_angle_check`, `L22_labels_reruns`, `L22_aggregate_all_labels`; the duplicate-once figure is computed from its per-arc rows), `results/arcs/L22_s{4,8,9,10}_labels/`, `results/p2_angle_goodfire_method.json` (`goodfire_passes_periodicity_test`, `goodfire_angle_vs_labels`), `results/session2_plan.json` (`per_layer[].angle_choice`); Goodfire's coordinate source: `refs/causalab/causalab/configs/runners/{weekdays,months}/*.yaml` and `methods/spline/train.py` (`intrinsic_mode`).
+[^src]: `results/p2_angle_source_audit.json` (`angle_source_counts`, `headline_angle_source`, `headline_L22_angle_check`, `L22_labels_reruns`, `L22_aggregate_all_labels`; the duplicate-once figure is computed from its per-arc rows), `results/arcs/L22_s{4,8,9,10}_labels/`, `results/p2_angle_goodfire_method.json` (`goodfire_passes_periodicity_test`, `goodfire_angle_vs_labels`), `results/session2_plan.json` (`per_layer[].angle_choice`); Goodfire's coordinate source: `refs/causalab/causalab/configs/analysis/activation_manifold.yaml` (`intrinsic_mode: pca`, inherited by `runners/{weekdays,months}/*_8b_pipeline.yaml`), `runners/{alphabet,age}/*_8b_pipeline.yaml` and `runners/*/*_70b*.yaml` (`intrinsic_mode: parameter`), `methods/spline/train.py:59` (default `parameter`).
 [^interp]: `results/p2_interp_labels_summary.json` (`heldout_reconstruction.labels_order.contiguous`, `seed0_interp_labels`, `arcs_interp_labels`, `delta_ratio_spline_over_chord`), `results/p2_interp_labels/`, `results/arcs_interp/`.
 [^ext]: `results/p2_extrapolation_linear_ext.json` (`runs.*.{smoothing_linear_ext,interp_linear_ext_goodfire_code,stored_smoothing_cubic_ext}`), `results/p2_linear_ext/`, `results/p2_linear_ext_interp/`.
 [^iso]: `results/p2_isometry_goodfire_method.json` (`layers.{8,12,22}.new.{interp,smooth}.{geo,lin}_pearson`).
