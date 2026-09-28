@@ -61,3 +61,37 @@ def test_nested_step_decode_is_out_of_fold():
     assert ag.r2(S.ravel(), test.ravel()) > 0.99
     for f, tr in train.items():
         assert tr.shape == ((folds != f).sum(), 8)
+
+
+def test_magnitude_scores_order_blind_code_hides_sign_but_not_magnitude():
+    """QA #358: features symmetric under time reversal (they see |a| and mean speed, not the sign of a) give ~0 R^2
+    for signed a but recover |a|; features that see the sign recover both."""
+    rng = np.random.default_rng(0)
+    per = 12
+    m = np.repeat([1.0, 1.75, 2.5, 3.25], 5 * per)
+    a = np.tile(np.repeat([-3.0, -1.5, 0.0, 1.5, 3.0], per), 4)
+    disp = m * ag.T_CLIP
+    cells = [(i, j) for i in range(4) for j in range(5) for _ in range(per)]
+    folds = ag.folds_by_cell(cells)
+    nuis = np.column_stack([m, disp])
+    W = rng.standard_normal((2, 30))
+    X_blind = np.column_stack([np.abs(a), m]) @ W + 0.1 * rng.standard_normal((len(a), 30))
+    r = ag.magnitude_scores(X_blind, a, nuis, folds, nb=200)
+    assert r["signed_a"]["ridge_partial_mean_speed_displacement"]["r2"] < 0.05
+    assert r["abs_a"]["ridge_partial_mean_speed_displacement"]["r2"] > 0.9
+    assert r["abs_minus_signed_partial"]["ci95"][0] > 0.8
+    X_signed = np.column_stack([a, m]) @ W + 0.1 * rng.standard_normal((len(a), 30))
+    r = ag.magnitude_scores(X_signed, a, nuis, folds, nb=200)
+    assert r["signed_a"]["ridge_partial_mean_speed_displacement"]["r2"] > 0.9
+    # a linear readout of a signed code cannot fold it into |a|: |a| is uncorrelated with a on this grid
+    assert r["abs_a"]["ridge_partial_mean_speed_displacement"]["r2"] < 0.05
+
+
+def test_abs_of_signed_recovers_magnitude_from_a_signed_code():
+    rng = np.random.default_rng(2)
+    n = 200
+    a = np.repeat([-3.0, -1.5, 0.0, 1.5, 3.0], n // 5)
+    folds = np.arange(n) % 5
+    X = a[:, None] * rng.standard_normal(20) + 0.1 * rng.standard_normal((n, 20))
+    p = ag.abs_of_signed_oof(X, a, folds)
+    assert ag.r2(np.abs(a), p) > 0.9

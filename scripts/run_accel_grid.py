@@ -19,8 +19,10 @@ initial speed v0 = m - 0.3125 a, final speed v(0.625 s) = m + 0.3125 a, both > 0
                        per-step speed decode (nested in-set probe and transfer probe from the speed set), the acceleration
                        readout with the decoded speed sequence partialled out, and MLP(activations) vs MLP(decoded
                        speed sequence) -> results/p5_accel_decorrelated.json, figures/fig_accel_decorrelated.png.
+  magnitude (Mac, CPU) QA #358: |a| (the paper's target) beside signed a, ridge plain and with mean speed +
+                       displacement partialled, same folds / bootstrap -> results/p5_accel_decorrelated_magnitude.json.
 
-  python scripts/run_accel_grid.py render|extract|score [--out artifacts/accel_grid] [--n-smoke 8]
+  python scripts/run_accel_grid.py render|extract|score|magnitude [--out artifacts/accel_grid] [--n-smoke 8]
 """
 import argparse
 import json
@@ -205,6 +207,59 @@ def boot_r2(y, p, nb=NB, seed=0, p2=None):
     if p2 is not None:
         out["minus_other"] = {"diff": r2(y, p) - r2(y, p2), "ci95": [float(x) for x in np.percentile(diffs, [2.5, 97.5])],
                               "frac_draws_le_0": float(np.mean(np.array(diffs) <= 0))}
+    return out
+
+
+def boot_r2_pair(y1, p1, y2, p2, nb=NB, seed=0):
+    """Paired clip bootstrap of R^2(y1, p1) - R^2(y2, p2) (two targets scored on the same clips and draws)."""
+    rng = np.random.default_rng(seed)
+    y1, p1, y2, p2 = (np.asarray(v, float) for v in (y1, p1, y2, p2))
+    d = []
+    for _ in range(nb):
+        i = rng.integers(0, len(y1), len(y1))
+        d.append(r2(y1[i], p1[i]) - r2(y2[i], p2[i]))
+    return {"diff": r2(y1, p1) - r2(y2, p2), "ci95": [float(x) for x in np.percentile(d, [2.5, 97.5])],
+            "frac_draws_le_0": float(np.mean(np.array(d) <= 0))}
+
+
+def magnitude_scores(X, a, nuis, folds, nb=NB, seed=0):
+    """Signed a and |a| (the paper's target, Joseph et al. 2026 sec. 5) under the signed run's protocol: plain OOF
+    ridge, and ridge with the nuisance columns (mean speed, displacement) OLS-regressed out of features and target
+    inside each training fold; R^2 with a 95% clip bootstrap. abs_minus_signed: paired bootstrap of the partialled
+    R^2(|a|) - R^2(a). An order-blind code (e.g. a time-pooled mean) cannot see the sign of a, since a decelerating
+    clip is a time-reversed accelerating one heading the other way; |a| does not need the order."""
+    X, a = np.asarray(X, float), np.asarray(a, float)
+    n, out, part = len(a), {}, {}
+    for name, y in (("signed_a", a), ("abs_a", np.abs(a))):
+        plain = oof(lambda tr, te: _ridge(X[tr], y[tr]).predict(X[te]), n, folds)
+        yr, pr = partial_ridge_oof(X, y, nuis, folds)
+        part[name] = (yr, pr)
+        out[name] = {"ridge": boot_r2(y, plain, nb, seed),
+                     "ridge_partial_mean_speed_displacement": boot_r2(yr, pr, nb, seed)}
+    out["abs_minus_signed_partial"] = boot_r2_pair(*part["abs_a"], *part["signed_a"], nb=nb, seed=seed)
+    y = np.abs(a)
+    p = abs_of_signed_oof(X, a, folds)
+    out["abs_a_from_abs_signed_ridge"] = {**boot_r2(y, p, nb, seed),
+                                          "minus_abs_ridge": boot_r2_pair(y, p, *part["abs_a"], nb=nb, seed=seed)}
+    return out
+
+
+def abs_of_signed_oof(X, a, folds):
+    """|a| read as |signed ridge prediction|, calibrated per outer fold by OLS |a| ~ 1 + |a_hat| fit on inner
+    out-of-fold signed predictions of the training clips (so the calibration never sees its own training fit and
+    the test fold never enters). Tests whether |a| is available through the signed code, a nonlinearity a linear
+    |a| ridge cannot express."""
+    X, a = np.asarray(X, float), np.asarray(a, float)
+    out = np.zeros(len(a))
+    for f in np.unique(folds):
+        te = folds == f
+        tr = np.flatnonzero(~te)
+        inner = np.zeros(len(tr))
+        for g in np.unique(folds[tr]):
+            ite = folds[tr] == g
+            inner[ite] = _ridge(X[tr[~ite]], a[tr[~ite]]).predict(X[tr[ite]])
+        c = np.polyfit(np.abs(inner), np.abs(a[tr]), 1)
+        out[te] = np.polyval(c, np.abs(_ridge(X[tr], a[tr]).predict(X[te])))
     return out
 
 
@@ -448,6 +503,75 @@ def merge(args):
     print("wrote", args.result, "gpu s", res["gpu_seconds_total"])
 
 
+def _magnitude_cell(out, model, L, mlp=True):
+    """One (model, point) cell of the magnitude stage: meanpool and timepool features."""
+    info, clips, a, m, v0, disp, S_true, folds = _load_plan(out)
+    feat = np.load(Path(out) / f"feat_{model}.npz")
+    n = len(a)
+    t0 = time.time()
+    X = {"meanpool": np.asarray(feat["meanpool"][:, L], np.float64),
+         "timepool": np.asarray(feat["timepool"][:, L], np.float64).reshape(n, -1)}
+    r = {k: magnitude_scores(v, a, np.column_stack([m, disp]), folds) for k, v in X.items()}
+    if mlp:
+        for k, v in X.items():
+            # |a| is a nonlinear function of a signed code, so a linear ridge can miss it; the signed run's MLP
+            # (wm.bakeoff.MLPReadout, 5 seeds, same folds; mean speed needs no partial, r = 0 by design)
+            pa, pm = mlp_oof(v, np.abs(a), folds), mlp_oof(v, a, folds)
+            r[k]["mlp"] = {"abs_a": boot_r2(np.abs(a), pa), "signed_a": boot_r2(a, pm),
+                           "abs_minus_signed": boot_r2_pair(np.abs(a), pa, a, pm)}
+    print(model, L, f"{time.time() - t0:.0f}s", {k: (round(v["signed_a"]["ridge_partial_mean_speed_displacement"]["r2"], 3),
+                                                      round(v["abs_a"]["ridge_partial_mean_speed_displacement"]["r2"], 3))
+                                                  for k, v in r.items()}, flush=True)
+    return model, L, r
+
+
+def magnitude(args):
+    """QA #358: |a| (the paper's target) beside signed a, same features, folds, nuisance partial-out and bootstrap
+    as the signed run -> results/p5_accel_decorrelated_magnitude.json."""
+    import os
+    from joblib import Parallel, delayed
+    from wm.provenance import provenance, sha256_file
+    out = Path(args.out)
+    pts = [int(p) for p in args.points.split(",")] if args.points else list(POINTS)
+    models = args.models.split(",")
+    info, clips, a, m, v0, disp, S_true, folds = _load_plan(out)
+    cells = Parallel(n_jobs=args.jobs)(delayed(_magnitude_cell)(out, mo, L, not args.no_mlp) for mo in models for L in pts)
+    corr = lambda x, y: float(np.corrcoef(x, y)[0, 1])                                   # noqa: E731
+    res = {"n_clips": len(a), "qa": "#358",
+           "abs_a_levels": {str(v): int(c) for v, c in zip(*np.unique(np.abs(a), return_counts=True))},
+           "design_correlations": {"abs_a~mean_speed": corr(np.abs(a), m), "abs_a~displacement": corr(np.abs(a), disp),
+                                   "abs_a~signed_a": corr(np.abs(a), a), "signed_a~mean_speed": corr(a, m)},
+           "folds": {"k": N_FOLDS, "rule": "folds_by_cell(seed 0), as the signed run"},
+           "models": {mo: {"points": {}} for mo in models}}
+    for mo, L, r in cells:
+        res["models"][mo]["points"][str(L)] = r
+    res["keys"] = {
+        "models[m].points[L].{meanpool,timepool}.{signed_a,abs_a}": "ridge: OOF ridge R^2 (standardise + RidgeCV, "
+            "alpha by 5-fold CV over training clips, as run_accel_grid._ridge). ridge_partial_mean_speed_displacement: "
+            "mean speed and displacement OLS-regressed out of features and target on the training fold, test rows "
+            "residualised with train coefficients, R^2 of the held-out residual (the signed run's "
+            "ridge_a_partial_mean_speed_displacement). r2 with 95% clip bootstrap (2,000 draws, seed 0).",
+        "abs_minus_signed_partial": "paired clip bootstrap of partialled R^2(|a|) - R^2(signed a)",
+        "abs_a_from_abs_signed_ridge": "|a| read as |OOF signed-a ridge prediction|, OLS-calibrated (|a| ~ 1 + |a_hat|) "
+            "on nested inner out-of-fold predictions of the training clips; R^2 for |a| (no partial: |a| has r = 0 with "
+            "mean speed and displacement by design); minus_abs_ridge = paired bootstrap vs the plain linear |a| ridge.",
+        "models[m].points[L].{meanpool,timepool}.mlp": "one-hidden-layer MLP on activations (wm.bakeoff.MLPReadout, "
+            "64 units, alpha 1e-2, early stopping), seeds 0-4 averaged, OOF over the same 5 folds, no partial (mean "
+            "speed and displacement have r = 0 with a and |a| by design); signed_a is the signed run's mlp.act_*.",
+        "meanpool / timepool": "mean over all 2,048 tokens [D] (order-blind) / 8 per-tubelet means concatenated [8D]",
+        "random": "untrained copy of V-JEPA 2 (torch.manual_seed(0) random init), same clips"}
+    res["provenance"] = provenance(
+        seeds={"design": 0, "folds": 0, "bootstrap": 0, "ridge_inner_cv_kfold": 0, "random_init_torch_manual_seed": 0,
+               "mlp": list(MLP_SEEDS) if not args.no_mlp else None},
+        points=pts, script="scripts/run_accel_grid.py (stage magnitude)",
+        script_sha256=sha256_file(Path(__file__)), plan_sha256=sha256_file(out / "plan.json"),
+        feature_sha256={f"feat_{mo}.npz": sha256_file(out / f"feat_{mo}.npz") for mo in models},
+        signed_run_result="results/p5_accel_decorrelated.json", threads=os.environ.get("OMP_NUM_THREADS"),
+        compute="Mac CPU, features already on disk (extracted on vast 53255833 for the signed run); no GPU")
+    Path(args.result).write_text(json.dumps(res, indent=1))
+    print("wrote", args.result)
+
+
 def _lstsq_pred(Ztr, ytr, Zte):
     D = lambda Z: np.column_stack([np.ones(len(Z)), Z])                            # noqa: E731
     return D(Zte) @ np.linalg.lstsq(D(Ztr), ytr, rcond=None)[0]
@@ -498,7 +622,7 @@ def figure(res, path):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("stage", choices=["render", "extract", "score", "merge"])
+    ap.add_argument("stage", choices=["render", "extract", "score", "merge", "magnitude"])
     ap.add_argument("--out", default=str(ART))
     ap.add_argument("--per-cell", type=int, default=PER_CELL)
     ap.add_argument("--n-smoke", type=int, default=0)
@@ -508,11 +632,15 @@ def main():
     ap.add_argument("--models", default=",".join(MODELS))
     ap.add_argument("--points", default="", help="score: comma-separated subset of POINTS (default all)")
     ap.add_argument("--no-merge", action="store_true")
+    ap.add_argument("--no-mlp", action="store_true", help="magnitude: skip the MLP readouts")
+    ap.add_argument("--jobs", type=int, default=7, help="magnitude: parallel (model, point) cells")
     ap.add_argument("--box", default="vast 53255833 (box 5, RTX 4060 Ti 16 GB)")
     ap.add_argument("--result", default=str(PROJECT_ROOT / "results" / "p5_accel_decorrelated.json"))
     ap.add_argument("--fig", default=str(PROJECT_ROOT / "figures" / "fig_accel_decorrelated.png"))
     args = ap.parse_args()
-    {"render": render, "extract": extract, "score": score, "merge": merge}[args.stage](args)
+    if args.stage == "magnitude" and args.result == ap.get_default("result"):
+        args.result = str(PROJECT_ROOT / "results" / "p5_accel_decorrelated_magnitude.json")
+    {"render": render, "extract": extract, "score": score, "merge": merge, "magnitude": magnitude}[args.stage](args)
 
 
 if __name__ == "__main__":
