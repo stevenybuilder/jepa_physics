@@ -38,7 +38,8 @@ and layer; N = 3 under the near-unregularised probes); at N = 1 it separates fro
 network, and at the onset layer the learned basis never beats the rank-2K random basis for N ≤ 20. Rerunning Parts 1
 and 2 at the paper's literal 70/30 split changes no qualitative verdict. **Part 2.** Direction lies on a ring.
 My centroid-plane angle recovers it without labels at point 12 but not at point 22; Goodfire's own label-free angle
-fails its periodicity test at points 8 and 12 and passes at 22, where it sits up to 38–97° from θ; its sequential tasks use
+fails its periodicity test at points 8 and 12 and passes at 22, where it sits up to 50° from θ on all 64 centroids
+(38–97° on the passing held-out arcs); its sequential tasks use
 the ordinal index, as A.3 says, and only its 70B cyclic configs take the coordinate from the labels[^src].
 The ring is an ellipse, not a circle: axis ratio 0.68–0.89 in its own plane from point 8 on (0.74 / 0.87 / 0.74 at
 points 8 / 12 / 22), bent out of that plane by a cos 2θ saddle that holds 20–34% of the centroid variance. Held-out
@@ -110,11 +111,12 @@ test does not recover the ring. This is a probe of the forecast on one stimulus 
 | Part 2: spline | interpolating, through the centroids exactly (A.3); √count-weighted smoothing spline for the world model (B.1) | smoothing spline with weight √count / sd_c per knot and coordinate and s = number of knots (both my choices; B.1 gives no smoothing value); interpolating run beside it | interpolating rebuilds held-out centroids worse and its edit is 1.4–1.6× the chord's (§4.1) |
 | Part 2: direction coordinate | unsupervised atan2(PC2, PC1) (A.3; the weekdays/months 8B configs inherit `intrinsic_mode: pca`); ordinal index for the sequential tasks (A.3; alphabet/age configs `parameter`); the labels only in the 70B cyclic configs | our centroid-plane atan2 at point 12; labels at points 2, 8 and 22 | label-free only at point 12, and only through our fallback (§4.1) |
 | Part 2: manifold arm | replace the PCA-64 part with the curve point (A.6) | additive, x + γ(t) − γ(t_src), residual kept | theirs run as a labelled arm (§4.4) |
-| Part 2: base pair of arms | manifold vs whole-activation chord replacement (A.6) | spline vs chord in the same PCA-64 subspace (matched support; causalab ships this as its non-default `linear_subspace` path mode) | their default linear arm erases the residual; run separately and labelled (§4.4) |
+| Part 2: base pair of arms | manifold vs whole-activation chord replacement (A.6) | spline vs chord in the same PCA-64 subspace (matched support, additive; causalab ships the same support as its non-default `linear_subspace` mode, in replacement form) | their default linear arm erases the residual; run separately and labelled (§4.4) |
 | Part 2: waypoints | K = 50 (A.6; the weekdays/months 8B default); alphabet/age 8B configs 150/250 (alphabet_8b_n3 50), 70B configs 100–150, grid/cylinder 20 | K = 50 | E_BC sums over waypoints, so only within-run energy ratios compare |
 | Part 2: Eq. 10 temperature | τ = 0.5 on a LayerNorm'd 64-d latent (B.1) | τ = 0.5 in raw PCA-64 units | absolute energies not comparable; τ 0.25–2 keeps the point-12 ordering (`tau_sensitivity` in `p2_steer_direction_direction_L12_contiguous.json`) |
 | Part 2: behaviour manifold | smoothing spline through 128 bin centroids (B.1) | interpolating spline through the 64 per-value centroids in the Hellinger tangent plane (A.4), F over 128 bins | circular at the steered layer either way (§4.2) |
 | Part 2: carriers | 16 fixed base prompts per task, one set for every pair (A.6) | 48 test clips per target, each steered from its own value | Goodfire starts every carrier at the centroid c_a whatever the carrier's own value (A.6); ours starts each carrier at its true value (an oracle source) and averages over sources |
+| Part 2: pullback (A.8–A.9) | one path per (source, target) pair shared by 16 carriers; replace top-32 PCs, residual and other PCs held; L-BFGS, chord init, K = 20 free; squared-Hellinger target on M_y; no norm term for the cyclic task; closest-point residual and intrinsic R² | one path per carrier; additive edit in PCA-64; Adam, zero init, 8 free waypoints; 1 − cos loss on the forecast angle; hard cap 1.2× natural change; equal-t distances | every difference favours an off-ring route, so the reverse test's negative is ours, not theirs; rerun with their recipe in progress (§4.5) |
 
 **Places where the paper contradicts itself**[^ptxt]. (a) The INLP stopping
 threshold for direction is R² < 0.1 in C.11 and R² < 0.3 in the Fig. 22 caption: each `p1b` file has both (`K`,
@@ -893,14 +895,20 @@ chord is closer to real clips in full space (1.21 vs 1.32× the 5-NN floor), whi
 the endpoint; at exactly 180° (12 pairs) the ideal direction follows the spline's arc. The intermediate-state claim now
 comes from the model's own forecast, not from the geometry of the edit.
 
-**The reverse test**[^ap]. For 20 carriers × 2 targets at 135–180°, I optimised K = 9 waypoints in PCA-64 at point 22
-so the forecast follows the ideal intermediate direction (Adam, 100 steps, converged by 20; edit norm ≤ 1.2× natural;
+**The reverse test**[^ap]. For 20 carriers × 2 targets at 135–180°, I optimised 8 free waypoints (the start fixed at zero edit) in
+PCA-64 at point 22, one path per carrier, added to the carrier's activation, so the forecast follows the ideal
+intermediate direction (Adam, 100 steps, converged by 20; edit norm capped at 1.2× the natural change, and the cap
+binds at every waypoint;
 gradients through blocks 23–24 and the predictor in bf16, re-scored in fp32). They hit it to 0.08°, but only at the
 norm cap, with 28% of each edit in the ring plane and forecast radius ≈ 5 (unedited ≈ 0.96). The path radius goes
 2.2 → 1.0, never crossing the interior; cosine 0.12 with the spline's edit, 0.00 with the chord's; closer to the spline
 in the ring plane (1.35 vs 1.75), slightly closer to the chord in full space (+0.04 [0.02, 0.06]). With an angle-only
 objective the predictor can be steered along an off-ring route, so the reverse direction is not recovered here. This
-objective is weaker than Goodfire's full pullback objective, which also penalises leaving real behaviour. A negative.
+objective is weaker than Goodfire's full pullback objective, which also penalises leaving real behaviour, and the
+protocol differs from A.8 in four ways that all favour an off-ring route: one path per clip instead of one path shared
+by 16 carriers at the same source value, an additive edit instead of a replacement of the top PCs, 64 PCs instead of
+32, and a hard norm cap where Goodfire uses no norm term for its cyclic task. The full-space comparison is at equal t,
+not A.9's closest-point residual. A rerun with Goodfire's recipe is in progress. A negative, as run.
 
 **Time-reversed clips** (the forward-trained probe read on reversed clips)[^trev]. From point 1 on, the direction probe
 reads θ + 180° on the reversed clip: the error to θ + 180° is 20.5° at point 1 and 5.7–10.3° from point 2 on, with
