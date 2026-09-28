@@ -384,7 +384,7 @@ et al.'s proof (arXiv 2608.10566) that the literal INLP count is not invariant t
 | planted: clean ring / ×30 sheared / + k = 3 harmonic / 3 copies | 1 / 8 / 1 / 1 | 1 | → −0.009 | → −0.24 to −0.31 | 0.995 / 0 / 0; 0.96 / 0 / 0; 0.66 / 0 / 0.32; 0.98 / 0.01 / 0 |
 
 Whitened K is 1 at every point 0–25 for both variables and every ε (0.001–0.1). After LEACE, ridge reads nothing, an
-MLP keeps 0.37–0.82 at points 9 / 12 / 22, and every planted ring drops below −0.23. In the centroid DFT, k = 2 holds 0.21–0.37 of the
+MLP keeps 0.37–0.82 (direction) and 0.76–0.91 (speed) at points 9 / 12 / 22, and every planted ring drops below −0.23. In the centroid DFT, k = 2 holds 0.21–0.37 of the
 non-constant power from point 8 on (0.08–0.16 at points 2–7) and k ≥ 3 together 0.03–0.11. The controls calibrate each
 column: shear inflates literal K (8) but not whitened K, a planted k = 3 harmonic shows up in the DFT (0.32) with
 literal K = 1, and copies do not inflate K. So (i) direction is organised on a harmonic basis (k = 1 plus a cos 2θ
