@@ -57,12 +57,15 @@ def by_value(G, curve_values, values):
     return G[np.ix_(o, o)]
 
 
-def act_curves(Z, y, rng=None):
-    """Smoothing (run_part2) and interpolating (Goodfire A.3) periodic splines through per-value centroids of Z."""
+def act_curves(Z, y, rng=None, choice=None):
+    """Smoothing (run_part2) and interpolating (Goodfire A.3) periodic splines through per-value centroids of Z.
+    choice: the point estimate's angle source and plane, held fixed in bootstrap draws (otherwise a draw can switch
+    plane and reorder the knots, which is a different pipeline, not sampling noise)."""
     if rng is not None:
         Z, y = resample(Z, y, rng)
     cent = mf.centroids(Z, y)
-    choice = mf.choose_angle_source(cent["C"], cent["values"])
+    if choice is None:
+        choice = mf.choose_angle_source(cent["C"], cent["values"])
     out = {}
     for sp in ("smooth", "interp"):
         c = mf.fit_curve(cent, True, angle=choice["angle"], plane=choice["plane"], spline=sp)
@@ -127,7 +130,7 @@ def run_layer(L, n_boot, seed=0):
     rng = np.random.default_rng(seed)
     boots = []
     for _ in range(n_boot):
-        a, _, _ = act_curves(Zk, yk, rng)
+        a, _, _ = act_curves(Zk, yk, rng, choice)
         b = {"eq9_same_layer": eq9, "encoder_out": beh_curve(Z25, yp, rng), "predictor": beh_curve(Zp, yp, rng),
              "concept": dth}
         boots.append(all_corrs(a, b))
