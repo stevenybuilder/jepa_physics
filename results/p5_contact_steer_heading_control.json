@@ -1,0 +1,745 @@
+{
+ "question": "QA #367: does the contact steer write a contact, or only a post-contact heading? Same carriers, slots, donors and norm as the bounce edit; heading difference with no wall (straight_out - straight_in)",
+ "headline": {
+  "22": {
+   "site": "block 22 all tokens",
+   "bounce_edit": {
+    "mean": 0.4782679668367513,
+    "median": 0.4746069840799946,
+    "ci95": [
+     0.4038356553129116,
+     0.5504945801839188
+    ],
+    "n": 96
+   },
+   "no_wall_heading_edit_norm_matched": {
+    "mean": 0.7684284490046762,
+    "median": 0.6945313915318964,
+    "ci95": [
+     0.6825166394605492,
+     0.8629476327604031
+    ],
+    "n": 96
+   },
+   "paired_bounce_minus_heading": {
+    "mean": -0.29016048216792484,
+    "ci95": [
+     -0.37823678373918057,
+     -0.2104099946557358
+    ],
+    "frac_carriers_positive": 0.17708333333333334,
+    "n": 96
+   }
+  },
+  "12": {
+   "site": "block 12 disk tokens",
+   "bounce_edit": {
+    "mean": 0.44935944328493704,
+    "median": 0.4815478718831037,
+    "ci95": [
+     0.39984123308119973,
+     0.4965717771389644
+    ],
+    "n": 96
+   },
+   "no_wall_heading_edit_norm_matched": {
+    "mean": 0.4603328514048017,
+    "median": 0.4632148387368999,
+    "ci95": [
+     0.4134492297996584,
+     0.5053144311990854
+    ],
+    "n": 96
+   },
+   "paired_bounce_minus_heading": {
+    "mean": -0.010973408119864553,
+    "ci95": [
+     -0.03304658337653201,
+     0.009135383096913714
+    ],
+    "frac_carriers_positive": 0.46875,
+    "n": 96
+   }
+  }
+ },
+ "definitions": {
+  "doc": "Contact-steer heading control (QA #367): is the injected bounce a CONTACT or just a post-contact HEADING?\n\nscripts/run_contact_steer.py (results/p5_contact_steer.json) adds the bounce-minus-straight twin difference\n(leave-one-pair-out mean over same-geometry-class donors) to the post-contact context tubelets of the 96 in-window\nstraight twins and reads the forecast turn toward theta_out (0.48 at point 22 all tokens, 0.45 at point 12 disk\ntokens). Every control there also fits \"a post-contact heading was written\". This adds the deciding control on the\nsame carriers, same slots, same donors, same norm:\n\n  heading difference (no wall) of pair j at point P, tubelet t:\n     pool  hP[j, t] = mean over 256 tokens (straight_out_j) - same for straight_in_j\n     disk  hD[j, t] = mean over straight_out_j's disk tokens - mean over straight_in_j's disk tokens\n  straight_out_j = constant velocity along theta_out_j throughout, no wall, same positions as bounce_j from k_b on\n  (the contact-in-context \"straight-at-theta_out reference\", artifacts/p5_contact_in_context/out/frames.npz).\n\nConditions (post-contact tubelets t with phase 1 only, exactly as run_contact_steer):\n  none, a_pool_loo, b_disk_loo    rerun of the stored arms (parity + paired comparison)\n  h_pool_loo      donor mean of hP (same donors as a_pool_loo), rescaled per (carrier, tubelet) to ||a_pool_loo||,\n                  added to all 256 tokens\n  h_disk_loo      donor mean of hD, rescaled per (carrier, tubelet) to ||b_disk_loo||, added to the carrier's disk tokens\n  h_pool_loo_nat / h_disk_loo_nat  the same heading differences at their own (natural) norm\nScoring: identical forecast \"transfer\" reader and turn fraction as run_contact_steer.score; paired differences\n(bounce arm - heading arm) per carrier with a carrier bootstrap (2000, seed 0).",
+  "turn_fraction": "0 = carrier's theta_in, 1 = its twin's theta_out; step mean over the 4 forecast steps",
+  "forecast_reader": "identical to run_contact_steer.score ('transfer' reader: native probe-role forecasts + p5_contact_dynamics rendered forecasts)",
+  "ci95": "carrier bootstrap, 2000 resamples, seed 0 (summarize / paired)"
+ },
+ "results": {
+  "references": {
+   "real_bounce_clips_forecast_step_mean": {
+    "mean": 0.9413909959799712,
+    "median": 0.9939844727726035,
+    "ci95": [
+     0.8724400815267332,
+     1.0065349267121555
+    ],
+    "n": 96
+   },
+   "straight_out_clips_forecast_step_mean": {
+    "mean": 1.0226203332614607,
+    "median": 1.0065262312828276,
+    "ci95": [
+     0.9942930922876604,
+     1.0514082711834085
+    ],
+    "n": 96
+   },
+   "unedited_straight_twins_forecast_step_mean": {
+    "mean": -0.0030656290567017907,
+    "median": 0.0035110865916504978,
+    "ci95": [
+     -0.0336733053259243,
+     0.023950967821164525
+    ],
+    "n": 96
+   }
+  },
+  "points": {
+   "22": {
+    "delta_norm_mean": {
+     "none": 0.0,
+     "a_pool_loo": 14.346990568884488,
+     "b_disk_loo": 46.255272415862684,
+     "h_pool_loo": 14.346990744272867,
+     "h_disk_loo": 46.25527276663944,
+     "h_pool_loo_nat": 10.914212177539694,
+     "h_disk_loo_nat": 47.039281735475036
+    },
+    "token_norm_mean": 190.2644500732422,
+    "cos_median_heading_vs_bounce_donor_mean": {
+     "pool": 0.6033452153205872,
+     "disk": 0.81210857629776
+    },
+    "forecast_turn_fraction_step_mean": {
+     "none": {
+      "mean": -0.0030656290567017907,
+      "median": 0.0035110865916504978,
+      "ci95": [
+       -0.0336733053259243,
+       0.023950967821164525
+      ],
+      "n": 96
+     },
+     "a_pool_loo": {
+      "mean": 0.4782679668367513,
+      "median": 0.4746069840799946,
+      "ci95": [
+       0.4038356553129116,
+       0.5504945801839188
+      ],
+      "n": 96
+     },
+     "b_disk_loo": {
+      "mean": 0.03290530859442195,
+      "median": 0.044357729723698974,
+      "ci95": [
+       0.0011028827991306962,
+       0.06237033598626093
+      ],
+      "n": 96
+     },
+     "h_pool_loo": {
+      "mean": 0.7684284490046762,
+      "median": 0.6945313915318964,
+      "ci95": [
+       0.6825166394605492,
+       0.8629476327604031
+      ],
+      "n": 96
+     },
+     "h_disk_loo": {
+      "mean": 0.034849502850176066,
+      "median": 0.03937257388329129,
+      "ci95": [
+       0.0030604006754997733,
+       0.06422514241537386
+      ],
+      "n": 96
+     },
+     "h_pool_loo_nat": {
+      "mean": 0.5704733407380264,
+      "median": 0.5712234148425649,
+      "ci95": [
+       0.507216546258562,
+       0.6340294434855016
+      ],
+      "n": 96
+     },
+     "h_disk_loo_nat": {
+      "mean": 0.03393416311300704,
+      "median": 0.03454079514335219,
+      "ci95": [
+       0.0019138945256600348,
+       0.06308413356343547
+      ],
+      "n": 96
+     }
+    },
+    "parity_rerun_vs_stored_forward": {
+     "none": {
+      "forecast_rel_maxabs": 0.0,
+      "turn_fraction_maxabs_diff": 0.0
+     },
+     "a_pool_loo": {
+      "forecast_rel_maxabs": 0.0,
+      "turn_fraction_maxabs_diff": 0.0
+     },
+     "b_disk_loo": {
+      "forecast_rel_maxabs": 0.0,
+      "turn_fraction_maxabs_diff": 0.0
+     }
+    },
+    "stored_p5_contact_steer_json": {
+     "none": {
+      "mean": -0.0030656290567017907,
+      "median": 0.0035110865916504978,
+      "ci95": [
+       -0.0336733053259243,
+       0.023950967821164525
+      ],
+      "n": 96
+     },
+     "a_pool_loo": {
+      "mean": 0.4782679668367513,
+      "median": 0.4746069840799946,
+      "ci95": [
+       0.4038356553129116,
+       0.5504945801839188
+      ],
+      "n": 96
+     },
+     "b_disk_loo": {
+      "mean": 0.03290530859442195,
+      "median": 0.044357729723698974,
+      "ci95": [
+       0.0011028827991306962,
+       0.06237033598626093
+      ],
+      "n": 96
+     },
+     "c_rand_pool": {
+      "mean": -0.02187221837023846,
+      "median": -0.006936421922246578,
+      "ci95": [
+       -0.06814459467993647,
+       0.021862866837992736
+      ],
+      "n": 96
+     },
+     "c_rand_disk": {
+      "mean": -0.002631048778241108,
+      "median": 0.005167625016696367,
+      "ci95": [
+       -0.032723546453030425,
+       0.024621452541135052
+      ],
+      "n": 96
+     },
+     "d_far_pool": {
+      "mean": -0.26589014048083875,
+      "median": -0.21122492587561673,
+      "ci95": [
+       -0.3095246013116851,
+       -0.22496664801004856
+      ],
+      "n": 96
+     },
+     "d_far_disk": {
+      "mean": -0.028854887863447226,
+      "median": -0.011557858172844444,
+      "ci95": [
+       -0.05900169487570986,
+       -0.001092500535139838
+      ],
+      "n": 96
+     },
+     "e_own_pool": {
+      "mean": 0.4780080214856628,
+      "median": 0.4409999220815849,
+      "ci95": [
+       0.4067562871357403,
+       0.5468321453978912
+      ],
+      "n": 96
+     },
+     "e_own_disk": {
+      "mean": 0.026927322104708343,
+      "median": 0.027148040252158376,
+      "ci95": [
+       -0.005052991842378781,
+       0.055937513135093854
+      ],
+      "n": 96
+     },
+     "e_own_tokens": {
+      "mean": 0.821728324129527,
+      "median": 0.8877281674019852,
+      "ci95": [
+       0.7550553996855257,
+       0.8868114732532486
+      ],
+      "n": 96
+     }
+    },
+    "paired": {
+     "a_pool_loo_minus_h_pool_loo": {
+      "mean": -0.29016048216792484,
+      "ci95": [
+       -0.37823678373918057,
+       -0.2104099946557358
+      ],
+      "frac_carriers_positive": 0.17708333333333334,
+      "n": 96
+     },
+     "b_disk_loo_minus_h_disk_loo": {
+      "mean": -0.0019441942557541158,
+      "ci95": [
+       -0.0047839501265484,
+       0.0009780982848884557
+      ],
+      "frac_carriers_positive": 0.4166666666666667,
+      "n": 96
+     },
+     "a_pool_loo_minus_h_pool_loo_nat": {
+      "mean": -0.09220537390127503,
+      "ci95": [
+       -0.14954969686330483,
+       -0.03536021571723317
+      ],
+      "frac_carriers_positive": 0.2708333333333333,
+      "n": 96
+     },
+     "b_disk_loo_minus_h_disk_loo_nat": {
+      "mean": -0.001028854518585084,
+      "ci95": [
+       -0.003826699020809874,
+       0.0020593425120491887
+      ],
+      "frac_carriers_positive": 0.4479166666666667,
+      "n": 96
+     },
+     "h_pool_loo_minus_none": {
+      "mean": 0.7714940780613779,
+      "ci95": [
+       0.6812302203194316,
+       0.867976866160633
+      ],
+      "frac_carriers_positive": 0.9895833333333334,
+      "n": 96
+     },
+     "h_disk_loo_minus_none": {
+      "mean": 0.03791513190687786,
+      "ci95": [
+       0.02980500559696225,
+       0.046441736338826534
+      ],
+      "frac_carriers_positive": 0.8125,
+      "n": 96
+     },
+     "a_pool_loo_minus_none": {
+      "mean": 0.4813335958934531,
+      "ci95": [
+       0.4200396574973465,
+       0.5447652736564738
+      ],
+      "frac_carriers_positive": 0.9583333333333334,
+      "n": 96
+     },
+     "b_disk_loo_minus_none": {
+      "mean": 0.03597093765112375,
+      "ci95": [
+       0.027935037406461583,
+       0.044308960951319656
+      ],
+      "frac_carriers_positive": 0.8125,
+      "n": 96
+     }
+    },
+    "ratio_heading_over_bounce_edit_effect": {
+     "pool": {
+      "ratio": 1.602826157665824,
+      "ci95": [
+       1.4153125515990805,
+       1.8311089871504986
+      ]
+     },
+     "disk": {
+      "ratio": 1.0540490290970599,
+      "ci95": [
+       0.9746702261335347,
+       1.1403304723950398
+      ]
+     }
+    }
+   },
+   "12": {
+    "delta_norm_mean": {
+     "none": 0.0,
+     "a_pool_loo": 13.64626055202265,
+     "b_disk_loo": 32.97101795810393,
+     "h_pool_loo": 13.646260541060876,
+     "h_disk_loo": 32.971017837524414,
+     "h_pool_loo_nat": 11.202444668473868,
+     "h_disk_loo_nat": 33.65610392340298
+    },
+    "token_norm_mean": 223.1271209716797,
+    "cos_median_heading_vs_bounce_donor_mean": {
+     "pool": 0.6277313828468323,
+     "disk": 0.8706275820732117
+    },
+    "forecast_turn_fraction_step_mean": {
+     "none": {
+      "mean": -0.0030656290567017907,
+      "median": 0.0035110865916504978,
+      "ci95": [
+       -0.0336733053259243,
+       0.023950967821164525
+      ],
+      "n": 96
+     },
+     "a_pool_loo": {
+      "mean": 0.05132700758169142,
+      "median": 0.06857887791085501,
+      "ci95": [
+       0.014696110934008435,
+       0.08381431428368845
+      ],
+      "n": 96
+     },
+     "b_disk_loo": {
+      "mean": 0.44935944328493704,
+      "median": 0.4815478718831037,
+      "ci95": [
+       0.39984123308119973,
+       0.4965717771389644
+      ],
+      "n": 96
+     },
+     "h_pool_loo": {
+      "mean": 0.12126870194765767,
+      "median": 0.11896682004621395,
+      "ci95": [
+       0.08458192298491722,
+       0.15555481358896867
+      ],
+      "n": 96
+     },
+     "h_disk_loo": {
+      "mean": 0.4603328514048017,
+      "median": 0.4632148387368999,
+      "ci95": [
+       0.4134492297996584,
+       0.5053144311990854
+      ],
+      "n": 96
+     },
+     "h_pool_loo_nat": {
+      "mean": 0.0918008246466434,
+      "median": 0.08145206040420463,
+      "ci95": [
+       0.057409511145976436,
+       0.12334889403249008
+      ],
+      "n": 96
+     },
+     "h_disk_loo_nat": {
+      "mean": 0.47306222868818876,
+      "median": 0.48709552789241445,
+      "ci95": [
+       0.42415331324579403,
+       0.5177304723412789
+      ],
+      "n": 96
+     }
+    },
+    "parity_rerun_vs_stored_forward": {
+     "none": {
+      "forecast_rel_maxabs": 0.0,
+      "turn_fraction_maxabs_diff": 0.0
+     },
+     "a_pool_loo": {
+      "forecast_rel_maxabs": 0.0,
+      "turn_fraction_maxabs_diff": 0.0
+     },
+     "b_disk_loo": {
+      "forecast_rel_maxabs": 0.0,
+      "turn_fraction_maxabs_diff": 0.0
+     }
+    },
+    "stored_p5_contact_steer_json": {
+     "none": {
+      "mean": -0.0030656290567017907,
+      "median": 0.0035110865916504978,
+      "ci95": [
+       -0.0336733053259243,
+       0.023950967821164525
+      ],
+      "n": 96
+     },
+     "a_pool_loo": {
+      "mean": 0.05132700758169142,
+      "median": 0.06857887791085501,
+      "ci95": [
+       0.014696110934008435,
+       0.08381431428368845
+      ],
+      "n": 96
+     },
+     "b_disk_loo": {
+      "mean": 0.44935944328493704,
+      "median": 0.4815478718831037,
+      "ci95": [
+       0.39984123308119973,
+       0.4965717771389644
+      ],
+      "n": 96
+     },
+     "c_rand_pool": {
+      "mean": -0.002238053198012213,
+      "median": 0.008149602944627594,
+      "ci95": [
+       -0.03370228736074991,
+       0.026282034664919105
+      ],
+      "n": 96
+     },
+     "c_rand_disk": {
+      "mean": 0.002756978569575273,
+      "median": 0.005755821750644913,
+      "ci95": [
+       -0.02748976919632415,
+       0.03161426844682757
+      ],
+      "n": 96
+     },
+     "d_far_pool": {
+      "mean": -0.045241809823712065,
+      "median": -0.024522637111422975,
+      "ci95": [
+       -0.07766414905631606,
+       -0.015884760882112964
+      ],
+      "n": 96
+     },
+     "d_far_disk": {
+      "mean": -0.20414610445716383,
+      "median": -0.17789580490366863,
+      "ci95": [
+       -0.2429336256026517,
+       -0.166161126991604
+      ],
+      "n": 96
+     },
+     "e_own_pool": {
+      "mean": 0.048759027024933295,
+      "median": 0.06482160308683962,
+      "ci95": [
+       0.012500227486403243,
+       0.0812479391463242
+      ],
+      "n": 96
+     },
+     "e_own_disk": {
+      "mean": 0.47677131582788107,
+      "median": 0.47681224343059486,
+      "ci95": [
+       0.4293967490047146,
+       0.5219746742253644
+      ],
+      "n": 96
+     },
+     "e_own_tokens": {
+      "mean": 0.8973003686925063,
+      "median": 0.9371556260739149,
+      "ci95": [
+       0.8369685918906441,
+       0.954641296768417
+      ],
+      "n": 96
+     }
+    },
+    "paired": {
+     "a_pool_loo_minus_h_pool_loo": {
+      "mean": -0.06994169436596626,
+      "ci95": [
+       -0.08770350665361673,
+       -0.053892286487842764
+      ],
+      "frac_carriers_positive": 0.2708333333333333,
+      "n": 96
+     },
+     "b_disk_loo_minus_h_disk_loo": {
+      "mean": -0.010973408119864553,
+      "ci95": [
+       -0.03304658337653201,
+       0.009135383096913714
+      ],
+      "frac_carriers_positive": 0.46875,
+      "n": 96
+     },
+     "a_pool_loo_minus_h_pool_loo_nat": {
+      "mean": -0.040473817064951984,
+      "ci95": [
+       -0.05503309586929619,
+       -0.0271401007290069
+      ],
+      "frac_carriers_positive": 0.3333333333333333,
+      "n": 96
+     },
+     "b_disk_loo_minus_h_disk_loo_nat": {
+      "mean": -0.023702785403251755,
+      "ci95": [
+       -0.044994428263618685,
+       -0.00425157725335531
+      ],
+      "frac_carriers_positive": 0.4375,
+      "n": 96
+     },
+     "h_pool_loo_minus_none": {
+      "mean": 0.12433433100435946,
+      "ci95": [
+       0.10638233839518016,
+       0.14238520789661546
+      ],
+      "frac_carriers_positive": 0.96875,
+      "n": 96
+     },
+     "h_disk_loo_minus_none": {
+      "mean": 0.46339848046150345,
+      "ci95": [
+       0.4266151910339721,
+       0.5003305891058473
+      ],
+      "frac_carriers_positive": 1.0,
+      "n": 96
+     },
+     "a_pool_loo_minus_none": {
+      "mean": 0.054392636638393214,
+      "ci95": [
+       0.04007802519000528,
+       0.06919193757294304
+      ],
+      "frac_carriers_positive": 0.78125,
+      "n": 96
+     },
+     "b_disk_loo_minus_none": {
+      "mean": 0.4524250723416389,
+      "ci95": [
+       0.41315910571089987,
+       0.49108616497477714
+      ],
+      "frac_carriers_positive": 1.0,
+      "n": 96
+     }
+    },
+    "ratio_heading_over_bounce_edit_effect": {
+     "pool": {
+      "ratio": 2.2858669608341375,
+      "ci95": [
+       1.8625631070234823,
+       3.0289002769494386
+      ]
+     },
+     "disk": {
+      "ratio": 1.0242546419080378,
+      "ci95": [
+       0.9810407969612442,
+       1.0758825855326022
+      ]
+     }
+    }
+   }
+  }
+ },
+ "config": {
+  "points": [
+   22,
+   12
+  ],
+  "conditions": [
+   "none",
+   "a_pool_loo",
+   "b_disk_loo",
+   "h_pool_loo",
+   "h_disk_loo",
+   "h_pool_loo_nat",
+   "h_disk_loo_nat"
+  ],
+  "forward": {
+   "norms": {
+    "22": {
+     "none": 0.0,
+     "a_pool_loo": 14.346990568884488,
+     "b_disk_loo": 46.255272415862684,
+     "h_pool_loo": 14.346990744272867,
+     "h_disk_loo": 46.25527276663944,
+     "h_pool_loo_nat": 10.914212177539694,
+     "h_disk_loo_nat": 47.039281735475036
+    },
+    "12": {
+     "none": 0.0,
+     "a_pool_loo": 13.64626055202265,
+     "b_disk_loo": 32.97101795810393,
+     "h_pool_loo": 13.646260541060876,
+     "h_disk_loo": 32.971017837524414,
+     "h_pool_loo_nat": 11.202444668473868,
+     "h_disk_loo_nat": 33.65610392340298
+    }
+   },
+   "cos_heading_vs_bounce_P22": {
+    "pool": 0.6033452153205872,
+    "disk": 0.81210857629776
+   },
+   "token_norm_mean_P22": 190.2644500732422,
+   "cos_heading_vs_bounce_P12": {
+    "pool": 0.6277313828468323,
+    "disk": 0.8706275820732117
+   },
+   "token_norm_mean_P12": 223.1271209716797,
+   "seconds_gpu_total": 65.51164078712463,
+   "lock_wait_s": 9.059906005859375e-06,
+   "gpu": "NVIDIA GeForce RTX 4060 Ti",
+   "torch": "2.2.2",
+   "smoke": false,
+   "n_carriers": 96,
+   "precision": "context encode to P, suffix and predictor bf16 autocast, fp32 residual/edits"
+  }
+ },
+ "provenance": {
+  "split_file": "/Users/stevenyang/Documents/world_mechanics_takehome/splits/split_v1.json",
+  "split_sha256": "98e6310c40bf29e81bd8b6bf4b1ac603b89e4104d40ac1047b15dd5dc2be2df2",
+  "seeds": {
+   "bootstrap": 0,
+   "random": "none (no random arms)"
+  },
+  "commit": "af17ffc31fb3f9fcb29979543c51615bc0960f4a",
+  "dirty": true,
+  "git_commit": "af17ffc31fb3f9fcb29979543c51615bc0960f4a",
+  "git_dirty_src_or_scripts": true,
+  "timestamp_utc": "2026-09-28T23:44:20+00:00",
+  "activation_sha256": {
+   "forward_npz": "da75cb2a5724689e107302ba68ce68d6181f3a897469f7beef0db01aaa77aab4",
+   "forward_info_json": "8d4c60cb95361488982caccf33cb8144537381fb673e01dbc6406b3ff1b23454",
+   "plan_npz": "c95eaea15c9a01476c5af201f4522fef93f9bb7351cbc76a9fb5ffa87d110c37",
+   "donors_json": "c56b4e7fa2e70bd170b3dd367eaedfbcba29be0c900424075a37224d82cf4a96",
+   "frames_npz": "4c6fbd34be838b161707102e9f996c348b4da6004699a9a320dcbc9255234aa7",
+   "configs_json": "4fb192fe73f3ccbb6163904d676a341098004180da8d83a5562b076fdd4a4373",
+   "in_context_forward_npz": "c3aff09b048491cdd37dddf71c7c6ae34a53b7ad2bcb95add14e115c6e5b107c",
+   "stored_contact_steer_forward_npz": "c28abcce05139767d736e42f3ccadbe50dfb3d0cfd703ed9d5af9a3c914519aa",
+   "stored_p5_contact_steer_json": "b308ae25d6c52234962b11fd106170f12d3f732afda08ef20476420faa4a73aa"
+  },
+  "script": "scripts/run_contact_steer_heading_control.py",
+  "script_sha256": "e577ddc7ccedcaba46ad52e1d5aeecdf8e813f86d03fc2027c85da3b4c510d4b",
+  "forward_script_sha256": "e577ddc7ccedcaba46ad52e1d5aeecdf8e813f86d03fc2027c85da3b4c510d4b",
+  "box": "Vast 53255819 (box 4, RTX 4060 Ti)",
+  "gpu_seconds": {
+   "this_forward": 65.51164078712463,
+   "smoke": 33.22675848007202
+  },
+  "n_carriers": 96
+ }
+}
