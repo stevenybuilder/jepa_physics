@@ -23,7 +23,7 @@ the minimum readout radius is higher for the spline on every arc (point 22 on th
 point 1, and the per-position curve rises most between points 4 and 6 on every seed (§3.1). (2) Whether speed needs
 fewer probes than direction is set by the stop rule, not the network: on the same clips speed needs fewer under C.11's
 thresholds (7 of 8 cells) and more under the Fig. 22 caption's (8 of 8), and across the two supplied sets the counts
-are equal; neither the ridge curves nor the paper's literal Adam recipe give a direction-specific sawtooth. **One addition to its steering result.** An edit along one probe's axis
+are equal at point 9 and the peaks (speed fewer only at point 8 under the paper protocol, 45 vs 83); neither the ridge curves nor the paper's literal Adam recipe give a direction-specific sawtooth. **One addition to its steering result.** An edit along one probe's axis
 fails, as §7.2 says (78°); an edit built from that probe but weighted by the activation covariance, which leaves the
 probe's plane, reaches 3.2°, and so does the same construction on a random 2-D subspace (median 4.2°, p = 0.24), so what
 the learned probe buys is specificity, not target error.
@@ -333,8 +333,8 @@ and `p1b_*_random_L{pt}.json`.
   point 22, removing 194 leaves it at 0.990. "Tens of probes" is therefore a real count, far outside the band.
 - **Direction vs speed.** The two counts come from different clip sets (the supplied direction set: 64 θ, half
   accelerating, starts in [−2, 2]², speeds to 7; the speed set: 64 θ, constant velocity, starts in [−1.2, 1.2]²,
-  0.25–4 m/s), where the paper reads both variables off one velocity set; on the same clips (the direction set's 750 constant-velocity clips, 596 train) direction vs speed K is 28 vs 22, 17 vs 26 and 59 vs 46 at points 8 / 9 / 22 (nested) and 36 vs 34, 36 vs 28 and 75 vs 45 (paper protocol), 54 vs 43 and 63 vs 48 at speed's peak 19, so under the C.11 rule speed needs fewer dimensions (2K vs K) in all 8 cells and fewer probes in 7 of 8 (nested point 9 is the exception, 17 vs 26), while under Fig. 22's thresholds it needs more probes in all 8 cells (direction 11–35, speed 23–52) and fewer dimensions in 6 of 8 (nested point 9: 22 vs 29; nested point 22: 52 vs 52)[^sameclip]. Across the two supplied sets (the table above) the probe counts are equal (37 vs 39 at point 9, 88 vs 89 at the peaks) and speed needs fewer
-  *dimensions* only because its probes are 1-output. So the paper's second claim reproduces in probe count on the same clips under its method-text thresholds, reverses under its figure's, and is a tie across the supplied sets: the count is set by the stop rule. The cross-set numbers that follow are kept for the coordinate and stop-rule comparisons.
+  0.25–4 m/s), where the paper reads both variables off one velocity set; on the same clips (the direction set's 750 constant-velocity clips, 596 train) direction vs speed K is 28 vs 22, 17 vs 26 and 59 vs 46 at points 8 / 9 / 22 (nested) and 36 vs 34, 36 vs 28 and 75 vs 45 (paper protocol), 54 vs 43 and 63 vs 48 at speed's peak 19, so under the C.11 rule speed needs fewer dimensions (2K vs K) in all 8 cells and fewer probes in 7 of 8 (nested point 9 is the exception, 17 vs 26), while under Fig. 22's thresholds it needs more probes in all 8 cells (direction 11–35, speed 23–52; the four paper-protocol speed values are floors, since the MAE rule stops the sequence at R² 0.12–0.18, before 0.1) and, nested, fewer dimensions at points 8 and 19 but not at 9 (22 vs 29) or 22 (52 vs 52); under the paper protocol the dimension comparison is undetermined for the same reason. Under the paper protocol speed's C.11 count also stops on the MAE rule, at R² 0.12–0.18, so 4 of the 7 "fewer" cells are taken at a looser point than direction's[^sameclip]. Across the two supplied sets (the table above) the probe counts are equal (37 vs 39 at point 9, 88 vs 89 at the peaks) and speed needs fewer
+  *dimensions* only because its probes are 1-output. So the paper's second claim reproduces in probe count on the same clips under its method-text thresholds, reverses under its figure's, and across the supplied sets is a tie at point 9 and the peaks with speed fewer only at point 8 under the paper protocol: the count is set by the stop rule. The cross-set numbers that follow are kept for the coordinate and stop-rule comparisons.
   Early layers hold each variable in hundreds of weak redundant directions (onset rows), which fits the
   random-feature picture from step 1. The counts depend on the coordinates: C.11 states no normalisation, and in raw
   centred coordinates (α re-chosen) nested K is 1.4–1.6× larger. Direction vs speed is then 51 vs 55 at point 9 and 65
@@ -400,7 +400,7 @@ intrinsic rank; beyond that code lies a nonlinear residual that grows toward the
 **Verdict.** The "tens of dimensions" claim reproduces at the paper's layer against a random band. The claim that
 speed needs fewer probes is a stop-rule call under ridge: on the same clips speed needs fewer probes under C.11's
 thresholds in 7 of 8 cells and more under the Fig. 22 caption's in all 8; across the two supplied sets the probe
-counts are equal, and in dimensions (2K for direction,
+counts are equal at point 9 and the peaks (speed fewer only at point 8 under the paper protocol), and in dimensions (2K for direction,
 K for speed, C.11's unit) speed needs fewer under C.11's thresholds in every cell but not under the Fig. 22 caption's
 (nested 42 vs 60 at point 8, 46 vs 47 at point 9, 74 vs 102 at the peaks; paper protocol 84 vs 57, 50 vs 50, 78 vs
 118). Direction's sawtooth does not appear under ridge. Under Adam both curves are
