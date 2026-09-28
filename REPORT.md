@@ -24,7 +24,7 @@ points 8→9 (§3.1). VideoMAE (pixel reconstruction) matches V-JEPA 2 on the po
 **Step 2 reproduces in part.** Every variable needs tens of probes at the paper's layer, far outside a random-removal
 band. Measured four ways, that count reflects anisotropy: a whitened erasure needs one probe at every point; the code
 is rank-2 linear plus a second harmonic and a nonlinear residual (§3.2). Speed does not need fewer probes than
-direction (in raw coordinates too, at point 9), and the ridge curves have no sawtooth. Under the paper's literal Adam
+direction (in raw coordinates and under one common R² stop too, except the paper protocol at point 8), and the ridge curves have no sawtooth. Under the paper's literal Adam
 recipe both variables' curves are jagged and K roughly doubles, with no direction-specific sawtooth. **Step 3
 reproduces in shape** (one probe fails, a few probes reach the target, MAE-to-true rises), with 3–5 probes to 10°
 where the paper needs about 20. How it compares with a random orthonormal basis of fixed rank 2K depends on the
@@ -296,10 +296,11 @@ and `p1b_*_random_L{pt}.json`.
   V-JEPA point under both protocols, while direction runs on to R² just under 0.1 (0.094 at the lowest). The scalar counts are therefore taken
   at a looser point than direction's. The same asymmetry means the speed and acceleration counts at Fig. 22's R² < 0.1
   (`K_loose`) are floors at every V-JEPA point except nested acceleration at onset, not only for VideoMAE as I
-  wrote earlier (footnote [^fig22]). Rerun with one R² rule for all variables[^stop], speed still does not need fewer
-  probes: at R² < 0.1, direction vs speed is 37 vs 47 (nested) and 46 vs 50 (paper protocol) at point 9, and 40 vs 60
-  and 83 vs 57 at point 8; at R² < 0.05, 45 vs 55 and 58 vs 59 at point 9. Acceleration also needs more than
-  direction at point 9 (48 nested, 57 paper at R² < 0.1).
+  wrote earlier (footnote [^fig22]). Rerun with one R² rule for all variables[^stop], which variable needs more probes
+  depends on the rule and the protocol. Nested, the scalars need more: direction / speed / acceleration 37 / 47 / 48 at
+  point 9 and 40 / 60 / 61 at point 8 at R² < 0.1, and 45 / 55 / 62 and 52 / 83 / 76 at R² < 0.05. Under the paper
+  protocol direction and speed are about equal at point 9 (46 vs 50; 58 vs 59), and at point 8 direction needs more
+  (83 vs 57; 113 vs 74), the one cell where speed needs fewer. The paper's claim holds only in that cell.
 - **One column per round.** C.11 says "project out the learned direction", while each direction probe has two output
   columns. Removing one column per round (alternating sin/cos, or the top singular vector) takes 72–73 rounds nested
   and 84–92 under the paper protocol at point 9, about twice the stored 37 / 46, so the removed dimension count is
