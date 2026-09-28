@@ -37,7 +37,7 @@ and layer; N = 3 under the near-unregularised probes); at N = 1 it separates fro
 network, and at the onset layer the learned basis never beats the rank-2K random basis for N ≤ 20. Rerunning Parts 1
 and 2 at the paper's literal 70/30 split changes no qualitative verdict. **Part 2.** Direction lies on a ring.
 My centroid-plane angle recovers it without labels at point 12 but not at point 22; Goodfire's own label-free angle
-fails its periodicity test at point 12 and passes at 22, where it sits up to 38–97° from θ; its sequential tasks use
+fails its periodicity test at points 8 and 12 and passes at 22, where it sits up to 38–97° from θ; its sequential tasks use
 the ordinal index, as A.3 says, and only its 70B cyclic configs take the coordinate from the labels[^src].
 The ring is an ellipse, not a circle: axis ratio 0.68–0.89 in its own plane from point 8 on (0.74 / 0.87 / 0.74 at
 points 8 / 12 / 22), bent out of that plane by a cos 2θ saddle that holds 20–34% of the centroid variance. Held-out
@@ -109,7 +109,7 @@ test does not recover the ring. This is a probe of the forecast on one stimulus 
 | Part 2: spline | interpolating, through the centroids exactly (A.3); √count-weighted smoothing spline for the world model (B.1) | smoothing spline with weight √count / sd_c per knot and coordinate and s = number of knots (both my choices; B.1 gives no smoothing value); interpolating run beside it | interpolating rebuilds held-out centroids worse and its edit is 1.4–1.6× the chord's (§4.1) |
 | Part 2: direction coordinate | unsupervised atan2(PC2, PC1) (A.3; the weekdays/months 8B configs inherit `intrinsic_mode: pca`); ordinal index for the sequential tasks (A.3; alphabet/age configs `parameter`); the labels only in the 70B cyclic configs | our centroid-plane atan2 at point 12; labels at points 2, 8 and 22 | label-free only at point 12, and only through our fallback (§4.1) |
 | Part 2: manifold arm | replace the PCA-64 part with the curve point (A.6) | additive, x + γ(t) − γ(t_src), residual kept | theirs run as a labelled arm (§4.4) |
-| Part 2: base pair of arms | manifold vs whole-activation chord replacement (A.6) | spline vs chord in the same PCA-64 subspace (matched support) | their linear arm erases the residual; run separately and labelled (§4.4) |
+| Part 2: base pair of arms | manifold vs whole-activation chord replacement (A.6) | spline vs chord in the same PCA-64 subspace (matched support; causalab ships this as its non-default `linear_subspace` path mode) | their default linear arm erases the residual; run separately and labelled (§4.4) |
 | Part 2: waypoints | K = 50 (A.6; the weekdays/months 8B default); alphabet/age 8B configs 150/250 (alphabet_8b_n3 50), 70B configs 100–150, grid/cylinder 20 | K = 50 | E_BC sums over waypoints, so only within-run energy ratios compare |
 | Part 2: Eq. 10 temperature | τ = 0.5 on a LayerNorm'd 64-d latent (B.1) | τ = 0.5 in raw PCA-64 units | absolute energies not comparable; τ 0.25–2 keeps the point-12 ordering (`tau_sensitivity` in `p2_steer_direction_direction_L12_contiguous.json`) |
 | Part 2: behaviour manifold | smoothing spline through 128 bin centroids (B.1) | interpolating spline through the 64 per-value centroids in the Hellinger tangent plane (A.4), F over 128 bins | circular at the steered layer either way (§4.2) |
@@ -753,10 +753,15 @@ point-22 endpoint on 1 of 16 arcs (+3.7°) and on the headline arc (+3.80°), an
   against 0.858 / 0.890 / 0.831[^isol]. On Goodfire's own cyclic coordinate (the √variance-scaled atan2 its 8B weekdays
   and months runs use; its periodicity test fails at points 8 and 12 and passes at 22 by 0.005; circular correlation
   with θ −0.40 / 0.65 / 0.91) the chord leads at every point: interpolating 0.50 / 0.32 / 0.66 against 0.73 / 0.87 /
-  0.75, smoothing 0.50 / 0.50 / 0.74 against 0.69 / 0.87 / 0.76[^isog]. So the isometry verdict is set by the knot
-  coordinate, not by the curve: an ordering that follows θ makes the spline near-isometric to the forecast geodesics,
-  and every ordering a label-free method gives us (our knot order, Goodfire's own angle) puts the chord ahead, at
-  point 22 in particular. The point-22 reversal is therefore not withdrawn; it disappears only with the labels.
+  0.75, smoothing 0.50 / 0.50 / 0.74 against 0.69 / 0.87 / 0.76[^isog]; at points 8 and 12 that run keeps the atan2 angle
+  where causalab would fall back to PC1 with a natural spline, and it leaves the behaviour side on the labels where
+  causalab applies the same label-free rule (a fully faithful rerun with bootstrap CIs is in progress). So the isometry
+  verdict is set by the knot coordinate, not by the curve. Only the labels ordering makes the spline near-isometric at
+  every point. Our label-free knot order favours the spline at points 8 and 12 and, at point 22, gives the chord a lead
+  on the interpolating spline (0.67 vs 0.75) and a tie on the smoothing one (0.758 vs 0.752); Goodfire's own angle
+  puts the chord ahead everywhere. At point 22 the reversal therefore stands under every label-free ordering tried
+  so far and disappears only with the labels; none of these files carries a confidence interval, and the stored
+  point-22 intervals (`p2_isometry_linear.json`) overlap, so the point-22 call is a lead-or-tie, not a settled gap.
 
 ### 4.5 Beyond the steered layer (GPU session 2)
 
