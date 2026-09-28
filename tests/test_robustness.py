@@ -47,3 +47,22 @@ def test_run_rounds_matches_single_ridge_and_oof_helper():
     assert np.isclose(rows[0]["r2"], score(Y[150:], X[150:] @ W + b, "scalar")["r2"]) and rows[1]["r2"] < rows[0]["r2"]
     _, _, rep = in_sample_and_oof(lambda A, B: fit_ridge(A, B, 1.0), X, Y, np.arange(200) % 5, "scalar")
     assert rep["in_sample"]["r2"] >= rep["out_of_fold"]["r2_fold_mean"] > 0.9
+
+
+def test_k_below_first_crossing_or_censored():
+    from wm.robustness import k_below
+    assert k_below([0.5, 0.2, 0.08, 0.04], 0.1) == 2 and k_below([0.5, 0.2, 0.08, 0.04], 0.05) == 3
+    assert k_below([0.5, 0.2], 0.05) is None and k_below([0.01], 0.05) == 0
+
+
+def test_lockstep_until_stops_on_mean_r2_and_matches_run_rounds():
+    from wm.inlp import probe_sequence
+    from wm.robustness import lockstep_until
+    rng = np.random.default_rng(0)
+    X = rng.standard_normal((200, 10))
+    Y = X[:, :3] @ np.ones((3, 1)) + 0.1 * rng.standard_normal((200, 1))
+    fn = lambda a, b: score(a, b, "scalar")  # noqa: E731
+    rows = lockstep_until([probe_sequence(X[:150], Y[:150], ridge_fit(1.0), fn, X[150:], Y[150:])], 0.05, 10)
+    ref = run_rounds(X[:150], Y[:150], ridge_fit(1.0), fn, X[150:], Y[150:], len(rows))
+    assert np.allclose([r["r2"] for r in rows], [r["r2"] for r in ref])
+    assert rows[-1]["r2"] < 0.05 and all(r["r2"] >= 0.05 for r in rows[:-1])

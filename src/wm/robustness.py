@@ -83,3 +83,24 @@ def in_sample_and_oof(fit, X, Y, folds, kind):
                   "out_of_fold": {"r2_fold_mean": float(np.mean([s["r2"] for s in fs])),
                                   "r2_fold_sd": float(np.std([s["r2"] for s in fs], ddof=1)),
                                   "mae_fold_mean": float(np.mean([s["mae"] for s in fs]))}}
+
+
+def k_below(values, thr):
+    """Probes kept before the first round whose R² falls below thr (first such round − 1, rounds 1-based); None if
+    the curve never falls below thr (censored)."""
+    return next((k for k, v in enumerate(values) if v < thr), None)
+
+
+def lockstep_until(seqs, thr, max_rounds):
+    """Advance wm.inlp.probe_sequence generators (one per fold, or one for the paper protocol) in lockstep until the
+    mean R² over them falls below thr (that round included) or max_rounds. Per round: mean r2, mae, base_mae (and
+    acc15 when scored) over the generators, plus each generator's r2."""
+    rows = []
+    for k in range(1, max_rounds + 1):
+        sc = [next(g)[0] for g in seqs]
+        row = {"round": k, **{key: float(np.mean([s[key] for s in sc])) for key in ("r2", "mae", "base_mae", "acc15")
+                              if key in sc[0]}, "each_r2": [float(s["r2"]) for s in sc]}
+        rows.append(row)
+        if row["r2"] < thr:
+            break
+    return rows

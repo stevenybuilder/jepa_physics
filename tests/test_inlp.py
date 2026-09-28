@@ -220,3 +220,19 @@ def test_K_loose_censored_when_mae_rule_stops_first():
     assert s["K_loose"] == 1 and s["K_loose_censored"]
     s = protocol_summary([{"round": 1, "cv_r2": 0.6}, {"round": 2, "cv_r2": 0.04}], 1, "cv", "scalar", 1)
     assert s["K_loose"] == 1 and not s["K_loose_censored"]
+
+
+def test_one_column_removes_one_direction_per_round():
+    from wm.inlp import one_column, probe_sequence, ridge_fit
+    rng = np.random.default_rng(0)
+    X = rng.standard_normal((120, 12))
+    th = rng.uniform(0, 2 * np.pi, 120)
+    Y = np.stack([np.sin(th), np.cos(th)], 1)
+    W = rng.standard_normal((12, 2))
+    assert np.allclose(one_column("alternate")(W, 1), W[:, [0]]) and np.allclose(one_column("alternate")(W, 2), W[:, [1]])
+    u = one_column("top_sv")(W, 1)
+    assert u.shape == (12, 1) and np.isclose(np.linalg.norm(W.T @ u), np.linalg.svd(W, compute_uv=False)[0])
+    for mode in ("alternate", "top_sv"):
+        seq = probe_sequence(X, Y, ridge_fit(1.0), select=one_column(mode))
+        assert [next(seq)[3] for _ in range(4)] == [0, 1, 2, 3]
+    assert [next(probe_sequence(X, Y, ridge_fit(1.0)))[3]] == [0]

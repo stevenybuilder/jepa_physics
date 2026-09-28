@@ -44,18 +44,21 @@ def at_chance(s, kind):
     return s["r2"] < 0.05 or s["mae"] > 0.9 * s["base_mae"]
 
 
-def probe_sequence(Xfit, Yfit, fit, score_fn=None, Xeval=None, Yeval=None):
+def probe_sequence(Xfit, Yfit, fit, score_fn=None, Xeval=None, Yeval=None, select=None):
     """Generator over rounds k = 1, 2, … of a sequence fit on (Xfit, Yfit) only.
 
     Yields (score, W, b, dims_removed, X⁽ᵏ⁾_fit): the round-k probe fit(X⁽ᵏ⁾, Y) (W with any numerical component along
     earlier directions removed), its score on (Xeval, Yeval) through the same accumulated projection (None without
-    an eval set; base_mae = MAE of predicting the fit-set mean), then removes span(W) from both sets."""
+    an eval set; base_mae = MAE of predicting the fit-set mean), then removes span(W) from both sets, or
+    span(select(W, k)) when select is given (e.g. one_column: one column per round)."""
     Yfit = np.asarray(Yfit, float).reshape(len(Yfit), -1)
     Xf = np.array(Xfit, float)
     Xe = None if Xeval is None else np.array(Xeval, float)
     Ye = None if Yeval is None else np.asarray(Yeval, float).reshape(len(Yeval), -1)
     Q = np.zeros((Xf.shape[1], 0))
+    k = 0
     while True:
+        k += 1
         W, b = fit(Xf, Yfit)
         W = W - Q @ (Q.T @ W)
         s = None
@@ -63,7 +66,7 @@ def probe_sequence(Xfit, Yfit, fit, score_fn=None, Xeval=None, Yeval=None):
             s = score_fn(Ye, predict(Xe, W, b))
             s["base_mae"] = float(np.mean(np.abs(Ye - Yfit.mean(axis=0))))
         yield s, W, b, Q.shape[1], Xf
-        Qk = np.linalg.qr(W)[0]
+        Qk = np.linalg.qr(W if select is None else select(W, k))[0]
         Qk = Qk - Q @ (Q.T @ Qk)
         Qk = np.linalg.qr(Qk)[0]
         Xf = project_out(Xf, Qk)
@@ -74,6 +77,18 @@ def probe_sequence(Xfit, Yfit, fit, score_fn=None, Xeval=None, Yeval=None):
 
 def ridge_fit(alpha):
     return lambda X, Y: fit_ridge(X, Y, alpha)
+
+
+def one_column(mode):
+    """select for probe_sequence: remove one direction per round instead of span(W_k) (C.11 l.1197 "project out the
+    learned direction" read as one column). 'alternate': column (k − 1) mod m of W_k (direction: the sin readout on
+    odd rounds, cos on even); 'top_sv': the top left-singular vector of W_k (its largest-gain input direction). For a
+    1-output probe both equal span(W_k), i.e. the stored sequence."""
+    if mode == "alternate":
+        return lambda W, k: W[:, [(k - 1) % W.shape[1]]]
+    if mode == "top_sv":
+        return lambda W, k: np.linalg.svd(W, full_matrices=False)[0][:, :1]
+    raise ValueError(mode)
 
 
 def protocol_summary(rows, K, prefix, kind, m):
@@ -98,7 +113,8 @@ def protocol_summary(rows, K, prefix, kind, m):
     return out
 
 
-def nested_curve(Xtr, Ytr, folds, alpha, score_fn, kind, max_rounds=None, Yfit=None, alpha_per_fold=True):
+def nested_curve(Xtr, Ytr, folds, alpha, score_fn, kind, max_rounds=None, Yfit=None, alpha_per_fold=True,
+                 select=None):
     """Protocol (a), nested. For each fold the sequence is fit on the other folds only and every round is scored on
     the held-out fold; the folds advance in lockstep until the fold-mean curve and every fold are at chance (or the
     cap). Yfit (default Ytr) holds the labels the removals are fit on and Ytr the labels scored; they differ only in
@@ -113,14 +129,15 @@ def nested_curve(Xtr, Ytr, folds, alpha, score_fn, kind, max_rounds=None, Yfit=N
     alphas = [cv_select_alpha(Xtr[folds != k], Yfit[folds != k], folds[folds != k], ALPHAS, score_fn)["alpha"]
               if alpha_per_fold else float(alpha) for k in ks]
     seqs = [probe_sequence(Xtr[folds != k], Yfit[folds != k], ridge_fit(a), score_fn,
-                           Xtr[folds == k], Ytr[folds == k]) for k, a in zip(ks, alphas)]
+                           Xtr[folds == k], Ytr[folds == k], select) for k, a in zip(ks, alphas)]
     rows, fold_K, K = [], [None] * len(ks), None
     for k in range(1, max_rounds + 1):
-        sc = [next(g)[0] for g in seqs]
+        steps = [next(g) for g in seqs]
+        sc = [st[0] for st in steps]
         for f, s in enumerate(sc):
             if fold_K[f] is None and at_chance(s, kind):
                 fold_K[f] = k - 1
-        row = {"round": k, "dims_removed": (k - 1) * m}
+        row = {"round": k, "dims_removed": steps[0][3]}
         for key in ("r2", "mae", "acc15"):
             if key in sc[0]:
                 vals = [s[key] for s in sc]
@@ -141,13 +158,14 @@ def nested_curve(Xtr, Ytr, folds, alpha, score_fn, kind, max_rounds=None, Yfit=N
     return out
 
 
-def paper_curve_and_basis(Xtr, Ytr, Xte, Yte, alpha, score_fn, kind, n_basis, max_rounds, score_test=True):
+def paper_curve_and_basis(Xtr, Ytr, Xte, Yte, alpha, score_fn, kind, n_basis, max_rounds, score_test=True,
+                          select=None):
     """Protocol (b), paper: the all-train sequence, each round scored on test until test is at chance (when
     score_test), run for at least n_basis rounds. Returns (summary or None, W list, b list) with the first n_basis
     probes (the basis for step 3)."""
     Ytr = np.asarray(Ytr, float).reshape(len(Ytr), -1)
     m = Ytr.shape[1]
-    seq = probe_sequence(Xtr, Ytr, ridge_fit(alpha), score_fn, Xte if score_test else None, Yte)
+    seq = probe_sequence(Xtr, Ytr, ridge_fit(alpha), score_fn, Xte if score_test else None, Yte, select)
     rows, Ws, bs, K, k = [], [], [], None, 0
     while k < max_rounds and (len(Ws) < n_basis or (score_test and K is None)):
         k += 1
@@ -408,7 +426,7 @@ ADAM_C11 = {"lr": 1e-3, "weight_decay": 1e-4, "epochs": {"circular": 100, "scala
 
 
 def adam_sequence(Xtr, Ytr, Xte, Yte, score_fn, kind, max_rounds=None, batch=None, seed=0, patience=3,
-                  fail_move=0.25, decoupled=False):
+                  fail_move=0.25, decoupled=False, select=None):
     """The probe sequence with the paper's C.11 Adam probe at every round, paper protocol (fit on all train, score
     on test). Adam is coupled L2 (torch.optim.Adam weight_decay) unless decoupled; batch=None is full batch; round k
     uses init seed seed + k − 1 (torch.nn.Linear init). Targets are standardised on the train rows for training
@@ -436,7 +454,7 @@ def adam_sequence(Xtr, Ytr, Xte, Yte, score_fn, kind, max_rounds=None, batch=Non
         return fit_adam(X, Y, lr, wd, epochs, batch, seed + state["k"] - 1, decoupled)
 
     stop_r2 = 0.1 if kind == "circular" else 0.05
-    seq = probe_sequence(Xtr, Ytr, fit, score_fn, Xte, Yte)
+    seq = probe_sequence(Xtr, Ytr, fit, score_fn, Xte, Yte, select)
     rows, Ws, K_first, run_start, move1 = [], [], None, None, None
     for k in range(1, max_rounds + 1):
         s, W, b, dims, Xk = next(seq)
