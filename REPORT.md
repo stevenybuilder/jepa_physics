@@ -799,14 +799,19 @@ point-22 endpoint on 1 of 16 arcs (+3.7°) and on the headline arc (+3.80°), an
   with θ −0.40 / 0.65 / 0.91) the chord leads at every point: interpolating 0.50 / 0.32 / 0.66 against 0.73 / 0.87 /
   0.75, smoothing 0.50 / 0.50 / 0.74 against 0.69 / 0.87 / 0.76[^isog]; at points 8 and 12 that run keeps the atan2 angle
   where causalab would fall back to PC1 with a natural spline, and it leaves the behaviour side on the labels where
-  causalab applies the same label-free rule (a fully faithful rerun with bootstrap CIs is in progress). So the isometry
-  verdict is set by the knot coordinate, not by the curve. Only the labels ordering makes the spline near-isometric at
-  every point. Our label-free knot order favours the spline at points 8 and 12 and, at point 22, gives the chord a lead
-  on the interpolating spline (0.67 vs 0.75) and a tie on the smoothing one (0.758 vs 0.752); Goodfire's own angle
-  puts the chord ahead everywhere. At point 22 the reversal therefore stands under every label-free ordering tried
-  so far and disappears only with the labels; none of these files carries a confidence interval, and the stored intervals (`p2_isometry_linear.json`, clips
-  resampled within each value) are biased low for the chord (20 of 48 exclude their own point estimate), so the
-  point-22 call is a lead-or-tie until the bias-corrected paired intervals now being computed land.
+  causalab applies the same label-free rule. Run causalab's way on both sides (PC1 fallback at points 8 and 12, its
+  angle at 22; the behaviour side on its own √variance atan2, which passes its test but correlates with θ at only 0.39,
+  so it caps every r near 0.3), the figures are interpolating 0.27 / -0.01 / 0.32 against chord 0.32 / 0.34 / 0.26 and
+  smoothing 0.24 / 0.03 / 0.32 against 0.29 / 0.34 / 0.26[^isof]. With paired 200-draw bootstraps on geo − lin (the
+  stored intervals in `p2_isometry_linear.json`, clips resampled within each value, are biased low for the chord: 20
+  of 48 exclude their own point estimate; so three interval types are reported, percentile, recentred and basic), the
+  calls are: labels, spline at every point under every interval; our label-free knot order, tie at every point (spline
+  at 8 and 12 under the basic interval only); Goodfire's angle, chord at 12 under every interval, chord-or-tie at 8,
+  tie at 22; the fully faithful run, chord at 12, tie at 8, and at 22 tie under two intervals and spline under the
+  basic one. So the isometry verdict is set by the knot coordinate, not by the curve: only the labels ordering makes
+  the spline near-isometric, and under every label-free ordering the point-22 test is a tie, with the sign of any
+  lead depending on the interval method. The point-22 reversal is neither confirmed nor withdrawn; it is undecidable
+  without labels.
 
 ### 4.5 Beyond the steered layer (GPU session 2)
 
@@ -1096,6 +1101,7 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
 [^ext]: `results/p2_extrapolation_linear_ext.json` (`runs.*.{smoothing_linear_ext,interp_linear_ext_goodfire_code,stored_smoothing_cubic_ext}`), `results/p2_linear_ext/`, `results/p2_linear_ext_interp/`.
 [^iso]: `results/p2_isometry_goodfire_method.json` (`layers.{8,12,22}.new.{interp,smooth}.{geo,lin}_pearson`).
 [^isog]: `results/p2_isometry_goodfire_coord.json` (`layers.{8,12,22}.goodfire_angle.{interp,smooth}.{geo,lin}_pearson`, `goodfire_periodicity_test`, `angle_vs_labels`, `geo_below_chord_goodfire_angle`; 213 tests at ee828a7).
+[^isof]: `results/p2_isometry_goodfire_full.json` (`layers.{8,12,22}.{goodfire_full_angle,goodfire_angle,labels_angle,unsupervised_angle}.{interp,smooth}.{geo,lin}_pearson`, `layers.*.bootstrap.variants.*` with percentile / shifted / basic intervals, bias and calls, `geo_minus_lin_calls`, `branches`, `circular_corr_with_labels`); 8ca50cf, ce42042.
 [^isol]: `results/p2_isometry_goodfire_labels.json` (`layers.{8,12,22}.labels_angle.{interp,smooth}.{geo,lin}_pearson`; `unsupervised_angle` rows reproduce the label-free figures; `geo_below_chord_labels_angle` false at every point).
 [^pp]: `results/p1a_perpatch_direction_{vjepa2,vjepa2_constvel,random,vjepa2_hard,vjepa2_paper_layout}.json` (`curves.{perpos_mean_r2,pooled_mean_r2,pooled_frac_ge_0.5,cross_half_r2,meanpool_r2}`, `onsets.*`, `layers[].halves` for the cross-half MAE, `methods`, `provenance.time_averaging`); `figures/fig1g_perpatch_direction.png`, `fig1h_perpatch_heatmaps.png`; rendered-set layout (7 shared starts) in `results/session2_stimuli_validation.json` (`layout.start_rule`) and `scripts/render_hard_stimuli.py`.
 [^hfolds]: `results/p1a_perpatch_hard_folds.json` (`sets.hard` for the stratified folds and `folds_start_grouped.hard` for start-grouped, each with per-point fold means ± SD and `summary.*.onset_per_fold`; `sets.paper_layout` alongside), cc41a6c.
