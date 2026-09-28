@@ -40,6 +40,7 @@ POINTS_STIM = [1, 4, 6, 7, 8, 9, 10, 12, 16, 22]
 HEATMAP_POINTS = [4, 7, 8, 9, 12, 22]
 GRID, NPOS, WIDTH, NSTEP = 16, 256, 1024, 8
 SETS = {"direction": (None, "splits/split_v1.json"),
+        "speed": (None, "splits/split_v1.json"), "acceleration": (None, "splits/split_v1.json"),   # extract only (Job B)
         "paper_layout": ("artifacts/stimuli/paper_layout", "splits/split_paper_layout.json"),
         "hard": ("artifacts/stimuli/hard", "splits/split_hard.json"),
         **{f"hard_seed{k}": (f"artifacts/stimuli/hard_seed{k}", f"splits/split_hard_seed{k}.json") for k in (1, 2)}}
@@ -49,9 +50,18 @@ FIGURES = PROJECT_ROOT / "figures"
 N_BOOT = 200
 
 
+def set_grid(model):
+    """Spatial grid of the model's tokens: 16 x 16 (V-JEPA 2 / random-init, 256 px) or 14 x 14 (VideoMAE, 224 px).
+    Sets the module globals GRID / NPOS used by extract, probe and the half-frame split (left = columns < GRID // 2)."""
+    global GRID, NPOS
+    GRID = 14 if model == "videomae" else 16
+    NPOS = GRID * GRID
+
+
 def table(name):
     root = SETS[name][0]
-    return load_table("direction", root=None if root is None else PROJECT_ROOT / root)
+    return load_table(name if name in ("speed", "acceleration") else "direction",
+                      root=None if root is None else PROJECT_ROOT / root)
 
 
 def result_path(name, model, subset=None):
@@ -65,6 +75,10 @@ def extract(a):
     import torch
     from wm.data import decode, frame_hash
     from wm.extract import encode, load_model, pick_device, preprocess, set_precision
+    from wm.extract import encode_videomae, preprocess_videomae
+    set_grid(a.model)
+    if a.model == "videomae":
+        encode, preprocess = encode_videomae, preprocess_videomae
 
     points = a.points or (POINTS_FULL if a.set == "direction" else POINTS_STIM)
     df = table(a.set)
@@ -113,7 +127,7 @@ def extract(a):
     info = json.loads(side.read_text()) if side.exists() else {"frame_hash": {}}
     info["frame_hash"].update({str(k): v for k, v in hashes.items()})
     # parity: position mean of the stored time-pool vs Part 1's stored meanpool (fp32), where available
-    ref_dir = "direction" if a.set == "direction" else f"stimuli_{a.set}"
+    ref_dir = a.set if a.set in ("direction", "speed", "acceleration") else f"stimuli_{a.set}"
     ref = PROJECT_ROOT / "artifacts" / "activations" / ref_dir / a.model / "meanpool.npy"
     parity = None
     if ref.exists():
@@ -127,8 +141,11 @@ def extract(a):
         print("parity max rel err per point:", parity["max_rel_err_per_point"])
     info.update({"set": a.set, "model": a.model, "ids": ids, "points": points, "shape": [N, P, NPOS, WIDTH],
                  "dtype": "float16", "memmap": str(out),
-                 "pooling": "mean over the 8 token time steps; positions kept (16x16, index h*16 + w, w = column)",
-                 "preprocess": "wm.extract: 16 frames, 256 px, ImageNet mean/std, no resize/crop, fp32 forward, TF32 off",
+                 "pooling": f"mean over the 8 token time steps; positions kept ({GRID}x{GRID}, index h*{GRID} + w, w = column)",
+                 "preprocess": ("wm.extract: 16 frames, 256 -> 224 px bilinear antialias resize, ImageNet mean/std, no crop, "
+                                "fp32 forward, TF32 off (MCG-NJU/videomae-large encoder, 8x14x14 tokens)"
+                                if a.model == "videomae" else
+                                "wm.extract: 16 frames, 256 px, ImageNet mean/std, no resize/crop, fp32 forward, TF32 off"),
                  "random_init": "VJEPA2Config + torch.manual_seed(0) (wm.extract.load_model)" if a.model == "random" else None,
                  "gpu_seconds_forward": gpu_s + info.get("gpu_seconds_forward", 0.0),
                  "wall_seconds_last_run": time.time() - t0, "batch_size": a.batch_size,
@@ -328,6 +345,7 @@ def probe(a):
 
     side = json.loads(Path(a.memmap).with_suffix(".json").read_text())
     assert side["complete"], "extraction incomplete"
+    set_grid(a.model)
     points = side["points"]
     mm = np.load(a.memmap, mmap_mode="r")
     df = table(a.set)
@@ -457,13 +475,13 @@ def probe(a):
            **({"onsets_stim_grid": onsets_stim_grid, "onsets_stim_grid_points": POINTS_STIM} if onsets_stim_grid else {}),
            ("part1_meanpool_all_clips" if a.subset else "part1_meanpool"): part1,   # Part 1 = all 1,500 clips
            "layers": rows,
-           "left_positions": "columns 0-7 of the 16x16 grid (128 positions); right = columns 8-15",
+           "left_positions": f"columns 0-{GRID // 2 - 1} of the {GRID}x{GRID} grid ({NPOS // 2} positions); right = columns {GRID // 2}-{GRID - 1}",
            "methods": {
                "probe": "closed-form ridge as wm.probes: train-standardised features, targets (sin, cos), alpha by fold-mean R2 on the split's 5 train folds over ALPHAS = logspace(-2, 4, 13), refit on all train, test scored once",
                "meanpool": "position mean of the stored time-pool (= Part 1 meanpool up to fp16 storage), same recipe",
                "perpos": "one probe per spatial position, own standardiser and own CV alpha (no alpha sharing)",
-               "pooled": "one probe on all (train clip, position) samples (n_train x 256), standardised over those samples, folds by clip; test scored per position",
-               "halves": "pooled probe fit on the left (right) 128 positions of train clips; within = same half of test clips, cross = other half; R2 over all (clip, position) samples of that half; cross_half_r2 = mean of left->right and right->left",
+               "pooled": f"one probe on all (train clip, position) samples (n_train x {NPOS}), standardised over those samples, folds by clip; test scored per position",
+               "halves": f"pooled probe fit on the left (right) {NPOS // 2} positions of train clips; within = same half of test clips, cross = other half; R2 over all (clip, position) samples of that half; cross_half_r2 = mean of left->right and right->left",
                "r2": "mean over the sin and cos columns of per-column R2 on test clips",
                "onset": "first SAMPLED point with metric >= 90% of its max over the sampled points; 95% CI from a 200-draw bootstrap of test clips over fixed test predictions (Part 1's CV onset used train-fold OOF predictions; the meanpool_r2 curve here gives the same-rule test-set baseline)"},
            "memmap": {"path": side["memmap"], "shape": side["shape"], "dtype": side["dtype"], "pooling": side["pooling"],
@@ -472,15 +490,16 @@ def probe(a):
                                                      "meanpool_parity", "random_init", "preprocess")},
            "probe_wall_seconds": wall,
            "provenance": {"split_file": SETS[a.set][1], "split_sha256": sha256_file(split_file), "commit": a.commit,
-                          "points": points, "pooling": side["pooling"], "positions": "16x16 (no spatial pooling)",
-                          "host": "vast 53030966 RTX 4060 Ti (extract GPU; per-position probes CPU float64; pooled/half probes GPU fp32 grams with float64 sums, float64 eigh)",
+                          "points": points, "pooling": side["pooling"], "positions": f"{GRID}x{GRID} (no spatial pooling)",
+                          "host": "vast 53030966 RTX 4060 Ti (extract GPU; per-position probes CPU float64; pooled/half probes fp32 grams with float64 sums, float64 eigh)",
+                          "pooled_probe_device": str(_dev()),
                           "subset": ("constant-velocity clips only (motion == 'velocity'), split rows filtered, same folds"
                                      if a.subset == "constvel" else "all clips of the set"),
                           "time_averaging": ("per-position features are averaged over the 8 token time steps before probing "
                                              "(one 1024-vector per spatial position per clip); the paper does not state whether "
                                              "its per-patch probes use per-token or time-averaged features"),
-                          "half_frame_design": ("the half-frame test fits ONE pooled probe over the 128 positions of one half "
-                                                "(columns 0-7 or 8-15; every (clip, position) is a sample) and scores it on the "
+                          "half_frame_design": (f"the half-frame test fits ONE pooled probe over the {NPOS // 2} positions of one half "
+                                                f"(columns 0-{GRID // 2 - 1} or {GRID // 2}-{GRID - 1}; every (clip, position) is a sample) and scores it on the "
                                                 "other half's positions of test clips; the paper does not state its half-frame "
                                                 "probe design"),
                           "timestamp_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "seed_bootstrap": 0}}
@@ -821,7 +840,7 @@ if __name__ == "__main__":
     ap.add_argument("--memmap-dir", default="/workspace/wm/artifacts/perpatch")
     ap.add_argument("--fold-scheme", default="stratified", choices=("stratified", "start"))
     ap.add_argument("--set", default="direction", choices=tuple(SETS))
-    ap.add_argument("--model", default="vjepa2", choices=("vjepa2", "random"))
+    ap.add_argument("--model", default="vjepa2", choices=("vjepa2", "random", "videomae"))
     ap.add_argument("--points", type=int, nargs="*", default=None)
     ap.add_argument("--out", default=None)
     ap.add_argument("--memmap", default=None)
