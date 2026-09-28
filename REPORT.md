@@ -21,20 +21,23 @@ Measured four ways, that count reflects anisotropy: a whitened erasure needs one
 rank-2 linear plus a second harmonic and a nonlinear residual (§3.2). Speed does not need fewer probes than direction,
 and the ridge curves have no sawtooth. Under the paper's literal Adam recipe both variables' curves are jagged and K
 roughly doubles, with no direction-specific sawtooth. **Step 3 reproduces in shape** (one probe fails, a few probes
-reach the target, MAE-to-true rises), with fewer probes than the paper needs. However, a random orthonormal basis of
-rank 2K matches the learned one up to N≈5, the same curve appears in an untrained network, and at the onset layer the
-learned basis never beats the random one. Rerunning Parts 1 and 2 at the paper's literal 70/30 split changes no
-qualitative verdict. **Part 2.** Direction lies on a ring that is recovered without labels at mid depth. At held-out
-direction values the spline path stays on the ring and the straight path cuts through it: the minimum readout radius
-is higher for the spline by +0.26 ± 0.05 at point 12 and +0.24 ± 0.07 at point 22 (mean ± SD over 16 runs covering 15
-distinct held-out 45° arcs), and it is higher on every arc. The endpoint error ties at point 12 (+0.08° ± 1.47) and
-slightly favours the line at point 22 (+1.26° ± 3.54; 3 of 16 runs flagged "negative_endpoint"). Readouts that did not
-build the edit (nearest-real-clip agreement, an MLP on disjoint clips) do not separate the two. Speed and acceleration
-are straight lines, and there the spline adds nothing. **Beyond the steered layer (GPU session 2).** Edits at points ≤
-12 wash out within a few blocks. Point-22 edits survive to the output with little target specificity (shuffled targets
-are at most 39° away). The predictor test is uninformative, not negative: the unedited forecast reads its own clip's
-direction 61° off and the real counterfactual context recovers only R = 0.0185 of the real future change, so it could
-not have seen an edit. The Part 2 advantage is geometric at the steered layer; downstream use is still open.
+reach the target, MAE-to-true rises), with fewer probes than the paper needs. Against a random orthonormal basis of
+fixed rank 2K the learned basis is indistinguishable until N ≈ 5; against a rank-matched random basis it first beats
+all 20 draws at N = 2–7 (by variable and layer); at N = 1 it separates from neither. The same curve appears in an
+untrained network, and at the onset layer the learned basis never beats the rank-2K random basis for N ≤ 20. Rerunning
+Parts 1 and 2 at the paper's literal 70/30 split changes no qualitative verdict. **Part 2.** Direction lies on a ring
+that is recovered without labels at mid depth. At held-out direction values the spline path stays on the ring and the
+straight path cuts through it: the minimum readout radius is higher for the spline by +0.26 ± 0.05 at point 12 and
++0.24 ± 0.07 at point 22 (mean ± SD over 16 runs covering 15 distinct held-out 45° arcs), and it is higher on every
+arc. The endpoint error ties at point 12 (+0.08° ± 1.47) and slightly favours the line at point 22 (+1.26° ± 3.54; 3 of
+16 runs flagged "negative_endpoint"). Readouts that did not build the edit (nearest-real-clip agreement, an MLP on
+disjoint clips) do not separate the two. Speed and acceleration are straight lines, and there the spline adds nothing.
+**Beyond the steered layer (GPU session 2).** Edits at points ≤ 12 wash out within a few blocks. Point-22 edits survive
+to the output with little target specificity (shuffled targets are at most 39° away). Probes fit on the predictor's own
+forecasts (8.9° on unedited forecasts, where real-token probes read 62.6° and were blind) show point-22 edits moving
+the forecast to 11.3–27.2° of the held-out target (smoothing spline 44.2°; unedited 92.1°, random 85.7°), position
+overshooting; edits at points ≤ 12 barely reach it. This is a probe of the forecast on one stimulus and one 45° arc,
+not a rendered future.
 
 ## 2. Setup
 
@@ -234,27 +237,30 @@ rises as MAE-to-target falls. **Figures:** `figures/fig3_steering_paper.png`, `f
 Direction, target θ\* = 90°, evaluation probe fit on test (paper protocol; out-of-fold R² 0.967 at point 9, 0.980 at
 point 22, 0.860 at point 2):
 
-| N probes | pt 9 MAE-to-target | pt 9 random-basis mean (p) | pt 9 MAE-to-true | pt 22 MAE-to-target (p) | pt 2 MAE-to-target (p) |
-|---:|---:|---|---:|---|---|
-| 0 | 87.4° | | 2.3° | 87.3° | 86.5° |
-| 1 | 78.4° | 77.7° (0.67) | 9.1° | 71.7° (0.52) | 85.7° (0.62) |
-| 3 | 25.4° | 30.0° (0.33) | 62.0° | 12.9° (0.29) | 82.1° (0.57) |
-| 5 | 8.7° | 12.8° (0.14) | 78.9° | 5.5° (0.29) | 77.3° (0.62) |
-| 10 | 3.1° | 9.0° (0.095) | 85.4° | 4.4° (0.14) | 65.0° (0.48) |
-| 20 | 2.9° | 14.2° (0.048) | 87.3° | 2.8° (0.048) | 21.4° (0.57) |
-| K (37 / 88 / 289) | 2.7° | 81.2° (0.048) | 87.0° | 4.1° (0.048) | 6.9° (0.048) |
+| N probes | pt 9 MAE-to-target | pt 9 rank-2K null, mean ± SD (p) | pt 9 rank-matched null, mean ± SD (p) | pt 9 MAE-to-true | pt 22 MAE-to-target (p) | pt 2 MAE-to-target (p) |
+|---:|---:|---|---|---:|---|---|
+| 0 | 87.4° | | | 2.3° | 87.3° | 86.5° |
+| 1 | 78.4° | 77.7 ± 2.1° (0.67) | 72.6 ± 26.4° (0.48) | 9.1° | 71.7° (0.52) | 85.7° (0.62) |
+| 3 | 25.4° | 30.0 ± 11.2° (0.33) | 66.5 ± 34.9° (0.095) | 62.0° | 12.9° (0.29) | 82.1° (0.57) |
+| 5 | 8.7° | 12.8 ± 4.6° (0.14) | 57.2 ± 37.4° (0.095) | 78.9° | 5.5° (0.29) | 77.3° (0.62) |
+| 10 | 3.1° | 9.0 ± 5.2° (0.095) | 54.3 ± 27.8° (0.048) | 85.4° | 4.4° (0.14) | 65.0° (0.48) |
+| 20 | 2.9° | 14.2 ± 12.5° (0.048) | 62.5 ± 33.0° (0.048) | 87.3° | 2.8° (0.048) | 21.4° (0.57) |
+| K (37 / 88 / 289) | 2.7° | 81.2 ± 42.4° (0.048) | (= rank 2K) | 87.0° | 4.1° (0.048) | 6.9° (0.048) |
 
-p is the empirical rank against 20 random orthonormal bases of the same rank, each with its own least-squares solve
-(the floor is 1/21 = 0.048). The orientation-only null (learned coefficients through a random basis) gives p = 0.048
-at every N, with a mean of 87.4° at N = 1. Source: `p1c_direction_L{2,9,22}.json`.
+p is the empirical rank against 20 random orthonormal bases (rank 2K, or rank-matched 2N), each with its own
+least-squares solve (floor 1/21 = 0.048). The orientation-only null (learned coefficients through a random basis) gives
+p = 0.048 at every N (mean 87.4° at N = 1). Source: `p1c_direction_L{2,9,22}.json`,
+`p1c_direction_L9_rankmatched.json`.
 
-- **Null reading.** The learned basis is no better than a random basis until N ≈ 5 at point 9 (p ≥ 0.14), and it
-  beats the random basis from N = 10–20. At the onset layer it never beats it for N ≤ 20. The paper's "single probe
-  fails, many succeed" is largely what least squares does in *any* subspace of that rank. The learned directions
-  become specific only once N is past a handful. Qualification: the random basis has rank 2K = 74 at every N
-  (`random_nulls.rank`), not the learned basis's 2N, so "random matches learned up to N ≈ 5" holds for this 74-dim
-  null; a rank-matched null is weaker and would favour the learned basis earlier (not stored in `results/`). At 70/30
-  the learned basis is at the 1/21 floor at N = 10 for all three variables (80/20: p = 0.095 / 0.14 / 0.095)[^s70].
+- **Null reading, two nulls.** Against the rank-2K (74-dim) basis the learned basis is no better until N ≈ 5 at point 9
+  (p ≥ 0.14); at the onset layer (rank 578) it never beats it for N ≤ 20, so "single probe fails, many succeed" is
+  largely least squares in *any* subspace of that rank. Against the rank-matched null (rank 2N for direction, N for
+  scalars; 20 nested draws; second band in `fig3c_steering_nulls_paper.png`) the learned basis first beats all 20 draws
+  at N = 6 (direction, point 9), N = 2 (direction, point 22), N = 6 / 7 (speed, points 9 / 19) and N = 5 (acceleration,
+  points 9 and 21); at N = 1 no variable separates from either null (p ≥ 0.29). The rank-matched draws are heavy-tailed
+  (direction SDs 23–42°; speed point 9, N = 7: 39.9 ± 165.2 m/s): a random low-rank subspace reaches the target only
+  with a large edit (per-draw median norm ratio 10.6 on average, N = 1, direction point 9). At 70/30 the learned basis
+  is at the 1/21 floor of the rank-2K null at N = 10 for all three variables (80/20: p = 0.095 / 0.14 / 0.095)[^s70][^rm].
 - **Untrained network.** The same curve appears in the random-init ViT at point 9 (K = 24): 82.9° → 30.7° (N = 5)
   → 8.7° (N = 10) → 5.9° (N = 20)[^p1cr].
 - **Norm and radius.** The median ‖x\*‖/‖x‖ is 1.003 at N = 20 and 1.118 at N = K (point 9), and 1.364 at N = K at
@@ -272,9 +278,8 @@ at every N, with a mean of 87.4° at N = 1. Source: `p1c_direction_L{2,9,22}.jso
   against 8.7° and 3.1° under the paper protocol. The in-sample evaluation probe flatters small N slightly and makes
   no difference from N = 10[^strict].
 
-**Verdict.** Fig. 24's shape reproduces, reaching the target with 5–10 probes rather than 20. Measured against a
-random basis and an untrained network, it is weaker evidence that the probe directions are special than the figure
-alone suggests.
+**Verdict.** Fig. 24's shape reproduces with 5–10 probes rather than 20. The probes beat a random subspace of their own
+rank from N = 2–7, but a rank-2K random basis matches them until N ≈ 5 and an untrained network shows the same curve.
 
 ### 3.4 The paper's 70/30 split
 
@@ -537,36 +542,49 @@ twin's real activation change at point 25 is 0.16 / 0.23 / 0.22 (probe-QR / smoo
 0.21 / 0.21 for the shuffled twin (`readout_b`). The interpolating spline overshoots (‖Δ‖ = 7.2× the natural twin
 change at point 12, vs 0.5–0.6× for the other arms) and is excluded from the reading.
 
-**Predictor** (context frames 1–8 edited at every token, predictor forecasts tubelets 4–7; R = projection of the
-forecast change on the real twin-minus-source future change; source `session2_predictor.json`). **This test is
-uninformative, not negative.** Probes fit on the encoder's real future tokens (direction 3.4° on them) read the
-unedited forecast 61° from its source clip's direction and 68 px from its position[^fpos]. The *real rendered twin's*
-context recovers only R = 0.0185 [0.0173, 0.0195] of the real future change (0.073 on disk tokens), so even a perfect
-edit would register at R ≈ 0.02. The values:
+**Predictor** (context frames 1–8 edited at every token; the predictor forecasts tubelets 4–7).
 
-| Arm | R, point 12 (shuffled target) | R, point 22 (shuffled target) |
-|---|---|---|
-| probe-QR | 0.00024 (0.00023) | 0.00178 (0.00173) |
-| smoothed spline | 0.00049 (0.00043) | 0.00241 (0.00220) |
-| chord | 0.00040 (0.00036) | 0.00243 (0.00225) |
-| random, matched ‖Δ‖ | 0.00001 (0.00002) | 0.00056 (0.00055) |
+*First attempt, token space (blind).* R projects the forecast change on the real twin-minus-source future change
+(`session2_predictor.json`). Probes fit on the encoder's real future tokens (direction 3.4°, position 6.7–8.4 px on
+them) read the unedited forecast 61° and 67.9 px from its source clip's direction and future position[^fpos]: the
+forecast is not in the encoder's code. In that readout edits moved the decoded position by ≤ 0.7 px at points 2–12 (16
+px, overshooting spline) and 2.9–5.5 px at point 22 (twin vs shuffled twin within 0.4 px), and the *real rendered
+twin's* context recovers only R = 0.0185 [0.0173, 0.0195] of the real future change (0.073 on disk tokens). R at point
+12 / 22 (shuffled target in brackets): probe-QR 0.00024 (0.00023) / 0.00178 (0.00173), smoothed spline 0.00049
+(0.00043) / 0.00241 (0.00220), chord 0.00040 (0.00036) / 0.00243 (0.00225), random 0.00001 (0.00002) / 0.00056
+(0.00055); ≤ 0.00011 at points 2 and 8; none beats its shuffled control. The readout was blind.
 
-At points 2 and 8 every arm is ≤ 0.00011. No arm beats its own shuffled-target control: every pair of 95% CIs
-overlaps, and the point-12 interpolating spline, the largest value (0.0057), equals its control (0.0057). The learned
-arms do beat the matched random edit at point 22. None of this says the arms are equivalent downstream. The test
-becomes informative with a readout fit on predictor outputs and a shuffled null 180° away.
+*Second attempt, a readout fit on the predictor's own outputs*[^nat]. Ridge probes (α by 5-fold CV) fit on the
+predictor's unedited forecasts of the 480 probe clips, disjoint from the steered test carriers, read the 300 test
+clips' unedited forecasts at 8.9° (R² 0.92) and 11.8 px; real-token probes read them at 62.6° / 65.7 px (real tokens:
+3.4°). The twin's own context now recovers R = 0.96 [0.92, 1.01] of the direction change (0.0185 in token space) and R
+= 1.07 of the position change, landing 9.1° from the target and 13.2 px from the twin's positions, so the test can see
+an edit. Edited forecasts (cached), 200 carriers × 4 targets (unedited: 92.1° from target, 60.2 px from the twin):
+
+| Arm | pt 12: to target | pt 22: to target | pt 22: to shuffled | pt 22: to 180° flip | pt 22: target − shuffled [95% CI] | pt 22: R dir / R pos | pt 22: px to twin |
+|---|---|---|---|---|---|---|---|
+| probe-QR | 84.1° | 17.1° | 23.5° | 162.9° | −6.4 [−7.3, −5.5] | 0.78 / 1.81 | 55.5 |
+| radius-matched | 84.4° | 16.3° | 22.8° | 163.7° | −6.5 [−7.5, −5.6] | 0.79 / 1.49 | 43.2 |
+| interpolating spline | 77.9° | 11.3° | 18.4° | 168.7° | −7.1 [−7.9, −6.3] | 1.00 / 1.43 | 44.3 |
+| smoothing spline | 81.7° | 44.2° | 47.1° | 135.8° | −2.9 [−3.6, −2.2] | 0.60 / 1.28 | 38.6 |
+| chord | 84.8° | 27.2° | 32.0° | 152.8° | −4.7 [−5.5, −3.9] | 0.68 / 1.30 | 39.7 |
+| random, matched ‖Δ‖ | 92.3° | 85.7° | 85.4° | 94.3° | +0.3 [0.2, 0.4] | 0.10 / −0.05 | 61.1 |
+
+At point 22 every structured arm moves the forecast toward the held-out target, away from its 180° flip (153–169° for
+probe-QR, radius-matched, interpolating spline, chord; 136° smoothing spline; 94° random). The shuffled null is weak by
+construction (shuffled targets average 16.5° from the true ones[^s2]); it separates by 3–7°, every structured arm's
+paired CI excluding 0. Position moves the right way but overshoots: R 1.3–1.8, 39–55 px from the twin against 13.2 px
+for the twin's own context. At point 12 edits barely reach the forecast (probe-QR, radius-matched, chord 84–85°;
+interpolating spline 77.9° but 104.9 px from the twin, R dir 0.31 [0.13, 0.48]); at points 2 and 8 every arm reads
+90.8–92.8°. Caveats: one stimulus, one 45° arc; the interpolating spline beats the smoothing one (the Part 2 default)
+by 33° at point 22, so spline-vs-chord depends on the variant; the readout is a linear probe of the pooled forecast, so
+it shows "the predictor's forecast changes in the steered direction", not "the rendered future changes".
 
 **Time-reversed clips** (the forward-trained probe read on reversed clips)[^trev]. From point 1 on, the direction probe
 reads θ + 180° on the reversed clip: the error to θ + 180° is 20.5° at point 1 and 5.7–10.3° from point 2 on, with
 98–100% of clips closer to the flipped angle. The probe tracks motion direction, not position or occupancy (a reversed
 constant-velocity clip has the same frame set). A speed probe transfers to reversed clips (R² 0.964–0.981 vs
 0.936–0.987 forward at points ≥ 1).
-
-**Future-position audit** (disk-centroid probe on the encoder's future tokens: 6.7–8.4 px test error)[^fpos]. Read on
-the predictor's forecast, the same probe is 67.9 px from the source's true future position, so the forecast tokens do
-not carry position in the encoder's code. Edits move the decoded forecast position by ≤ 0.7 px at points 2–12 (16 px for
-the overshooting spline) and by 2.9–5.5 px at point 22, against a 58 px source-to-twin distance. The error to the
-twin's position equals the error to the shuffled twin's within 0.4 px for every arm.
 
 ## 5. Beyond the three variables
 
@@ -584,10 +602,12 @@ twin's position equals the error to the shuffled twin's within 0.4 px for every 
 
 - **Detection vs use.** Detection is easy on this data. A random network, and random features of a 32-number
   trajectory, detect all three variables at R² ≥ 0.85. Use is where the evidence thins. The Part 1 edit moves a
-  held-out linear probe, but it beats a random basis only past N ≈ 5, works in an untrained network too, and leaves an
-  MLP on disjoint clips 19–31° off. On the ladder in `PART2_RATIONALE.md` §2, this project reaches rung 3 at the
-  steered layer and rung 4 only by circular measures. Rung 5 was tested: edits at points ≤ 12 wash out, point-22 edits
-  survive with weak target specificity, and the predictor readout had no power to see an edit (§4.5).
+  held-out linear probe, but it beats a rank-2K random basis only past N ≈ 5 (a rank-matched one from N = 2–7), works
+  in an untrained network too, and leaves an MLP on disjoint clips 19–31° off. On the ladder in `PART2_RATIONALE.md`
+  §2, this project reaches rung 3 at the steered layer and rung 4 only by circular measures. Rung 5 was tested: at
+  point 22 the edit reaches the predictor's forecast (structured arms 11.3–44.2° from the held-out target by a
+  predictor-native probe, vs 92.1° unedited and 85.7° random; position overshoots); at points ≤ 12 it washes out and
+  does not (§4.5).
 - **Internal world model vs stimulus-response.** For this stimulus class the random-init control gives a direct
   answer to her question. Linear availability of direction, speed and acceleration is architectural (one attention
   block over rotary positions plus a nonlinearity). What V-JEPA's training adds is precision (direction 10.7° → 3.0°
@@ -602,10 +622,10 @@ twin's position equals the error to the shuffled twin's within 0.4 px for every 
   decodable through (sin, cos), which is a 2-D linear subspace with a ring on it, and nothing in Part 1 contradicts
   the subspace form of the hypothesis. The steering corollary is what fails geometrically: the straight path between
   distant directions passes through the ring's interior (readout radius 0.61) where the curved path does not (0.86).
-  The measured caveat is that the model's own independent readouts do not care, at the steered layer or downstream
-  (§4.5). The precise statement supported is "for a cyclic variable the hypothesis describes the subspace and
-  misdescribes the moves, geometrically". A functional difference was not found; on this stimulus the predictor test
-  is too weak to rule one out.
+  The measured caveat is that independent readouts at the steered layer do not care; downstream, in the predictor's
+  forecast at point 22, the interpolating spline beats the chord (11.3° vs 27.2°) but the smoothing spline does not
+  (44.2°), so any functional advantage depends on the variant (§4.5). The supported statement is "for a cyclic variable
+  the hypothesis describes the subspace and misdescribes the moves, geometrically".
 
 ## 7. Limitations and next steps
 
@@ -614,10 +634,9 @@ twin's position equals the error to the shuffled twin's within 0.4 px for every 
   directions, covers direction only and uses one render seed, so it is a pointer, not a reproduction.
 - **Training dynamics.** With intermediate V-JEPA 2 checkpoints, the random-init vs final contrast becomes a curve.
   That is the natural test of when precision and the ring appear.
-- **Predictor test uninformative.** Probes fit on real tokens read the unedited predictor forecast 61° off in
-  direction and 68 px off in position, and the real twin's context recovers only R = 0.0185, so the test had no power
-  to see an edit; its shuffled targets are at most 39° apart. Next: a readout fit on predictor outputs and a 180°
-  shuffled null.
+- **Predictor readout is a probe; the edit overshoots.** Probes fit on the predictor's own forecasts (8.9° / 11.8 px)
+  show the pooled forecast moving in the steered direction, not a rendered future. Point-22 edits overshoot in position
+  (R 1.3–1.8; 39–55 px from the twin vs 13.2 px for its own context). One stimulus, one 45° arc of targets.
 - **Post-hoc verdict rule.** The spline-vs-line call was iterated after seeing results and frozen at 8d3cac8 before
   the arc sweep and the 70/30 reruns (§4.2). The gaps and CIs are the evidence; the calls summarise them.
 - **Sample size vs d.** Around 1,200 train clips against d = 1,024 makes K a ridge count at a CV-chosen α. The K
@@ -633,21 +652,20 @@ twin's position equals the error to the shuffled twin's within 0.4 px for every 
   `run_velocity_plane.py`, `run_position_sheet.py`, `run_object_permanence.py`, `run_objective_axis.py`,
   `run_donor_ceiling.py`, `run_two_route.py`, `run_rotating_speed_axis.py`, `run_cosine_tangent.py`,
   `render_hard_stimuli.py`, `make_figures.py`. Session 2: `scripts/session2_box.sh` → `run_session2.py`,
-  `session2_extras.py`. The 70/30 reruns set `WM_SPLIT_PATH=splits/split_paper70.json`.
+  `session2_extras.py`, `session2_native_readout.py` (predictor-native probes). The 70/30 reruns set `WM_SPLIT_PATH=splits/split_paper70.json`.
 - **Provenance.** Every results JSON records the split sha256 (`98e6310c…`), seeds (split 0, all others 0), git
   commit and a dirty flag. The 20 `p2_steer_*` files and all 32 arc runs were produced at commit 8d3cac8; the other
   Part 2 files at 677b305, 8e552c1, 8829195, 8f08444 or fbf4f72; all with `git_dirty_src_or_scripts: false`. Most
   Part 2 files record split and source paths inside the frozen scratchpad worktree that ran them; the split sha256 and
-  the commit are the same as the repository's. The session 2 files were scored at b9c53d0 or 0f34ec2 with the dirty
-  flag set.
+  the commit are the same as the repository's. The session 2 files were scored at b9c53d0 or 0f34ec2 (the native
+  readout at 8734f4b) with the dirty flag set.
 - **Numerics.** CPU–GPU parity on 8 clips: worst per-layer max|Δ|/max|x| 8.2e-5 (rule < 1e-3); GPU batch-8 vs
   batch-16 gap 1.31× the CPU–CPU gap (rule ≤ 2×). Frame hashes and disk masks match, and 27/27 sha256 checks of the
   downloaded activations pass[^gpu].
-- **Cost.** GPU session 1 (RTX 4080 SUPER, Vast): 37.7 billed minutes, $0.19 of compute[^gpu]. Session 2 box (RTX
-  4060 Ti, $0.198/h): $0.512 from start to the end of session 2 (the session 2 run itself $0.311), and $0.637 billed as
-  of 19:57 ET with the box still running follow-on VideoMAE and random-init extraction, plus $0.006 egress[^cost]. At
-  that rate the session 2 box comes to about $0.65–0.70 when stopped. No other box's cost is recorded in `results/` or
-  `artifacts/`.
+- **Cost.** GPU session 1 (RTX 4080 SUPER, Vast): 37.7 billed minutes, $0.19[^gpu]. Session 2 box (RTX 4060 Ti,
+  $0.198/h): $0.512 to the end of session 2 (the run itself $0.311); $0.792 over 4.00 billed hours as of 20:44 ET, box
+  still running, including the predictor-native readout extraction (0.09 h, $0.018); $0.006 egress[^cost]. No other
+  box's cost is recorded.
 - **Tests.** `pytest --collect-only` collects 173 tests at the commit of this report.
 
 [^gpu]: `artifacts/gpu_session1.json`.
@@ -677,4 +695,6 @@ twin's position equals the error to the shuffled twin's within 0.4 px for every 
 [^cos]: `results/p2_cosine_tangent_{direction_L12,direction_L22,speed_L12,speed_L19,acceleration_L12,acceleration_L21}_contiguous.json` (`cosines.step_net`, `cosines.tangent_chord`).
 [^trev]: `results/session2_timerev.json`, `results/session2_timerev_speed.json`.
 [^fpos]: `results/session2_future_position.json`.
-[^cost]: `results/session2_cost.json` (`cost_start_to_session2_done_usd`, `session2_run_cost_usd`, `cost_so_far_usd`, `pull_egress_usd`, `status: running`).
+[^rm]: `results/p1c_{direction,speed,acceleration}_L{9,22|19|21}_rankmatched.json` (`rank_matched_null`: `rows[].rank_matched`, `rows[].random_basis_full_rank`); `figures/fig3c_steering_nulls{,_paper}.png`.
+[^nat]: `results/session2_predictor_native_readout.json` (`direction`, `position`, `twin_context_reference`, `per_layer`, `definitions`); `scripts/session2_native_readout.py`.
+[^cost]: `results/session2_cost.json` (`cost_start_to_session2_done_usd`, `session2_run_cost_usd`, `cost_so_far_usd`, `billed_hours_so_far`, `as_of_utc` 00:44 UTC, `runs[0]`, `pull_egress_usd`, `status: running`).
