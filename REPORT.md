@@ -722,8 +722,7 @@ rerun `p2_steer_direction_direction_L{12,22}_contiguous_rawchord.json`, whose ol
 file to 1e-9 relative. The smoothed-knot chord sits 0.3–1.1 (point 12) and 0.8–2.1 (point 22) PCA units from the
 spline at the eight held-out targets; the raw-centroid chord sits 1.9–2.4 and 3.2–3.7, so the paper's baseline is
 further from the spline than our line arm was, and lands closer to the target. Against the raw chord the spline's
-agreement with real clips at the target is higher at point 12 (+0.011), so the "independent readouts null" reading
-below is a smoothed-knot-chord result. Paired per-pair SEs (A.9's form) are 0.43 and 0.41 for the raw-chord endpoint
+agreement with real clips at the target is higher on the headline arc at point 12 (+0.011), but over the 16 point-12 arcs the gap is −0.021 ± 0.059 SD (spline ahead on 7, CIs split 4 above and 4 below zero), while at point 22 it is +0.018 ± 0.013 (ahead on 15 of 16, 11 CIs above zero; `results/arcs_rawchord/*/gaps.manifold_minus_linear_raw.nearest_real_R.mean`). So against the paper's chord the nearest-real readout favours the spline consistently at point 22 and not at point 12; the "independent readouts null" reading below is a smoothed-knot-chord result at point 22 and stands at point 12 either way. Paired per-pair SEs (A.9's form) are 0.43 and 0.41 for the raw-chord endpoint
 gap; the table keeps the clip bootstrap used by every other row. Figures:
 `figures/fig4_waypoint_readout_direction_direction_L12_contiguous.png` (radius and Eq. 10 distance along the path) and
 `figures/fig4_path_energy_direction_direction_L12_contiguous.png`.
