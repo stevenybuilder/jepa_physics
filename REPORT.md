@@ -35,13 +35,13 @@ at point 12 (+0.08° ± 1.47) and slightly favours the line at point 22 (+1.26°
 clips) do not separate the two; the labels of the real clips nearest the path midpoint do. The spline's advantage over
 the chord is in the ring plane and in the forecast, not in distance to real clips in the full subspace, where the chord
 is as close at point 12 and closer at point 22. Speed and acceleration are straight, and there the spline adds nothing.
-**Beyond the steered layer (GPU session 2).** Edits at points ≤ 12 wash out within a few blocks. Point-22 edits survive
-to the output with little target specificity (shuffled targets are at most 39° away). Probes fit on the predictor's own
-forecasts (8.9° on unedited forecasts, where real-token probes read 62.6° and were blind) show point-22 edits moving
-the forecast to 11.3–27.2° of the held-out target (smoothing spline 44.2°; unedited 92.1°, random 85.7°), position
-overshooting; edits at points ≤ 12 barely reach it. At a common edit norm the interpolating spline still beats the
-chord (19.5° vs 27.2° at the chord's norm, 12.3° vs 25.7° at the natural one), in forecast angle only. This is a
-probe of the forecast on one stimulus and one 45° arc, not a rendered future.
+**Beyond the steered layer (GPU session 2).** Edits at points ≤ 12 wash out within a few blocks and barely reach the
+predictor's forecast. Point-22 edits survive to the output with little target specificity. Probes fit on the
+predictor's own forecasts show point-22 edits moving the forecast to 11.3–27.2° of the held-out target (unedited
+92.1°), position overshooting. At a common edit norm the interpolating spline still beats the chord (19.5° vs 27.2° at
+the chord's norm, 12.3° vs 25.7° at the natural one), in forecast angle only. Along the path the forecast follows the
+intermediate directions along the spline and jumps along the chord (−13.4° paired, −31.3° at large shifts). The reverse
+test does not recover the ring. This is a probe of the forecast on one stimulus and one 45° arc, not a rendered future.
 
 ## 2. Setup
 
@@ -459,23 +459,20 @@ Position sheet (speed set, start (x, y), thin-plate spline vs chord to a held-ou
 "negative: TPS path indistinguishable from chord". At point 19 "chord better than the TPS path on err_path and
 excess_to_nearest_real". Endpoint error is 0.178 m for both vs 0.197 for a Delaunay interpolation (point 12)[^sheet].
 
-**Reading.** At the encoder layer, the spline stays on the ring (the readout radius stays near 0.86 and the Eq. 9
-distribution walks the arc in order) and the line cuts across the ring's interior in the chart plane (the radius drops
-to 0.61). The reflected arm is worst on every path metric, so it matters which way the path bends. This much reproduces
-Goodfire at held-out values. The radius gap grows with angular shift: at point 12 it is −0.003 below 30°, then +0.05,
-+0.12, +0.25, +0.43 and +0.62 per 30° bin up to 180°, CI above zero in 17/17 runs from 90° on (16/17 at 60–90°; point
-22: +0.01 to +0.58); endpoint error and nearest-real agreement show no trend with shift[^p2b]. A readout that uses
-neither a probe nor the spline also separates the paths along the route: the labels of the 10 real clips nearest the
-midpoint (PCA-64) are 16° / 20° (points 12 / 22) closer to the intermediate direction for the spline than for the chord,
-38° / 44° closer at shifts ≥ 120°, and agree with each other more (resultant +0.12 / +0.10), on 17/17 arcs at both
-points. The empty interior is a ring-plane fact, though. In the 64-D subspace the edit acts on, the spline midpoint is
-no closer to real clips than the chord's (5-NN distance ratio +0.007 at point 12, CIs split 4 above / 9 below) and at
-point 22 it is farther (+0.037, 17/17 arcs); in full space the stored 5-NN excess is +0.28 / +0.17 for the spline at
-points 22 / 12 (CI above zero in 17 / 7 of 17 runs). So "the chord cuts through the ring" holds in the ring plane only,
-and so does Goodfire's low-density-region premise here. Endpoint readouts that did not build the edit do not separate
-the arms: nearest-real agreement ties at point 12 and slightly favours the line at point 22; the endpoint probe error
-ties at point 12 and favours the line by 3.8° at point 22 on this arc. Eq. 9 energy ties at point 22 (1.01 vs 1.00). For
-speed and acceleration all arms coincide with the chord except in extrapolation, where the smoothing spline is worse.
+**Reading.** At the encoder layer the spline stays on the ring (the Eq. 9 distribution walks the arc in order) and the
+line cuts across the ring's interior in the chart plane. The reflected arm is worst on every path metric, so it matters
+which way the path bends. This much reproduces Goodfire at held-out values. The radius gap grows with angular shift: at
+point 12 it is −0.003 below 30°, then +0.05, +0.12, +0.25, +0.43 and +0.62 per 30° bin up to 180°, CI above zero in
+17/17 runs from 90° on (16/17 at 60–90°; point 22: +0.01 to +0.58); endpoint error and nearest-real agreement show no
+trend with shift[^p2b]. A readout that uses neither a probe nor the spline also separates the paths along the route:
+the labels of the 10 real clips nearest the midpoint (PCA-64) are 16° / 20° (points 12 / 22) closer to the intermediate
+direction for the spline than for the chord, 38° / 44° closer at shifts ≥ 120°, and agree with each other more
+(resultant +0.12 / +0.10), on 17/17 arcs at both points. The empty interior is a ring-plane fact, though. In the 64-D
+subspace the edit acts on, the spline midpoint is no closer to real clips than the chord's (5-NN distance ratio +0.007
+at point 12, CIs split 4 above / 9 below) and at point 22 it is farther (+0.037, 17/17 arcs); in full space the stored
+5-NN excess is +0.28 / +0.17 for the spline at points 22 / 12 (CI above zero in 17 / 7 of 17 runs). So "the chord cuts
+through the ring" holds in the ring plane only, and so does Goodfire's low-density-region premise here. For speed and
+acceleration all arms coincide with the chord except in extrapolation, where the smoothing spline is worse.
 
 ### 4.4 Controls and the comparison with Part 1
 
@@ -557,11 +554,10 @@ only 1–6° at point 25 (7–13° at the steered point). The projection on the 
 is 0.16 / 0.23 / 0.22 (probe-QR / smoothed spline / chord) vs 0.15 / 0.21 / 0.21 for the shuffled twin (`readout_b`).
 The interpolating spline overshoots (‖Δ‖ 7.2× the natural twin change at point 12, vs 0.5–0.6×) and is excluded.
 
-**Predictor** (context frames 1–8 edited at every token; the predictor forecasts tubelets 4–7). *First attempt, token
-space (blind).* R projects the forecast change on the real twin-minus-source future change (`session2_predictor.json`).
-Probes fit on the encoder's real future tokens (3.4°, 6.7–8.4 px) read the unedited forecast 61° and 67.9 px off[^fpos]:
-the forecast is not in the encoder's code. The real twin's context recovers only R = 0.0185 [0.0173, 0.0195]; probe-QR,
-smoothed-spline, chord and random edits reach R ≤ 0.0025, none beating its shuffled control. The readout was blind.
+**Predictor** (context frames 1–8 edited at every token; the predictor forecasts tubelets 4–7). *First attempt
+(blind).* Probes fit on the encoder's real future tokens (3.4°, 6.7–8.4 px) read the unedited forecast 61° / 67.9 px
+off[^fpos]; token-space R (`session2_predictor.json`) is 0.0185 [0.0173, 0.0195] for the twin's context, ≤ 0.0025 for
+every edit.
 
 *Second attempt, a readout fit on the predictor's own outputs*[^nat]. Ridge probes (α by 5-fold CV) fit on the
 unedited forecasts of the 480 probe clips read the 300 test clips' unedited forecasts at 8.9° (R² 0.92) and 11.8 px
@@ -579,12 +575,11 @@ over the natural twin change (`session2_propagation.json`), not norm-matched (ma
 | chord | 84.8° | 27.2° | 32.0° | 152.8° | −4.7 [−5.5, −3.9] | 0.68 / 1.30 | 39.7 | 0.65 |
 | random, matched ‖Δ‖ | 92.3° | 85.7° | 85.4° | 94.3° | +0.3 [0.2, 0.4] | 0.10 / −0.05 | 61.1 | 0.79 |
 
-At point 22 every structured arm moves the forecast toward the held-out target, away from its 180° flip (136–169°;
-random 94°); the weak shuffled null (targets 16.5° apart) separates by 3–7°, every paired CI excluding 0. Position
-overshoots: R 1.3–1.8, 39–55 px from the twin vs 13.2 px for its own context. At point 12 edits barely reach the
-forecast (81.7–84.8°; interpolating spline 77.9° but 104.9 px off, R dir 0.31 [0.13, 0.48]); at points 2 and 8, 90.8–92.8°.
-The readout is a linear probe of the pooled forecast, not a rendered future. Unmatched, the spline's lead over the
-chord (11.3° vs 27.2°) is confounded with a larger edit (0.91× vs 0.65×; the point-12 contrast and flip null are not).
+At point 22 every structured arm moves the forecast toward the held-out target, away from its 180° flip; the weak
+shuffled null (targets 16.5° apart) separates by 3–7°. Position overshoots: R 1.3–1.8, 39–55 px from the twin vs
+13.2 px for its own context. At point 12 edits barely reach the forecast (81.7–84.8°; interpolating spline 77.9° but
+104.9 px off, R dir 0.31 [0.13, 0.48]); at points 2 and 8, 90.8–92.8°. Unmatched, the spline's lead over the chord
+(11.3° vs 27.2°) is confounded with a larger edit (0.91× vs 0.65×; the point-12 contrast and flip null are not).
 *Norm-matched rerun*[^nm]: point-22 edits rescaled per (carrier, target) to a common norm, same carriers, targets and
 probes (chord and unedited forecasts match the cache exactly). Cells: to target / paired target − flip / R dir / px:
 
@@ -602,6 +597,37 @@ the chord's norm (paired 95% CI 5.0–10.6) and 13.4° at the natural norm (11.1
 half of that lead was dose, and a route effect remains. The gain is angle-only: at the chord's norm its R equals the
 chord's (−0.003 [−0.04, 0.03]) and position is 3.6 px worse [2.5, 4.7]; at the natural norm R is 0.155 lower [0.06,
 0.26] and position ties (+0.4 px [−1.2, 2.1]). The smoothing spline trails the chord by 12° at both norms.
+
+**The forecast read along the path**[^ap]. Nine waypoints (t = 0, 0.125, …, 1) per point-22 path, scaled so the
+endpoint equals the natural twin change (t = 1 reproduces the cells above); random: a line with the spline's norms.
+Cells: error to the ideal intermediate direction (source + t × shorter-arc shift) / forecast radius / px to the twin:
+
+| Arm | all 800 pairs: t = 0.25 | 0.5 | 0.75 | 1.0 | shift ≥ 135° (216 pairs): t = 0.25 | 0.5 | 0.75 | 1.0 |
+|---|---|---|---|---|---|---|---|---|
+| interpolating spline | 13.8° / 0.95 / 53.5 | 17.8° / 0.98 / 47.7 | 21.8° / 1.08 / 44.0 | 12.3° / 1.34 / 43.7 | 17.4° / 0.88 / 75.0 | 23.4° / 0.81 / 65.2 | 32.7° / 0.83 / 56.7 | 12.1° / 1.24 / 54.7 |
+| smoothing spline | 12.1° / 0.95 / 51.4 | 17.9° / 0.96 / 48.4 | 28.0° / 0.96 / 45.5 | 37.3° / 0.97 / 43.4 | 15.9° / 0.95 / 74.4 | 18.4° / 1.06 / 71.4 | 32.5° / 1.07 / 61.8 | 47.1° / 1.01 / 52.5 |
+| chord | 22.0° / 0.72 / 46.7 | 38.9° / 0.63 / 38.9 | 35.6° / 0.78 / 38.2 | 25.7° / 1.03 / 43.3 | 41.9° / 0.53 / 64.4 | 79.4° / 0.36 / 51.3 | 60.1° / 0.61 / 48.5 | 31.5° / 1.01 / 54.8 |
+| random | 28.3° / 1.00 / 63.0 | 49.7° / 1.05 / 65.9 | 69.2° / 1.12 / 69.7 | 84.4° / 1.18 / 73.3 | 46.1° / 0.98 / 88.9 | 79.1° / 1.04 / 91.2 | 107.5° / 1.13 / 94.6 | 126.2° / 1.19 / 97.0 |
+
+Mean error to the ideal intermediate direction over t: interpolating spline 16.3° [14.7, 18.1], smoothing spline 22.1°,
+chord 29.7° [26.4, 33.1], random 53.2°; paired spline − chord −13.4° [−15.7, −11.0], −31.3° [−36.0, −26.7] at shift
+≥ 135°; smoothing − chord −7.6° [−10.2, −5.0]. The spline's forecast moves steadily through the intermediate
+directions; at large shifts the chord's stays near the source until about t = 0.5, then jumps (largest step 68°, spline
+57°), and its radius collapses (minimum 0.26 vs 0.53 for the spline at ≥ 135°, 0.36 vs 0.81 at t = 0.5). Caveats: edit
+size is matched only at the endpoint (spline 0.40, chord 0.25 of the natural change at t = 0.25); along the path the
+chord is closer to real clips in full space (1.21 vs 1.32× the 5-NN floor), while in the ring plane it dips to radius
+0.69 and the spline stays ≈ 1.26; mid-path position favours the chord (38.9 vs 47.7 px at t = 0.5) because the twin is
+the endpoint; at exactly 180° (12 pairs) the ideal direction follows the spline's arc. The intermediate-state claim now
+comes from the model's own forecast, not from the geometry of the edit.
+
+**The reverse test**[^ap]. For 20 carriers × 2 targets at 135–180°, I optimised K = 9 waypoints in PCA-64 at point 22
+so the forecast follows the ideal intermediate direction (Adam, 100 steps, converged by 20; edit norm ≤ 1.2× natural;
+gradients through blocks 23–24 and the predictor in bf16, re-scored in fp32). They hit it to 0.08°, but only at the
+norm cap, with 28% of each edit in the ring plane and forecast radius ≈ 5 (unedited ≈ 0.96). The path radius goes
+2.2 → 1.0, never crossing the interior; cosine 0.12 with the spline's edit, 0.00 with the chord's; closer to the spline
+in the ring plane (1.35 vs 1.75), slightly closer to the chord in full space (+0.04 [0.02, 0.06]). With an angle-only
+objective the predictor can be steered along an off-ring route, so the reverse direction is not recovered here. This
+objective is weaker than Goodfire's full pullback objective, which also penalises leaving real behaviour. A negative.
 
 **Time-reversed clips** (the forward-trained probe read on reversed clips)[^trev]. From point 1 on, the direction probe
 reads θ + 180° on the reversed clip: the error to θ + 180° is 20.5° at point 1 and 5.7–10.3° from point 2 on, with
@@ -623,33 +649,27 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
 
 ## 6. What this says about her framing
 
-- **Detection vs use.** Detection is easy on this data. A random network, and random features of a 32-number trajectory,
-  detect all three variables at R² ≥ 0.85. Use is where the evidence thins. The Part 1 edit moves a held-out linear
-  probe, but it beats a rank-2K random basis only past N ≈ 5 (a rank-matched one from N = 2–7), works in an untrained
-  network too, and leaves an MLP on disjoint clips 19–31° off. On the ladder in `PART2_RATIONALE.md` §2, this project
-  reaches rung 3 at the steered layer and rung 4 only by circular measures. Rung 5 was tested: at point 22 the edit
-  reaches the predictor's forecast (structured arms 11.3–44.2° from the held-out target by a predictor-native probe, vs
-  92.1° unedited and 85.7° random; position overshoots); at points ≤ 12 it washes out and does not (§4.5).
-- **Internal world model vs stimulus-response.** For this stimulus class the random-init control gives a direct
-  answer to her question. Linear availability of direction, speed and acceleration is architectural (one attention
-  block over rotary positions plus a nonlinearity). What V-JEPA's training adds is precision (direction 10.7° → 3.0°
-  vs flat for the random network) and a ring that is recovered without labels at mid depth. Carrying direction into
-  disk-free tokens is not a training effect: the random-init encoder does it as well. VideoMAE matches V-JEPA 2 on
-  every Part 1 measure, so none of this is specific to latent prediction, and none of it shows that the variables are
-  used to predict. I have two points on the training axis (random init, final checkpoint), not a trajectory. The
-  authors' OpenReview response states that "all 13 models encode motion direction (R²≥.43), regardless of objective",
-  classification CNNs included, so availability is their own finding; training buys precision, fewer probes to steer
-  (4 vs 10 to reach 10°[^obj]) and a label-free ring.
-- **The linear representation hypothesis: right about the subspace, wrong about the moves.** Direction is linearly
-  decodable through (sin, cos), which is a 2-D linear subspace with a ring on it, and nothing in Part 1 contradicts
-  the subspace form of the hypothesis. The steering corollary is what fails geometrically: in the ring plane the straight
-  path between distant directions crosses the empty interior (readout radius 0.61) where the curved path does not
-  (0.86), though in the 64-D edit subspace it is no farther from real clips (§4.3).
-  The measured caveat is that independent readouts at the steered layer do not care; downstream, in the predictor's
-  forecast at point 22, the interpolating spline gets closer than the chord at a common edit norm (19.5° vs 27.2° at
-  the chord's norm, 12.3° vs 25.7° at the natural norm), in angle only, and the smoothing spline stays worst of the
-  real arms (39.1° / 37.3°) (§4.5). The supported statement is "for a cyclic variable
-  the hypothesis describes the subspace and misdescribes the moves, geometrically".
+- **Detection vs use.** Detection is easy on this data. A random network, and random features of a 32-number
+  trajectory, detect all three variables at R² ≥ 0.85. Use is where the evidence thins. The Part 1 edit moves a
+  held-out linear probe, but it beats a rank-2K random basis only past N ≈ 5 (a rank-matched one from N = 2–7), works
+  in an untrained network too, and leaves an MLP on disjoint clips 19–31° off. On the ladder in `PART2_RATIONALE.md`
+  §2, this project reaches rung 3 at the steered layer and rung 4 only by circular measures. Rung 5 was tested: at
+  point 22 the edit reaches the predictor's forecast; at points ≤ 12 it washes out and does not (§4.5). Along the path
+  the forecast passes through the intermediate directions on the spline and jumps on the chord (−13.4°), in the ring
+  plane only.
+- **Internal world model vs stimulus-response.** For this stimulus class the random-init control answers her question:
+  linear availability is architectural, carrying direction into disk-free tokens is not a training effect, and VideoMAE
+  matches V-JEPA 2 on every Part 1 measure, so none of this is specific to latent prediction or shows that the
+  variables are used to predict. The authors' OpenReview response states that "all 13 models encode motion direction
+  (R²≥.43), regardless of objective", classification CNNs included, so availability is their own finding; training buys
+  precision, fewer probes to steer (4 vs 10 to reach 10°[^obj]) and a label-free ring.
+- **The linear representation hypothesis: right about the subspace, wrong about the moves.** Direction lives in a 2-D
+  linear subspace (sin, cos) with a ring on it, and nothing in Part 1 contradicts that form of the hypothesis. The
+  steering corollary is what fails geometrically: in the ring plane the straight path between distant directions
+  crosses the empty interior (readout radius 0.61) where the curved path does not (0.86), though in the 64-D edit
+  subspace it is no farther from real clips (§4.3). Independent readouts at the steered layer do not care; the
+  predictor's forecast at point 22 does, in angle only (§4.5). The supported statement is "for a cyclic variable the
+  hypothesis describes the subspace and misdescribes the moves, geometrically".
 
 ## 7. Limitations and next steps
 
@@ -658,12 +678,12 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
   directions, covers direction only and uses one render seed, so it is a pointer, not a reproduction.
 - **Training dynamics.** With intermediate V-JEPA 2 checkpoints, the random-init vs final contrast becomes a curve.
   That is the natural test of when precision and the ring appear.
-- **Predictor readout is a probe; the edit overshoots.** Probes fit on the predictor's own forecasts (8.9° / 11.8 px)
-  show the pooled forecast moving in the steered direction, not a rendered future. Point-22 edits overshoot in position
-  (R 1.3–1.8; 39–55 px from the twin vs 13.2 px for its own context). One stimulus, four targets in one 45° arc. The
-  spline's norm-matched lead is in angle only, and the smoothing spline (the Part 2 default) is the worst real arm.
+- **Predictor readout is a probe; the edit overshoots.** A probe of the pooled forecast, not a rendered future;
+  point-22 edits overshoot in position (R 1.3–1.8); one stimulus, four targets in one 45° arc. The spline's lead is in
+  angle only and the smoothing spline (the Part 2 default) is the worst real arm.
 - **The hollow is in the ring plane.** In the 64-D edit subspace and full space the chord is no farther from real clips
-  than the spline (§4.3). A test that reads the predictor's forecast along the path, not only at endpoints, is running.
+  than the spline (§4.3). Along the path the forecast follows the intermediate directions along the spline and jumps
+  along the chord (−13.4° paired, −31.3° at large shifts); the reverse test does not recover the ring (§4.5).
 - **Post-hoc verdict rule.** Iterated after seeing results, frozen at 8d3cac8 before the arc sweep (§4.2); the gaps and
   CIs are the evidence.
 - **Sample size vs d.** Around 1,200 train clips against d = 1,024 makes K a ridge count at a CV-chosen α. The K
@@ -679,20 +699,20 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
   `run_velocity_plane.py`, `run_position_sheet.py`, `run_object_permanence.py`, `run_objective_axis.py`,
   `run_donor_ceiling.py`, `run_two_route.py`, `run_rotating_speed_axis.py`, `run_cosine_tangent.py`,
   `render_hard_stimuli.py`, `make_figures.py`. Session 2: `scripts/session2_box.sh` → `run_session2.py`,
-  `session2_extras.py`, `session2_native_readout.py` (predictor-native probes), `session2_norm_matched.py`. The 70/30 reruns set `WM_SPLIT_PATH=splits/split_paper70.json`. Second look at Part 2 (commit 33a2cbd, clean): `run_ring_occupancy.py`, `run_isometry_linear.py`, `summarize_shift_dependence.py`; `PART2_SECOND_LOOK.md` is the audit record against the Goodfire paper.
+  `session2_extras.py`, `session2_native_readout.py` (predictor-native probes), `session2_norm_matched.py`, `session2_along_path.py` (forecast along the path, reverse test; `session2_predictor_along_path.json`, `session2_reverse_path.json`). The 70/30 reruns set `WM_SPLIT_PATH=splits/split_paper70.json`. Second look at Part 2 (commit 33a2cbd, clean): `run_ring_occupancy.py`, `run_isometry_linear.py`, `summarize_shift_dependence.py`; `PART2_SECOND_LOOK.md` is the audit record against the Goodfire paper.
 - **Provenance.** Every results JSON records the split sha256 (`98e6310c…`), seeds (split 0, all others 0), git
   commit and a dirty flag. The 20 `p2_steer_*` files and all 32 arc runs were produced at commit 8d3cac8; the other
   Part 2 files at 677b305, 8e552c1, 8829195, 8f08444 or fbf4f72; all with `git_dirty_src_or_scripts: false`. Most
   Part 2 files record split and source paths inside the frozen scratchpad worktree that ran them; the split sha256 and
   the commit are the same as the repository's. The session 2 files were scored at b9c53d0 or 0f34ec2 (the native
-  readout at 8734f4b, the norm-matched rerun at 494afe2) with the dirty flag set.
+  readout at 8734f4b, the norm-matched rerun at 494afe2, along-path and reverse at 21b27b6) with the dirty flag set.
 - **Numerics.** CPU–GPU parity on 8 clips: worst per-layer max|Δ|/max|x| 8.2e-5 (rule < 1e-3); GPU batch-8 vs
   batch-16 gap 1.31× the CPU–CPU gap (rule ≤ 2×). Frame hashes and disk masks match, and 27/27 sha256 checks of the
   downloaded activations pass[^gpu].
 - **Cost.** GPU session 1 (RTX 4080 SUPER, Vast): 37.7 billed minutes, $0.19[^gpu]. Session 2 box (RTX 4060 Ti,
-  $0.198/h): $0.512 to the end of session 2 (the run itself $0.311); $0.90 over 4.55 billed hours as of 21:17 ET, box
-  still running, including the native-readout extraction (0.09 h, $0.018) and the norm-matched rerun (0.137 h,
-  $0.027); $0.006 egress[^cost]. No other box's cost is recorded.
+  $0.198/h): $0.512 to the end of session 2 (the run itself $0.311); $1.19 over 6.00 billed hours as of 22:44 ET, box
+  still running, including the native-readout extraction (0.09 h, $0.018), the norm-matched rerun (0.137 h, $0.027),
+  the along-path forward (0.34 h, $0.067) and the reverse test (0.365 h, $0.072); $0.006 egress[^cost]. No other box's cost is recorded.
 - **Tests.** `pytest --collect-only` collects 173 tests at the commit of this report.
 
 [^gpu]: `artifacts/gpu_session1.json`.
@@ -726,4 +746,5 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
 [^nat]: `results/session2_predictor_native_readout.json` (`direction`, `position`, `twin_context_reference`, `per_layer`, `definitions`); `scripts/session2_native_readout.py`.
 [^nm]: `results/session2_predictor_norm_matched.json` (`per_condition`, `spline_minus_chord`, `session2_unmatched`, `applied_norms`, `forward.parity_*`); `scripts/session2_norm_matched.py`.
 [^p2b]: `results/p2_ring_occupancy_L{12,22}.json` (`occupancy`; `over_arcs.manifold_minus_linear.{knn_mid_err,knn_mid_rbar,mid_ratio_pca64}`), `results/p2_shift_dependence.json` (`by_shift.{probe_radius_min,probe_err_to_target,nearest_real_R,excess_to_nearest_real}`), `results/p2_isometry_linear.json` (`correlations["smooth.{geo,lin}.{predictor,encoder_out,concept}"]`); 17 arc runs (seeds 0–16); scripts at 33a2cbd.
-[^cost]: `results/session2_cost.json` (`cost_start_to_session2_done_usd`, `session2_run_cost_usd`, `cost_so_far_usd`, `billed_hours_so_far`, `as_of_utc` 01:17 UTC, `runs[0]`, `runs[1]`, `pull_egress_usd`, `status: running`).
+[^cost]: `results/session2_cost.json` (`cost_start_to_session2_done_usd`, `session2_run_cost_usd`, `cost_so_far_usd`, `billed_hours_so_far`, `as_of_utc` 02:44 UTC, `runs[0..3]`, `pull_egress_usd`, `status: running`).
+[^ap]: `results/session2_predictor_along_path.json` (`by_t.{all,shift_ge_135}`, `summary`, `spline_minus_chord`, `applied_norms`, `n_exact_180`; unedited radius `by_t.all.spline.forecast_radius[0]`) and `results/session2_reverse_path.json` (`reverse`, `by_t`, `over_t`, `paired_over_t`, `loss_curve_mean` every 10 steps); `scripts/session2_along_path.py`.
