@@ -134,7 +134,7 @@ def geometry_layer(path, layer, dataset, k=64):
     F, _ = load_layer(path, layer)
     F = np.nan_to_num(F)
     R = tm.remove_clip_mean(F)
-    knot, held = m["role"] == "knot", m["role"] != "knot"
+    knot, held = m["role"] == "knot", np.isin(m["role"], ["probe", "test"])
     g = fit_time_geometry(R, m, knot, k)
     Z, C, pca = g["Z"], g["cent"]["C"], g["pca"]
     Zh = Z[held].reshape(-1, Z.shape[-1])

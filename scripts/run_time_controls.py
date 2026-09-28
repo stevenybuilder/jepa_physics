@@ -29,6 +29,24 @@ tmr = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(tmr)
 
 
+SUBSET = None      # ids with random-init features (partial extraction); set in main, applied to both encoders
+
+
+def _meta_subset(dataset, _orig=tmr.meta):
+    m = _orig(dataset)
+    if SUBSET is not None and dataset == "speed":
+        miss = ~np.isin(m["ids"], SUBSET)
+        m["role"] = np.where(miss, "none", m["role"])
+        m["train"] = m["train"] & ~miss
+        m["fold"] = np.where(miss, -9, m["fold"])
+    return m
+
+
+tmr.meta = _meta_subset
+_band_orig = tmr.band_of
+tmr.band_of = lambda m, ds: np.where(m["role"] == "none", "", _band_orig(m, ds))
+
+
 def band_ratio(dataset):
     m = tmr.meta(dataset)
     band = tmr.band_of(m, dataset)
@@ -49,14 +67,28 @@ def main():
     ap.add_argument("--out", default=str(PROJECT_ROOT / "results" / "p5_time_manifold_controls.json"))
     args = ap.parse_args()
     t0 = time.time()
+    global SUBSET
     rand = Path(args.act_root) / "speed" / "random" / "timepool.npy"
-    jobs = [("clock", l, delayed(tmr.clock_layer)(rand, l, "speed")) for l in args.layers]
-    jobs += [("decode", l, delayed(tmr.decode_layer)(rand, l, "speed")) for l in args.layers]
-    jobs += [("geometry", l, delayed(tmr.geometry_layer)(rand, l, "speed")) for l in args.layers]
-    outs = Parallel(n_jobs=args.jobs, verbose=5)(j[2] for j in jobs)
-    res = {"speed/random/timepool": {"clock": {}, "decode": {}, "geometry": {}}}
-    for (sec, l, _), (_, o) in zip(jobs, outs):
-        res["speed/random/timepool"][sec][str(l)] = o
+    subset_file = rand.with_name("ids_available.json")
+    if subset_file.exists():
+        SUBSET = np.array(json.loads(subset_file.read_text()))
+    encs = {"speed/random/timepool": rand, "speed/vjepa2/timepool_same_subset": Path(args.act_root) / "speed" / "vjepa2" / "timepool.npy"}
+
+    def job(fn, path, l):                      # SUBSET must be set inside the worker process too
+        global SUBSET
+        SUBSET = None if not subset_file.exists() else np.array(json.loads(subset_file.read_text()))
+        return fn(path, l, "speed")
+    jobs = [(e, sec, l, delayed(job)(fn, p, l)) for e, p in encs.items()
+            for sec, fn in (("clock", tmr.clock_layer), ("decode", tmr.decode_layer), ("geometry", tmr.geometry_layer))
+            for l in args.layers]
+    outs = Parallel(n_jobs=args.jobs, verbose=5)(j[3] for j in jobs)
+    res = {e: {"clock": {}, "decode": {}, "geometry": {}} for e in encs}
+    for (e, sec, l, _), (_, o) in zip(jobs, outs):
+        res[e][sec][str(l)] = o
+    res["subset"] = {"n_clips_with_random_features": None if SUBSET is None else int(len(SUBSET)),
+                     "note": "partial CPU extraction (first 3 of 6 chunks of each of 4 id shards); both encoders are "
+                             "scored on exactly these clips; clips are sorted by speed in id order, so all three bands "
+                             "are covered but not uniformly"}
     res["odometer_prediction_as_ratio"] = {ds: band_ratio(ds) for ds in ("speed", "acceleration", "direction")}
     res["static_disk_control"] = ("not run: no zero-speed clips exist in the supplied sets (speed 0.25-4 m/s; direction-set "
                                   "velocity clips 1-7 m/s, accelerating clips start at rest but reach >= 2 m/s^2 * tau; "

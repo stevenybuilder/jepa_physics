@@ -229,7 +229,8 @@ def figure(res, path):
            "abs_v_rel": "|v_rel|"}
     cols["v_top_minus_bottom"] = "#17a589"
     lab["v_top_minus_bottom"] = "v_top - v_bottom"
-    fig, ax = plt.subplots(1, 3, figsize=(16, 4.6))
+    bc = res.get("beyond_composition")
+    fig, ax = plt.subplots(1, 4 if bc else 3, figsize=(21 if bc else 16, 4.6))
     pts = np.arange(N_POINTS)
     for t in TARGETS:
         for src, ls, a in (("vjepa2", "-", 1.0), ("random", ":", 0.8)):
@@ -265,7 +266,22 @@ def figure(res, path):
         a.set(xlabel="layer point", ylabel="R$^2$", title=ttl, ylim=(-0.5, 1.02))
         a.title.set_fontsize(8)
         a.legend(fontsize=6)
+    if bc:
+        a = ax[3]
+        for src, ls in (("vjepa2", "-"), ("random", ":")):
+            rows = bc["sources"][src]
+            for t, col in (("rel_speed", "#555555"), ("closing_rate", "#1e8449")):
+                pp = [r["point"] for r in rows]
+                a.plot(pp, [r["targets"][t]["mlp_acts"]["test_r2"] for r in rows], ls, color=col, lw=1.6,
+                       label=f"{src} MLP on activations: {t}")
+                a.plot(pp, [r["targets"][t]["mlp_null"]["test_r2"] for r in rows], ls, color=col, lw=0.8, alpha=0.6,
+                       marker="x", ms=3, label=f"{src} MLP on decoded single-disk readouts: {t}")
+        a.set(xlabel="layer point", ylabel="held-out test R$^2$", ylim=(-0.5, 1.02),
+              title="Beyond composition: |v1 - v2| and closing rate")
+        a.title.set_fontsize(8)
+        a.legend(fontsize=5)
     fig.tight_layout()
+    Path(path).parent.mkdir(parents=True, exist_ok=True)
     fig.savefig(path, dpi=150)
     plt.close(fig)
 

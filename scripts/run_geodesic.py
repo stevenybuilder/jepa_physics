@@ -52,7 +52,7 @@ torch.set_default_dtype(torch.float64)
 BETA = 1e-3                     # Bethune et al.: metric ~ I on data, ~ 1e3 I in low density
 N_FREE = 50                     # free nodes between the fixed endpoints
 KNN_K, DIM_K = 5, 10
-LBFGS_CFG = {**pbg.LBFGS, "max_iter": 20, "tol": 1e-6, "window": 3}
+LBFGS_CFG = {**pbg.LBFGS, "max_iter": 20, "tol": 1e-6, "window": 3, "steps": 200}
 pbg.LBFGS.update(LBFGS_CFG)     # tighter stop than the pullback run: a geodesic, not a matched-budget replication
 SIMPSON = (np.array([0.0, 0.5, 1.0]), np.array([1.0, 4.0, 1.0]) / 6.0)
 FINE = (np.linspace(0, 1, 17), np.r_[0.5, np.ones(15), 0.5] / 16.0)
@@ -273,7 +273,8 @@ def score_arm(Zp, x, resid, src, tgt, m, ctx, energies, cs, chord, spline, U):
 
 
 # ------------------------------------------------------------------ one arc ------------------------------------------
-def run_arc(d, layer, seed, n_clips, n_restart_clips, n_restarts, log, keep_paths=False):
+def run_arc(d, layer, seed, n_clips, n_restart_clips, n_restarts, log, keep_paths=False, n_targets=None,
+            target_pick=None):
     m = rp2.build(d, 64, "unsupervised", "contiguous", seed, n_controls=0, spline="smooth", behaviour_mode="spline",
                   subspace="pca", extend="cubic", aim="coord")
     probe_rows = d["role"] == "probe"
@@ -287,6 +288,10 @@ def run_arc(d, layer, seed, n_clips, n_restart_clips, n_restarts, log, keep_path
     Ztr, Rtr = pca.project(Xtr), pca.complement(Xtr)
     t0 = time.time()
     energies = {"knn": KNNEnergy(Ztr, Rtr), "kde": KDEEnergy(Ztr, d["fold"][m["knot"]])}
+    # variant: kNN energy fit on knot clips at ALL values (incl. the held-out arc's values; never probe/test clips)
+    allk = d["role"] == "knot"
+    Xall = d["X"][allk].astype(float)
+    e_all = KNNEnergy(pca.project(Xall), pca.complement(Xall))
     flat = FlatEnergy()
     U, ring_var = ring_plane(m["cent"]["C"])
     top_m = energies["kde"].m
@@ -298,8 +303,16 @@ def run_arc(d, layer, seed, n_clips, n_restart_clips, n_restarts, log, keep_path
     log(f"  arc s{seed}: energies built {time.time() - t0:.1f}s d_int={energies['knn'].d_int:.2f} "
         f"h={energies['kde'].h:.3f}")
     picks = rp2.pick_clips(d, m["held"], n_clips, seed)
+    if n_targets:                     # lite run: n_targets spread across the held-out block
+        keys = list(picks)
+        sel = np.unique(np.linspace(0, len(keys) - 1, n_targets).round().astype(int))
+        if target_pick is not None:   # one of those targets per process (the lite run's parallel shards)
+            sel = sel[[target_pick]]
+        picks = {keys[i]: picks[keys[i]] for i in sel}
+    calib["knn_all_values"] = {"train_clips": int(allk.sum()), "d_int_levina_bickel_k10": e_all.d_int,
+                               "E_ref": e_all.E_ref}
     arms = ("chord", "spline", "spline_matched", "geo_knn_from_chord", "geo_knn_from_spline", "geo_kde_from_chord",
-            "geo_kde_from_spline", "flat_from_spline")
+            "geo_kde_from_spline", "flat_from_spline", "geo_knnall_from_chord", "geo_knn_spline_end")
     acc = {a: {} for a in arms}
     rst = {e: {} for e in energies}
     opt_info = {a: [] for a in arms if a.startswith(("geo", "flat"))}
@@ -323,16 +336,25 @@ def run_arc(d, layer, seed, n_clips, n_restart_clips, n_restarts, log, keep_path
         paths = {"chord": chord, "spline": spline, "spline_matched": resample(init["spline"], 50)}
         for e in energies:
             for i0 in ("chord", "spline"):
-                P, info = geodesic(init[i0], energies[e], cs[e])
+                P, info = geodesic(init[i0], energies[e], cs[e], steps=LBFGS_CFG["steps"])
                 paths[f"geo_{e}_from_{i0}"] = resample(P, 50)
                 opt_info[f"geo_{e}_from_{i0}"].append({k: info[k] for k in ("outer_steps", "n_evals", "stop")})
-        P, info = geodesic(init["spline"], flat)
+        c_all = e_all.offsets(resid)
+        P, info = geodesic(init["chord"], e_all, c_all, steps=LBFGS_CFG["steps"])
+        paths["geo_knnall_from_chord"] = resample(P, 50)
+        opt_info["geo_knnall_from_chord"].append({k: info[k] for k in ("outer_steps", "n_evals", "stop")})
+        P, info = geodesic(resample(spline, M), energies["knn"], cs["knn"], steps=LBFGS_CFG["steps"])      # pinned to the SPLINE's end state
+        paths["geo_knn_spline_end"] = resample(P, 50)
+        opt_info["geo_knn_spline_end"].append({k: info[k] for k in ("outer_steps", "n_evals", "stop")})
+        P, info = geodesic(init["spline"], flat, steps=LBFGS_CFG["steps"])
         paths["flat_from_spline"] = resample(P, 50)
         opt_info["flat_from_spline"].append({k: info[k] for k in ("outer_steps", "n_evals", "stop")})
         for a in arms:
             sc = score_arm(paths[a], x, resid, src, tgt, m, ctx, energies, cs, chord, spline, U)
             for q, v in sc.items():
                 acc[a].setdefault(q, []).append(v)
+        acc["geo_knnall_from_chord"].setdefault("dist_to_geo_knn_from_chord_mean", []).append(
+            closest(paths["geo_knnall_from_chord"], paths["geo_knn_from_chord"])[0])
         for e in energies:
             acc[f"geo_{e}_from_spline"].setdefault("dist_to_geo_from_chord_mean", []).append(
                 closest(paths[f"geo_{e}_from_spline"], paths[f"geo_{e}_from_chord"])[0])
@@ -362,7 +384,7 @@ def run_arc(d, layer, seed, n_clips, n_restart_clips, n_restarts, log, keep_path
     ids = np.concatenate(ids)
     # A.9-style: do the two initialisations land on the same path?
     multi = {}
-    out = {"seed": seed, "held_out_values": m["held"].tolist(), "angle_plane": m["plane"],
+    out = {"seed": seed, "held_out_values": m["held"].tolist(), "targets_run": [float(t) for t in picks], "angle_plane": m["plane"],
            "angle_source": m["curve"].coord_source, "calibration": calib,
            "calibration_carriers_E_minus_Eref": {e: {"median": float(np.median(np.concatenate(v))),
                                                      "p95": float(np.percentile(np.concatenate(v), 95))}
@@ -377,7 +399,7 @@ def run_arc(d, layer, seed, n_clips, n_restart_clips, n_restarts, log, keep_path
            "waypoint_radius_mean": {a: cat[a]["_wp_radius"].mean(0).tolist() for a in arms}}
     gaps = {}
     for a in [x for x in arms if x.startswith("geo")]:
-        for ref in ("chord", "spline"):
+        for ref in ("chord", "spline", "spline_matched"):
             gaps[f"{a}_minus_{ref}"] = {q: rp2.paired_bootstrap(cat[a][q] - cat[ref][q], ids, seed=seed)
                                         for q in EVAL_KEYS + ("LG_knn", "LG_kde")}
     out["paired_gaps"] = gaps
@@ -395,7 +417,7 @@ def run_arc(d, layer, seed, n_clips, n_restart_clips, n_restarts, log, keep_path
                     "dist_to_spline_from_chord_vs_from_spline": [out["arms"][a]["dist_to_spline_mean"],
                                                                  out["arms"][b]["dist_to_spline_mean"]]}
     out["multimodality"] = multi
-    out["restart_null"] = {e: {"n_clips_per_target": n_restart_clips, "n_restarts": n_restarts,
+    out["restart_null"] = {} if not n_restarts else {e: {"n_clips_per_target": n_restart_clips, "n_restarts": n_restarts,
                                **{q: float(np.nanmean(np.concatenate(v))) for q, v in r.items()
                                   if not q.startswith("_")},
                                "frac_restarts_LG_below_geo_from_chord_by_1pct": float(np.mean(
@@ -450,6 +472,34 @@ def plot(example, energies, headline, path, layer):
     plt.close(fig)
 
 
+def merge(shard_paths, out_path):
+    """Lite run: one JSON per held-out target (--target-pick shards) -> one file. Pooled arm means = mean of the
+    per-target means (equal carriers per target); paired-gap CIs stay per target (not re-bootstrapped)."""
+    import hashlib
+    sh = [json.loads(Path(q).read_text()) for q in shard_paths]
+    heads = [x["headline"] for x in sh]
+    arms = list(heads[0]["arms"])
+    pooled = {a: {q: float(np.mean([h["arms"][a][q] for h in heads])) for q in heads[0]["arms"][a]} for a in arms}
+    gaps = {g: {q: {"mean": float(np.mean([h["paired_gaps"][g][q]["mean"] for h in heads])),
+                    "per_target_ci95": [h["paired_gaps"][g][q]["ci95"] for h in heads],
+                    "all_targets_ci_excludes_0_same_sign": bool(
+                        all(c[0] > 0 for c in [h["paired_gaps"][g][q]["ci95"] for h in heads]) or
+                        all(c[1] < 0 for c in [h["paired_gaps"][g][q]["ci95"] for h in heads]))}
+                for q in heads[0]["paired_gaps"][g]} for g in heads[0]["paired_gaps"]}
+    out = {k: v for k, v in sh[0].items() if k != "headline"}
+    out["provenance"]["run_config"]["target_pick"] = "merged shards"
+    out["provenance"]["shards"] = [{"file": str(q), "sha256": hashlib.sha256(Path(q).read_bytes()).hexdigest(),
+                                    "targets_run": h.get("targets_run")}
+                                   for q, h in zip(shard_paths, heads)]
+    out["targets_run"] = [t for h in heads for t in h.get("targets_run", [])]
+    out["headline"] = {"pooled_arms_mean": pooled, "pooled_paired_gaps": gaps,
+                       "pooled_note": "mean over the per-target means (16 carriers per target); CIs per target",
+                       "calibration": heads[0]["calibration"], "angle_plane": heads[0]["angle_plane"],
+                       "angle_source": heads[0]["angle_source"], "per_target": heads}
+    Path(out_path).write_text(json.dumps(out, indent=1))
+    return out
+
+
 def parse_arcs(s):
     if not s:
         return []
@@ -465,18 +515,36 @@ def main(argv=None):
     p.add_argument("--arc-clips", type=int, default=16)
     p.add_argument("--restart-clips", type=int, default=8)
     p.add_argument("--restarts", type=int, default=3)
+    p.add_argument("--n-targets", type=int, default=None, help="lite: this many held-out targets, spread")
+    p.add_argument("--target-pick", type=int, default=None, help="shard: index into the --n-targets targets")
+    p.add_argument("--tag", default="")
+    p.add_argument("--max-iter", type=int, default=20)
+    p.add_argument("--tol", type=float, default=1e-6)
+    p.add_argument("--steps", type=int, default=200)
     p.add_argument("--results-dir", default=str(ROOT / "results"))
     p.add_argument("--figures-dir", default=str(ROOT / "figures"))
+    p.add_argument("--merge", nargs="*", default=None, help="merge these shard JSONs into --merge-out")
+    p.add_argument("--merge-out", default=None)
     a = p.parse_args(argv)
+    if a.merge:
+        merge(a.merge, a.merge_out)
+        return
     log = lambda *s: print(*s, flush=True)  # noqa: E731
+    LBFGS_CFG.update(max_iter=a.max_iter, tol=a.tol, steps=a.steps)
+    pbg.LBFGS.update(LBFGS_CFG)
     d = load_inputs("direction", a.layer, "direction")
-    head, ex, energies, m = run_arc(d, a.layer, 0, a.n_clips, a.restart_clips, a.restarts, log)
+    head, ex, energies, m = run_arc(d, a.layer, 0, a.n_clips, a.restart_clips, a.restarts, log,
+                                       n_targets=a.n_targets, target_pick=a.target_pick)
     res = Path(a.results_dir)
     res.mkdir(parents=True, exist_ok=True)
-    out_path = res / f"p2_geodesic_direction_L{a.layer}.json"
+    out_path = res / f"p2_geodesic_direction_L{a.layer}{a.tag}.json"
     out = {"layer": a.layer, "dataset": "direction", "variable": "direction",
            "provenance": provenance(None, seeds={"seed": 0}, layer=a.layer, pool="meanpool", holdout="contiguous",
-                                    spline="smooth", k=64, subspace="pca", K=50),
+                                    spline="smooth", k=64, subspace="pca", K=50,
+                                    run_config={"n_clips_per_target": a.n_clips, "n_targets": a.n_targets,
+                                                "restarts": a.restarts, "restart_clips": a.restart_clips,
+                                                "lbfgs": dict(LBFGS_CFG), "argv": sys.argv[1:],
+                                                "target_pick": a.target_pick, "lite": bool(a.n_targets)}),
            "matches": f"results/p2_steer_direction_direction_L{a.layer}_contiguous_rawchord.json (seed 0)",
            "metric": "Goodfire 2605.05115 Eq. 4 length under Eq. 6 G_E = (alpha e^-E + beta)^-1 I",
            "arms": {"chord": "linear_raw arm (raw-centroid chord), K=50",
@@ -485,6 +553,9 @@ def main(argv=None):
                     "spline_matched": "spline arm bent onto the chord's end state (the spline initialiser)",
                     "geo_{knn,kde}_from_{chord,spline}": "Eq. 4 minimiser under G_E, 50 free nodes, fixed chord "
                                                          "endpoints, resampled to 50 waypoints uniform in arc length",
+                    "geo_knnall_from_chord": "kNN energy fit on knot clips at ALL values (the held-out arc's "
+                                             "values included; probe/test never), from the chord",
+                    "geo_knn_spline_end": "kNN geodesic pinned to the SPLINE arm's own end state (spline init)",
                     "flat_from_spline": "same optimiser with G = I from the spline initialiser (parity: must be the "
                                         "chord)"},
            "optimiser": {"lbfgs": LBFGS_CFG, "n_free_nodes": N_FREE, "quadrature": "Simpson per segment (optimised); "
@@ -492,7 +563,7 @@ def main(argv=None):
            "headline": head}
     out_path.write_text(json.dumps(out, indent=1))
     Path(a.figures_dir).mkdir(parents=True, exist_ok=True)
-    plot(ex, energies, head, Path(a.figures_dir) / f"fig_geodesic_direction_L{a.layer}.png", a.layer)
+    plot(ex, energies, head, Path(a.figures_dir) / f"fig_geodesic_direction_L{a.layer}{a.tag}.png", a.layer)
     arcs = []
     for s in parse_arcs(a.arcs):
         o, _, _, _ = run_arc(d, a.layer, s, a.arc_clips, 0, 0, log)

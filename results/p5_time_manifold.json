@@ -13603,7 +13603,8 @@
   "decode[dataset/model/pool][point]": "cv = grouped CV over the split's 5 train folds (all 8 steps of a clip together); test = fit on all train clips, read on test clips. t_r2/t_mae_steps: step index 0..7; dist: distance travelled from the start (m, v tau + a tau^2/2); xy: absolute disk position at the step (m). cv_t_bias_by_band: mean signed error of the t probe per speed band (acceleration band on the acceleration set; speed band on the direction set, whose accelerating clips have speed 0 and fall in 'slow').",
   "geometry[...][point]": "residual = step feature - clip mean over 8 steps; PCA-64 on knot residual rows; heldout_var_explained: fraction of non-knot clips' residual variance (PCA-64) explained by the knot step centroids / smoothing spline at integer t / least-squares line in t (centroids_full_space: centroids lifted, over full residual variance); residual_var_frac_of_step_var: within-clip (time) share of all per-step variance; bend: spread_vs_curvature on the interpolating spline (interior knots); loo_sagitta: step h held out of PCA+centroids+spline, sagitta = |spline(h) - raw chord midpoint|, over median centroid noise (spread/sqrt(count)); loo_spline_beats_chord = # of the 6 held-out steps whose true centroid the spline is closer to than the chord.",
   "clock[...][point]": "time spline from MID-band knot clips (extended linearly), coordinate of each non-knot clip's step residual = nearest spline point; also a mid-band ridge time probe on residual PCA coords (linear_probe). slope: per-clip OLS slope of coord on t, mean + clip bootstrap CI; clock_prediction 1, odometer_prediction: mean per-clip slope of the odometer coordinate (the step at which a mid-mean reference clip has covered the same distance; speed v/v_mid, acceleration sqrt(a/a_mid)). joint_fit_heldout: coord = a + b t + c odo over held-out rows (clip bootstrap CIs). bands: {\"speed\": {\"var\": \"speed_mps\", \"slow\": [0.0, 1.0], \"mid\": [1.5, 2.75], \"fast\": [3.25, 9.0]}, \"acceleration\": {\"var\": \"acceleration_mps2\", \"slow\": [0.0, 2.5], \"mid\": [4.0, 6.5], \"fast\": [7.75, 99.0]}, \"direction\": {\"var\": \"speed_mps\", \"slow\": [0.0, 2.0], \"mid\": [3.0, 5.0], \"fast\": [6.0, 99.0]}}",
-  "steer[point]": "speed set, held-out step h in 2..5 (excluded from PCA, centroids, spline); every other step s of every test clip is moved to h. Arms: spline (x + lift(S(h) - S(s))), chord_raw (raw-centroid polyline point at h - raw centroid at s; the A.9 chord between the neighbours of h), unedited, donor_real_step (the clip's own real step-h feature = ceiling). Readouts: one ridge fit on probe-fold per-step features for t, distance, (x, y), speed, (sin, cos) direction. time_err = |t_hat - h| (steps); dist_err / xy_err vs the clip's true step-h distance / position (m); speed_change / dir_change = off-target change vs the unedited read; nearest_real_R = 1 - |x' - x_h| / |x_s - x_h| with x_h the clip's own real step-h feature. gaps: paired differences, mean with 95% clip-bootstrap CI."
+  "steer[point]": "speed set, held-out step h in 2..5 (excluded from PCA, centroids, spline); every other step s of every test clip is moved to h. Arms: spline (x + lift(S(h) - S(s))), chord_raw (raw-centroid polyline point at h - raw centroid at s; the A.9 chord between the neighbours of h), unedited, donor_real_step (the clip's own real step-h feature = ceiling). Readouts: one ridge fit on probe-fold per-step features for t, distance, (x, y), speed, (sin, cos) direction. time_err = |t_hat - h| (steps); dist_err / xy_err vs the clip's true step-h distance / position (m); speed_change / dir_change = off-target change vs the unedited read; nearest_real_R = 1 - |x' - x_h| / |x_s - x_h| with x_h the clip's own real step-h feature. gaps: paired differences, mean with 95% clip-bootstrap CI.",
+  "controls": "Untrained-encoder control on the speed set (random-init timepool extracted on CPU, same code path/fp32; its meanpool matches the stored random-init meanpool to 1.2e-5), scored with V-JEPA 2 on the SAME 768-clip subset (partial extraction; held-out clips slow/mid/fast = 100/135/63). Same fields as clock/decode/geometry. odometer_prediction_as_ratio: odometer => fast slope / slow slope = speed ratio of the held-out clips (full set 6.02 = 3.64/0.60 m/s; this subset 7.44 = 3.40/0.46); clock => 1. Copy of results/p5_time_manifold_controls.json."
  },
  "provenance": {
   "split_file": "/workspace/wm_p5/splits/split_v1.json",
@@ -13655,5 +13656,5066 @@
   "step_time": "tau_t = (2t + 0.5)/24 s",
   "random_init_note": "random-init timepool exists only for the direction set (artifacts/activations/direction/random*/timepool.npy); speed/acceleration random-init have meanpool only",
   "wall_s": 1044.8
+ },
+ "controls": {
+  "speed/random/timepool": {
+   "clock": {
+    "1": {
+     "reference_mid_mean": 2.1353820598006648,
+     "n_heldout_clips": {
+      "slow": 100,
+      "mid": 135,
+      "fast": 63
+     },
+     "spline": {
+      "slow": {
+       "slope": {
+        "mean": 0.14173035714285714,
+        "ci95": [
+         0.0048268005952381,
+         0.28144508928571427
+        ],
+        "n": 100,
+        "n_clips": 100
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 0.2143588746272527,
+       "mean_coord_per_step": [
+        2.6249500000000006,
+        2.8032499999999994,
+        3.3834000000000013,
+        3.3045,
+        3.098800000000001,
+        3.369450000000001,
+        3.7582999999999998,
+        3.6789000000000014
+       ]
+      },
+      "mid": {
+       "slope": {
+        "mean": 0.1796957671957672,
+        "ci95": [
+         0.10600370370370371,
+         0.2712419091710759
+        ],
+        "n": 135,
+        "n_clips": 135
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 1.0078366970626793,
+       "mean_coord_per_step": [
+        2.346037037037038,
+        2.4826666666666655,
+        2.9695925925925915,
+        3.280518518518518,
+        2.6688148148148154,
+        2.9645925925925916,
+        4.004296296296298,
+        3.505037037037037
+       ]
+      },
+      "fast": {
+       "slope": {
+        "mean": 0.15949735449735447,
+        "ci95": [
+         0.07005763416477702,
+         0.25524870086923657
+        ],
+        "n": 63,
+        "n_clips": 63
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 1.5944509270063532,
+       "mean_coord_per_step": [
+        2.2521428571428577,
+        3.3050793650793655,
+        2.9073015873015877,
+        2.881825396825396,
+        3.387539682539683,
+        2.6681746031746028,
+        3.176746031746031,
+        4.2880158730158735
+       ]
+      },
+      "fast_over_slow_slope": {
+       "mean": 1.1253577406609445,
+       "ci95": [
+        0.15345023467848107,
+        6.34925584308025
+       ],
+       "clock_prediction": 1.0,
+       "odometer_prediction": 7.438231469440833
+      },
+      "joint_fit_heldout": {
+       "a": 2.5504022340691623,
+       "b_clock": 0.17422223323738598,
+       "c_odometer": -0.01332818190801037,
+       "r2_clock_only": 0.014039062374857414,
+       "r2_odometer_only": 0.00482113731940137,
+       "r2_both": 0.01413597159073876,
+       "b_clock_ci95": [
+        0.09464838001520579,
+        0.2526253787035577
+       ],
+       "c_odometer_ci95": [
+        -0.060386062646307505,
+        0.0380270291793542
+       ]
+      },
+      "quadratic_coef_by_band": {
+       "slow": {
+        "mean": -0.009443750000000055,
+        "ci95": [
+         -0.06525057291666672,
+         0.046912723214285634
+        ],
+        "n": 100,
+        "n_clips": 100
+       },
+       "mid": {
+        "mean": -0.0006234567901235029,
+        "ci95": [
+         -0.03993594576719581,
+         0.042847547398589016
+        ],
+        "n": 135,
+        "n_clips": 135
+       },
+       "fast": {
+        "mean": 0.024938586545729356,
+        "ci95": [
+         -0.04903128543083906,
+         0.0943332860922146
+        ],
+        "n": 63,
+        "n_clips": 63
+       }
+      }
+     },
+     "linear_probe": {
+      "slow": {
+       "slope": {
+        "mean": 0.3264494351600639,
+        "ci95": [
+         0.28618137137902033,
+         0.3704809160958178
+        ],
+        "n": 100,
+        "n_clips": 100
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 0.2143588746272527,
+       "mean_coord_per_step": [
+        2.1727293483608343,
+        2.773643034028613,
+        3.3159856021227023,
+        3.466459340325609,
+        3.40901666033175,
+        3.7059383244386925,
+        4.353468078791201,
+        4.802759611600593
+       ]
+      },
+      "mid": {
+       "slope": {
+        "mean": 0.3212179946796855,
+        "ci95": [
+         0.2954262602315375,
+         0.35165528935745866
+        ],
+        "n": 135,
+        "n_clips": 135
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 1.0078366970626793,
+       "mean_coord_per_step": [
+        2.3335798306875746,
+        2.7415521650747725,
+        3.0174347185948087,
+        3.460581343593543,
+        3.571393476690397,
+        3.8419282535348196,
+        4.396936513702519,
+        4.6365936981215645
+       ]
+      },
+      "fast": {
+       "slope": {
+        "mean": 0.300834407770857,
+        "ci95": [
+         0.26926557180287947,
+         0.3377977079412746
+        ],
+        "n": 63,
+        "n_clips": 63
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 1.5944509270063532,
+       "mean_coord_per_step": [
+        2.337969282354787,
+        2.72795810967009,
+        3.189464826168131,
+        3.5283531928755156,
+        3.6095835069961293,
+        3.7120524466988636,
+        4.317828922391111,
+        4.576789712845372
+       ]
+      },
+      "fast_over_slow_slope": {
+       "mean": 0.9215344717118368,
+       "ci95": [
+        0.772265018825107,
+        1.1103989994020922
+       ],
+       "clock_prediction": 1.0,
+       "odometer_prediction": 7.438231469440833
+      },
+      "joint_fit_heldout": {
+       "a": 2.3845903533116246,
+       "b_clock": 0.32084964242731184,
+       "c_odometer": -0.0025247818320926207,
+       "r2_clock_only": 0.3164259435377811,
+       "r2_odometer_only": 0.13086410634602408,
+       "r2_both": 0.3164463720313888,
+       "b_clock_ci95": [
+        0.2925561809050214,
+        0.3501280923593666
+       ],
+       "c_odometer_ci95": [
+        -0.015498929934100849,
+        0.008779296562091117
+       ]
+      },
+      "quadratic_coef_by_band": {
+       "slow": {
+        "mean": 0.00304989315225479,
+        "ci95": [
+         -0.017913362124204423,
+         0.021662326373093975
+        ],
+        "n": 100,
+        "n_clips": 100
+       },
+       "mid": {
+        "mean": 0.0011413116823374221,
+        "ci95": [
+         -0.012318099779646709,
+         0.016492503846069824
+        ],
+        "n": 135,
+        "n_clips": 135
+       },
+       "fast": {
+        "mean": -0.00562580547319592,
+        "ci95": [
+         -0.02963307384529164,
+         0.021934009540973253
+        ],
+        "n": 63,
+        "n_clips": 63
+       }
+      }
+     }
+    },
+    "4": {
+     "reference_mid_mean": 2.1353820598006648,
+     "n_heldout_clips": {
+      "slow": 100,
+      "mid": 135,
+      "fast": 63
+     },
+     "spline": {
+      "slow": {
+       "slope": {
+        "mean": 0.4800249999999999,
+        "ci95": [
+         0.37314684523809527,
+         0.595890119047619
+        ],
+        "n": 100,
+        "n_clips": 100
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 0.2143588746272527,
+       "mean_coord_per_step": [
+        1.6068500000000008,
+        2.0493499999999996,
+        2.7937499999999993,
+        2.68625,
+        2.7387499999999996,
+        3.65985,
+        4.640699999999999,
+        5.1375
+       ]
+      },
+      "mid": {
+       "slope": {
+        "mean": 0.48469929453262794,
+        "ci95": [
+         0.4274349537037037,
+         0.5512439925044091
+        ],
+        "n": 135,
+        "n_clips": 135
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 1.0078366970626793,
+       "mean_coord_per_step": [
+        1.5460740740740744,
+        2.1254444444444442,
+        2.37237037037037,
+        2.8621481481481488,
+        2.4776296296296314,
+        3.595925925925926,
+        4.664185185185187,
+        5.079629629629632
+       ]
+      },
+      "fast": {
+       "slope": {
+        "mean": 0.465062358276644,
+        "ci95": [
+         0.4036102843915344,
+         0.5280257936507937
+        ],
+        "n": 63,
+        "n_clips": 63
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 1.5944509270063532,
+       "mean_coord_per_step": [
+        1.3430158730158728,
+        2.8316666666666674,
+        2.3511904761904763,
+        2.6418253968253973,
+        2.8707142857142856,
+        3.6061111111111117,
+        3.968650793650793,
+        5.541111111111111
+       ]
+      },
+      "fast_over_slow_slope": {
+       "mean": 0.9688294532089872,
+       "ci95": [
+        0.7453808305182079,
+        1.2576113720762632
+       ],
+       "clock_prediction": 1.0,
+       "odometer_prediction": 7.438231469440833
+      },
+      "joint_fit_heldout": {
+       "a": 1.449883336229299,
+       "b_clock": 0.4849737071995196,
+       "c_odometer": -0.006925261611172739,
+       "r2_clock_only": 0.156557952610618,
+       "r2_odometer_only": 0.0637364770990898,
+       "r2_both": 0.15659161129828825,
+       "b_clock_ci95": [
+        0.4136963104642459,
+        0.5462100558915207
+       ],
+       "c_odometer_ci95": [
+        -0.047758028033290746,
+        0.036675894438927645
+       ]
+      },
+      "quadratic_coef_by_band": {
+       "slow": {
+        "mean": 0.04413511904761901,
+        "ci95": [
+         -0.0015243973214285986,
+         0.08889675595238093
+        ],
+        "n": 100,
+        "n_clips": 100
+       },
+       "mid": {
+        "mean": 0.050986772486772455,
+        "ci95": [
+         0.014108702601410908,
+         0.08770427138447967
+        ],
+        "n": 135,
+        "n_clips": 135
+       },
+       "fast": {
+        "mean": 0.056872637944066474,
+        "ci95": [
+         0.010123937074829904,
+         0.09798718584656083
+        ],
+        "n": 63,
+        "n_clips": 63
+       }
+      }
+     },
+     "linear_probe": {
+      "slow": {
+       "slope": {
+        "mean": 0.8574498191359242,
+        "ci95": [
+         0.8129103280668181,
+         0.9019775848850934
+        ],
+        "n": 100,
+        "n_clips": 100
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 0.2143588746272527,
+       "mean_coord_per_step": [
+        0.3546499076269234,
+        1.7895483142533826,
+        2.642126961680426,
+        2.8232564644303917,
+        3.3326649424642767,
+        4.266580336506409,
+        5.73245219085309,
+        7.058720882185103
+       ]
+      },
+      "mid": {
+       "slope": {
+        "mean": 0.86137019474829,
+        "ci95": [
+         0.8353181825821193,
+         0.8847757259444601
+        ],
+        "n": 135,
+        "n_clips": 135
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 1.0078366970626793,
+       "mean_coord_per_step": [
+        0.45494914404370934,
+        1.743308684542469,
+        2.41867289131497,
+        2.8515414741365754,
+        3.36930695546886,
+        4.395359104739782,
+        5.779786276003738,
+        6.987075469749892
+       ]
+      },
+      "fast": {
+       "slope": {
+        "mean": 0.8079785529592263,
+        "ci95": [
+         0.7711302009095367,
+         0.8442664492136203
+        ],
+        "n": 63,
+        "n_clips": 63
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 1.5944509270063532,
+       "mean_coord_per_step": [
+        0.44484396566986595,
+        1.8886290726577037,
+        2.6503342936428362,
+        2.9226737952973263,
+        3.3818982992189883,
+        4.433133217899648,
+        5.6648905972174655,
+        6.61359675839617
+       ]
+      },
+      "fast_over_slow_slope": {
+       "mean": 0.9423041849532938,
+       "ci95": [
+        0.8757180883691149,
+        1.0087141457452686
+       ],
+       "clock_prediction": 1.0,
+       "odometer_prediction": 7.438231469440833
+      },
+      "joint_fit_heldout": {
+       "a": 0.5290792240118096,
+       "b_clock": 0.8548408421719556,
+       "c_odometer": -0.007016880300402262,
+       "r2_clock_only": 0.8390115572153533,
+       "r2_odometer_only": 0.3467031657869185,
+       "r2_both": 0.8390705314272602,
+       "b_clock_ci95": [
+        0.8288210116350635,
+        0.8805389649599294
+       ],
+       "c_odometer_ci95": [
+        -0.017545228294423638,
+        0.004608585913333626
+       ]
+      },
+      "quadratic_coef_by_band": {
+       "slow": {
+        "mean": 0.04708254229021909,
+        "ci95": [
+         0.03237449744660089,
+         0.06092989802237714
+        ],
+        "n": 100,
+        "n_clips": 100
+       },
+       "mid": {
+        "mean": 0.04804124476732131,
+        "ci95": [
+         0.039399734011532836,
+         0.057836027161715355
+        ],
+        "n": 135,
+        "n_clips": 135
+       },
+       "fast": {
+        "mean": 0.024936557923383187,
+        "ci95": [
+         0.010950077422698974,
+         0.03900630464718947
+        ],
+        "n": 63,
+        "n_clips": 63
+       }
+      }
+     }
+    },
+    "8": {
+     "reference_mid_mean": 2.1353820598006648,
+     "n_heldout_clips": {
+      "slow": 100,
+      "mid": 135,
+      "fast": 63
+     },
+     "spline": {
+      "slow": {
+       "slope": {
+        "mean": 0.6639476190476191,
+        "ci95": [
+         0.5891040773809524,
+         0.7511604910714286
+        ],
+        "n": 100,
+        "n_clips": 100
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 0.2143588746272527,
+       "mean_coord_per_step": [
+        0.9613000000000005,
+        1.6542000000000003,
+        2.414500000000001,
+        2.395550000000002,
+        2.78545,
+        3.547799999999999,
+        4.810600000000001,
+        6.132700000000003
+       ]
+      },
+      "mid": {
+       "slope": {
+        "mean": 0.6579060846560847,
+        "ci95": [
+         0.6097774911816579,
+         0.7077026014109347
+        ],
+        "n": 135,
+        "n_clips": 135
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 1.0078366970626793,
+       "mean_coord_per_step": [
+        1.1254814814814824,
+        1.74362962962963,
+        2.164888888888888,
+        2.3491481481481493,
+        2.182777777777778,
+        3.295185185185186,
+        5.105037037037038,
+        6.158703703703708
+       ]
+      },
+      "fast": {
+       "slope": {
+        "mean": 0.653442932728647,
+        "ci95": [
+         0.5832138605442176,
+         0.7229388227513228
+        ],
+        "n": 63,
+        "n_clips": 63
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 1.5944509270063532,
+       "mean_coord_per_step": [
+        1.0307142857142857,
+        2.0011111111111104,
+        2.3964285714285722,
+        2.449603174603174,
+        2.898253968253967,
+        3.7144444444444433,
+        4.90452380952381,
+        6.169206349206351
+       ]
+      },
+      "fast_over_slow_slope": {
+       "mean": 0.9841784411637167,
+       "ci95": [
+        0.8376697594615173,
+        1.1506820681211383
+       ],
+       "clock_prediction": 1.0,
+       "odometer_prediction": 7.438231469440833
+      },
+      "joint_fit_heldout": {
+       "a": 0.7718233420131333,
+       "b_clock": 0.6479310797507103,
+       "c_odometer": 0.01277611859904143,
+       "r2_clock_only": 0.3004608256931234,
+       "r2_odometer_only": 0.1325357340716915,
+       "r2_both": 0.30057697360262303,
+       "b_clock_ci95": [
+        0.5875118444624866,
+        0.6965823749574565
+       ],
+       "c_odometer_ci95": [
+        -0.021184313807559932,
+        0.05358629921459226
+       ]
+      },
+      "quadratic_coef_by_band": {
+       "slow": {
+        "mean": 0.07339821428571426,
+        "ci95": [
+         0.0372135044642857,
+         0.11084177827380949
+        ],
+        "n": 100,
+        "n_clips": 100
+       },
+       "mid": {
+        "mean": 0.11189351851851852,
+        "ci95": [
+         0.0814255566578483,
+         0.14457129078483244
+        ],
+        "n": 135,
+        "n_clips": 135
+       },
+       "fast": {
+        "mean": 0.07281651549508691,
+        "ci95": [
+         0.031510511148903984,
+         0.10884948979591834
+        ],
+        "n": 63,
+        "n_clips": 63
+       }
+      }
+     },
+     "linear_probe": {
+      "slow": {
+       "slope": {
+        "mean": 0.920603200098312,
+        "ci95": [
+         0.8776779900277686,
+         0.9637026063903992
+        ],
+        "n": 100,
+        "n_clips": 100
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 0.2143588746272527,
+       "mean_coord_per_step": [
+        0.43324855119812455,
+        1.526380396779485,
+        2.3960503480586595,
+        2.786376748519684,
+        3.267485593629904,
+        4.183262343322245,
+        5.848903154900877,
+        7.558292863591017
+       ]
+      },
+      "mid": {
+       "slope": {
+        "mean": 0.9086961561250771,
+        "ci95": [
+         0.8894890310556974,
+         0.9284250400206228
+        ],
+        "n": 135,
+        "n_clips": 135
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 1.0078366970626793,
+       "mean_coord_per_step": [
+        0.529612037910808,
+        1.5183563727198004,
+        2.297898373664694,
+        2.776449155108708,
+        3.3277228839500554,
+        4.275905838950154,
+        5.887070122543522,
+        7.3869852151522535
+       ]
+      },
+      "fast": {
+       "slope": {
+        "mean": 0.8653715047010855,
+        "ci95": [
+         0.837317071857198,
+         0.8945682583721671
+        ],
+        "n": 63,
+        "n_clips": 63
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 1.5944509270063532,
+       "mean_coord_per_step": [
+        0.5096561308890105,
+        1.6366933197976288,
+        2.4657531164562116,
+        2.8732779763125427,
+        3.3629015691361013,
+        4.290219585443561,
+        5.775622601718916,
+        7.0858757002460315
+       ]
+      },
+      "fast_over_slow_slope": {
+       "mean": 0.9400048844156437,
+       "ci95": [
+        0.8846384893970272,
+        0.9893463195036288
+       ],
+       "clock_prediction": 1.0,
+       "odometer_prediction": 7.438231469440833
+      },
+      "joint_fit_heldout": {
+       "a": 0.33732484713487326,
+       "b_clock": 0.9115475305001766,
+       "c_odometer": -0.009259590808740392,
+       "r2_clock_only": 0.8886482256208238,
+       "r2_odometer_only": 0.3654706492419034,
+       "r2_both": 0.8887442118703883,
+       "b_clock_ci95": [
+        0.8881558348221462,
+        0.9389998371711556
+       ],
+       "c_odometer_ci95": [
+        -0.019460310236467344,
+        0.0010237861248499932
+       ]
+      },
+      "quadratic_coef_by_band": {
+       "slow": {
+        "mean": 0.07921918851377222,
+        "ci95": [
+         0.06972356765558102,
+         0.08838886316720446
+        ],
+        "n": 100,
+        "n_clips": 100
+       },
+       "mid": {
+        "mean": 0.07487699067599052,
+        "ci95": [
+         0.06746731723784688,
+         0.08125080024052721
+        ],
+        "n": 135,
+        "n_clips": 135
+       },
+       "fast": {
+        "mean": 0.0543584696816624,
+        "ci95": [
+         0.04475150783330066,
+         0.06447146690986469
+        ],
+        "n": 63,
+        "n_clips": 63
+       }
+      }
+     }
+    },
+    "12": {
+     "reference_mid_mean": 2.1353820598006648,
+     "n_heldout_clips": {
+      "slow": 100,
+      "mid": 135,
+      "fast": 63
+     },
+     "spline": {
+      "slow": {
+       "slope": {
+        "mean": 0.7322696428571429,
+        "ci95": [
+         0.6616427232142857,
+         0.8108901488095238
+        ],
+        "n": 100,
+        "n_clips": 100
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 0.2143588746272527,
+       "mean_coord_per_step": [
+        0.8462500000000006,
+        1.3507500000000008,
+        2.0593500000000007,
+        2.5011499999999995,
+        2.689049999999999,
+        3.5164500000000016,
+        5.191399999999999,
+        6.2388499999999985
+       ]
+      },
+      "mid": {
+       "slope": {
+        "mean": 0.7341477072310405,
+        "ci95": [
+         0.6822338403880072,
+         0.7870491622574955
+        ],
+        "n": 135,
+        "n_clips": 135
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 1.0078366970626793,
+       "mean_coord_per_step": [
+        0.7238518518518519,
+        1.3355555555555554,
+        1.7407777777777778,
+        2.0122222222222224,
+        2.197740740740742,
+        3.1359999999999997,
+        5.103814814814816,
+        6.2175555555555615
+       ]
+      },
+      "fast": {
+       "slope": {
+        "mean": 0.6605697278911565,
+        "ci95": [
+         0.6016015447845806,
+         0.7265994425547997
+        ],
+        "n": 63,
+        "n_clips": 63
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 1.5944509270063532,
+       "mean_coord_per_step": [
+        1.0314285714285714,
+        1.7373015873015873,
+        1.974841269841271,
+        2.184285714285714,
+        2.526269841269842,
+        3.338809523809524,
+        4.895317460317459,
+        6.069126984126984
+       ]
+      },
+      "fast_over_slow_slope": {
+       "mean": 0.902085364775972,
+       "ci95": [
+        0.7701620421486397,
+        1.0376033521030756
+       ],
+       "clock_prediction": 1.0,
+       "odometer_prediction": 7.438231469440833
+      },
+      "joint_fit_heldout": {
+       "a": 0.40949533424209694,
+       "b_clock": 0.742162777352146,
+       "c_odometer": -0.027958405867925862,
+       "r2_clock_only": 0.3475387477986389,
+       "r2_odometer_only": 0.13323535771839656,
+       "r2_both": 0.3480807584368193,
+       "b_clock_ci95": [
+        0.6897428255074808,
+        0.7852220470881859
+       ],
+       "c_odometer_ci95": [
+        -0.05689171881950635,
+        0.007380454680851956
+       ]
+      },
+      "quadratic_coef_by_band": {
+       "slow": {
+        "mean": 0.08011577380952378,
+        "ci95": [
+         0.04597250744047616,
+         0.11411244047619046
+        ],
+        "n": 100,
+        "n_clips": 100
+       },
+       "mid": {
+        "mean": 0.11517305996472663,
+        "ci95": [
+         0.08453482694003528,
+         0.14481612654320986
+        ],
+        "n": 135,
+        "n_clips": 135
+       },
+       "fast": {
+        "mean": 0.10025462962962961,
+        "ci95": [
+         0.05808521116780043,
+         0.14123745748299313
+        ],
+        "n": 63,
+        "n_clips": 63
+       }
+      }
+     },
+     "linear_probe": {
+      "slow": {
+       "slope": {
+        "mean": 0.9254817325521781,
+        "ci95": [
+         0.8887144620517982,
+         0.9613987823231243
+        ],
+        "n": 100,
+        "n_clips": 100
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 0.2143588746272527,
+       "mean_coord_per_step": [
+        0.4270927683732119,
+        1.4941579318229146,
+        2.4130774880821435,
+        2.729884242208613,
+        3.274417433244768,
+        4.248133276399241,
+        5.870727001480588,
+        7.542509858388518
+       ]
+      },
+      "mid": {
+       "slope": {
+        "mean": 0.9118598732478191,
+        "ci95": [
+         0.8908659942766635,
+         0.9326783091074323
+        ],
+        "n": 135,
+        "n_clips": 135
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 1.0078366970626793,
+       "mean_coord_per_step": [
+        0.5105176424702512,
+        1.5201626945435176,
+        2.32668933829667,
+        2.7556592635594463,
+        3.291441831887022,
+        4.2813346668602925,
+        5.9142070839359615,
+        7.39998747844684
+       ]
+      },
+      "fast": {
+       "slope": {
+        "mean": 0.8651358399690641,
+        "ci95": [
+         0.8375593053324104,
+         0.8973975009157736
+        ],
+        "n": 63,
+        "n_clips": 63
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 1.5944509270063532,
+       "mean_coord_per_step": [
+        0.5625810573151171,
+        1.5689131071066214,
+        2.475664464366219,
+        2.9145068585829925,
+        3.295856561380612,
+        4.317184800914974,
+        5.7544596353189155,
+        7.110833515014552
+       ]
+      },
+      "fast_over_slow_slope": {
+       "mean": 0.93479515536552,
+       "ci95": [
+        0.8846065358774066,
+        0.9829843999365959
+       ],
+       "clock_prediction": 1.0,
+       "odometer_prediction": 7.438231469440833
+      },
+      "joint_fit_heldout": {
+       "a": 0.32670162750808823,
+       "b_clock": 0.9158940577912629,
+       "c_odometer": -0.010791537940548324,
+       "r2_clock_only": 0.8919827191043741,
+       "r2_odometer_only": 0.36538233837075773,
+       "r2_both": 0.8921127120666497,
+       "b_clock_ci95": [
+        0.894690294948274,
+        0.9380941513949059
+       ],
+       "c_odometer_ci95": [
+        -0.019456677166971165,
+        -0.0010273205583283837
+       ]
+      },
+      "quadratic_coef_by_band": {
+       "slow": {
+        "mean": 0.07825573005907467,
+        "ci95": [
+         0.06971133913598229,
+         0.08759808313427944
+        ],
+        "n": 100,
+        "n_clips": 100
+       },
+       "mid": {
+        "mean": 0.0758829055487851,
+        "ci95": [
+         0.06910919118311899,
+         0.08209633271216997
+        ],
+        "n": 135,
+        "n_clips": 135
+       },
+       "fast": {
+        "mean": 0.05718398722066432,
+        "ci95": [
+         0.046764325130161495,
+         0.06717826151218322
+        ],
+        "n": 63,
+        "n_clips": 63
+       }
+      }
+     }
+    },
+    "19": {
+     "reference_mid_mean": 2.1353820598006648,
+     "n_heldout_clips": {
+      "slow": 100,
+      "mid": 135,
+      "fast": 63
+     },
+     "spline": {
+      "slow": {
+       "slope": {
+        "mean": 0.7254952380952379,
+        "ci95": [
+         0.6517999404761905,
+         0.8100659672619048
+        ],
+        "n": 100,
+        "n_clips": 100
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 0.2143588746272527,
+       "mean_coord_per_step": [
+        1.0692000000000002,
+        1.4210000000000003,
+        2.131900000000001,
+        2.4125,
+        2.7700500000000003,
+        3.8944999999999994,
+        5.176450000000001,
+        6.286199999999997
+       ]
+      },
+      "mid": {
+       "slope": {
+        "mean": 0.7171860670194004,
+        "ci95": [
+         0.6698333223104057,
+         0.7729634369488536
+        ],
+        "n": 135,
+        "n_clips": 135
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 1.0078366970626793,
+       "mean_coord_per_step": [
+        0.9345925925925926,
+        1.6530370370370364,
+        1.8233333333333328,
+        2.2501851851851855,
+        2.261888888888889,
+        3.575925925925926,
+        5.191259259259262,
+        6.260740740740742
+       ]
+      },
+      "fast": {
+       "slope": {
+        "mean": 0.6981604308390024,
+        "ci95": [
+         0.6386332435752079,
+         0.7597913123582767
+        ],
+        "n": 63,
+        "n_clips": 63
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 1.5944509270063532,
+       "mean_coord_per_step": [
+        1.0548412698412701,
+        1.4957936507936513,
+        1.875317460317461,
+        2.316507936507937,
+        2.7738095238095246,
+        3.769206349206349,
+        4.633650793650794,
+        6.314444444444443
+       ]
+      },
+      "fast_over_slow_slope": {
+       "mean": 0.9623225545518368,
+       "ci95": [
+        0.8334259095997545,
+        1.121695864735128
+       ],
+       "clock_prediction": 1.0,
+       "odometer_prediction": 7.438231469440833
+      },
+      "joint_fit_heldout": {
+       "a": 0.5454344233657,
+       "b_clock": 0.7381487540449058,
+       "c_odometer": -0.025643443132432664,
+       "r2_clock_only": 0.3557432122117462,
+       "r2_odometer_only": 0.1374443300512006,
+       "r2_both": 0.35621257044785126,
+       "b_clock_ci95": [
+        0.6823381049909611,
+        0.7905282995464245
+       ],
+       "c_odometer_ci95": [
+        -0.0655046083226759,
+        0.017547039405724066
+       ]
+      },
+      "quadratic_coef_by_band": {
+       "slow": {
+        "mean": 0.08388869047619045,
+        "ci95": [
+         0.05424867559523807,
+         0.11617452380952378
+        ],
+        "n": 100,
+        "n_clips": 100
+       },
+       "mid": {
+        "mean": 0.10984215167548499,
+        "ci95": [
+         0.0844904045414462,
+         0.1408454254850088
+        ],
+        "n": 135,
+        "n_clips": 135
+       },
+       "fast": {
+        "mean": 0.09124574829931974,
+        "ci95": [
+         0.047525037792894916,
+         0.13039773478835978
+        ],
+        "n": 63,
+        "n_clips": 63
+       }
+      }
+     },
+     "linear_probe": {
+      "slow": {
+       "slope": {
+        "mean": 0.9307604293695125,
+        "ci95": [
+         0.8921671266768827,
+         0.9688644037479022
+        ],
+        "n": 100,
+        "n_clips": 100
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 0.2143588746272527,
+       "mean_coord_per_step": [
+        0.4051357449566151,
+        1.476486364220778,
+        2.339967119252025,
+        2.7419902683103374,
+        3.298658002346846,
+        4.367290297408135,
+        5.914842295101217,
+        7.455629908404039
+       ]
+      },
+      "mid": {
+       "slope": {
+        "mean": 0.9154512838224431,
+        "ci95": [
+         0.8961288101810594,
+         0.9356102372951579
+        ],
+        "n": 135,
+        "n_clips": 135
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 1.0078366970626793,
+       "mean_coord_per_step": [
+        0.4631070004993047,
+        1.5132449263679293,
+        2.33410107189803,
+        2.760202481179191,
+        3.319490538651876,
+        4.3044643150699,
+        5.95111198745233,
+        7.354277678881437
+       ]
+      },
+      "fast": {
+       "slope": {
+        "mean": 0.8723719785820699,
+        "ci95": [
+         0.8465918667386045,
+         0.89921669074906
+        ],
+        "n": 63,
+        "n_clips": 63
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 1.5944509270063532,
+       "mean_coord_per_step": [
+        0.5116809692893101,
+        1.557453081305049,
+        2.4236690078349272,
+        2.902757302362882,
+        3.3901954061907937,
+        4.37998115095424,
+        5.773968857590579,
+        7.060294224472221
+       ]
+      },
+      "fast_over_slow_slope": {
+       "mean": 0.9372680133952468,
+       "ci95": [
+        0.8875545984394434,
+        0.9846898432359097
+       ],
+       "clock_prediction": 1.0,
+       "odometer_prediction": 7.438231469440833
+      },
+      "joint_fit_heldout": {
+       "a": 0.3094740657292549,
+       "b_clock": 0.9202827820483133,
+       "c_odometer": -0.010168352840100758,
+       "r2_clock_only": 0.897318082112499,
+       "r2_odometer_only": 0.3682309368479155,
+       "r2_both": 0.897432933269052,
+       "b_clock_ci95": [
+        0.8971056287320588,
+        0.9466872960729265
+       ],
+       "c_odometer_ci95": [
+        -0.019132755039344192,
+        0.00027499119885458025
+       ]
+      },
+      "quadratic_coef_by_band": {
+       "slow": {
+        "mean": 0.07197425374750127,
+        "ci95": [
+         0.06297619741500342,
+         0.08210201407513318
+        ],
+        "n": 100,
+        "n_clips": 100
+       },
+       "mid": {
+        "mean": 0.07066600243706142,
+        "ci95": [
+         0.06282533737211002,
+         0.07708751716657421
+        ],
+        "n": 135,
+        "n_clips": 135
+       },
+       "fast": {
+        "mean": 0.050354370691014526,
+        "ci95": [
+         0.03927132237051064,
+         0.060826083469384874
+        ],
+        "n": 63,
+        "n_clips": 63
+       }
+      }
+     }
+    },
+    "22": {
+     "reference_mid_mean": 2.1353820598006648,
+     "n_heldout_clips": {
+      "slow": 100,
+      "mid": 135,
+      "fast": 63
+     },
+     "spline": {
+      "slow": {
+       "slope": {
+        "mean": 0.7127934523809525,
+        "ci95": [
+         0.6328501339285715,
+         0.7989979910714285
+        ],
+        "n": 100,
+        "n_clips": 100
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 0.2143588746272527,
+       "mean_coord_per_step": [
+        1.0608,
+        1.4692999999999996,
+        2.0685000000000002,
+        2.3087500000000003,
+        2.8855500000000003,
+        3.856049999999999,
+        5.082949999999999,
+        6.18465
+       ]
+      },
+      "mid": {
+       "slope": {
+        "mean": 0.7432244268077601,
+        "ci95": [
+         0.6904487764550264,
+         0.8010582782186949
+        ],
+        "n": 135,
+        "n_clips": 135
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 1.0078366970626793,
+       "mean_coord_per_step": [
+        0.9615555555555554,
+        1.5608518518518517,
+        1.7180740740740748,
+        2.077407407407407,
+        2.152888888888889,
+        3.7376666666666662,
+        5.2104444444444455,
+        6.397074074074073
+       ]
+      },
+      "fast": {
+       "slope": {
+        "mean": 0.7658597883597885,
+        "ci95": [
+         0.706108205782313,
+         0.8284369567271355
+        ],
+        "n": 63,
+        "n_clips": 63
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 1.5944509270063532,
+       "mean_coord_per_step": [
+        0.9781746031746031,
+        1.251031746031746,
+        1.7796031746031753,
+        2.3952380952380947,
+        2.6178571428571416,
+        3.7900793650793663,
+        5.107777777777777,
+        6.520238095238095
+       ]
+      },
+      "fast_over_slow_slope": {
+       "mean": 1.0744484054975223,
+       "ci95": [
+        0.9340331104362889,
+        1.2449170829195737
+       ],
+       "clock_prediction": 1.0,
+       "odometer_prediction": 7.438231469440833
+      },
+      "joint_fit_heldout": {
+       "a": 0.457401648912358,
+       "b_clock": 0.7366937982196158,
+       "c_odometer": 0.001275692923589311,
+       "r2_clock_only": 0.3753025590696346,
+       "r2_odometer_only": 0.1588283449256923,
+       "r2_both": 0.3753037130064488,
+       "b_clock_ci95": [
+        0.6748008054841276,
+        0.7946532253184745
+       ],
+       "c_odometer_ci95": [
+        -0.033703969125368674,
+        0.04701053287209491
+       ]
+      },
+      "quadratic_coef_by_band": {
+       "slow": {
+        "mean": 0.08050744047619045,
+        "ci95": [
+         0.04901735119047617,
+         0.1123550520833333
+        ],
+        "n": 100,
+        "n_clips": 100
+       },
+       "mid": {
+        "mean": 0.12358928571428571,
+        "ci95": [
+         0.0971455742945326,
+         0.1539266975308642
+        ],
+        "n": 135,
+        "n_clips": 135
+       },
+       "fast": {
+        "mean": 0.10162603930461073,
+        "ci95": [
+         0.060993421674225244,
+         0.13975179516250943
+        ],
+        "n": 63,
+        "n_clips": 63
+       }
+      }
+     },
+     "linear_probe": {
+      "slow": {
+       "slope": {
+        "mean": 0.9297114605118608,
+        "ci95": [
+         0.8905148081922203,
+         0.9682703033480884
+        ],
+        "n": 100,
+        "n_clips": 100
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 0.2143588746272527,
+       "mean_coord_per_step": [
+        0.39204226361571015,
+        1.4766226724137004,
+        2.332761867360974,
+        2.7675974213114762,
+        3.3294340030632568,
+        4.3602799520750155,
+        5.905025843319098,
+        7.436235976840769
+       ]
+      },
+      "mid": {
+       "slope": {
+        "mean": 0.9187804587190915,
+        "ci95": [
+         0.9002924420314983,
+         0.9384218400203642
+        ],
+        "n": 135,
+        "n_clips": 135
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 1.0078366970626793,
+       "mean_coord_per_step": [
+        0.46320511410415377,
+        1.4725913869166012,
+        2.2966807304706878,
+        2.7636378396340993,
+        3.356460804950775,
+        4.387743367579582,
+        5.95041245266814,
+        7.309268303675958
+       ]
+      },
+      "fast": {
+       "slope": {
+        "mean": 0.8725195111341111,
+        "ci95": [
+         0.8451748048820459,
+         0.8985675809353812
+        ],
+        "n": 63,
+        "n_clips": 63
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 1.5944509270063532,
+       "mean_coord_per_step": [
+        0.5037882142882374,
+        1.5431028399900777,
+        2.428243159524143,
+        2.9037517377070117,
+        3.4183782483547875,
+        4.390552928255025,
+        5.776582642386021,
+        7.035600229494695
+       ]
+      },
+      "fast_over_slow_slope": {
+       "mean": 0.9384841944980842,
+       "ci95": [
+        0.8882076413458432,
+        0.9878074245926465
+       ],
+       "clock_prediction": 1.0,
+       "odometer_prediction": 7.438231469440833
+      },
+      "joint_fit_heldout": {
+       "a": 0.3053351930922211,
+       "b_clock": 0.9210342521500194,
+       "c_odometer": -0.009664762681495298,
+       "r2_clock_only": 0.9005158676873847,
+       "r2_odometer_only": 0.37004734754078583,
+       "r2_both": 0.9006197234831568,
+       "b_clock_ci95": [
+        0.8979767712608392,
+        0.9470820519921989
+       ],
+       "c_odometer_ci95": [
+        -0.019023754387300244,
+        0.0001873668450974977
+       ]
+      },
+      "quadratic_coef_by_band": {
+       "slow": {
+        "mean": 0.06913877154015786,
+        "ci95": [
+         0.05924518389662528,
+         0.0798131553995977
+        ],
+        "n": 100,
+        "n_clips": 100
+       },
+       "mid": {
+        "mean": 0.06652709670815682,
+        "ci95": [
+         0.058682069039176825,
+         0.07293697226539199
+        ],
+        "n": 135,
+        "n_clips": 135
+       },
+       "fast": {
+        "mean": 0.04778789520958421,
+        "ci95": [
+         0.03618601960113546,
+         0.058864011898522514
+        ],
+        "n": 63,
+        "n_clips": 63
+       }
+      }
+     }
+    }
+   },
+   "decode": {
+    "1": {
+     "cv": {
+      "t_r2": 0.9121029244928507,
+      "t_mae_steps": 0.5442111879829714,
+      "dist_r2": 0.6923051069970398,
+      "dist_mae_m": 0.2296257397263697,
+      "xy_r2": 0.6677076058690048,
+      "xy_err_m": 0.6423835604372826
+     },
+     "test": {
+      "t_r2": 0.9184691985990903,
+      "t_mae_steps": 0.5245112900217423,
+      "dist_r2": 0.7080795225859233,
+      "dist_mae_m": 0.2255173624596342,
+      "xy_r2": 0.6648057166513257,
+      "xy_err_m": 0.6455592265438685
+     },
+     "n_rows_dropped_nonfinite": 6144,
+     "cv_t_bias_by_band": {
+      "slow": 0.03960864431920106,
+      "mid": 0.016115490994802344,
+      "fast": -0.014440483107727532
+     },
+     "cv_t_bias_by_band_per_step": {
+      "slow": [
+       0.13844229929567453,
+       0.3171792777873677,
+       0.3728035820257893,
+       0.04776863527083622,
+       -0.33573656955893727,
+       -0.21533956553335515,
+       0.07123232056658756,
+       -0.07948082530035457
+      ],
+      "mid": [
+       0.10918750688387134,
+       0.31797657783252875,
+       0.33174803571759554,
+       0.03771563478822838,
+       -0.2552079794494794,
+       -0.2962129419951704,
+       0.02212496952566063,
+       -0.13840787534481602
+      ],
+      "fast": [
+       0.16687257182285992,
+       0.4586188566097908,
+       0.4224099715766169,
+       0.1456542261534131,
+       -0.37623872695961325,
+       -0.39357542768989295,
+       -0.23146988418129888,
+       -0.30779545219369586
+      ]
+     }
+    },
+    "4": {
+     "cv": {
+      "t_r2": 0.9511790352264973,
+      "t_mae_steps": 0.40415860409315757,
+      "dist_r2": 0.7374712022814955,
+      "dist_mae_m": 0.2132079059242922,
+      "xy_r2": 0.8284323814254775,
+      "xy_err_m": 0.45821333836940725
+     },
+     "test": {
+      "t_r2": 0.9534644541613597,
+      "t_mae_steps": 0.3923122332711551,
+      "dist_r2": 0.742851227005316,
+      "dist_mae_m": 0.2119934068555373,
+      "xy_r2": 0.8365724759907169,
+      "xy_err_m": 0.4447070087347613
+     },
+     "n_rows_dropped_nonfinite": 6144,
+     "cv_t_bias_by_band": {
+      "slow": 0.0183409341541887,
+      "mid": 0.0036154696569973403,
+      "fast": -0.026009866983599292
+     },
+     "cv_t_bias_by_band_per_step": {
+      "slow": [
+       0.04904602038981521,
+       0.282477420135498,
+       0.29739970940287086,
+       -0.14469104578408654,
+       -0.33596916130781534,
+       -0.15717778470839977,
+       0.13440110819099735,
+       0.021241206914629808
+      ],
+      "mid": [
+       -0.013836893361277315,
+       0.29784389268846045,
+       0.2535898104015967,
+       -0.0929540137188121,
+       -0.3151588668588672,
+       -0.1599478796019106,
+       0.11137285142376664,
+       -0.05198514371697797
+      ],
+      "fast": [
+       0.11361326033002205,
+       0.3741369903145709,
+       0.326713969109299,
+       -0.137141925520009,
+       -0.34459152338080534,
+       -0.2673498599338473,
+       -0.05431313275961516,
+       -0.2191467140284093
+      ]
+     }
+    },
+    "8": {
+     "cv": {
+      "t_r2": 0.9706302538315477,
+      "t_mae_steps": 0.31272447040147294,
+      "dist_r2": 0.7555517639280543,
+      "dist_mae_m": 0.20476047700291264,
+      "xy_r2": 0.8745899841447862,
+      "xy_err_m": 0.39211092401063613
+     },
+     "test": {
+      "t_r2": 0.9711749821127507,
+      "t_mae_steps": 0.3096629499637363,
+      "dist_r2": 0.7636102061726839,
+      "dist_mae_m": 0.2000131398185683,
+      "xy_r2": 0.877920886257612,
+      "xy_err_m": 0.38504711133976927
+     },
+     "n_rows_dropped_nonfinite": 6144,
+     "cv_t_bias_by_band": {
+      "slow": -0.005336314702081411,
+      "mid": -0.008781219247163248,
+      "fast": -0.007138317405983995
+     },
+     "cv_t_bias_by_band_per_step": {
+      "slow": [
+       0.050700080446513966,
+       0.16249206602217434,
+       0.00904676172959973,
+       -0.10821694424874223,
+       -0.20855466891281546,
+       -0.1173047368129593,
+       0.08284701755288483,
+       0.08629990660669286
+      ],
+      "mid": [
+       0.03961093355305219,
+       0.20713788517507614,
+       0.04887651780648871,
+       -0.1149762188770945,
+       -0.17064939303668542,
+       -0.12450491974460849,
+       0.06477243224678833,
+       -0.02051699110032294
+      ],
+      "fast": [
+       0.14406131927972718,
+       0.26509296505609475,
+       0.16793274252538387,
+       -0.053280743249825874,
+       -0.22693350546073018,
+       -0.16065444166979742,
+       -0.01364839208287095,
+       -0.17967648364585329
+      ]
+     }
+    },
+    "12": {
+     "cv": {
+      "t_r2": 0.9691942893363769,
+      "t_mae_steps": 0.32022727579827587,
+      "dist_r2": 0.7585476422561104,
+      "dist_mae_m": 0.20478910614464202,
+      "xy_r2": 0.8802160675123161,
+      "xy_err_m": 0.3832201264654669
+     },
+     "test": {
+      "t_r2": 0.9704320145715755,
+      "t_mae_steps": 0.31665154700177495,
+      "dist_r2": 0.7712464085814786,
+      "dist_mae_m": 0.19821359978623385,
+      "xy_r2": 0.8794448032391565,
+      "xy_err_m": 0.3841715228035382
+     },
+     "n_rows_dropped_nonfinite": 6144,
+     "cv_t_bias_by_band": {
+      "slow": 0.003539313938972034,
+      "mid": -0.012883045120359761,
+      "fast": -0.011709488842408668
+     },
+     "cv_t_bias_by_band_per_step": {
+      "slow": [
+       0.002422206388512681,
+       0.14969880583389636,
+       0.06849413221673187,
+       -0.09249415587278008,
+       -0.1656804011191523,
+       -0.14354257447466537,
+       0.10538043467255917,
+       0.10403606386667388
+      ],
+      "mid": [
+       0.06841285567706527,
+       0.18813054735058093,
+       0.05422345597773475,
+       -0.12466187367485694,
+       -0.16878527555668105,
+       -0.14813482283189136,
+       0.04316377470289829,
+       -0.015413022607728054
+      ],
+      "fast": [
+       0.13065110237511193,
+       0.27458305271658767,
+       0.11920022677401436,
+       -0.052301163805650294,
+       -0.1743848338949068,
+       -0.17239395450589637,
+       -0.04717829447078603,
+       -0.1718520459277438
+      ]
+     }
+    },
+    "19": {
+     "cv": {
+      "t_r2": 0.9695963494300364,
+      "t_mae_steps": 0.31718113901929246,
+      "dist_r2": 0.7636334626771435,
+      "dist_mae_m": 0.20232081270331925,
+      "xy_r2": 0.8816038150887141,
+      "xy_err_m": 0.38056854005704954
+     },
+     "test": {
+      "t_r2": 0.9723945155066347,
+      "t_mae_steps": 0.3020986495259136,
+      "dist_r2": 0.7716367873098944,
+      "dist_mae_m": 0.199531844361536,
+      "xy_r2": 0.8843179274982882,
+      "xy_err_m": 0.3758985971725661
+     },
+     "n_rows_dropped_nonfinite": 6144,
+     "cv_t_bias_by_band": {
+      "slow": -0.022608342591801885,
+      "mid": 0.010857746051306348,
+      "fast": -0.024101590544639243
+     },
+     "cv_t_bias_by_band_per_step": {
+      "slow": [
+       -0.011698521715003164,
+       0.13688248106034412,
+       0.019282608536557035,
+       -0.10019622813520632,
+       -0.17439697317624317,
+       -0.15017420294993664,
+       0.056227420922312865,
+       0.04320667472276024
+      ],
+      "mid": [
+       0.03511009575928684,
+       0.21972286442378444,
+       0.12863193334979992,
+       -0.09438884867176293,
+       -0.15194970293143714,
+       -0.10243043566991655,
+       0.05382807005729666,
+       -0.0016620079066003953
+      ],
+      "fast": [
+       0.15372005999350594,
+       0.23447662848319967,
+       0.09275158758563787,
+       -0.1041371194891579,
+       -0.18960043021790732,
+       -0.2135933386598525,
+       -0.02890282052212232,
+       -0.13752729153041723
+      ]
+     }
+    },
+    "22": {
+     "cv": {
+      "t_r2": 0.9707852594551146,
+      "t_mae_steps": 0.31109193633616367,
+      "dist_r2": 0.7623852284333212,
+      "dist_mae_m": 0.2020850937161622,
+      "xy_r2": 0.8794957181180669,
+      "xy_err_m": 0.3834680443530621
+     },
+     "test": {
+      "t_r2": 0.9734796479917971,
+      "t_mae_steps": 0.2953346055552504,
+      "dist_r2": 0.775315549619298,
+      "dist_mae_m": 0.19815894553235514,
+      "xy_r2": 0.8839782884438282,
+      "xy_err_m": 0.37341992570141386
+     },
+     "n_rows_dropped_nonfinite": 6144,
+     "cv_t_bias_by_band": {
+      "slow": -0.014063942805961594,
+      "mid": 0.014888514322812895,
+      "fast": -0.026748138919046968
+     },
+     "cv_t_bias_by_band_per_step": {
+      "slow": [
+       -0.02421689868258598,
+       0.1411110210783776,
+       0.03356282766917008,
+       -0.06850311208868874,
+       -0.17146167420170905,
+       -0.13947743275450744,
+       0.07791303680770006,
+       0.03856068972455073
+      ],
+      "mid": [
+       0.06725814639655858,
+       0.1748500680946406,
+       0.11836320350257416,
+       -0.08790328971628265,
+       -0.14513734127454395,
+       -0.09460565634385525,
+       0.08411277210318087,
+       0.0021702118202308073
+      ],
+      "fast": [
+       0.12913584175650306,
+       0.2735122513710797,
+       0.11170759902313802,
+       -0.10699478414493499,
+       -0.199100878088933,
+       -0.1965093752555476,
+       -0.053921211795411754,
+       -0.17181455421826908
+      ]
+     }
+    }
+   },
+   "geometry": {
+    "1": {
+     "residual_var_frac_of_step_var": 0.7909955641184839,
+     "heldout_var_explained": {
+      "centroids": -0.0008834919523676987,
+      "spline": 0.00037318140530973043,
+      "line_in_t": 0.0009261321183899884,
+      "centroids_full_space": -0.0007587054884630184
+     },
+     "per_clip_var_explained_median": -0.000820490744113167,
+     "centroid_participation_ratio": 3.011810154013791,
+     "centroid_pc1_frac": 0.5373194471578987,
+     "centroid_path_length": 0.046729663347383606,
+     "centroid_end_to_end": 0.014112034780249893,
+     "median_centroid_noise": 0.004684327107604776,
+     "bend": {
+      "median_bend": 0.005194827129183158,
+      "median_spread": 0.08859555489436666,
+      "median_centroid_noise": 0.0046246503209855395,
+      "bend_over_noise": 1.112334555627669,
+      "bend_over_spread": 0.058063391169683815
+     },
+     "loo_sagitta": [
+      {
+       "held_step": 1,
+       "sagitta": 0.002745742919661234,
+       "sagitta_over_centroid_noise": 0.5925725085230901,
+       "spline_err_to_heldout_centroid": 0.005402807940820391,
+       "chord_err_to_heldout_centroid": 0.004737056026362886
+      },
+      {
+       "held_step": 2,
+       "sagitta": 0.001723620165211718,
+       "sagitta_over_centroid_noise": 0.36396035096440404,
+       "spline_err_to_heldout_centroid": 0.0062181170668460855,
+       "chord_err_to_heldout_centroid": 0.005610710908216686
+      },
+      {
+       "held_step": 3,
+       "sagitta": 0.0018335296009783938,
+       "sagitta_over_centroid_noise": 0.38715299441955847,
+       "spline_err_to_heldout_centroid": 0.006396999574999681,
+       "chord_err_to_heldout_centroid": 0.006910911922047833
+      },
+      {
+       "held_step": 4,
+       "sagitta": 0.0016129207124113243,
+       "sagitta_over_centroid_noise": 0.34062860561580216,
+       "spline_err_to_heldout_centroid": 0.006892097969998024,
+       "chord_err_to_heldout_centroid": 0.0067826284498419395
+      },
+      {
+       "held_step": 5,
+       "sagitta": 0.0016682159869676133,
+       "sagitta_over_centroid_noise": 0.3522591699215727,
+       "spline_err_to_heldout_centroid": 0.0051964931720640635,
+       "chord_err_to_heldout_centroid": 0.004614783050690318
+      },
+      {
+       "held_step": 6,
+       "sagitta": 0.0028830169764410604,
+       "sagitta_over_centroid_noise": 0.6219100164243719,
+       "spline_err_to_heldout_centroid": 0.005225245340973772,
+       "chord_err_to_heldout_centroid": 0.00452071893780302
+      }
+     ],
+     "loo_sagitta_over_noise_median": 0.37555667269198123,
+     "loo_spline_beats_chord": 1,
+     "centroids_top2": [
+      [
+       0.006127101600836524,
+       0.0001839187540951522
+      ],
+      [
+       0.003297110382342224,
+       0.001251239421505304
+      ],
+      [
+       0.0015301381504408782,
+       -0.0008221348932056099
+      ],
+      [
+       0.001937717114058176,
+       0.0028860500018820464
+      ],
+      [
+       0.001285548251849575,
+       -0.004780659582576566
+      ],
+      [
+       -0.0013491074284106975,
+       0.0005982695017466358
+      ],
+      [
+       -0.005409711121510471,
+       0.0012122702942983848
+      ],
+      [
+       -0.007418796949606207,
+       -0.0005289534977453473
+      ]
+     ]
+    },
+    "4": {
+     "residual_var_frac_of_step_var": 0.7313340236323573,
+     "heldout_var_explained": {
+      "centroids": 0.0026657545154012974,
+      "spline": 0.004016279294988934,
+      "line_in_t": 0.004408820360794485,
+      "centroids_full_space": 0.002290823455574187
+     },
+     "per_clip_var_explained_median": 0.0025725040729328574,
+     "centroid_participation_ratio": 1.775171895403622,
+     "centroid_pc1_frac": 0.7414818267917535,
+     "centroid_path_length": 0.06175774995378859,
+     "centroid_end_to_end": 0.0273444279669958,
+     "median_centroid_noise": 0.005611712319334054,
+     "bend": {
+      "median_bend": 0.0063726242917652495,
+      "median_spread": 0.10613215323219513,
+      "median_centroid_noise": 0.00554005330287024,
+      "bend_over_noise": 1.1388030072061976,
+      "bend_over_spread": 0.059445033095563496
+     },
+     "loo_sagitta": [
+      {
+       "held_step": 1,
+       "sagitta": 0.0026849692267812177,
+       "sagitta_over_centroid_noise": 0.4837962594060789,
+       "spline_err_to_heldout_centroid": 0.005942140382141661,
+       "chord_err_to_heldout_centroid": 0.00577570042973026
+      },
+      {
+       "held_step": 2,
+       "sagitta": 0.0020791031574882634,
+       "sagitta_over_centroid_noise": 0.366348877442032,
+       "spline_err_to_heldout_centroid": 0.007587940861318879,
+       "chord_err_to_heldout_centroid": 0.006912596623313868
+      },
+      {
+       "held_step": 3,
+       "sagitta": 0.0021728858543734603,
+       "sagitta_over_centroid_noise": 0.3828468450676114,
+       "spline_err_to_heldout_centroid": 0.007698032544502941,
+       "chord_err_to_heldout_centroid": 0.00827741990715649
+      },
+      {
+       "held_step": 4,
+       "sagitta": 0.00195680048557032,
+       "sagitta_over_centroid_noise": 0.3448209645258767,
+       "spline_err_to_heldout_centroid": 0.008408663238088495,
+       "chord_err_to_heldout_centroid": 0.008166170983292325
+      },
+      {
+       "held_step": 5,
+       "sagitta": 0.002231836106828906,
+       "sagitta_over_centroid_noise": 0.39329003676540264,
+       "spline_err_to_heldout_centroid": 0.005912226128139443,
+       "chord_err_to_heldout_centroid": 0.005360298588306006
+      },
+      {
+       "held_step": 6,
+       "sagitta": 0.0030602393068097145,
+       "sagitta_over_centroid_noise": 0.5511646247436411,
+       "spline_err_to_heldout_centroid": 0.006593722259436622,
+       "chord_err_to_heldout_centroid": 0.005720743060729463
+      }
+     ],
+     "loo_sagitta_over_noise_median": 0.38806844091650705,
+     "loo_spline_beats_chord": 1,
+     "centroids_top2": [
+      [
+       0.01262685949888725,
+       0.001269476792481148
+      ],
+      [
+       0.007088913293782579,
+       0.0013034246278028614
+      ],
+      [
+       0.0035167660099038735,
+       0.0004766025797350048
+      ],
+      [
+       0.0031318914737829898,
+       0.0010601748119629748
+      ],
+      [
+       0.0012768566494078025,
+       -0.006538568303718865
+      ],
+      [
+       -0.003459004225079317,
+       0.0001886536819173569
+      ],
+      [
+       -0.009859965557526648,
+       0.002424935454076009
+      ],
+      [
+       -0.014322317143158533,
+       -0.0001846996442564909
+      ]
+     ]
+    },
+    "8": {
+     "residual_var_frac_of_step_var": 0.6883563990727207,
+     "heldout_var_explained": {
+      "centroids": 0.005799337196361054,
+      "spline": 0.007268663387141383,
+      "line_in_t": 0.007417134322866614,
+      "centroids_full_space": 0.004997635303678694
+     },
+     "per_clip_var_explained_median": 0.0056812967098176514,
+     "centroid_participation_ratio": 1.5024533019714792,
+     "centroid_pc1_frac": 0.8114638775435281,
+     "centroid_path_length": 0.07713425852114725,
+     "centroid_end_to_end": 0.03906981819547314,
+     "median_centroid_noise": 0.0065193554272674065,
+     "bend": {
+      "median_bend": 0.007720730009784365,
+      "median_spread": 0.1232128751968115,
+      "median_centroid_noise": 0.006431659731776422,
+      "bend_over_noise": 1.1880634228215063,
+      "bend_over_spread": 0.06201640585979351
+     },
+     "loo_sagitta": [
+      {
+       "held_step": 1,
+       "sagitta": 0.0033225337301279662,
+       "sagitta_over_centroid_noise": 0.5155349556866057,
+       "spline_err_to_heldout_centroid": 0.007175534053827427,
+       "chord_err_to_heldout_centroid": 0.0070053103905629585
+      },
+      {
+       "held_step": 2,
+       "sagitta": 0.0025076690003000843,
+       "sagitta_over_centroid_noise": 0.38015521091098115,
+       "spline_err_to_heldout_centroid": 0.0091106419315937,
+       "chord_err_to_heldout_centroid": 0.008333821879822404
+      },
+      {
+       "held_step": 3,
+       "sagitta": 0.0026215512686522443,
+       "sagitta_over_centroid_noise": 0.3974311539876336,
+       "spline_err_to_heldout_centroid": 0.008991516348867542,
+       "chord_err_to_heldout_centroid": 0.009695032717458588
+      },
+      {
+       "held_step": 4,
+       "sagitta": 0.002305591047933452,
+       "sagitta_over_centroid_noise": 0.3495836449692524,
+       "spline_err_to_heldout_centroid": 0.010028898959888727,
+       "chord_err_to_heldout_centroid": 0.009705407758961962
+      },
+      {
+       "held_step": 5,
+       "sagitta": 0.002749257849436547,
+       "sagitta_over_centroid_noise": 0.41681585103908864,
+       "spline_err_to_heldout_centroid": 0.00699424927360725,
+       "chord_err_to_heldout_centroid": 0.006414327448428956
+      },
+      {
+       "held_step": 6,
+       "sagitta": 0.003921493506036726,
+       "sagitta_over_centroid_noise": 0.6082287464592874,
+       "spline_err_to_heldout_centroid": 0.008073006239916521,
+       "chord_err_to_heldout_centroid": 0.0065784307967903825
+      }
+     ],
+     "loo_sagitta_over_noise_median": 0.40712350251336116,
+     "loo_spline_beats_chord": 1,
+     "centroids_top2": [
+      [
+       0.0167163012046738,
+       0.0012179797686381062
+      ],
+      [
+       0.010937584241056734,
+       0.00146958172270855
+      ],
+      [
+       0.006246906019253717,
+       8.06447013461527e-05
+      ],
+      [
+       0.004185307770522831,
+       0.002009664058591743
+      ],
+      [
+       0.0023490104477288335,
+       -0.007541031863549006
+      ],
+      [
+       -0.00432607639485655,
+       0.0006126303170865366
+      ],
+      [
+       -0.014145267083382151,
+       0.0028457356571340124
+      ],
+      [
+       -0.021963766204997213,
+       -0.0006952043619560947
+      ]
+     ]
+    },
+    "12": {
+     "residual_var_frac_of_step_var": 0.6608784300991847,
+     "heldout_var_explained": {
+      "centroids": 0.006525036690112285,
+      "spline": 0.007982058539715342,
+      "line_in_t": 0.008063157193402004,
+      "centroids_full_space": 0.0056278302159875615
+     },
+     "per_clip_var_explained_median": 0.00661768075884428,
+     "centroid_participation_ratio": 1.471971928238347,
+     "centroid_pc1_frac": 0.8202067474787161,
+     "centroid_path_length": 0.0876223985982702,
+     "centroid_end_to_end": 0.04543903871888214,
+     "median_centroid_noise": 0.007231986912949683,
+     "bend": {
+      "median_bend": 0.008590578296746507,
+      "median_spread": 0.13663750895612992,
+      "median_centroid_noise": 0.007132419909848208,
+      "bend_over_noise": 1.1916531832772712,
+      "bend_over_spread": 0.06220378983028513
+     },
+     "loo_sagitta": [
+      {
+       "held_step": 1,
+       "sagitta": 0.003251260947533447,
+       "sagitta_over_centroid_noise": 0.4548401401730904,
+       "spline_err_to_heldout_centroid": 0.007800239575628297,
+       "chord_err_to_heldout_centroid": 0.007918111680276601
+      },
+      {
+       "held_step": 2,
+       "sagitta": 0.002841324290752108,
+       "sagitta_over_centroid_noise": 0.3882425794830441,
+       "spline_err_to_heldout_centroid": 0.010182758499733286,
+       "chord_err_to_heldout_centroid": 0.009150532079309588
+      },
+      {
+       "held_step": 3,
+       "sagitta": 0.003035785301264977,
+       "sagitta_over_centroid_noise": 0.4147632993618517,
+       "spline_err_to_heldout_centroid": 0.009887975914276825,
+       "chord_err_to_heldout_centroid": 0.010757149842124112
+      },
+      {
+       "held_step": 4,
+       "sagitta": 0.0026042506313133217,
+       "sagitta_over_centroid_noise": 0.355913950232749,
+       "spline_err_to_heldout_centroid": 0.011360264938298373,
+       "chord_err_to_heldout_centroid": 0.010965719073257869
+      },
+      {
+       "held_step": 5,
+       "sagitta": 0.002988082412263902,
+       "sagitta_over_centroid_noise": 0.40832551395884514,
+       "spline_err_to_heldout_centroid": 0.007863371364372389,
+       "chord_err_to_heldout_centroid": 0.0072071847861560415
+      },
+      {
+       "held_step": 6,
+       "sagitta": 0.004631616871580008,
+       "sagitta_over_centroid_noise": 0.6476976551506896,
+       "spline_err_to_heldout_centroid": 0.009054540866220645,
+       "chord_err_to_heldout_centroid": 0.0072653844561828725
+      }
+     ],
+     "loo_sagitta_over_noise_median": 0.4115444066603484,
+     "loo_spline_beats_chord": 2,
+     "centroids_top2": [
+      [
+       -0.01928803996893734,
+       -0.004087448183269825
+      ],
+      [
+       -0.012728220313905306,
+       -0.0020143385637549035
+      ],
+      [
+       -0.00710322793677238,
+       -0.0021439378994299917
+      ],
+      [
+       -0.004760189544626922,
+       0.004414260711152157
+      ],
+      [
+       -0.003196740684421853,
+       0.006498445509119433
+      ],
+      [
+       0.004870755123123792,
+       0.0009170591776691376
+      ],
+      [
+       0.016473483354658425,
+       -0.0010625993756009098
+      ],
+      [
+       0.025732179970881588,
+       -0.0025214413758850975
+      ]
+     ]
+    },
+    "19": {
+     "residual_var_frac_of_step_var": 0.6258627593294341,
+     "heldout_var_explained": {
+      "centroids": 0.007528247848105574,
+      "spline": 0.00884779281822623,
+      "line_in_t": 0.009089013147584923,
+      "centroids_full_space": 0.006493800129952709
+     },
+     "per_clip_var_explained_median": 0.007475155007078849,
+     "centroid_participation_ratio": 1.4102202687629144,
+     "centroid_pc1_frac": 0.8389392294966838,
+     "centroid_path_length": 0.1000384956006234,
+     "centroid_end_to_end": 0.05406118138868953,
+     "median_centroid_noise": 0.00815929442124619,
+     "bend": {
+      "median_bend": 0.009593942850500643,
+      "median_spread": 0.1541047286456671,
+      "median_centroid_noise": 0.008044201355771287,
+      "bend_over_noise": 1.1796506219822627,
+      "bend_over_spread": 0.06157726123060771
+     },
+     "loo_sagitta": [
+      {
+       "held_step": 1,
+       "sagitta": 0.0037938442858713953,
+       "sagitta_over_centroid_noise": 0.4706258768163909,
+       "spline_err_to_heldout_centroid": 0.008619388503410446,
+       "chord_err_to_heldout_centroid": 0.008833311738923
+      },
+      {
+       "held_step": 2,
+       "sagitta": 0.0030353024659417575,
+       "sagitta_over_centroid_noise": 0.36747246550614987,
+       "spline_err_to_heldout_centroid": 0.011294968191850514,
+       "chord_err_to_heldout_centroid": 0.010236348229191235
+      },
+      {
+       "held_step": 3,
+       "sagitta": 0.0031007994018953894,
+       "sagitta_over_centroid_noise": 0.37536403612914715,
+       "spline_err_to_heldout_centroid": 0.011175188003690823,
+       "chord_err_to_heldout_centroid": 0.012129529755199127
+      },
+      {
+       "held_step": 4,
+       "sagitta": 0.0029214065026397715,
+       "sagitta_over_centroid_noise": 0.3537577717828993,
+       "spline_err_to_heldout_centroid": 0.012985178254236746,
+       "chord_err_to_heldout_centroid": 0.01249819481368581
+      },
+      {
+       "held_step": 5,
+       "sagitta": 0.0034226026175513988,
+       "sagitta_over_centroid_noise": 0.41439061254413634,
+       "spline_err_to_heldout_centroid": 0.00875993335945556,
+       "chord_err_to_heldout_centroid": 0.008039400479189886
+      },
+      {
+       "held_step": 6,
+       "sagitta": 0.006100914595945957,
+       "sagitta_over_centroid_noise": 0.7564672983017001,
+       "spline_err_to_heldout_centroid": 0.010775098041910333,
+       "chord_err_to_heldout_centroid": 0.008308720476497685
+      }
+     ],
+     "loo_sagitta_over_noise_median": 0.39487732433664174,
+     "loo_spline_beats_chord": 2,
+     "centroids_top2": [
+      [
+       -0.02352647937153047,
+       -0.0031002753761562307
+      ],
+      [
+       -0.015095089540570948,
+       -0.0024426910857492457
+      ],
+      [
+       -0.008621425291404874,
+       -0.0009375226278392317
+      ],
+      [
+       -0.005838090462073715,
+       0.00019429010767616314
+      ],
+      [
+       -0.0036186863232925207,
+       0.009757686211170478
+      ],
+      [
+       0.0065679291955609,
+       0.00024966703104379814
+      ],
+      [
+       0.020045640805911695,
+       -0.0028749294160999566
+      ],
+      [
+       0.030086200987399933,
+       -0.000846224844045773
+      ]
+     ]
+    },
+    "22": {
+     "residual_var_frac_of_step_var": 0.6111052751146734,
+     "heldout_var_explained": {
+      "centroids": 0.007831951654485136,
+      "spline": 0.009115043409169021,
+      "line_in_t": 0.009453368104201165,
+      "centroids_full_space": 0.006756018511190343
+     },
+     "per_clip_var_explained_median": 0.007600111449444613,
+     "centroid_participation_ratio": 1.4108270913793794,
+     "centroid_pc1_frac": 0.8386875865919171,
+     "centroid_path_length": 0.10450747107624979,
+     "centroid_end_to_end": 0.05671230192935915,
+     "median_centroid_noise": 0.008466242704363306,
+     "bend": {
+      "median_bend": 0.009941442662803718,
+      "median_spread": 0.1598758401396748,
+      "median_centroid_noise": 0.008345450923596986,
+      "bend_over_noise": 1.1783761173526455,
+      "bend_over_spread": 0.061510732630482304
+     },
+     "loo_sagitta": [
+      {
+       "held_step": 1,
+       "sagitta": 0.003992707666528528,
+       "sagitta_over_centroid_noise": 0.4773160984894277,
+       "spline_err_to_heldout_centroid": 0.009148491169568793,
+       "chord_err_to_heldout_centroid": 0.009146187678247037
+      },
+      {
+       "held_step": 2,
+       "sagitta": 0.00330712437499683,
+       "sagitta_over_centroid_noise": 0.3858546904233107,
+       "spline_err_to_heldout_centroid": 0.011899103760765996,
+       "chord_err_to_heldout_centroid": 0.010633024641008154
+      },
+      {
+       "held_step": 3,
+       "sagitta": 0.0033546424709819524,
+       "sagitta_over_centroid_noise": 0.391426874858706,
+       "spline_err_to_heldout_centroid": 0.011954581949267405,
+       "chord_err_to_heldout_centroid": 0.012938926365860103
+      },
+      {
+       "held_step": 4,
+       "sagitta": 0.003019871289244602,
+       "sagitta_over_centroid_noise": 0.3524365124572523,
+       "spline_err_to_heldout_centroid": 0.013496171503024007,
+       "chord_err_to_heldout_centroid": 0.013137181666359342
+      },
+      {
+       "held_step": 5,
+       "sagitta": 0.0035193663176293177,
+       "sagitta_over_centroid_noise": 0.41068618773800425,
+       "spline_err_to_heldout_centroid": 0.00887481869572338,
+       "chord_err_to_heldout_centroid": 0.008231239933700696
+      },
+      {
+       "held_step": 6,
+       "sagitta": 0.005754426637586835,
+       "sagitta_over_centroid_noise": 0.6875896241226742,
+       "spline_err_to_heldout_centroid": 0.010359511218946614,
+       "chord_err_to_heldout_centroid": 0.008541906757896754
+      }
+     ],
+     "loo_sagitta_over_noise_median": 0.4010565312983551,
+     "loo_spline_beats_chord": 1,
+     "centroids_top2": [
+      [
+       0.02475719143870446,
+       0.0033739472957817376
+      ],
+      [
+       0.015936753722919493,
+       0.0024226234858983056
+      ],
+      [
+       0.009159714045618581,
+       0.0007346701597527731
+      ],
+      [
+       0.005936547109250054,
+       0.00076705177981578
+      ],
+      [
+       0.0035596180015440714,
+       -0.010403368874637508
+      ],
+      [
+       -0.0070651684231408714,
+       -0.0012091294425716345
+      ],
+      [
+       -0.0207908130061265,
+       0.0028906775896919623
+      ],
+      [
+       -0.03149384288876929,
+       0.0014235280062685853
+      ]
+     ]
+    }
+   }
+  },
+  "speed/vjepa2/timepool_same_subset": {
+   "clock": {
+    "1": {
+     "reference_mid_mean": 2.1353820598006648,
+     "n_heldout_clips": {
+      "slow": 100,
+      "mid": 135,
+      "fast": 63
+     },
+     "spline": {
+      "slow": {
+       "slope": {
+        "mean": -0.013186309523809525,
+        "ci95": [
+         -0.17294285714285712,
+         0.13911501488095238
+        ],
+        "n": 100,
+        "n_clips": 100
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 0.2143588746272527,
+       "mean_coord_per_step": [
+        2.3541500000000006,
+        2.8577000000000004,
+        2.6187000000000014,
+        2.8046499999999996,
+        2.8783,
+        2.9150500000000004,
+        2.63165,
+        2.219849999999999
+       ]
+      },
+      "mid": {
+       "slope": {
+        "mean": 0.02870149911816577,
+        "ci95": [
+         -0.05350613977072311,
+         0.11422042548500881
+        ],
+        "n": 135,
+        "n_clips": 135
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 1.0078366970626793,
+       "mean_coord_per_step": [
+        2.5673333333333335,
+        3.059592592592591,
+        2.9384444444444435,
+        2.8008148148148138,
+        3.086518518518519,
+        2.6934074074074075,
+        3.093592592592592,
+        2.951666666666667
+       ]
+      },
+      "fast": {
+       "slope": {
+        "mean": 0.026628873771730895,
+        "ci95": [
+         -0.10359814342403631,
+         0.16259301776266058
+        ],
+        "n": 63,
+        "n_clips": 63
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 1.5944509270063532,
+       "mean_coord_per_step": [
+        2.7307936507936508,
+        3.870714285714287,
+        2.805793650793651,
+        2.906190476190477,
+        3.5219047619047616,
+        2.6559523809523826,
+        3.864285714285713,
+        3.031190476190476
+       ]
+      },
+      "fast_over_slow_slope": {
+       "mean": -2.019433392159432,
+       "ci95": [
+        -8.48400996078183,
+        9.093103689929436
+       ],
+       "clock_prediction": 1.0,
+       "odometer_prediction": 7.438231469440833
+      },
+      "joint_fit_heldout": {
+       "a": 2.8299284508946023,
+       "b_clock": -0.06015948905917253,
+       "c_odometer": 0.08591475955989948,
+       "r2_clock_only": 8.706905909616758e-05,
+       "r2_odometer_only": 0.0024585880204724964,
+       "r2_both": 0.0033618096990416513,
+       "b_clock_ci95": [
+        -0.1629015931284558,
+        0.051466561665909544
+       ],
+       "c_odometer_ci95": [
+        0.01786125970346344,
+        0.15457146181678377
+       ]
+      },
+      "quadratic_coef_by_band": {
+       "slow": {
+        "mean": -0.04469434523809529,
+        "ci95": [
+         -0.10423531994047625,
+         0.013722068452380906
+        ],
+        "n": 100,
+        "n_clips": 100
+       },
+       "mid": {
+        "mean": -0.00920260141093478,
+        "ci95": [
+         -0.055195039682539734,
+         0.03553689373897702
+        ],
+        "n": 135,
+        "n_clips": 135
+       },
+       "fast": {
+        "mean": -0.0027191987906274207,
+        "ci95": [
+         -0.07340973403250195,
+         0.05754166666666661
+        ],
+        "n": 63,
+        "n_clips": 63
+       }
+      }
+     },
+     "linear_probe": {
+      "slow": {
+       "slope": {
+        "mean": -0.0007172813372936928,
+        "ci95": [
+         -0.008133001015328038,
+         0.006711889304846979
+        ],
+        "n": 100,
+        "n_clips": 100
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 0.2143588746272527,
+       "mean_coord_per_step": [
+        3.5027981014070133,
+        3.5126510023818103,
+        3.50922538161728,
+        3.4905691576933844,
+        3.49470164691973,
+        3.4718583086726365,
+        3.498407995061979,
+        3.519788406246168
+       ]
+      },
+      "mid": {
+       "slope": {
+        "mean": 0.0012949496298340023,
+        "ci95": [
+         -0.0019359096169665644,
+         0.004688062674295351
+        ],
+        "n": 135,
+        "n_clips": 135
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 1.0078366970626793,
+       "mean_coord_per_step": [
+        3.4962594352667242,
+        3.486815024994779,
+        3.5066085079883513,
+        3.494441150702354,
+        3.4820696239571065,
+        3.5292796089687557,
+        3.535330686151216,
+        3.4691959619707093
+       ]
+      },
+      "fast": {
+       "slope": {
+        "mean": 0.004096376367517312,
+        "ci95": [
+         -0.003684357738313388,
+         0.012169234830827616
+        ],
+        "n": 63,
+        "n_clips": 63
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 1.5944509270063532,
+       "mean_coord_per_step": [
+        3.449104881040247,
+        3.508452176780485,
+        3.4868015506487713,
+        3.517001515194376,
+        3.536658204043403,
+        3.520383052692206,
+        3.480750433063657,
+        3.5008481865368557
+       ]
+      },
+      "fast_over_slow_slope": {
+       "mean": -5.710975811768597,
+       "ci95": [
+        -19.86287810127049,
+        23.772615897512964
+       ],
+       "clock_prediction": 1.0,
+       "odometer_prediction": 7.438231469440833
+      },
+      "joint_fit_heldout": {
+       "a": 3.4957804413045768,
+       "b_clock": 0.0006382001802897546,
+       "c_odometer": 0.0006628491379318816,
+       "r2_clock_only": 0.00027578463881361426,
+       "r2_odometer_only": 0.00031638416297052885,
+       "r2_both": 0.00036062677757975337,
+       "b_clock_ci95": [
+        -0.003791800085974837,
+        0.004708441918659008
+       ],
+       "c_odometer_ci95": [
+        -0.0013140651320789358,
+        0.0026233771022808987
+       ]
+      },
+      "quadratic_coef_by_band": {
+       "slow": {
+        "mean": 0.0017830920064329403,
+        "ci95": [
+         -0.001001563862857134,
+         0.004542865736362899
+        ],
+        "n": 100,
+        "n_clips": 100
+       },
+       "mid": {
+        "mean": -0.0012493138830988006,
+        "ci95": [
+         -0.00337851204613615,
+         0.0011106576249317584
+        ],
+        "n": 135,
+        "n_clips": 135
+       },
+       "fast": {
+        "mean": -0.003874870972190397,
+        "ci95": [
+         -0.007742027204792247,
+         -1.8137151155091017e-05
+        ],
+        "n": 63,
+        "n_clips": 63
+       }
+      }
+     }
+    },
+    "4": {
+     "reference_mid_mean": 2.1353820598006648,
+     "n_heldout_clips": {
+      "slow": 100,
+      "mid": 135,
+      "fast": 63
+     },
+     "spline": {
+      "slow": {
+       "slope": {
+        "mean": 0.7983702380952381,
+        "ci95": [
+         0.7405786755952382,
+         0.8544206101190477
+        ],
+        "n": 100,
+        "n_clips": 100
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 0.2143588746272527,
+       "mean_coord_per_step": [
+        -0.14034999999999997,
+        3.2446000000000015,
+        1.8506000000000002,
+        1.4731500000000006,
+        1.7893499999999996,
+        4.851350000000001,
+        5.2120000000000015,
+        6.703600000000002
+       ]
+      },
+      "mid": {
+       "slope": {
+        "mean": 0.8456199294532628,
+        "ci95": [
+         0.7984177028218695,
+         0.8898134259259259
+        ],
+        "n": 135,
+        "n_clips": 135
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 1.0078366970626793,
+       "mean_coord_per_step": [
+        1.140296296296296,
+        2.119148148148148,
+        2.205185185185187,
+        2.73937037037037,
+        3.6925185185185203,
+        5.550592592592594,
+        6.0588148148148155,
+        6.903777777777777
+       ]
+      },
+      "fast": {
+       "slope": {
+        "mean": 0.8474272486772488,
+        "ci95": [
+         0.7922953514739229,
+         0.9035702239229024
+        ],
+        "n": 63,
+        "n_clips": 63
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 1.5944509270063532,
+       "mean_coord_per_step": [
+        1.2199999999999998,
+        2.047777777777779,
+        2.228888888888889,
+        2.7489682539682536,
+        3.742936507936509,
+        5.461825396825398,
+        6.1499999999999995,
+        6.9314285714285715
+       ]
+      },
+      "fast_over_slow_slope": {
+       "mean": 1.0614464420655905,
+       "ci95": [
+        0.9642205006316997,
+        1.1629802832592615
+       ],
+       "clock_prediction": 1.0,
+       "odometer_prediction": 7.438231469440833
+      },
+      "joint_fit_heldout": {
+       "a": 0.6753885780778689,
+       "b_clock": 0.7261719055473536,
+       "c_odometer": 0.12012054195107374,
+       "r2_clock_only": 0.587754363794448,
+       "r2_odometer_only": 0.340218997154754,
+       "r2_both": 0.6004105896554209,
+       "b_clock_ci95": [
+        0.6808511407128256,
+        0.7699259437197463
+       ],
+       "c_odometer_ci95": [
+        0.09306691161471975,
+        0.14495279366882696
+       ]
+      },
+      "quadratic_coef_by_band": {
+       "slow": {
+        "mean": 0.1070297619047619,
+        "ci95": [
+         0.08587144345238094,
+         0.1286445982142857
+        ],
+        "n": 100,
+        "n_clips": 100
+       },
+       "mid": {
+        "mean": 0.05392680776014107,
+        "ci95": [
+         0.03954741512345676,
+         0.06832939814814812
+        ],
+        "n": 135,
+        "n_clips": 135
+       },
+       "fast": {
+        "mean": 0.05789351851851848,
+        "ci95": [
+         0.03594124385865454,
+         0.07789630574452001
+        ],
+        "n": 63,
+        "n_clips": 63
+       }
+      }
+     },
+     "linear_probe": {
+      "slow": {
+       "slope": {
+        "mean": 1.0880200323200686,
+        "ci95": [
+         1.0257660880739334,
+         1.1516020612641598
+        ],
+        "n": 100,
+        "n_clips": 100
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 0.2143588746272527,
+       "mean_coord_per_step": [
+        -0.24861044001684937,
+        1.1399431791425405,
+        1.5307786117288311,
+        2.984900655200784,
+        3.9553925741811597,
+        4.957336802397873,
+        5.829425641033299,
+        7.850832976332363
+       ]
+      },
+      "mid": {
+       "slope": {
+        "mean": 0.9315155237456006,
+        "ci95": [
+         0.8988796197739283,
+         0.962570680986552
+        ],
+        "n": 135,
+        "n_clips": 135
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 1.0078366970626793,
+       "mean_coord_per_step": [
+        0.27820028470364155,
+        1.1114317783425693,
+        2.1794574379258145,
+        3.0564225668514666,
+        3.8042561668413453,
+        4.93213851476263,
+        5.860332352619618,
+        6.777760897952908
+       ]
+      },
+      "fast": {
+       "slope": {
+        "mean": 0.9291764237984029,
+        "ci95": [
+         0.8939730359306859,
+         0.9665723814558131
+        ],
+        "n": 63,
+        "n_clips": 63
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 1.5944509270063532,
+       "mean_coord_per_step": [
+        0.33058072246692854,
+        1.0767971695665441,
+        2.1164336772220245,
+        3.1142404167283564,
+        3.8056833444429254,
+        4.883815572891551,
+        5.975930893663897,
+        6.696518203017774
+       ]
+      },
+      "fast_over_slow_slope": {
+       "mean": 0.8540067243220226,
+       "ci95": [
+        0.793790565269063,
+        0.9181207122166936
+       ],
+       "clock_prediction": 1.0,
+       "odometer_prediction": 7.438231469440833
+      },
+      "joint_fit_heldout": {
+       "a": 0.05646140737096537,
+       "b_clock": 1.0131877899745545,
+       "c_odometer": -0.03425254789189813,
+       "r2_clock_only": 0.8745652524525888,
+       "r2_odometer_only": 0.3387274907132807,
+       "r2_both": 0.8756561343111553,
+       "b_clock_ci95": [
+        0.9784533882912417,
+        1.0525401366705298
+       ],
+       "c_odometer_ci95": [
+        -0.05057611148274248,
+        -0.0207455640470474
+       ]
+      },
+      "quadratic_coef_by_band": {
+       "slow": {
+        "mean": 0.03582806062556309,
+        "ci95": [
+         0.013837098460080553,
+         0.056032173254160454
+        ],
+        "n": 100,
+        "n_clips": 100
+       },
+       "mid": {
+        "mean": 0.0043173266846942325,
+        "ci95": [
+         -0.006117565709657269,
+         0.015052034048092378
+        ],
+        "n": 135,
+        "n_clips": 135
+       },
+       "fast": {
+        "mean": 0.0038217499132514854,
+        "ci95": [
+         -0.013953454247780016,
+         0.021137519532146546
+        ],
+        "n": 63,
+        "n_clips": 63
+       }
+      }
+     }
+    },
+    "8": {
+     "reference_mid_mean": 2.1353820598006648,
+     "n_heldout_clips": {
+      "slow": 100,
+      "mid": 135,
+      "fast": 63
+     },
+     "spline": {
+      "slow": {
+       "slope": {
+        "mean": 0.9969523809523808,
+        "ci95": [
+         0.9860079910714287,
+         1.0065522172619048
+        ],
+        "n": 100,
+        "n_clips": 100
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 0.2143588746272527,
+       "mean_coord_per_step": [
+        -0.04059999999999981,
+        0.9071999999999999,
+        1.9367,
+        2.9850500000000006,
+        3.9626500000000027,
+        4.984699999999998,
+        5.757550000000002,
+        7.012349999999998
+       ]
+      },
+      "mid": {
+       "slope": {
+        "mean": 1.0020939153439152,
+        "ci95": [
+         1.0000352843915343,
+         1.00429942680776
+        ],
+        "n": 135,
+        "n_clips": 135
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 1.0078366970626793,
+       "mean_coord_per_step": [
+        0.010740740740740893,
+        0.9789629629629631,
+        1.9824814814814817,
+        3.016444444444444,
+        4.018962962962964,
+        5.058888888888891,
+        5.995999999999998,
+        6.990592592592593
+       ]
+      },
+      "fast": {
+       "slope": {
+        "mean": 0.997205215419501,
+        "ci95": [
+         0.9949222647392288,
+         0.9994142337490552
+        ],
+        "n": 63,
+        "n_clips": 63
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 1.5944509270063532,
+       "mean_coord_per_step": [
+        0.034761904761904966,
+        1.0050793650793652,
+        2.038253968253968,
+        3.129285714285715,
+        4.037936507936508,
+        5.092301587301587,
+        6.002857142857142,
+        6.992698412698416
+       ]
+      },
+      "fast_over_slow_slope": {
+       "mean": 1.0002536073657586,
+       "ci95": [
+        0.9903208914071562,
+        1.0117444080746143
+       ],
+       "clock_prediction": 1.0,
+       "odometer_prediction": 7.438231469440833
+      },
+      "joint_fit_heldout": {
+       "a": -0.0061013956508163955,
+       "b_clock": 0.986467248256541,
+       "c_odometer": 0.014866023406715945,
+       "r2_clock_only": 0.9911021235016717,
+       "r2_odometer_only": 0.4326138720532322,
+       "r2_both": 0.991327687077056,
+       "b_clock_ci95": [
+        0.9774529728662514,
+        0.9944509010099704
+       ],
+       "c_odometer_ci95": [
+        0.009473716210429023,
+        0.020986998554814944
+       ]
+      },
+      "quadratic_coef_by_band": {
+       "slow": {
+        "mean": -0.00021250000000001213,
+        "ci95": [
+         -0.0017010491071428682,
+         0.001064947916666652
+        ],
+        "n": 100,
+        "n_clips": 100
+       },
+       "mid": {
+        "mean": -0.0018860229276896115,
+        "ci95": [
+         -0.003336276455026468,
+         -0.0006978780864197721
+        ],
+        "n": 135,
+        "n_clips": 135
+       },
+       "fast": {
+        "mean": -0.006116780045351479,
+        "ci95": [
+         -0.007913052721088443,
+         -0.004126417233560093
+        ],
+        "n": 63,
+        "n_clips": 63
+       }
+      }
+     },
+     "linear_probe": {
+      "slow": {
+       "slope": {
+        "mean": 0.9769041092271652,
+        "ci95": [
+         0.9649455549926369,
+         0.9911913831441306
+        ],
+        "n": 100,
+        "n_clips": 100
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 0.2143588746272527,
+       "mean_coord_per_step": [
+        0.13727684432751494,
+        1.0378482435287852,
+        1.8754927017145457,
+        3.0648265591029222,
+        4.108202956540602,
+        4.989207484601485,
+        5.842206457184546,
+        6.944938752999596
+       ]
+      },
+      "mid": {
+       "slope": {
+        "mean": 0.999066308920395,
+        "ci95": [
+         0.9900909983401244,
+         1.0089239515944237
+        ],
+        "n": 135,
+        "n_clips": 135
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 1.0078366970626793,
+       "mean_coord_per_step": [
+        0.0071182212722742735,
+        0.9919952835693411,
+        2.0119075695784323,
+        2.984117211759331,
+        4.018180275687649,
+        4.990773018023666,
+        6.005322216981678,
+        6.990586203127627
+       ]
+      },
+      "fast": {
+       "slope": {
+        "mean": 1.0141848062224772,
+        "ci95": [
+         0.9985991302000504,
+         1.0278526901175489
+        ],
+        "n": 63,
+        "n_clips": 63
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 1.5944509270063532,
+       "mean_coord_per_step": [
+        0.001790083157206564,
+        0.9461912229625975,
+        1.9523454662567667,
+        2.966373567116683,
+        4.028078874494476,
+        4.968724666199786,
+        6.065652663146359,
+        7.070843456666127
+       ]
+      },
+      "fast_over_slow_slope": {
+       "mean": 1.0381620843265824,
+       "ci95": [
+        1.0171350393125622,
+        1.0593117006178363
+       ],
+       "clock_prediction": 1.0,
+       "odometer_prediction": 7.438231469440833
+      },
+      "joint_fit_heldout": {
+       "a": 0.01834849282576849,
+       "b_clock": 0.9886996752939587,
+       "c_odometer": 0.007077119112427366,
+       "r2_clock_only": 0.9898682620362746,
+       "r2_odometer_only": 0.42427960643051876,
+       "r2_both": 0.9899197824987567,
+       "b_clock_ci95": [
+        0.981218971782493,
+        0.9971701481998011
+       ],
+       "c_odometer_ci95": [
+        0.003703122565949768,
+        0.010558634905175989
+       ]
+      },
+      "quadratic_coef_by_band": {
+       "slow": {
+        "mean": -2.1930090253625698e-05,
+        "ci95": [
+         -0.0043332895135094265,
+         0.004816709660432668
+        ],
+        "n": 100,
+        "n_clips": 100
+       },
+       "mid": {
+        "mean": -0.00022786148030277533,
+        "ci95": [
+         -0.0037941217986025197,
+         0.002993917266580327
+        ],
+        "n": 135,
+        "n_clips": 135
+       },
+       "fast": {
+        "mean": 0.00467146463956441,
+        "ci95": [
+         0.0008553305831304402,
+         0.008938111022618855
+        ],
+        "n": 63,
+        "n_clips": 63
+       }
+      }
+     }
+    },
+    "12": {
+     "reference_mid_mean": 2.1353820598006648,
+     "n_heldout_clips": {
+      "slow": 100,
+      "mid": 135,
+      "fast": 63
+     },
+     "spline": {
+      "slow": {
+       "slope": {
+        "mean": 0.9871559523809523,
+        "ci95": [
+         0.9785868303571429,
+         0.9950699404761905
+        ],
+        "n": 100,
+        "n_clips": 100
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 0.2143588746272527,
+       "mean_coord_per_step": [
+        -0.002549999999999919,
+        1.0009500000000005,
+        1.9810000000000005,
+        3.0226500000000014,
+        3.9519000000000006,
+        4.6411,
+        5.99955,
+        7.000099999999996
+       ]
+      },
+      "mid": {
+       "slope": {
+        "mean": 1.0005983245149912,
+        "ci95": [
+         0.9979887345679013,
+         1.002700099206349
+        ],
+        "n": 135,
+        "n_clips": 135
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 1.0078366970626793,
+       "mean_coord_per_step": [
+        -0.0013333333333332654,
+        1.0010370370370372,
+        2.02737037037037,
+        3.0089259259259276,
+        3.985518518518519,
+        5.045962962962966,
+        6.004148148148146,
+        6.999000000000001
+       ]
+      },
+      "fast": {
+       "slope": {
+        "mean": 0.9966402116402118,
+        "ci95": [
+         0.9934411611866969,
+         0.9993458049886622
+        ],
+        "n": 63,
+        "n_clips": 63
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 1.5944509270063532,
+       "mean_coord_per_step": [
+        0.001349206349206405,
+        1.0035714285714288,
+        2.0475396825396834,
+        3.092460317460318,
+        4.012619047619047,
+        5.004444444444445,
+        5.996507936507938,
+        6.9959523809523825
+       ]
+      },
+      "fast_over_slow_slope": {
+       "mean": 1.0096076605083362,
+       "ci95": [
+        1.0006191672594633,
+        1.019348093775004
+       ],
+       "clock_prediction": 1.0,
+       "odometer_prediction": 7.438231469440833
+      },
+      "joint_fit_heldout": {
+       "a": 0.008123723971286937,
+       "b_clock": 0.9844067660662804,
+       "c_odometer": 0.012527846980917468,
+       "r2_clock_only": 0.9835931704440735,
+       "r2_odometer_only": 0.4270452484368541,
+       "r2_both": 0.9837534531253973,
+       "b_clock_ci95": [
+        0.9765889081244317,
+        0.9923503947026441
+       ],
+       "c_odometer_ci95": [
+        0.006530055921570549,
+        0.017800063120039893
+       ]
+      },
+      "quadratic_coef_by_band": {
+       "slow": {
+        "mean": 0.007406547619047604,
+        "ci95": [
+         0.0030891964285714108,
+         0.011647313988095228
+        ],
+        "n": 100,
+        "n_clips": 100
+       },
+       "mid": {
+        "mean": -0.0012105379188712712,
+        "ci95": [
+         -0.0030058752204585714,
+         0.000412852733686046
+        ],
+        "n": 135,
+        "n_clips": 135
+       },
+       "fast": {
+        "mean": -0.004167611489040081,
+        "ci95": [
+         -0.006265991118669716,
+         -0.0020832742819350096
+        ],
+        "n": 63,
+        "n_clips": 63
+       }
+      }
+     },
+     "linear_probe": {
+      "slow": {
+       "slope": {
+        "mean": 0.9260216112087473,
+        "ci95": [
+         0.9176199481993388,
+         0.9346912226195988
+        ],
+        "n": 100,
+        "n_clips": 100
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 0.2143588746272527,
+       "mean_coord_per_step": [
+        0.3848661909110913,
+        1.1403840098402334,
+        2.0680594264472196,
+        2.9956714013964314,
+        3.8424974172127366,
+        4.924746550292055,
+        5.870756843769426,
+        6.773018160130804
+       ]
+      },
+      "mid": {
+       "slope": {
+        "mean": 1.0012282825227221,
+        "ci95": [
+         0.997526585898816,
+         1.005673726925739
+        ],
+        "n": 135,
+        "n_clips": 135
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 1.0078366970626793,
+       "mean_coord_per_step": [
+        -0.006410521149471356,
+        0.9936212059359417,
+        2.0010427967473903,
+        2.9933028513650557,
+        4.017160472899613,
+        4.999160806075864,
+        6.003330126428576,
+        6.998792261697029
+       ]
+      },
+      "fast": {
+       "slope": {
+        "mean": 0.9998242092727463,
+        "ci95": [
+         0.9934809255908482,
+         1.0063620328539893
+        ],
+        "n": 63,
+        "n_clips": 63
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 1.5944509270063532,
+       "mean_coord_per_step": [
+        -0.010663442358902141,
+        0.983656337754093,
+        2.00591130812992,
+        3.021888836762327,
+        4.0415458062545815,
+        4.971165663089956,
+        5.996008647889833,
+        6.990486842478185
+       ]
+      },
+      "fast_over_slow_slope": {
+       "mean": 1.0796985698505066,
+       "ci95": [
+        1.0667119736261153,
+        1.0917262730219106
+       ],
+       "clock_prediction": 1.0,
+       "odometer_prediction": 7.438231469440833
+      },
+      "joint_fit_heldout": {
+       "a": 0.08561571578057675,
+       "b_clock": 0.9616352678426466,
+       "c_odometer": 0.016242248582952645,
+       "r2_clock_only": 0.9945759749448408,
+       "r2_odometer_only": 0.4359272862588345,
+       "r2_both": 0.9948594311082751,
+       "b_clock_ci95": [
+        0.9560011434095255,
+        0.9679639535144671
+       ],
+       "c_odometer_ci95": [
+        0.0139147774827378,
+        0.01821875396388268
+       ]
+      },
+      "quadratic_coef_by_band": {
+       "slow": {
+        "mean": 0.011589698140709908,
+        "ci95": [
+         0.008482265676288115,
+         0.014690908469864691
+        ],
+        "n": 100,
+        "n_clips": 100
+       },
+       "mid": {
+        "mean": -0.000650618533307629,
+        "ci95": [
+         -0.002560410774129674,
+         0.0013631939126781192
+        ],
+        "n": 135,
+        "n_clips": 135
+       },
+       "fast": {
+        "mean": -0.002440329418245706,
+        "ci95": [
+         -0.0051099898820984825,
+         0.0003275328899768489
+        ],
+        "n": 63,
+        "n_clips": 63
+       }
+      }
+     }
+    },
+    "19": {
+     "reference_mid_mean": 2.1353820598006648,
+     "n_heldout_clips": {
+      "slow": 100,
+      "mid": 135,
+      "fast": 63
+     },
+     "spline": {
+      "slow": {
+       "slope": {
+        "mean": 0.9887494047619049,
+        "ci95": [
+         0.981671875,
+         0.9943359077380952
+        ],
+        "n": 100,
+        "n_clips": 100
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 0.2143588746272527,
+       "mean_coord_per_step": [
+        0.0005499999999999883,
+        0.9861500000000001,
+        1.9491000000000005,
+        3.034399999999999,
+        3.952599999999998,
+        4.706200000000002,
+        5.973099999999999,
+        6.990650000000001
+       ]
+      },
+      "mid": {
+       "slope": {
+        "mean": 0.9966186067019401,
+        "ci95": [
+         0.9955213073192241,
+         0.9977645061728396
+        ],
+        "n": 135,
+        "n_clips": 135
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 1.0078366970626793,
+       "mean_coord_per_step": [
+        3.703703703703625e-05,
+        0.9998888888888894,
+        1.998851851851853,
+        2.9893333333333336,
+        3.9925555555555556,
+        4.916296296296301,
+        5.996222222222219,
+        6.9970000000000026
+       ]
+      },
+      "fast": {
+       "slope": {
+        "mean": 0.9990863567649282,
+        "ci95": [
+         0.9977113095238096,
+         1.0003302862811791
+        ],
+        "n": 63,
+        "n_clips": 63
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 1.5944509270063532,
+       "mean_coord_per_step": [
+        0.0003174603174603107,
+        1.0076984126984128,
+        2.0089682539682547,
+        2.987142857142857,
+        4.013492063492063,
+        4.998492063492063,
+        5.999920634920635,
+        6.995634920634923
+       ]
+      },
+      "fast_over_slow_slope": {
+       "mean": 1.0104545721628146,
+       "ci95": [
+        1.004393079421621,
+        1.0176942877881197
+       ],
+       "clock_prediction": 1.0,
+       "odometer_prediction": 7.438231469440833
+      },
+      "joint_fit_heldout": {
+       "a": -0.003413279349703284,
+       "b_clock": 0.9860423084973066,
+       "c_odometer": 0.0097706575171288,
+       "r2_clock_only": 0.9937624619215505,
+       "r2_odometer_only": 0.4286738988280109,
+       "r2_both": 0.9938611135111308,
+       "b_clock_ci95": [
+        0.981541851808382,
+        0.9913296742036453
+       ],
+       "c_odometer_ci95": [
+        0.005677412616201036,
+        0.013080214578798871
+       ]
+      },
+      "quadratic_coef_by_band": {
+       "slow": {
+        "mean": 0.005933035714285692,
+        "ci95": [
+         0.003538251488095219,
+         0.008524724702380932
+        ],
+        "n": 100,
+        "n_clips": 100
+       },
+       "mid": {
+        "mean": 0.0019076278659611733,
+        "ci95": [
+         0.0010894069664902732,
+         0.002743005952380929
+        ],
+        "n": 135,
+        "n_clips": 135
+       },
+       "fast": {
+        "mean": -0.00027541572184431223,
+        "ci95": [
+         -0.0015789280990174044,
+         0.0008419194066515314
+        ],
+        "n": 63,
+        "n_clips": 63
+       }
+      }
+     },
+     "linear_probe": {
+      "slow": {
+       "slope": {
+        "mean": 0.9196339965367697,
+        "ci95": [
+         0.9111074424201046,
+         0.9284774370225298
+        ],
+        "n": 100,
+        "n_clips": 100
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 0.2143588746272527,
+       "mean_coord_per_step": [
+        0.5059403545324611,
+        1.110485432517818,
+        2.137977608363359,
+        2.96816699445364,
+        3.6906812204500516,
+        4.813851755877369,
+        5.908573875885298,
+        6.864322757920003
+       ]
+      },
+      "mid": {
+       "slope": {
+        "mean": 0.9975450164425145,
+        "ci95": [
+         0.9943585666051301,
+         1.0008401955419528
+        ],
+        "n": 135,
+        "n_clips": 135
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 1.0078366970626793,
+       "mean_coord_per_step": [
+        -0.008906612547211487,
+        1.0152498983509304,
+        2.006167689824417,
+        3.0016280101815416,
+        4.019664905903597,
+        5.0026369032491305,
+        5.972337193081975,
+        6.991222011955616
+       ]
+      },
+      "fast": {
+       "slope": {
+        "mean": 0.9941450189671422,
+        "ci95": [
+         0.989237770438129,
+         0.9992687608087726
+        ],
+        "n": 63,
+        "n_clips": 63
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 1.5944509270063532,
+       "mean_coord_per_step": [
+        0.05602975279583669,
+        0.9935742475217919,
+        2.001415239350862,
+        2.994296083963473,
+        4.022371694783494,
+        4.925305028907416,
+        5.990269773904909,
+        7.016738178772221
+       ]
+      },
+      "fast_over_slow_slope": {
+       "mean": 1.0810224749313009,
+       "ci95": [
+        1.0688353160314539,
+        1.0929303715563081
+       ],
+       "clock_prediction": 1.0,
+       "odometer_prediction": 7.438231469440833
+      },
+      "joint_fit_heldout": {
+       "a": 0.10316325970812062,
+       "b_clock": 0.9565449004436142,
+       "c_odometer": 0.016331950553962415,
+       "r2_clock_only": 0.9909474000420113,
+       "r2_odometer_only": 0.43451742024106776,
+       "r2_both": 0.9912359070130772,
+       "b_clock_ci95": [
+        0.9504517734748597,
+        0.9643729428113915
+       ],
+       "c_odometer_ci95": [
+        0.013853467402616055,
+        0.018747041039100305
+       ]
+      },
+      "quadratic_coef_by_band": {
+       "slow": {
+        "mean": 0.026554594811486608,
+        "ci95": [
+         0.020997532310202748,
+         0.031471019877400204
+        ],
+        "n": 100,
+        "n_clips": 100
+       },
+       "mid": {
+        "mean": -0.001601687335444031,
+        "ci95": [
+         -0.003210678276921131,
+         5.554625532667895e-05
+        ],
+        "n": 135,
+        "n_clips": 135
+       },
+       "fast": {
+        "mean": 0.0037483324041276116,
+        "ci95": [
+         0.0012475458005772458,
+         0.005890079891786197
+        ],
+        "n": 63,
+        "n_clips": 63
+       }
+      }
+     }
+    },
+    "22": {
+     "reference_mid_mean": 2.1353820598006648,
+     "n_heldout_clips": {
+      "slow": 100,
+      "mid": 135,
+      "fast": 63
+     },
+     "spline": {
+      "slow": {
+       "slope": {
+        "mean": 0.9885214285714287,
+        "ci95": [
+         0.9828850297619048,
+         0.9934588095238095
+        ],
+        "n": 100,
+        "n_clips": 100
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 0.2143588746272527,
+       "mean_coord_per_step": [
+        0.0006499999999999861,
+        0.9883500000000004,
+        1.9706500000000002,
+        3.0378499999999993,
+        3.9513499999999997,
+        4.689099999999997,
+        6.000850000000002,
+        6.987000000000003
+       ]
+      },
+      "mid": {
+       "slope": {
+        "mean": 0.9958910934744267,
+        "ci95": [
+         0.9932779431216934,
+         0.9977637786596121
+        ],
+        "n": 135,
+        "n_clips": 135
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 1.0078366970626793,
+       "mean_coord_per_step": [
+        0.000148148148148145,
+        0.9996666666666669,
+        2.0255555555555564,
+        3.0119629629629627,
+        3.983185185185185,
+        4.925185185185189,
+        6.000814814814811,
+        6.997148148148151
+       ]
+      },
+      "fast": {
+       "slope": {
+        "mean": 0.9959674981103551,
+        "ci95": [
+         0.9940107709750567,
+         0.9978718348450492
+        ],
+        "n": 63,
+        "n_clips": 63
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 1.5944509270063532,
+       "mean_coord_per_step": [
+        -7.936507936507767e-05,
+        1.0081746031746033,
+        2.0096825396825397,
+        3.0250793650793657,
+        4.00452380952381,
+        4.9323015873015885,
+        5.998968253968255,
+        6.994206349206349
+       ]
+      },
+      "fast_over_slow_slope": {
+       "mean": 1.0075325322483775,
+       "ci95": [
+        1.0018968564160267,
+        1.01326219441101
+       ],
+       "clock_prediction": 1.0,
+       "odometer_prediction": 7.438231469440833
+      },
+      "joint_fit_heldout": {
+       "a": 0.0036599561438621715,
+       "b_clock": 0.9861373735387494,
+       "c_odometer": 0.008429943845883914,
+       "r2_clock_only": 0.993482836320435,
+       "r2_odometer_only": 0.42720642777597484,
+       "r2_both": 0.993556408681525,
+       "b_clock_ci95": [
+        0.9818353450056194,
+        0.9906895308442237
+       ],
+       "c_odometer_ci95": [
+        0.0050947650414065624,
+        0.011511064486849016
+       ]
+      },
+      "quadratic_coef_by_band": {
+       "slow": {
+        "mean": 0.005818452380952356,
+        "ci95": [
+         0.0035707663690475906,
+         0.008378147321428542
+        ],
+        "n": 100,
+        "n_clips": 100
+       },
+       "mid": {
+        "mean": 0.0009142416225749343,
+        "ci95": [
+         -0.00048576940035276027,
+         0.002039302248677226
+        ],
+        "n": 135,
+        "n_clips": 135
+       },
+       "fast": {
+        "mean": -4.7241118669712055e-05,
+        "ci95": [
+         -0.001278521825396849,
+         0.0011651431405895459
+        ],
+        "n": 63,
+        "n_clips": 63
+       }
+      }
+     },
+     "linear_probe": {
+      "slow": {
+       "slope": {
+        "mean": 0.9769078729686173,
+        "ci95": [
+         0.9675090272923206,
+         0.9867013260422287
+        ],
+        "n": 100,
+        "n_clips": 100
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 0.2143588746272527,
+       "mean_coord_per_step": [
+        0.30717229554173103,
+        1.1255576345871885,
+        1.8382684143911172,
+        2.9263933290195605,
+        3.844020908785666,
+        4.824775649051401,
+        5.987788046509202,
+        7.146023722114138
+       ]
+      },
+      "mid": {
+       "slope": {
+        "mean": 0.9977163689498558,
+        "ci95": [
+         0.9938828808826422,
+         1.0015750524608746
+        ],
+        "n": 135,
+        "n_clips": 135
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 1.0078366970626793,
+       "mean_coord_per_step": [
+        -0.03077499612500678,
+        1.0187105651948087,
+        2.0336405781433213,
+        3.0033930586939133,
+        4.020545017141841,
+        4.987804087975221,
+        5.980055732944035,
+        6.986625956031875
+       ]
+      },
+      "fast": {
+       "slope": {
+        "mean": 0.9942205587434519,
+        "ci95": [
+         0.9877688981437885,
+         1.0013884905862653
+        ],
+        "n": 63,
+        "n_clips": 63
+       },
+       "clock_prediction": 1.0,
+       "odometer_prediction": 1.5944509270063532,
+       "mean_coord_per_step": [
+        -0.0020336202708596844,
+        0.9893832755713092,
+        2.0622321782052597,
+        3.003241767586204,
+        4.057020905108553,
+        4.915846104465498,
+        5.9937893356154195,
+        6.980520053718618
+       ]
+      },
+      "fast_over_slow_slope": {
+       "mean": 1.0177219226642376,
+       "ci95": [
+        1.0064056052497306,
+        1.0302250977078538
+       ],
+       "clock_prediction": 1.0,
+       "odometer_prediction": 7.438231469440833
+      },
+      "joint_fit_heldout": {
+       "a": 0.03514885226137378,
+       "b_clock": 0.9866467710122119,
+       "c_odometer": 0.0038677138351260743,
+       "r2_clock_only": 0.9913190345592784,
+       "r2_odometer_only": 0.42169641629136,
+       "r2_both": 0.9913345956357411,
+       "b_clock_ci95": [
+        0.9809293755232565,
+        0.9923764457642463
+       ],
+       "c_odometer_ci95": [
+        0.0013227578905090189,
+        0.005874743170149358
+       ]
+      },
+      "quadratic_coef_by_band": {
+       "slow": {
+        "mean": 0.03240782396032014,
+        "ci95": [
+         0.02797068731331872,
+         0.03731865110571136
+        ],
+        "n": 100,
+        "n_clips": 100
+       },
+       "mid": {
+        "mean": -0.0029422700002826444,
+        "ci95": [
+         -0.005056554092208499,
+         -0.0009590548513358353
+        ],
+        "n": 135,
+        "n_clips": 135
+       },
+       "fast": {
+        "mean": -0.002398634322410776,
+        "ci95": [
+         -0.0051644732966268855,
+         0.00014783743056667005
+        ],
+        "n": 63,
+        "n_clips": 63
+       }
+      }
+     }
+    }
+   },
+   "decode": {
+    "1": {
+     "cv": {
+      "t_r2": 0.18331084339463344,
+      "t_mae_steps": 1.6469757266958165,
+      "dist_r2": 0.4579573971570915,
+      "dist_mae_m": 0.30284327528997473,
+      "xy_r2": 0.32750024840518344,
+      "xy_err_m": 0.910099927038651
+     },
+     "test": {
+      "t_r2": 0.21637805340568161,
+      "t_mae_steps": 1.6134016351533265,
+      "dist_r2": 0.43376023759445037,
+      "dist_mae_m": 0.33627212989642613,
+      "xy_r2": 0.38408445953615056,
+      "xy_err_m": 0.9375529341644755
+     },
+     "n_rows_dropped_nonfinite": 0,
+     "cv_t_bias_by_band": {
+      "slow": -0.06145396898053695,
+      "mid": 0.1612680822241411,
+      "fast": -0.16539194203663748
+     },
+     "cv_t_bias_by_band_per_step": {
+      "slow": [
+       1.2441646246689941,
+       1.0084622291610548,
+       0.7611060237621259,
+       0.5486719757247026,
+       0.14270026219280021,
+       -0.6156411561198357,
+       -1.4364453700035895,
+       -2.144650341230548
+      ],
+      "mid": [
+       1.5072934720706916,
+       1.2375635922136128,
+       1.0519993594631787,
+       0.6205268926100317,
+       0.18674734407003934,
+       -0.30334558502512293,
+       -1.1494877121321805,
+       -1.8611527054771215
+      ],
+      "fast": [
+       1.3646732395437335,
+       1.0892417652270798,
+       0.6112217762418022,
+       0.25304263156620954,
+       -0.016409734293743674,
+       -0.8114470311282493,
+       -1.5635094631567612,
+       -2.2499487202931707
+      ]
+     }
+    },
+    "4": {
+     "cv": {
+      "t_r2": 0.9403931453246811,
+      "t_mae_steps": 0.43500796929995045,
+      "dist_r2": 0.9169936819540778,
+      "dist_mae_m": 0.1209933617325215,
+      "xy_r2": 0.582668772469277,
+      "xy_err_m": 0.7097149486929357
+     },
+     "test": {
+      "t_r2": 0.9530594071822347,
+      "t_mae_steps": 0.39523938776582423,
+      "dist_r2": 0.9358207669435614,
+      "dist_mae_m": 0.11564483772553505,
+      "xy_r2": 0.70554930203707,
+      "xy_err_m": 0.6461168991990155
+     },
+     "n_rows_dropped_nonfinite": 0,
+     "cv_t_bias_by_band": {
+      "slow": 0.015227439702389555,
+      "mid": 0.031212639487630867,
+      "fast": -0.017196115087671396
+     },
+     "cv_t_bias_by_band_per_step": {
+      "slow": [
+       0.08012708503590925,
+       0.03489954118000516,
+       0.03308271326875941,
+       0.01632719255477639,
+       0.022754467905375518,
+       -0.017352549915115322,
+       -0.03768963896916601,
+       -0.010329293441427962
+      ],
+      "mid": [
+       0.17512171287447426,
+       0.09848932635184314,
+       0.2216394716827214,
+       0.047582741051433786,
+       -0.033593216920875496,
+       -0.04391962890922017,
+       -0.07539910526037856,
+       -0.1402201849689515
+      ],
+      "fast": [
+       0.08171387415330991,
+       -0.0294122832664489,
+       -0.020429517851309136,
+       -0.01624288898722382,
+       -0.032896009900212436,
+       -0.0198146430799777,
+       0.023005742549593446,
+       -0.12349319431910258
+      ]
+     }
+    },
+    "8": {
+     "cv": {
+      "t_r2": 0.9935253085243825,
+      "t_mae_steps": 0.14435113787867607,
+      "dist_r2": 0.9633327518380905,
+      "dist_mae_m": 0.07975261340804823,
+      "xy_r2": 0.8973256435341482,
+      "xy_err_m": 0.3530685265786198
+     },
+     "test": {
+      "t_r2": 0.9951149101041838,
+      "t_mae_steps": 0.12561604852391337,
+      "dist_r2": 0.969096528577625,
+      "dist_mae_m": 0.08032977136782742,
+      "xy_r2": 0.9270360702548717,
+      "xy_err_m": 0.3206737340265166
+     },
+     "n_rows_dropped_nonfinite": 0,
+     "cv_t_bias_by_band": {
+      "slow": -0.008423307304004021,
+      "mid": -0.0037239639265097607,
+      "fast": 0.0045159893575410824
+     },
+     "cv_t_bias_by_band_per_step": {
+      "slow": [
+       0.004605124804970899,
+       -0.0066673206116795785,
+       -0.004550705653837158,
+       -0.008619007199094954,
+       -0.013917493016569716,
+       -0.012672992352090698,
+       -0.019531763357839904,
+       -0.006032301045891052
+      ],
+      "mid": [
+       0.00729078539214028,
+       -0.0016159345498269965,
+       0.022008348385314586,
+       0.0033842370348646077,
+       -0.0026883121960915787,
+       -0.017456528664719136,
+       -0.018170937315751135,
+       -0.02254336949800871
+      ],
+      "fast": [
+       0.01025469447983483,
+       -0.007116393732735345,
+       0.01194350088323099,
+       -0.009521870078131852,
+       0.013080504134505087,
+       -0.004774502226744578,
+       0.0024621695572584297,
+       0.019799811843111102
+      ]
+     }
+    },
+    "12": {
+     "cv": {
+      "t_r2": 0.9975295034293148,
+      "t_mae_steps": 0.08968162441244269,
+      "dist_r2": 0.9708990765572704,
+      "dist_mae_m": 0.07172138655014997,
+      "xy_r2": 0.9688816356361639,
+      "xy_err_m": 0.19535820048151242
+     },
+     "test": {
+      "t_r2": 0.9977741342830396,
+      "t_mae_steps": 0.08561781890908625,
+      "dist_r2": 0.9726263075689537,
+      "dist_mae_m": 0.07541296087126641,
+      "xy_r2": 0.9733542375936037,
+      "xy_err_m": 0.1911564679099917
+     },
+     "n_rows_dropped_nonfinite": 0,
+     "cv_t_bias_by_band": {
+      "slow": -0.0012085698774502757,
+      "mid": -0.004657607779636625,
+      "fast": -0.0015449151233873132
+     },
+     "cv_t_bias_by_band_per_step": {
+      "slow": [
+       0.016215393304361628,
+       0.015759754335438813,
+       0.007373075232062261,
+       0.00921313392102125,
+       -0.010900780334303216,
+       -0.013081071152501216,
+       -0.01955699060493852,
+       -0.014691073720743204
+      ],
+      "mid": [
+       -0.006963507554845232,
+       -0.008351336592102762,
+       0.0017769703178892508,
+       0.0036397251865843113,
+       -0.007043958860906576,
+       -0.018075335217558906,
+       -0.006384562624751807,
+       0.00414114310859872
+      ],
+      "fast": [
+       0.004271821111650799,
+       0.004556943755771025,
+       0.0032544546530234135,
+       -0.004170350642444016,
+       0.005788664882038317,
+       -0.0007452956395869006,
+       -0.010714620197131089,
+       -0.014600938910420051
+      ]
+     }
+    },
+    "19": {
+     "cv": {
+      "t_r2": 0.9982515267856729,
+      "t_mae_steps": 0.0745506675240844,
+      "dist_r2": 0.9873184121690399,
+      "dist_mae_m": 0.04696371446645072,
+      "xy_r2": 0.9841144135029127,
+      "xy_err_m": 0.13726760956470652
+     },
+     "test": {
+      "t_r2": 0.9985044789311897,
+      "t_mae_steps": 0.0694387761274663,
+      "dist_r2": 0.9861995582043298,
+      "dist_mae_m": 0.05226248466400607,
+      "xy_r2": 0.9858875077244379,
+      "xy_err_m": 0.1355935101466684
+     },
+     "n_rows_dropped_nonfinite": 0,
+     "cv_t_bias_by_band": {
+      "slow": 0.000354963298381465,
+      "mid": 3.600682833941892e-05,
+      "fast": -0.0029251419550837005
+     },
+     "cv_t_bias_by_band_per_step": {
+      "slow": [
+       0.027158604594164287,
+       0.009343160611379431,
+       0.0211527819824485,
+       -0.003603261427495355,
+       -0.008627310632881772,
+       -0.029798124796589307,
+       -0.01277995460973567,
+       -6.189334238399067e-06
+      ],
+      "mid": [
+       -0.008789911598840716,
+       0.0012818982918234537,
+       -0.002795716258953714,
+       -0.0014058010089662543,
+       0.0036073542026651704,
+       0.00316711200312358,
+       0.002926371633293004,
+       0.002296747362570828
+      ],
+      "fast": [
+       0.013554112746516231,
+       0.01252551567151086,
+       0.0025249708195260174,
+       0.008759271488090399,
+       -0.003876970487990242,
+       -0.02656514529921797,
+       -0.0160729173173426,
+       -0.014249973261762297
+      ]
+     }
+    },
+    "22": {
+     "cv": {
+      "t_r2": 0.9977150138399457,
+      "t_mae_steps": 0.08579463382251451,
+      "dist_r2": 0.9863858093468256,
+      "dist_mae_m": 0.04823126829058025,
+      "xy_r2": 0.9867434101711166,
+      "xy_err_m": 0.1242902517064771
+     },
+     "test": {
+      "t_r2": 0.998039490885229,
+      "t_mae_steps": 0.08013665719147187,
+      "dist_r2": 0.9857680247772797,
+      "dist_mae_m": 0.05268545854977282,
+      "xy_r2": 0.9873736945448762,
+      "xy_err_m": 0.12484383617720027
+     },
+     "n_rows_dropped_nonfinite": 0,
+     "cv_t_bias_by_band": {
+      "slow": 0.0018425114562344168,
+      "mid": -0.0009578510326527621,
+      "fast": 0.003786302148192357
+     },
+     "cv_t_bias_by_band_per_step": {
+      "slow": [
+       0.01950642354922305,
+       0.013862098358297362,
+       0.029252686552399855,
+       0.0019931126562631593,
+       -0.004711679879530054,
+       -0.036632996873433556,
+       -0.008778125177147232,
+       0.0002485724638027434
+      ],
+      "mid": [
+       0.004259396939617773,
+       -0.001639220664629559,
+       -0.003446530826860934,
+       -0.005820010815386801,
+       0.004473190768026294,
+       0.0020564232005065245,
+       -0.00576254567087479,
+       -0.001783511191620608
+      ],
+      "fast": [
+       0.006980265822633954,
+       0.02155501183690476,
+       0.012693272835802825,
+       0.01620890335956661,
+       0.009360142410414803,
+       -0.026884115129242235,
+       -0.011995806341643354,
+       0.002372742391101493
+      ]
+     }
+    }
+   },
+   "geometry": {
+    "1": {
+     "residual_var_frac_of_step_var": 0.06089511354709525,
+     "heldout_var_explained": {
+      "centroids": -0.0019620848714567707,
+      "spline": -0.0007410087743049409,
+      "line_in_t": -0.0003225624307456876,
+      "centroids_full_space": -0.0018181069788631987
+     },
+     "per_clip_var_explained_median": -0.0027957583574771405,
+     "centroid_participation_ratio": 4.618181540656561,
+     "centroid_pc1_frac": 0.36352626678068634,
+     "centroid_path_length": 0.29395295136156,
+     "centroid_end_to_end": 0.054124456304240134,
+     "median_centroid_noise": 0.03067235018837051,
+     "bend": {
+      "median_bend": 0.03408153238207629,
+      "median_spread": 0.5811498094678877,
+      "median_centroid_noise": 0.03033577312203553,
+      "bend_over_noise": 1.0987472702611982,
+      "bend_over_spread": 0.057354140646829796
+     },
+     "loo_sagitta": [
+      {
+       "held_step": 1,
+       "sagitta": 0.015500928682116466,
+       "sagitta_over_centroid_noise": 0.5106079336934907,
+       "spline_err_to_heldout_centroid": 0.02794824202938749,
+       "chord_err_to_heldout_centroid": 0.02693114065203144
+      },
+      {
+       "held_step": 2,
+       "sagitta": 0.012044218531227698,
+       "sagitta_over_centroid_noise": 0.38854317423302526,
+       "spline_err_to_heldout_centroid": 0.03665133641528614,
+       "chord_err_to_heldout_centroid": 0.03389540514062635
+      },
+      {
+       "held_step": 3,
+       "sagitta": 0.0110928845121018,
+       "sagitta_over_centroid_noise": 0.357866438856642,
+       "spline_err_to_heldout_centroid": 0.04179248876016292,
+       "chord_err_to_heldout_centroid": 0.04438894439771857
+      },
+      {
+       "held_step": 4,
+       "sagitta": 0.010491761995677225,
+       "sagitta_over_centroid_noise": 0.3385389419184275,
+       "spline_err_to_heldout_centroid": 0.04823163620732693,
+       "chord_err_to_heldout_centroid": 0.046238204209400016
+      },
+      {
+       "held_step": 5,
+       "sagitta": 0.010923198771130136,
+       "sagitta_over_centroid_noise": 0.3523588758687375,
+       "spline_err_to_heldout_centroid": 0.03379714704974644,
+       "chord_err_to_heldout_centroid": 0.02948734162232871
+      },
+      {
+       "held_step": 6,
+       "sagitta": 0.01517528195235681,
+       "sagitta_over_centroid_noise": 0.4997876722730602,
+       "spline_err_to_heldout_centroid": 0.036451772245761294,
+       "chord_err_to_heldout_centroid": 0.033610780451242654
+      }
+     ],
+     "loo_sagitta_over_noise_median": 0.3732048065448336,
+     "loo_spline_beats_chord": 1,
+     "centroids_top2": [
+      [
+       0.01452301037062029,
+       0.00387735473863043
+      ],
+      [
+       0.010844033326118198,
+       0.0021768722731582337
+      ],
+      [
+       0.00667673838841948,
+       -0.007083407594283755
+      ],
+      [
+       0.009477089000667953,
+       0.027226966479696944
+      ],
+      [
+       0.025653438850729106,
+       -0.0173926904020724
+      ],
+      [
+       -0.012628573998261387,
+       0.0015942111174578096
+      ],
+      [
+       -0.031357529521360936,
+       0.008015547731550353
+      ],
+      [
+       -0.02318820641693271,
+       -0.018414854344137616
+      ]
+     ]
+    },
+    "4": {
+     "residual_var_frac_of_step_var": 0.33776089176482854,
+     "heldout_var_explained": {
+      "centroids": 0.6841634740182561,
+      "spline": 0.6841511227072528,
+      "line_in_t": 0.06679347996593932,
+      "centroids_full_space": 0.6732209619957487
+     },
+     "per_clip_var_explained_median": 0.7309313653268332,
+     "centroid_participation_ratio": 1.7524847806312944,
+     "centroid_pc1_frac": 0.7180925390021443,
+     "centroid_path_length": 28.631154410517556,
+     "centroid_end_to_end": 4.43730057397662,
+     "median_centroid_noise": 0.08671095430822393,
+     "bend": {
+      "median_bend": 3.510146910309751,
+      "median_spread": 1.6611429144160785,
+      "median_centroid_noise": 0.08671095430822393,
+      "bend_over_noise": 41.380153309214116,
+      "bend_over_spread": 2.160026420197477
+     },
+     "loo_sagitta": [
+      {
+       "held_step": 1,
+       "sagitta": 6.619177314029846,
+       "sagitta_over_centroid_noise": 77.48971000235362,
+       "spline_err_to_heldout_centroid": 4.475783114062878,
+       "chord_err_to_heldout_centroid": 3.5956264668013205
+      },
+      {
+       "held_step": 2,
+       "sagitta": 0.8588858186355629,
+       "sagitta_over_centroid_noise": 10.054920517435917,
+       "spline_err_to_heldout_centroid": 2.674481145066294,
+       "chord_err_to_heldout_centroid": 3.4186785522613428
+      },
+      {
+       "held_step": 3,
+       "sagitta": 1.5174348175349588,
+       "sagitta_over_centroid_noise": 17.22926677040304,
+       "spline_err_to_heldout_centroid": 2.1881626173906223,
+       "chord_err_to_heldout_centroid": 3.6566326238792
+      },
+      {
+       "held_step": 4,
+       "sagitta": 0.8104900085675211,
+       "sagitta_over_centroid_noise": 9.20170286317266,
+       "spline_err_to_heldout_centroid": 1.5305679126684102,
+       "chord_err_to_heldout_centroid": 2.2706364594642263
+      },
+      {
+       "held_step": 5,
+       "sagitta": 0.8231514790909228,
+       "sagitta_over_centroid_noise": 9.639265268028433,
+       "spline_err_to_heldout_centroid": 3.560262147273789,
+       "chord_err_to_heldout_centroid": 4.157746120372619
+      },
+      {
+       "held_step": 6,
+       "sagitta": 3.784553003154577,
+       "sagitta_over_centroid_noise": 42.96925595627359,
+       "spline_err_to_heldout_centroid": 6.023783798195228,
+       "chord_err_to_heldout_centroid": 3.0579088701550035
+      }
+     ],
+     "loo_sagitta_over_noise_median": 13.642093643919479,
+     "loo_spline_beats_chord": 4,
+     "centroids_top2": [
+      [
+       3.385876145492615,
+       -1.1928352507851476
+      ],
+      [
+       -2.371385215628527,
+       -1.9146718529423652
+      ],
+      [
+       -2.4060150908895466,
+       1.6311963591044734
+      ],
+      [
+       2.8816326215890635,
+       1.051962685579107
+      ],
+      [
+       1.1346020734605904,
+       -1.4421182031219713
+      ],
+      [
+       -3.110420236615462,
+       -0.263381838253973
+      ],
+      [
+       0.9009699411226804,
+       1.5902418341298135
+      ],
+      [
+       -0.4152602385314155,
+       0.5396062662900626
+      ]
+     ]
+    },
+    "8": {
+     "residual_var_frac_of_step_var": 0.7009853374075525,
+     "heldout_var_explained": {
+      "centroids": 0.8143416133173225,
+      "spline": 0.8141456791759343,
+      "line_in_t": 0.16007601080204859,
+      "centroids_full_space": 0.7950697531957217
+     },
+     "per_clip_var_explained_median": 0.8248119760437774,
+     "centroid_participation_ratio": 2.374910544443835,
+     "centroid_pc1_frac": 0.5923861890955248,
+     "centroid_path_length": 124.55445586835496,
+     "centroid_end_to_end": 24.033512982830732,
+     "median_centroid_noise": 0.282337350181623,
+     "bend": {
+      "median_bend": 15.109166291653676,
+      "median_spread": 5.2508697094609005,
+      "median_centroid_noise": 0.2740931677245543,
+      "bend_over_noise": 52.14834216246199,
+      "bend_over_spread": 2.7221213029032922
+     },
+     "loo_sagitta": [
+      {
+       "held_step": 1,
+       "sagitta": 27.65126236456177,
+       "sagitta_over_centroid_noise": 95.88867612624328,
+       "spline_err_to_heldout_centroid": 20.164763123696233,
+       "chord_err_to_heldout_centroid": 16.71694733398778
+      },
+      {
+       "held_step": 2,
+       "sagitta": 3.5207579031688074,
+       "sagitta_over_centroid_noise": 12.203936289608182,
+       "spline_err_to_heldout_centroid": 11.926420426124565,
+       "chord_err_to_heldout_centroid": 14.367852134205114
+      },
+      {
+       "held_step": 3,
+       "sagitta": 6.428867313066689,
+       "sagitta_over_centroid_noise": 23.201120383976946,
+       "spline_err_to_heldout_centroid": 10.086679512734547,
+       "chord_err_to_heldout_centroid": 15.578973577179251
+      },
+      {
+       "held_step": 4,
+       "sagitta": 3.7281002593722645,
+       "sagitta_over_centroid_noise": 12.924713527896184,
+       "spline_err_to_heldout_centroid": 6.218768527695381,
+       "chord_err_to_heldout_centroid": 8.789884432770178
+      },
+      {
+       "held_step": 5,
+       "sagitta": 3.72412964583708,
+       "sagitta_over_centroid_noise": 12.9031360546126,
+       "spline_err_to_heldout_centroid": 13.805191468843697,
+       "chord_err_to_heldout_centroid": 16.425473933648867
+      },
+      {
+       "held_step": 6,
+       "sagitta": 14.134633184219432,
+       "sagitta_over_centroid_noise": 51.09767284852085,
+       "spline_err_to_heldout_centroid": 23.230734929479546,
+       "chord_err_to_heldout_centroid": 13.76049894079037
+      }
+     ],
+     "loo_sagitta_over_noise_median": 18.062916955936565,
+     "loo_spline_beats_chord": 4,
+     "centroids_top2": [
+      [
+       15.297261109671618,
+       7.707722112381467
+      ],
+      [
+       -9.664297963020054,
+       10.05903818103521
+      ],
+      [
+       -8.472844189078055,
+       -5.165606942982291
+      ],
+      [
+       11.965507241050545,
+       -4.272128584964191
+      ],
+      [
+       2.518617375460459,
+       3.189614595699943
+      ],
+      [
+       -12.303739204985472,
+       0.30306786593133545
+      ],
+      [
+       4.18409831863078,
+       -7.6944305581404535
+      ],
+      [
+       -3.5246026877298253,
+       -4.1272766689610165
+      ]
+     ]
+    },
+    "12": {
+     "residual_var_frac_of_step_var": 0.7261757232567968,
+     "heldout_var_explained": {
+      "centroids": 0.7787321536197249,
+      "spline": 0.7783379972773049,
+      "line_in_t": 0.1431569102643767,
+      "centroids_full_space": 0.7556696593421444
+     },
+     "per_clip_var_explained_median": 0.8026096722403734,
+     "centroid_participation_ratio": 3.25172957387441,
+     "centroid_pc1_frac": 0.4693423311691798,
+     "centroid_path_length": 166.34892173709068,
+     "centroid_end_to_end": 27.93282515788419,
+     "median_centroid_noise": 0.4241961657796231,
+     "bend": {
+      "median_bend": 18.738510262130333,
+      "median_spread": 7.97181329535673,
+      "median_centroid_noise": 0.4161252667717358,
+      "bend_over_noise": 45.82218896353086,
+      "bend_over_spread": 2.3918987939193705
+     },
+     "loo_sagitta": [
+      {
+       "held_step": 1,
+       "sagitta": 30.065152041326623,
+       "sagitta_over_centroid_noise": 70.19367454486917,
+       "spline_err_to_heldout_centroid": 39.76266617739233,
+       "chord_err_to_heldout_centroid": 30.73281962405418
+      },
+      {
+       "held_step": 2,
+       "sagitta": 4.2717873217777615,
+       "sagitta_over_centroid_noise": 10.12849772612314,
+       "spline_err_to_heldout_centroid": 24.259561276724387,
+       "chord_err_to_heldout_centroid": 23.49076115090339
+      },
+      {
+       "held_step": 3,
+       "sagitta": 10.94697550786943,
+       "sagitta_over_centroid_noise": 25.571874391740046,
+       "spline_err_to_heldout_centroid": 16.159929208618546,
+       "chord_err_to_heldout_centroid": 17.21188488100622
+      },
+      {
+       "held_step": 4,
+       "sagitta": 7.489146145260989,
+       "sagitta_over_centroid_noise": 17.514273731308922,
+       "spline_err_to_heldout_centroid": 10.472027996269475,
+       "chord_err_to_heldout_centroid": 9.05470158464229
+      },
+      {
+       "held_step": 5,
+       "sagitta": 4.330364329836926,
+       "sagitta_over_centroid_noise": 10.124244854293284,
+       "spline_err_to_heldout_centroid": 17.314852588378777,
+       "chord_err_to_heldout_centroid": 19.799230176817993
+      },
+      {
+       "held_step": 6,
+       "sagitta": 17.657933252301756,
+       "sagitta_over_centroid_noise": 41.89805573820225,
+       "spline_err_to_heldout_centroid": 29.120153861457798,
+       "chord_err_to_heldout_centroid": 16.21572985975931
+      }
+     ],
+     "loo_sagitta_over_noise_median": 21.543074061524486,
+     "loo_spline_beats_chord": 2,
+     "centroids_top2": [
+      [
+       10.742153696477159,
+       12.716803025541303
+      ],
+      [
+       -22.356833282442757,
+       7.863830729986745
+      ],
+      [
+       0.8186197381903877,
+       -11.47547672252348
+      ],
+      [
+       11.422089402050682,
+       4.486106515017944
+      ],
+      [
+       0.5876039113062779,
+       3.856804149227737
+      ],
+      [
+       -13.126735962277689,
+       -4.618775029076857
+      ],
+      [
+       9.480594291527494,
+       -4.870898474362857
+      ],
+      [
+       2.4325082051684435,
+       -7.9583941938105305
+      ]
+     ]
+    },
+    "19": {
+     "residual_var_frac_of_step_var": 0.7858100824903488,
+     "heldout_var_explained": {
+      "centroids": 0.8497563241393545,
+      "spline": 0.8495009652268294,
+      "line_in_t": 0.14137537475617035,
+      "centroids_full_space": 0.8367885327767874
+     },
+     "per_clip_var_explained_median": 0.8692126875927177,
+     "centroid_participation_ratio": 2.9349978657805242,
+     "centroid_pc1_frac": 0.5227715558038218,
+     "centroid_path_length": 186.08087405031742,
+     "centroid_end_to_end": 29.34792055195084,
+     "median_centroid_noise": 0.3556625525315944,
+     "bend": {
+      "median_bend": 23.650704385952626,
+      "median_spread": 6.343958390131178,
+      "median_centroid_noise": 0.3311519323990887,
+      "bend_over_noise": 70.9058748162346,
+      "bend_over_spread": 3.7012565373018536
+     },
+     "loo_sagitta": [
+      {
+       "held_step": 1,
+       "sagitta": 40.11241455280643,
+       "sagitta_over_centroid_noise": 116.49479502940119,
+       "spline_err_to_heldout_centroid": 43.25536082820481,
+       "chord_err_to_heldout_centroid": 27.664944526552897
+      },
+      {
+       "held_step": 2,
+       "sagitta": 5.503016720758187,
+       "sagitta_over_centroid_noise": 14.961443305783286,
+       "spline_err_to_heldout_centroid": 25.902738729431544,
+       "chord_err_to_heldout_centroid": 22.805970772539247
+      },
+      {
+       "held_step": 3,
+       "sagitta": 11.252498615252566,
+       "sagitta_over_centroid_noise": 30.593121273202627,
+       "spline_err_to_heldout_centroid": 21.8958030482706,
+       "chord_err_to_heldout_centroid": 24.94427887081692
+      },
+      {
+       "held_step": 4,
+       "sagitta": 6.343224144343317,
+       "sagitta_over_centroid_noise": 17.24421079620491,
+       "spline_err_to_heldout_centroid": 13.170716041490191,
+       "chord_err_to_heldout_centroid": 9.574506476441874
+      },
+      {
+       "held_step": 5,
+       "sagitta": 5.913670987837143,
+       "sagitta_over_centroid_noise": 16.06990876062302,
+       "spline_err_to_heldout_centroid": 20.90957929111522,
+       "chord_err_to_heldout_centroid": 23.786832571064316
+      },
+      {
+       "held_step": 6,
+       "sagitta": 19.262718391338357,
+       "sagitta_over_centroid_noise": 55.90525036259235,
+       "spline_err_to_heldout_centroid": 35.13121527772028,
+       "chord_err_to_heldout_centroid": 22.095350415461862
+      }
+     ],
+     "loo_sagitta_over_noise_median": 23.91866603470377,
+     "loo_spline_beats_chord": 2,
+     "centroids_top2": [
+      [
+       8.555972163983064,
+       -6.980175305707428
+      ],
+      [
+       -19.76770567729037,
+       -11.252932965292963
+      ],
+      [
+       -6.9824622724584255,
+       4.1149075666071395
+      ],
+      [
+       19.829336589117712,
+       -5.7765442029228256
+      ],
+      [
+       4.540124198807404,
+       -0.533985125784131
+      ],
+      [
+       -14.414911756977485,
+       0.552843866056407
+      ],
+      [
+       11.985744145314113,
+       4.157511020090591
+      ],
+      [
+       -3.746097390496012,
+       15.71837514695321
+      ]
+     ]
+    },
+    "22": {
+     "residual_var_frac_of_step_var": 0.7236316359419332,
+     "heldout_var_explained": {
+      "centroids": 0.8130833086911047,
+      "spline": 0.8128054749804182,
+      "line_in_t": 0.14718616357636227,
+      "centroids_full_space": 0.795971008295469
+     },
+     "per_clip_var_explained_median": 0.8280167361522766,
+     "centroid_participation_ratio": 3.003654049607962,
+     "centroid_pc1_frac": 0.5120264122597433,
+     "centroid_path_length": 233.704436538692,
+     "centroid_end_to_end": 38.994551002525604,
+     "median_centroid_noise": 0.49464959174370315,
+     "bend": {
+      "median_bend": 28.32772992523173,
+      "median_spread": 8.807437227002612,
+      "median_centroid_noise": 0.45974448094469256,
+      "bend_over_noise": 63.090920494531716,
+      "bend_over_spread": 3.2933192423050293
+     },
+     "loo_sagitta": [
+      {
+       "held_step": 1,
+       "sagitta": 44.373737401082515,
+       "sagitta_over_centroid_noise": 92.67019824751506,
+       "spline_err_to_heldout_centroid": 52.82899147086383,
+       "chord_err_to_heldout_centroid": 39.3236567685925
+      },
+      {
+       "held_step": 2,
+       "sagitta": 7.130130099786354,
+       "sagitta_over_centroid_noise": 13.91409854110646,
+       "spline_err_to_heldout_centroid": 31.849510878801887,
+       "chord_err_to_heldout_centroid": 27.514784461965093
+      },
+      {
+       "held_step": 3,
+       "sagitta": 15.27280851396175,
+       "sagitta_over_centroid_noise": 29.80000626670388,
+       "spline_err_to_heldout_centroid": 25.229744694628625,
+       "chord_err_to_heldout_centroid": 27.86085343090801
+      },
+      {
+       "held_step": 4,
+       "sagitta": 8.127762748204963,
+       "sagitta_over_centroid_noise": 15.871621025281412,
+       "spline_err_to_heldout_centroid": 16.85629226039605,
+       "chord_err_to_heldout_centroid": 11.760076692727734
+      },
+      {
+       "held_step": 5,
+       "sagitta": 7.1240354027298425,
+       "sagitta_over_centroid_noise": 13.899085129525584,
+       "spline_err_to_heldout_centroid": 26.714853911386477,
+       "chord_err_to_heldout_centroid": 29.272293202717634
+      },
+      {
+       "held_step": 6,
+       "sagitta": 24.465571257050115,
+       "sagitta_over_centroid_noise": 51.106115167948985,
+       "spline_err_to_heldout_centroid": 44.863817053023006,
+       "chord_err_to_heldout_centroid": 27.214491348810768
+      }
+     ],
+     "loo_sagitta_over_noise_median": 22.835813645992644,
+     "loo_spline_beats_chord": 2,
+     "centroids_top2": [
+      [
+       11.911991628237757,
+       -13.374284264523972
+      ],
+      [
+       -29.30128389359985,
+       -12.559167576068258
+      ],
+      [
+       -3.498711566222976,
+       5.3787763531945645
+      ],
+      [
+       20.951018482986022,
+       -6.605723952648932
+      ],
+      [
+       5.160999426268766,
+       -0.39467212013335434
+      ],
+      [
+       -17.77315131311092,
+       3.733592500398115
+      ],
+      [
+       14.826836700552793,
+       4.161635001578148
+      ],
+      [
+       -2.2776994651115867,
+       19.659844058203692
+      ]
+     ]
+    }
+   }
+  },
+  "subset": {
+   "n_clips_with_random_features": 768,
+   "note": "partial CPU extraction (first 3 of 6 chunks of each of 4 id shards); both encoders are scored on exactly these clips; clips are sorted by speed in id order, so all three bands are covered but not uniformly"
+  },
+  "odometer_prediction_as_ratio": {
+   "speed": {
+    "variable": "speed_mps",
+    "mean_slow": 0.45773809523809517,
+    "mean_fast": 3.404761904761904,
+    "ratio_fast_over_slow": 7.438231469440832,
+    "odometer_slope_ratio": 7.438231469440832
+   },
+   "acceleration": {
+    "variable": "acceleration_mps2",
+    "mean_slow": 1.3341609371021137,
+    "mean_fast": 8.911727456940223,
+    "ratio_fast_over_slow": 6.679649515370378,
+    "odometer_slope_ratio": 2.58450179248736
+   },
+   "direction": {
+    "variable": "speed_mps",
+    "mean_slow": 1.51,
+    "mean_fast": 6.515625,
+    "ratio_fast_over_slow": 4.314983443708609,
+    "odometer_slope_ratio": 4.314983443708609
+   }
+  },
+  "static_disk_control": "not run: no zero-speed clips exist in the supplied sets (speed 0.25-4 m/s; direction-set velocity clips 1-7 m/s, accelerating clips start at rest but reach >= 2 m/s^2 * tau; acceleration set >= 0.25 m/s^2); rendering + extracting a static set needs the GPU",
+  "provenance": {
+   "split_file": "/workspace/wm_p5/splits/split_v1.json",
+   "split_sha256": "98e6310c40bf29e81bd8b6bf4b1ac603b89e4104d40ac1047b15dd5dc2be2df2",
+   "seeds": {
+    "bootstrap": 0,
+    "random_init": "torch.manual_seed(0)"
+   },
+   "commit": null,
+   "dirty": null,
+   "git_commit": "unknown",
+   "git_dirty_src_or_scripts": null,
+   "timestamp_utc": "2026-09-28T20:29:14+00:00",
+   "act_root": "/dev/shm/wm_p5",
+   "layers": [
+    1,
+    4,
+    8,
+    12,
+    19,
+    22
+   ],
+   "wall_s": 129.2
+  }
  }
 }
