@@ -36,7 +36,7 @@ from wm.data import PROJECT_ROOT
 from wm.p2_data import load_inputs
 from wm.provenance import layer_role, provenance
 
-MAIN_ARMS = ("manifold", "linear", "linear_dose_matched", "projected", "reflected")
+MAIN_ARMS = ("manifold", "linear", "linear_dose_matched", "projected", "reflected", "linear_raw")
 GOODFIRE_ARMS = ("goodfire_linear", "goodfire_manifold")
 CONTROLS = ("random_endpoint_matched", "random_unmatched", "shuffled_unmatched")
 METRICS = ("probe_err_to_target", "probe_err_to_true", "nearest_real_R", "energy_to_curve", "energy_to_nearest_real",
@@ -57,6 +57,8 @@ WAYPOINT_SERIES = ("_wp_err", "_wp_radius", "_wp_bc", "_wp_entropy", "_wp_mid")
 ARM_NOTES = {
     "manifold": "spline walk in the PCA-k subspace, additive (x + curve(t_k) - curve(t_src)), residual kept",
     "linear": "straight line between the polyline (chord) points at source and target, same subspace, residual kept",
+    "linear_raw": "as linear, but the polyline runs through the RAW kept centroids (Goodfire's chord between raw "
+                  "centroids); equals linear for an interpolating spline, differs for a smoothing spline",
     "linear_dose_matched": "linear arm with its delta rescaled, per clip and per waypoint, to the spline's ||delta||",
     "projected": "the spline's own chord (same endpoints) traversed with the spline's arc-length spacing",
     "reflected": "2 * projected - spline: the bend flipped, same endpoints, dose and waypoint count",
@@ -96,11 +98,17 @@ def build(d, k, angle, design="scattered", seed=0, n_controls=20, spline="interp
                           periodic=curve.periodic, coord_source=curve.coord_source)
     noise = gc.align(cent["spread"] / np.sqrt(cent["count"]), cent["values"], curve.values)
     spread = gc.align(cent["spread"], cent["values"], curve.values)
+    raw_curve = mf.raw_knot_curve(curve, cent)      # polyline through the RAW kept centroids (the paper's chord)
     sag = mf.sagitta(curve, held)
-    for s in sag:
+    sag_raw = mf.sagitta(curve, held, chord_curve=raw_curve)
+    for s, r in zip(sag, sag_raw):
         s["sagitta_over_centroid_noise"] = s["sagitta"] / float(np.median(noise))
         s["sagitta_over_spread"] = s["sagitta"] / float(np.median(spread))
-    # reference manifold that NEITHER arm was built from (Goodfire A.7): probe-fold clips at all values, same PCA
+        s["sagitta_smoothed_chord"] = s["sagitta"]
+        s["sagitta_raw_chord"] = r["sagitta"]
+        s["sagitta_raw_chord_over_centroid_noise"] = r["sagitta"] / float(np.median(noise))
+    # reference manifold that neither arm was built from (our choice; the closest-point distance itself is Goodfire
+    # A.7): probe-fold clips at all values, same PCA
     ref = d["role"] == "probe"
     ref_cent = mf.centroids(pca.project(d["X"][ref]), d["y"][ref])
     ref_curve = mf.fit_curve(ref_cent, d["periodic"], angle="labels", spline="smooth")
@@ -111,7 +119,7 @@ def build(d, k, angle, design="scattered", seed=0, n_controls=20, spline="interp
                                             for _ in range(n_controls)],
                 "random_unmatched": [gc.random_smooth_curve(curve, rng) for _ in range(n_controls)],
                 "shuffled_unmatched": [gc.shuffled_curve(curve, rng) for _ in range(n_controls)]}
-    return {"pca": pca, "cent": cent, "curve": curve, "angle_choice": choice, "plane": plane,
+    return {"pca": pca, "cent": cent, "curve": curve, "raw_curve": raw_curve, "angle_choice": choice, "plane": plane,
             "full_curve": full_curve, "held": held, "knot": knot, "design": design_info, "sagitta": sag,
             "controls": controls, "ref_curve": ref_curve, "X_ref": d["X"][ref], "ref_y": d["y"][ref],
             "behaviour": behaviour}
@@ -132,6 +140,9 @@ def subspace_arms(Z, src, tgt, m, K):
     Zd = Z[:, None] + dl * np.where(nl > 0, ns / np.where(nl > 0, nl, 1.0), 0.0)
     projected, reflected = mf.chord_coords(Zs)
     out = {"manifold": Zs, "linear": Zl, "linear_dose_matched": Zd, "projected": projected, "reflected": reflected}
+    if "raw_curve" in m:           # chord between the RAW kept centroids (= linear for an interpolating spline)
+        out["linear_raw"] = mf.linear_coords(Z, mf.piecewise_linear_point(m["raw_curve"], src),
+                                             mf.piecewise_linear_point(m["raw_curve"], tgt), K)
     if m["curve"].periodic:
         out["manifold_transport"] = curve_coords(m["curve"], Z, src, tgt, K, mode="transport")
     return out
@@ -244,12 +255,19 @@ def bf16_steering_energy(d, d_steer, args, angle, picks):
     return {a: {q: float(np.mean(np.concatenate(v))) for q, v in qs.items()} for a, qs in acc.items()}
 
 
-def band(values, spline_value, higher_better):
+def band(values, spline_value, higher_better, rtol=1e-9):
+    """spline_rank compares exactly (kept for reproducibility); spline_rank_tol treats draws within rtol (relative)
+    of the spline value as tied, so metrics identical by construction do not get ranks from floating-point noise."""
     v = np.asarray(values, dtype=float)
     better = v > spline_value if higher_better else v < spline_value
+    tied = np.abs(v - spline_value) <= rtol * np.maximum(np.maximum(np.abs(v), abs(spline_value)), 1e-300)
+    better_tol = better & ~tied
     return {"mean": float(v.mean()), "p05": float(np.percentile(v, 5)), "p95": float(np.percentile(v, 95)),
             "spline": float(spline_value), "spline_rank": int(better.sum()) + 1, "n_draws": len(v),
-            "frac_draws_spline_beats": float(np.mean(~better & (v != spline_value)))}
+            "frac_draws_spline_beats": float(np.mean(~better & (v != spline_value))),
+            "spline_rank_tol": int(better_tol.sum()) + 1, "n_draws_tied_tol": int(tied.sum()),
+            "tied_with_all_draws": bool(tied.all()), "tie_rtol": rtol,
+            "frac_draws_spline_beats_tol": float(np.mean(~better & ~tied))}
 
 
 def run(args):
@@ -373,8 +391,12 @@ def run(args):
            "spline": m["curve"].kind, "curve_extension": args.extend,
            "holdout": m["design"], "held_out_values": m["held"].tolist(),
            "sagitta_per_target": m["sagitta"],
-           "sagitta_note": ("at a held-out target the linear arm aims at the chord point between the neighbouring kept "
-                            "centroids and the spline at the curve point; sagitta = their distance (PCA units)"),
+           "sagitta_note": ("at a held-out target the spline aims at the curve point; the linear arm aims at the chord "
+                            "point between the neighbouring kept knots of the curve (curve.points: the raw centroids "
+                            "for an interpolating spline, the SMOOTHED knots for a smoothing spline) and linear_raw at "
+                            "the chord point between the neighbouring RAW kept centroids; sagitta = sagitta_smoothed_"
+                            "chord = distance from the curve point to the linear arm's chord point, sagitta_raw_chord "
+                            "= to linear_raw's (PCA units)"),
            "held_out_senses": {"fitting": "held-out values are never knots; probe clips (folds 3-4) never build or "
                                           "receive the edit; steered and nearest-real clips are test",
                                "development": "no design choice may be made on this output's test read",
@@ -462,6 +484,10 @@ def run(args):
     out["controls_note"] = (f"{args.n_controls} draws each, on the first {args.n_control_clips} steered clips per "
                             "target (the spline value in each band is on the same clips); spline_rank = 1 + number "
                             "of draws better than the spline arm (1 = spline best); band = 5-95% of the draws' means")
+    out["controls_tie_note"] = ("spline_rank compares exactly; spline_rank_tol counts a draw as better only beyond a "
+                                "relative tolerance tie_rtol (draws within it are tied: n_draws_tied_tol, "
+                                "tied_with_all_draws), since some metrics are identical by construction for "
+                                "endpoint-matched draws and an exact comparison ranks floating-point noise")
     if args.goodfire_baseline:
         out["goodfire_comparison"] = {
             "note": "Goodfire's own comparison: residual erased (linear) vs kept (manifold), so it mixes "

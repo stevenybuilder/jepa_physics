@@ -3,7 +3,10 @@
 Every arm moves test clips toward a held-out target value; each clip's edit is rescaled to the same ||delta||
 (the spline arm's), so arms differ only in where they put that norm. Arms, with their edit rank:
   spline             PCA-k spline walk, additive (rank <= k)
-  chord              straight line between PCA-k chord points (rank <= k)
+  chord              straight line between PCA-k chord points (rank <= k); the chord runs through curve.points
+                     (the smoothed knots for a smoothing spline)
+  chord_raw          as chord, through the RAW kept centroids (Goodfire's chord between raw centroids; equals chord
+                     for an interpolating spline) (rank <= k)
   centroid_transport x + mu(target) - mu(source), full-space centroids of the knot clips (a held-out target has no
                      centroid: its full-space chord point is used) (rank: full)
   ring_rotation      rotate the clip's coordinates in the circular-chart plane (X ~ mu + A[cos, sin], k = 1 ring)
@@ -112,6 +115,10 @@ def arm_deltas(x, src, tgt, m, chart, basis, std, periodic):
         out["ring_rotation"] = (ring_rotation_delta(x, chart, dtheta), 2)
     if basis is not None:
         out["probe_qr"] = probe_qr_delta(x, basis, tgt, periodic, *std)
+    if "raw_curve" in m:
+        raw = m["raw_curve"]
+        dZ_r = mf.piecewise_linear_point(raw, np.full(len(src), tgt)) - mf.piecewise_linear_point(raw, src)
+        out["chord_raw"] = (pca.lift_delta(dZ_r), k)
     return out
 
 

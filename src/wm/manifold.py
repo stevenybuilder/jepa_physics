@@ -434,11 +434,14 @@ def heldout_design(values, design, periodic, seed=0, block=8, every=4, extend="c
     return mask, info
 
 
-def sagitta(curve, values):
+def sagitta(curve, values, chord_curve=None):
     """Per target value: the distance (PCA units) between the curve point and the chord point between the kept
-    neighbouring knots, i.e. how far apart the spline's and the line's targets are. Also names the neighbours."""
+    neighbouring knots, i.e. how far apart the spline's and the line's targets are. Also names the neighbours.
+    The chord runs between curve.points (the smoothed knots for a smoothing spline) unless chord_curve is given
+    (e.g. raw_knot_curve: the chord between the raw kept centroids)."""
     values = np.asarray(values, dtype=float)
-    dist = np.linalg.norm(curve(curve.coord_of_value(values)) - piecewise_linear_point(curve, values), axis=-1)
+    chord = curve if chord_curve is None else chord_curve
+    dist = np.linalg.norm(curve(curve.coord_of_value(values)) - piecewise_linear_point(chord, values), axis=-1)
     kv = np.sort(curve.values.astype(float))
     out = []
     for v, s in zip(values, np.atleast_1d(dist)):
@@ -470,6 +473,17 @@ def fit_curve(cent, periodic, keep=None, angle="unsupervised", plane="activation
         return natural_cubic(C, v, smooth=smooth, extend=extend)
     return periodic_cubic(C, v, angle=None if angle == "unsupervised" else labels_angle(v), plane=plane,
                           smooth=smooth)
+
+
+def raw_knot_curve(curve, cent):
+    """The polyline through the RAW kept centroids cent["C"], in the curve's knot order, coordinates and periodicity
+    (spline=None: only piecewise_linear_point uses it). This is the paper's linear baseline chord between raw
+    centroids c_a, c_b. For an interpolating spline curve.points are already these centroids; for a smoothing spline
+    curve.points are the smoothed knots, so the chord through them is not the raw-centroid chord."""
+    idx = {float(v): i for i, v in enumerate(cent["values"])}
+    C = np.asarray(cent["C"])[[idx[float(v)] for v in curve.values]]
+    return Curve(spline=None, values=curve.values, coords=curve.coords, points=C, periodic=curve.periodic,
+                 coord_source=curve.coord_source, kind="raw_knots")
 
 
 # ---------------------------------------------------------------- 4. steering paths -------------------------------
@@ -650,9 +664,9 @@ def off_manifold_energy(W, pca, curve, X_real=None, knn=1):
     """Per-waypoint distances for W [.., D]: to `curve` (PCA space) and, if X_real is given, the mean distance to
     the knn nearest real activations (full space; a density proxy). Means are what Goodfire-style summaries use.
 
-    Pass a reference curve and real clips that NEITHER steering arm was built from (Goodfire A.7: naturalness is
-    scored against a manifold fit to unintervened data). Scoring against the manifold arm's own spline makes the
-    manifold arm win by construction."""
+    Goodfire A.7 scores naturalness as the closest-point distance to a manifold fit to unintervened data. Our
+    choice (not A.7's): pass a reference curve and real clips that NEITHER steering arm was built from, because
+    scoring against the manifold arm's own spline makes the manifold arm win by construction."""
     out = {"to_curve": curve.distance(pca.project(W))}
     if X_real is not None:
         out["to_nearest_real"] = min_distance(W, X_real) if knn == 1 else knn_distance(W, X_real, knn)

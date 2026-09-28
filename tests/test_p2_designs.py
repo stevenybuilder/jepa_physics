@@ -118,7 +118,8 @@ def test_matched_support_residual_identical(ring_model):
     pca = m["pca"]
     Z, resid = pca.project(x), pca.complement(x)
     arms = P2.subspace_arms(Z, src, tgt, m, K=9)
-    assert set(arms) == {"manifold", "linear", "linear_dose_matched", "projected", "reflected", "manifold_transport"}
+    assert set(arms) == {"manifold", "linear", "linear_dose_matched", "projected", "reflected", "manifold_transport",
+                         "linear_raw"}
     for name, Zk in arms.items():
         assert Zk.shape == (6, 9, pca.components.shape[0])        # arms only carry in-subspace coordinates
         W = P2.compose(pca, Zk, resid)
@@ -161,6 +162,59 @@ def test_control_band_rank():
     b = P2.band([0.1, 0.2, 0.3, 0.4], 0.35, higher_better=True)
     assert b["spline_rank"] == 2 and b["frac_draws_spline_beats"] == 0.75 and b["n_draws"] == 4
     assert P2.band([0.1, 0.2], 0.05, higher_better=False)["spline_rank"] == 1
+
+
+def test_control_band_tolerance_ties():
+    s = 0.3
+    b = P2.band([s * (1 - 1e-13), s * (1 + 1e-13), s], s, higher_better=False)     # identical by construction
+    assert b["spline_rank_tol"] == 1 and b["n_draws_tied_tol"] == 3 and b["tied_with_all_draws"]
+    assert b["spline_rank"] == 2                                                      # exact comparison ranks noise
+    b = P2.band([0.1, 0.3 * (1 + 1e-12), 0.5], 0.3, higher_better=False)
+    assert b["spline_rank_tol"] == 2 and b["n_draws_tied_tol"] == 1 and not b["tied_with_all_draws"]
+
+
+def _ring_split(spline):
+    X, th, Q = ring_data()
+    f = np.arange(len(th)) % 5
+    d = {"X": X, "y": th, "periodic": True, "role": np.where(f < 3, "knot", np.where(f == 3, "probe", "test"))}
+    return X, th, P2.build(d, 16, "unsupervised", "contiguous", seed=0, n_controls=0, spline=spline)
+
+
+def test_linear_raw_equals_linear_for_interpolating_spline():
+    X, th, m = _ring_split("interp")
+    assert m["curve"].kind == "interpolating"
+    np.testing.assert_array_equal(m["raw_curve"].points, m["curve"].points)
+    x, src = X[th == 0.0][:5].astype(float), np.zeros(5)
+    Z = m["pca"].project(x)
+    for tgt in m["held"]:
+        arms = P2.subspace_arms(Z, src, float(tgt), m, K=7)
+        np.testing.assert_array_equal(arms["linear_raw"], arms["linear"])
+    for s in m["sagitta"]:
+        assert s["sagitta_raw_chord"] == s["sagitta_smoothed_chord"] == s["sagitta"]
+    from wm.bakeoff import arm_deltas
+    dl = arm_deltas(x, src, float(m["held"][2]), m, None, None, None, True)
+    np.testing.assert_array_equal(dl["chord_raw"][0], dl["chord"][0])
+
+
+def test_linear_raw_hits_raw_centroids_for_smoothing_spline():
+    X, th, m = _ring_split("smooth")
+    curve, raw, cent = m["curve"], m["raw_curve"], m["cent"]
+    assert curve.kind == "smoothing"
+    C = gc.align(cent["C"], cent["values"], curve.values)
+    np.testing.assert_allclose(mf.piecewise_linear_point(raw, curve.values), C, atol=1e-12)
+    assert np.abs(curve.points - C).max() > 1e-6            # smoothed knots are not the raw centroids
+    x = X[th == 0.0][:4].astype(float)
+    Z = m["pca"].project(x)
+    for a, b in ((0, 5), (3, 10)):                          # knot-to-knot steers: the edit is the raw centroid step
+        va, vb = float(curve.values[a]), float(curve.values[b])
+        arms = P2.subspace_arms(Z, np.full(4, va), vb, m, K=5)
+        np.testing.assert_allclose(arms["linear_raw"][:, -1] - Z, np.broadcast_to(C[b] - C[a], Z.shape), atol=1e-10)
+        np.testing.assert_allclose(arms["linear"][:, -1] - Z, np.broadcast_to(curve.points[b] - curve.points[a],
+                                                                              Z.shape), atol=1e-10)
+    for s in m["sagitta"]:
+        p = mf.piecewise_linear_point(raw, [s["value"]])
+        c = curve(curve.coord_of_value(np.array([s["value"]])))
+        assert s["sagitta_raw_chord"] == pytest.approx(float(np.linalg.norm(c - p)), rel=1e-9)
 
 
 def test_rescue_harm_counts():
