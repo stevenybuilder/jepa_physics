@@ -53,7 +53,7 @@ adds nothing; in extrapolation our smoothing spline, continued along its end tan
 the chord by 0.02–0.06, while the authors' own interpolating arm beats the chord on speed and trails it on
 acceleration[^ext].
 
-Rerunning Parts 1 and 2 (Part 2: the contiguous steering runs) at the paper's literal 70/30 split changes no qualitative
+Rerunning Parts 1 and 2 (Part 2: the contiguous steering runs) at C.12's 70/30 split (C.11 states 80/20; App. B uses 5-fold CV) changes no qualitative
 verdict; §2 lists every deviation from the paper and what the parity audit changed.
 
 ## 2. Setup
@@ -87,7 +87,7 @@ verdict; §2 lists every deviation from the paper and what the parity audit chan
 | Input | 224², 1,568 tokens | 256², no crop, 2,048 tokens | layer fractions comparable, patch counts not |
 | Hidden states | 24 points | 26 (embedding, blocks 1–24, final LN) | paper layer L = our point L+1 |
 | Data | 8 directions, one velocity set (8 θ × 7 v × 7 starts) read for both direction and speed | 64 directions, mixed motion types | direction also reported per motion type |
-| Split | 70/30, C.11 stopping on test | 80/20, stopping on fold-mean CV | "paper protocol" also run; Part 1 and Part 2's contiguous steering runs rerun at 70/30, no verdict changes (§3.4); session 2, isometry and pullback not rerun |
+| Split | 80/20 (C.11 l.1207) with stopping on test; 70/30 only in C.12 (l.1243); 5-fold grouped CV in App. B | 80/20, stopping on fold-mean CV | "paper protocol" also run; Part 1 and Part 2's contiguous steering runs rerun at 70/30, no verdict changes (§3.4); session 2, isometry and pullback not rerun |
 | INLP K | probes until test at chance | nested K (held-out folds), paper-protocol K beside it | both below |
 | Steering basis length | until R² < 0.1 on train | ridge: all-train sequence cut at nested K; Adam refit (§3.3): K = 84 by C.11's stop rule read on the test clips | ridge length never chosen on test; the Adam length is, which touches N = K and the rank-2K null only |
 | Steering solve (C.12 l.1235 "least squares") | c* via least squares such that all probes predict θ* | minimum-change c* = c + A⁺(y* − ŷ) in the full rank-2K basis at every N | a literal minimum-norm solve in V_K would also erase the clip's other 2K − 2N coordinates; the two coincide when V is built from the first N probes; the erase reading was not run |
@@ -181,7 +181,7 @@ right panel); `figures/fig1g_perpatch_direction.png` and `fig1h_perpatch_heatmap
 Cells are CV R² (5-fold mean). Onset is the first point at ≥ 90% of the maximum, with a 200-draw clip bootstrap for
 the CI. Source: `p1a_{var}_{target}_meanpool.json`.
 
-**Mean-pooled curve.** Direction is at 0.875 after one block, and no variable declines late on the pooled readout (per patch it does: the per-position mean peaks at 0.976 at points 10–14 and is 0.939 at point 24, the pooled-patch probe goes 0.977 → 0.922 and half-frame transfer 0.960 → 0.826, while the random-init network climbs to 0.385 with no late decline (0.007 at point 0, dips of ≤ 0.02 at points 12–14 and 16–19), so "degrades toward the output" partly reproduces per patch). The paper's §5.2 also says Cartesian velocity
+**Mean-pooled curve.** Direction is at 0.875 after one block, and no variable declines late on the pooled readout (per patch it does: the per-position mean peaks at 0.976 at points 10–14 and is 0.939 at point 24, the pooled-patch probe goes 0.977 → 0.922 and half-frame transfer 0.960 → 0.826, while the random-init network climbs to 0.385 with no late decline (0.007 → −0.021 over points 0–2, then rising with dips of ≤ 0.01 at points 12–14 and 16–19), so "degrades toward the output" partly reproduces per patch). The paper's §5.2 also says Cartesian velocity
 and acceleration "exhibit a transition at the Physics Emergence Zone"; the same passage adds that acceleration is "also decodable with
 high R² from early layers"; on pooled probes here (vx, vy) reads 0.985 / 0.977 / 0.984 and (ax, ay) 0.975 / 0.966 / 0.980
 at block 1 / point 8 / point 9, so no transition shows in the pooled readout. Disk-pooling changes little
@@ -524,9 +524,9 @@ steers to 3–5° outside the probe's plane, though no better on target error th
 subspace. An untrained network
 shows the same curve.
 
-### 3.4 The paper's 70/30 split
+### 3.4 C.12's 70/30 split
 
-Part 1 was rerun at the paper's literal 70/30 split (`splits/split_paper70.json`: same seed, stratification and
+Part 1 was rerun at C.12's 70/30 split (C.11's own split is the 80/20 used everywhere else) (`splits/split_paper70.json`: same seed, stratification and
 identical-clip grouping; `figures/split70/`)[^s70]. Every qualitative verdict is unchanged (`verdicts_changed: []`).
 
 | 80/20 → 70/30 (train/test 1,200/300 → 1,050/450 for direction, 1,228/308 → 1,075/461 for the scalars) | direction | speed | acceleration |
