@@ -15,7 +15,8 @@ per-position R² never exceeds 0.39; on a harder rendered set the half-frame jum
 three seeds, a shape the random-init network never shows. (2) Every variable needs tens of probes at the paper's layer,
 far outside a random-removal band, and Step 3 reproduces in shape and, with C.11's Adam probe sequence, the basis C.12
 steers along, in count: it takes 18 to reach 10°, where the paper reports ≈ 12° at about 20. (3) Direction lies on a
-ring, and at held-out direction values the spline path stays on the ring while the straight path cuts across the hollow:
+ring, and at held-out direction values the spline path stays on the ring while the straight path cuts across the hollow
+in the ring plane (in the 64-D subspace it is as close to real clips at point 12 and closer at point 22):
 the minimum readout radius is higher for the spline on every arc (point 22 on the labels angle[^src]).
 
 **Three disagreements with the paper.** (1) On the harder set transfer does not appear only after the zone: it is 0.7 at
@@ -31,8 +32,9 @@ spline and jumps along the chord (−13.4° paired, −31.3° at large shifts). 
 stimulus and one 45° arc, not a rendered future.
 
 **One negative.** The endpoint error ties at points 12 and 22. Speed and acceleration are straight, and there the spline
-adds nothing; in extrapolation, continued along its end tangent as the authors' code does, it trails the chord by
-0.02–0.07[^ext].
+adds nothing; in extrapolation our smoothing spline, continued along its end tangent as the authors' code does, trails
+the chord by 0.02–0.07, while the authors' own interpolating arm beats the chord on speed and trails it on
+acceleration[^ext].
 
 Rerunning Parts 1 and 2 (Part 2: the contiguous steering runs) at the paper's literal 70/30 split changes no qualitative
 verdict; §2 lists every deviation from the paper and what the parity audit changed.
@@ -98,7 +100,7 @@ verdict; §2 lists every deviation from the paper and what the parity audit chan
 - Part 1, emergence zone: read per patch on the hard render across three seeds, the largest rise is at points 4 → 6 on every seed, and the half-frame dip-and-jump at points 8 → 9 (paper layers 7 → 8) is training-specific (§3.1).
 - Part 1, Step 3: with the paper's own Adam steering basis the probe count reproduces, 18 probes to 10° against the paper's about 20 (§3.3).
 - Part 1: a covariance-weighted edit built from one probe steers to 3–5°, outside the probe's plane (§3.3, §6).
-- Part 2: the isometry verdict is set by the knot coordinate, and under every label-free ordering point 22 is a tie (§4.4).
+- Part 2: the isometry verdict is set by the knot coordinate; under every label-free ordering point 22 is a tie (spline only under the basic interval in the fully faithful run), and Goodfire's own angle loses to the chord at point 12 (§4.4).
 - Part 2: at the encoder output the verdict is mixed (the spline trails the chord by 10.8° at the chord's norm and leads by 2.1° at the natural norm), and in scalar extrapolation the spline trails the chord by 0.02–0.07 (§4.5, §4.3).
 - Part 2: Goodfire's cyclic 8B runs take the coordinate label-free, as atan2(PC2, PC1), and only its 70B cyclic configs use the labels (§2).
 
@@ -529,7 +531,8 @@ label-free recovery here is my extension, the centroid-plane fallback, and it wo
   dominant among centroids, not among clips. On the labels knot order, held-out centroids on the contiguous arc are
   rebuilt with mean error 6.3 by the interpolating spline, 2.76 by the smoothing spline and 2.59 by the chord at point
   12, and 6.9 / 4.3 / 3.75 at point 22[^interp]; on the knot order of the label-free angle, which is not monotone in θ,
-  the interpolating error is larger. Steered on the labels angle, the interpolating
+  the interpolating error is 188 at point 12 and 71.8 at point 22 (and the smoothing spline's 41.0 against the chord's
+  4.46 at 22). Steered on the labels angle, the interpolating
   spline keeps the path result (radius gap +0.28 on the headline arc at point 12, +0.30 at point 22), but its endpoint
   is worse at point 12 (+2.30° on the headline arc; +2.45° ± 2.14 over 8 arcs, 3 of 8 "negative_endpoint") and mixed at
   point 22 (−0.48° on the headline arc; +1.18° ± 1.57, 2 of 8), with an edit 1.4–1.6× the chord's on the headline
@@ -746,7 +749,8 @@ without labels only at point 12, through my centroid-plane fallback; Goodfire's 
 periodicity test there, and point-22 steering and session 2 at points 2, 8 and 22 use the labels (§4.1). **Limitations**:
 at held-out endpoints it offers nothing a chord does not; the interpolating version rebuilds held-out centroids worse
 than the smoothing one and edits 1.4–1.6× more than the chord (hence smoothing); on scalars it adds nothing inside the
-knots and trails the chord by 0.02–0.07 in extrapolation, even continued along its end tangent as the authors' code does. **Failure cases**: the
+knots and, as a smoothing spline, trails the chord by 0.02–0.07 in extrapolation even continued along its end tangent as
+the authors' code does (their own interpolating arm is mixed: better on speed, worse on acceleration). **Failure cases**: the
 point-22 endpoint on 1 of 16 arcs (+3.7°) and on the headline arc (+3.80°), and the position sheet.
 
 - **Cosine between the Part 1 step and the spline** (additional metric; contiguous design, same rows; the Part 1
@@ -889,7 +893,7 @@ Unedited: 92.1°, 60.2 px; the 180° flip null of the structured arms is 153–1
 conditions; ≈ 165° for the best arms), again
 180° minus the target error. Edits at the predictor's input reach the forecast as point-22 edits do, so the wash-out
 picture holds: edits at points ≤ 12 are repaired, edits at point 22 or later reach the forecast. The route effect does not carry over.
-Paired spline − chord is +3.1° [2.1, 4.2] at own norms, +10.8° [9.4, 12.6] at the chord's norm (point 22: −7.7° [−10.6,
+Paired spline − chord is +3.1° [2.1, 4.1] at own norms, +10.8° [9.4, 12.6] at the chord's norm (point 22: −7.7° [−10.6,
 −5.0]) and −2.1° [−3.8, −0.4] at the natural norm (point 22: −13.4°). "The spline beats the chord at matched norm" is a
 point-22 result; at the encoder output the verdict is mixed: the chord is better at its own norm and at the chord's
 norm, the spline is better at the natural-change norm (2.1° and 13.3 px), and the matched-norm effect shrinks from
@@ -947,11 +951,14 @@ distance from the spline (p = 0.003, chord closer on 8 of 8), along a route of n
 converged and the loss was still falling. Those figures were scored against a ring fitted on full-clip activations, while the edited
 activation is the carrier's context-only (frames 1–8) point-22 vector, which sits 0.56 from that ring before any edit.
 Rescored against a ring fitted on context-only activations of the same knot clips (same PCA-64, centroids, spline and
-chord recipe)[^ctx], the carriers sit on the ring (0.14 ± 0.01), the chord is 0.16 from the spline, the full-clip chord
-start is 0.57 off it, and the optimised paths end 0.81 ± 0.08 from the spline and 0.81 ± 0.08 from the chord (paired
-−0.006 [−0.023, 0.012]; intrinsic R² 0 against both): the optimiser moved away from the ring, five times the chord's
-own distance from it. Our earlier angle-only paths score 1.20 / 1.27 on the same ring (closer to the spline by 0.07,
-19 of 20, but seven times the chord's distance). So neither our angle-only test nor an unconverged run of Goodfire's
+chord recipe)[^ctx], the carriers sit within the chord's own offset from the ring (0.14 ± 0.01 against the chord's
+0.16 from the spline; distances in full-clip natural units, on which context-only centroid spacings run 0.61–0.75×),
+the full-clip chord start is 0.57 off it, and the optimised paths end 0.81 ± 0.08 from the spline and 0.81 ± 0.08 from
+the chord (paired −0.006 [−0.023, 0.012]; intrinsic R² 0 against both). So the run started 0.57 off the ring it edits,
+because its PCA basis, replaced components, centroids and chord start all came from full-clip activations, and the
+optimiser added +0.23 on 8 of 8 pairs; the rescoring changes the ruler, not that anchoring, and a rerun with
+context-only geometry throughout is in progress. Our earlier angle-only paths score 1.20 / 1.27 on the same ring
+(closer to the spline by 0.07, 19 of 20; no per-carrier zero-edit baseline is stored for them yet). So neither our angle-only test nor an unconverged run of Goodfire's
 recipe recovers the ring from the forecast; both find a route off it, and neither is a test the paper would count as
 complete. A negative, as run, on both protocols.
 
@@ -1063,8 +1070,10 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
   still running, including the native-readout extraction (0.09 h, $0.018), the norm-matched rerun (0.137 h, $0.027),
   the along-path forward (0.34 h, $0.067) and the reverse test (0.365 h, $0.072); $0.006 egress[^cost]. The per-patch
   run on the same box took 1.65 h ($0.33; box totals not refreshed since), and the encoder-output forward 817 s of GPU
-  time with no separate cost recorded (`session2_encoder_output.json`, `forward.seconds_total`). No other box's cost is recorded.
-- **Tests.** `pytest --collect-only` collects 218 tests at the commit of this report.
+  time with no separate cost recorded (`session2_encoder_output.json`, `forward.seconds_total`); the Goodfire-recipe
+  pullback ≈ 62 GPU-min and the context-only extraction 2.0 GPU-min on the same box at $0.198/h (≈ $0.21, not in the
+  $1.19 total). No other box's cost is recorded.
+- **Tests.** `pytest --collect-only` collects 219 tests at the commit of this report.
 
 [^gpu]: `artifacts/gpu_session1.json`.
 [^ptxt]: Line numbers in `refs/physics_paper.txt` (text of arXiv 2602.07050): (a) 1211 vs 1172; (b) 1207 vs 1243 and 1266; (c) 1245–1246; (d) 430–431 vs 1256 and 1269; (e) 669 vs 1243; (f) 245 vs 671; (g) 1244 vs 1256 and 1269, Table 3 at 958, 1217 vs 970–973, 402–403; (h) Table 3 rows 949–951. Our numbers: `p1b_*` (`K`, `K_loose`), `results/split70/COMPARISON.md`, `p1c_direction_L9_strict.json` (`strict_eval`), `p1c_direction_L9.json`.
@@ -1100,13 +1109,13 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
 [^cost]: `results/session2_cost.json` (`cost_start_to_session2_done_usd`, `session2_run_cost_usd`, `cost_so_far_usd`, `billed_hours_so_far`, `as_of_utc` 02:44 UTC, `runs[0..3]`, `pull_egress_usd`, `status: running`).
 [^ap]: `results/session2_predictor_along_path.json` (`by_t.{all,shift_ge_135}`, `summary`, `spline_minus_chord`, `applied_norms`, `n_exact_180`; unedited radius `by_t.all.spline.forecast_radius[0]`) and `results/session2_reverse_path.json` (`reverse`, `by_t`, `over_t`, `paired_over_t`, `loss_curve_mean` every 10 steps); `scripts/session2_along_path.py`.
 [^src]: `results/p2_angle_source_audit.json` (`angle_source_counts`, `headline_angle_source`, `headline_L22_angle_check`, `L22_labels_reruns`, `L22_aggregate_all_labels`; the duplicate-once figure is computed from its per-arc rows), `results/arcs/L22_s{4,8,9,10}_labels/`, `results/p2_angle_goodfire_method.json` (`goodfire_passes_periodicity_test`, `goodfire_angle_vs_labels`), `results/session2_plan.json` (`per_layer[].angle_choice`); Goodfire's coordinate source: `refs/causalab/causalab/configs/analysis/activation_manifold.yaml` (`intrinsic_mode: pca`, inherited by `runners/{weekdays,months}/*_8b_pipeline.yaml`), `runners/{alphabet,age}/*_8b_pipeline.yaml` and `runners/*/*_70b*.yaml` (`intrinsic_mode: parameter`), `methods/spline/train.py:59` (default `parameter`).
-[^interp]: `results/p2_interp_labels_summary.json` (`heldout_reconstruction.labels_order.contiguous`, `seed0_interp_labels`, `arcs_interp_labels`, `delta_ratio_spline_over_chord`), `results/p2_interp_labels/`, `results/arcs_interp/`.
+[^interp]: `results/p2_interp_labels_summary.json` (`points.{12,22}.heldout_reconstruction.{labels_order,stored_unsupervised_order}.contiguous`, `seed0_interp_labels`, `arcs_interp_labels`, `delta_ratio_spline_over_chord`), `results/p2_interp_labels/`, `results/arcs_interp/`.
 [^ext]: `results/p2_extrapolation_linear_ext.json` (`runs.*.{smoothing_linear_ext,interp_linear_ext_goodfire_code,stored_smoothing_cubic_ext}`), `results/p2_linear_ext/`, `results/p2_linear_ext_interp/`.
 [^iso]: `results/p2_isometry_goodfire_method.json` (`layers.{8,12,22}.new.{interp,smooth}.{geo,lin}_pearson`).
 [^isog]: `results/p2_isometry_goodfire_coord.json` (`layers.{8,12,22}.goodfire_angle.{interp,smooth}.{geo,lin}_pearson`, `goodfire_periodicity_test`, `angle_vs_labels`, `geo_below_chord_goodfire_angle`; 213 tests at ee828a7).
 [^isof]: `results/p2_isometry_goodfire_full.json` (`layers.{8,12,22}.{goodfire_full_angle,goodfire_angle,labels_angle,unsupervised_angle}.{interp,smooth}.{geo,lin}_pearson`, `layers.*.bootstrap.variants.*` with percentile / shifted / basic intervals, bias and calls, `geo_minus_lin_calls`, `branches`, `circular_corr_with_labels`); 8ca50cf, ce42042.
 [^pbg]: `results/session2_pullback_goodfire.json` (`goodfire.per_pair[].{resid_to_spline,resid_to_chord,r2_spline,r2_chord,chord_baseline_resid_to_spline,loss_chord_init_fp32,loss_final_fp32,n_evals,outer_steps,carrier_ctx_vs_fullclip_pca32_offset_over_unit,path_norm32_over_unit_by_t}`, `goodfire.summary_{64d,32d}`, `old_reverse_test`; provenance records a dirty worktree at d0e459c for the scripts, committed as cab0dfa); `scripts/session2_pullback_goodfire.py`; box 53030966, ≈ 62 GPU-min; cab0dfa, 216 tests. The point-25 along-path read was not run (GPU budget).
-[^ctx]: `results/session2_pullback_goodfire_ctxring.json` (`goodfire.per_pair[].{resid_to_spline,resid_to_chord,r2_spline,r2_chord,chord_baseline_resid_to_spline,carrier_offset_ctx,carrier_offset_full}`, `goodfire.summary_{64d,32d}`, `old_reverse_test`, `ctx_ring_provenance`, `data_separation`); context-only activations of 805 clips extracted on the box (2.5 GPU-min), `artifacts/session2/ctx_ring/` with sha256s; `scripts/session2_pullback_ctxring.py`; clean worktree at 03c6b2b, c7d1a66, 219 tests.
+[^ctx]: `results/session2_pullback_goodfire_ctxring.json` (`goodfire.per_pair[].{resid_to_spline,resid_to_chord,r2_spline,r2_chord,chord_baseline_resid_to_spline,carrier_offset_from_ctx_ring_over_unit,carrier_offset_from_fullclip_ring_over_unit}`, `init_fullclip_chord_path`, `goodfire.summary_{64d,32d}`, `old_reverse_test`, `ctx_ring_provenance`, `data_separation`); context-only activations of 805 clips extracted on the box (2.0 GPU-min forward), `artifacts/session2/ctx_ring/` with sha256s; `scripts/session2_pullback_ctxring.py`; clean worktree at 03c6b2b, c7d1a66, 219 tests.
 [^isol]: `results/p2_isometry_goodfire_labels.json` (`layers.{8,12,22}.labels_angle.{interp,smooth}.{geo,lin}_pearson`; `unsupervised_angle` rows reproduce the label-free figures; `geo_below_chord_labels_angle` false at every point).
 [^pp]: `results/p1a_perpatch_direction_{vjepa2,vjepa2_constvel,random,vjepa2_hard,vjepa2_paper_layout}.json` (`curves.{perpos_mean_r2,pooled_mean_r2,pooled_frac_ge_0.5,cross_half_r2,meanpool_r2}`, `onsets.*`, `layers[].halves` for the cross-half MAE, `methods`, `provenance.time_averaging`); `figures/fig1g_perpatch_direction.png`, `fig1h_perpatch_heatmaps.png`; rendered-set layout (7 shared starts) in `results/session2_stimuli_validation.json` (`layout.start_rule`) and `scripts/render_hard_stimuli.py`.
 [^hfolds]: `results/p1a_perpatch_hard_folds.json` (`sets.hard` for the stratified folds and `folds_start_grouped.hard` for start-grouped, each with per-point fold means ± SD and `summary.*.onset_per_fold`; `sets.paper_layout` alongside), cc41a6c.
