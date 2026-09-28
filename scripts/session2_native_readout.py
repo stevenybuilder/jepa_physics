@@ -194,6 +194,7 @@ def score_all():
                     "dir_err_to_target": boot_ci(wrap(a - tg).mean(1)),
                     "dir_err_to_shuffled45_target": boot_ci(wrap(a - tg[:, shuf]).mean(1)),
                     "dir_err_to_flipped180_target": boot_ci(wrap(a - (tg + 180.0)).mean(1)),
+                    "dir_err_target_minus_shuffled45_paired": boot_ci((wrap(a - tg) - wrap(a - tg[:, shuf])).mean(1)),
                     "dir_err_to_source_true": boot_ci(wrap(a - y[rows][:, None]).mean(1)),
                     "dir_shift_from_unedited_deg": boot_ci(wrap(a - angle_of(Ps)[:, None]).mean(1)),
                     "R_dir_real_change": boot_ci(proj(Pe - Ps[:, None], d_true, -1).mean(1)),
@@ -201,6 +202,8 @@ def score_all():
                     "px_err_to_twin_true": boot_ci(np.nanmean(dist(pe, twin_true), (1, 2))),
                     "px_err_to_shuffled45_twin": boot_ci(np.nanmean(dist(pe, twin_true[:, shuf]), (1, 2))),
                     "px_err_to_flipped180_twin": boot_ci(np.nanmean(dist(pe, flipped_pos), (1, 2))),
+                    "px_err_twin_minus_shuffled45_paired": boot_ci(np.nanmean(dist(pe, twin_true)
+                                                                              - dist(pe, twin_true[:, shuf]), (1, 2))),
                     "px_shift_from_unedited": boot_ci(np.nanmean(dist(pe, ps[:, None]), (1, 2))),
                     "R_px_real_change": boot_ci(proj(pe - ps[:, None], d_pos, (-1, -2)).mean(1)),
                     "R_token_realdiff_session2": old[str(L)][arm]["R_realdiff"]}

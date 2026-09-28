@@ -9,12 +9,26 @@
  "cost_start_to_session2_done_usd": 0.512,
  "session2_run_hours": 1.573,
  "session2_run_cost_usd": 0.311,
- "as_of_utc": "2026-09-27T23:57:48+00:00",
- "billed_hours_so_far": 3.219,
- "cost_so_far_usd": 0.637,
+ "as_of_utc": "2026-09-28T00:44:52+00:00",
+ "billed_hours_so_far": 4.004,
+ "cost_so_far_usd": 0.792,
  "inet_up_cost_per_gb": 0.00390625,
  "pull_bytes": 1530820377,
  "pull_egress_usd": 0.006,
  "status": "running",
- "note": "box still running (follow-on VideoMAE + random-init timepool extraction under /workspace/wmh); cost_so_far includes that; the session-2 share is start->session2_DONE. Source: vastai show instances --raw."
+ "note": "box still running (follow-on VideoMAE + random-init timepool extraction under /workspace/wmh); cost_so_far includes that; the session-2 share is start->session2_DONE. Source: vastai show instances --raw.",
+ "runs": [
+  {
+   "run": "predictor_native_readout (scripts/session2_native_readout.py extract)",
+   "window_utc": [
+    "2026-09-28T00:37:00+00:00",
+    "2026-09-28T00:42:24+00:00"
+   ],
+   "gpu_seconds_extract": 279.0,
+   "hours": 0.09,
+   "cost_usd": 0.0178,
+   "dph_total": 0.19777777777777777,
+   "note": "1500 clips, context-only encode + predictor, batch 16, RTX 4060 Ti; scoring on the Mac (CPU)"
+  }
+ ]
 }
