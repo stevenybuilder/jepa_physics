@@ -547,6 +547,13 @@ def probe_folds(a):
                    "standardisation and metrics as the probe stage (per-position R2 = mean over sin, cos columns)"),
         "onset_rule": "first SAMPLED point with the fold's metric >= 90% of its max over the sampled points",
         "sets": {}}
+    okey = "sets" if a.fold_scheme == "stratified" else "folds_start_grouped"
+    if okey == "folds_start_grouped":
+        out.setdefault(okey, {})
+        out["folds_start_grouped_design"] = (
+            "as 'sets' but the 5 folds hold out whole start positions (the set's distinct (start_x, start_y) pairs "
+            "among the train clips, dealt round-robin to 5 folds, seed 0, wm.robustness.value_grouped_folds), so no "
+            "start (hence no (direction, start) path) is shared between fit and evaluation clips, outer and inner")
     for name in a.sets:
         mmp = str(Path(a.memmap_dir) / f"{name}_vjepa2.npy")
         side = json.loads(Path(mmp).with_suffix(".json").read_text())
@@ -558,6 +565,10 @@ def probe_folds(a):
         split_file = PROJECT_ROOT / SETS[name][1]
         Y, kind, score_fn = targets(df, "direction")
         tr, te, folds = split_rows("direction", df, split_file)
+        if a.fold_scheme == "start":
+            from wm.robustness import value_grouped_folds
+            sid = np.unique(np.round(df[["start_x", "start_y"]].to_numpy(float)[tr], 6), axis=0, return_inverse=True)[1]
+            folds = value_grouped_folds(sid.ravel())
         Ytr = Y[tr]
         ks = np.unique(folds)
         left = np.array([p for p in range(NPOS) if p % GRID < GRID // 2])
@@ -609,23 +620,29 @@ def probe_folds(a):
                                 store[k]["RR"], store[k]["RL"], store[k]["Pm"])
             pp_alpha = np.array([[x[3] for x in res if x[0] == pi and x[2] == k] for pi in range(len(points))])
             per_fold.append({"fold": int(k), "n_fit": int((~ev).sum()), "n_eval": int(ev.sum()), "curves": c,
-                             "onsets": on, "alpha": {**alphas[k], "perpos_median": np.median(pp_alpha, 1).tolist()}})
+                             "onsets": on, "largest_jump": {m: jump(points, v) for m, v in c.items()}, "alpha": {**alphas[k], "perpos_median": np.median(pp_alpha, 1).tolist()}})
         summ = {}
         for m in per_fold[0]["curves"]:
             arr = np.array([f["curves"][m] for f in per_fold])
             ons = [f["onsets"][m] for f in per_fold]
             summ[m] = {"mean": arr.mean(0).tolist(), "sd": arr.std(0, ddof=1).tolist(), "onset_per_fold": ons,
                        "onset_of_fold_mean_curve": None if onset_of(arr.mean(0)) is None else points[onset_of(arr.mean(0))]}
-        out["sets"][name] = {"points": points, "n_train": len(tr), "fold_sizes": np.bincount(folds).tolist(),
+        if a.fold_scheme == "start":
+            summ["n_starts_per_fold"] = [int(len(np.unique(sid.ravel()[folds == k]))) for k in ks]
+        out[okey][name] = {"points": points, "n_train": len(tr), "fold_sizes": np.bincount(folds).tolist(),
                              "per_fold": per_fold, "summary": summ, "wall_seconds": time.time() - t0,
+                             "fold_scheme": a.fold_scheme,
                              "provenance": {"split_file": SETS[name][1], "split_sha256": sha256_file(split_file),
                                             "memmap": mmp, "commit": a.commit, "workers": a.workers,
                                             "parent_threads": a.parent_threads,
                                             "timestamp_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}}
+        for entry in [e for k2 in ("sets", "folds_start_grouped") for e in out.get(k2, {}).values()]:
+            for f in entry["per_fold"]:          # runs before largest_jump existed: same pure function of the curves
+                f.setdefault("largest_jump", {m: jump(entry["points"], v) for m, v in f["curves"].items()})
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(out, indent=1))
-        print(f"wrote {path} [{name}] ({time.time() - t0:.0f}s)")
-        for m, v in summ.items():
+        print(f"wrote {path} [{okey}/{name}] ({time.time() - t0:.0f}s)")
+        for m, v in ((m, v) for m, v in summ.items() if m != "n_starts_per_fold"):
             print(f"  {m}: onsets {v['onset_per_fold']} | " + " ".join(f"{p}:{mu:.3f}±{sd:.3f}" for p, mu, sd in
                                                                      zip(points, v["mean"], v["sd"])))
 
@@ -799,6 +816,7 @@ if __name__ == "__main__":
     ap.add_argument("stage", choices=("extract", "probe", "folds", "figures", "seeds"))
     ap.add_argument("--sets", nargs="+", default=["hard"], choices=tuple(SETS))
     ap.add_argument("--memmap-dir", default="/workspace/wm/artifacts/perpatch")
+    ap.add_argument("--fold-scheme", default="stratified", choices=("stratified", "start"))
     ap.add_argument("--set", default="direction", choices=tuple(SETS))
     ap.add_argument("--model", default="vjepa2", choices=("vjepa2", "random"))
     ap.add_argument("--points", type=int, nargs="*", default=None)
