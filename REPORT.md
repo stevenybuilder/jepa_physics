@@ -36,7 +36,8 @@ disjoint clips) do not separate the two. Speed and acceleration are straight lin
 to the output with little target specificity (shuffled targets are at most 39° away). Probes fit on the predictor's own
 forecasts (8.9° on unedited forecasts, where real-token probes read 62.6° and were blind) show point-22 edits moving
 the forecast to 11.3–27.2° of the held-out target (smoothing spline 44.2°; unedited 92.1°, random 85.7°), position
-overshooting; edits at points ≤ 12 barely reach it. This is a probe of the forecast on one stimulus and one 45° arc,
+overshooting; edits at points ≤ 12 barely reach it. The arms are not norm-matched (‖Δ‖ 0.58–0.91× the natural twin
+change), so which route reaches the forecast best is confounded with dose. This is a probe of the forecast on one stimulus and one 45° arc,
 not a rendered future.
 
 ## 2. Setup
@@ -296,7 +297,8 @@ The paper-protocol K for direction drops from 46 to 35 because that count reads 
 the test split is larger; the nested K barely moves. Part 2's contiguous design was also rerun at 70/30
 (`results/split70_p2/`). The direction radius gap is +0.26 / +0.24 at points 12 / 22 (80/20) and +0.25 / +0.26
 (70/30). The point-22 endpoint loss of the spline (+3.80°) shrinks to +0.47° at 70/30, consistent with the arc sweep
-(§4.3), where the loss appears on 3 of 16 arcs. For speed and acceleration the bend is 0.04–0.19× centroid noise at both
+(§4.3), where the loss appears on 3 of 16 arcs; at point 12 the endpoint gap is +0.11° and −0.40° (both far below the
+probe's out-of-sample error). For speed and acceleration the bend is 0.04–0.19× centroid noise at both
 splits, so the verdict flickers on sub-margin differences, and "scalars are straight, no independent-readout gain"
 holds at both. The split of record stays 80/20 so that Part 1 and Part 2 read the same clips.
 
@@ -559,16 +561,18 @@ predictor's unedited forecasts of the 480 probe clips, disjoint from the steered
 clips' unedited forecasts at 8.9° (R² 0.92) and 11.8 px; real-token probes read them at 62.6° / 65.7 px (real tokens:
 3.4°). The twin's own context now recovers R = 0.96 [0.92, 1.01] of the direction change (0.0185 in token space) and R
 = 1.07 of the position change, landing 9.1° from the target and 13.2 px from the twin's positions, so the test can see
-an edit. Edited forecasts (cached), 200 carriers × 4 targets (unedited: 92.1° from target, 60.2 px from the twin):
+an edit. Edited forecasts (cached), 200 carriers × 4 targets (unedited: 92.1° from target, 60.2 px from the twin);
+the last column is the arm's median ‖Δ‖ at point 22 over the natural twin change (`session2_propagation.json`,
+`delta_over_natural_twin_change["22"].median_ratio`), and the arms are not norm-matched:
 
-| Arm | pt 12: to target | pt 22: to target | pt 22: to shuffled | pt 22: to 180° flip | pt 22: target − shuffled [95% CI] | pt 22: R dir / R pos | pt 22: px to twin |
-|---|---|---|---|---|---|---|---|
-| probe-QR | 84.1° | 17.1° | 23.5° | 162.9° | −6.4 [−7.3, −5.5] | 0.78 / 1.81 | 55.5 |
-| radius-matched | 84.4° | 16.3° | 22.8° | 163.7° | −6.5 [−7.5, −5.6] | 0.79 / 1.49 | 43.2 |
-| interpolating spline | 77.9° | 11.3° | 18.4° | 168.7° | −7.1 [−7.9, −6.3] | 1.00 / 1.43 | 44.3 |
-| smoothing spline | 81.7° | 44.2° | 47.1° | 135.8° | −2.9 [−3.6, −2.2] | 0.60 / 1.28 | 38.6 |
-| chord | 84.8° | 27.2° | 32.0° | 152.8° | −4.7 [−5.5, −3.9] | 0.68 / 1.30 | 39.7 |
-| random, matched ‖Δ‖ | 92.3° | 85.7° | 85.4° | 94.3° | +0.3 [0.2, 0.4] | 0.10 / −0.05 | 61.1 |
+| Arm | pt 12: to target | pt 22: to target | pt 22: to shuffled | pt 22: to 180° flip | pt 22: target − shuffled [95% CI] | pt 22: R dir / R pos | pt 22: px to twin | pt 22: ‖Δ‖ ÷ twin change |
+|---|---|---|---|---|---|---|---|---|
+| probe-QR | 84.1° | 17.1° | 23.5° | 162.9° | −6.4 [−7.3, −5.5] | 0.78 / 1.81 | 55.5 | 0.79 |
+| radius-matched | 84.4° | 16.3° | 22.8° | 163.7° | −6.5 [−7.5, −5.6] | 0.79 / 1.49 | 43.2 | 0.58 |
+| interpolating spline | 77.9° | 11.3° | 18.4° | 168.7° | −7.1 [−7.9, −6.3] | 1.00 / 1.43 | 44.3 | 0.91 |
+| smoothing spline | 81.7° | 44.2° | 47.1° | 135.8° | −2.9 [−3.6, −2.2] | 0.60 / 1.28 | 38.6 | 0.62 |
+| chord | 84.8° | 27.2° | 32.0° | 152.8° | −4.7 [−5.5, −3.9] | 0.68 / 1.30 | 39.7 | 0.65 |
+| random, matched ‖Δ‖ | 92.3° | 85.7° | 85.4° | 94.3° | +0.3 [0.2, 0.4] | 0.10 / −0.05 | 61.1 | 0.79 |
 
 At point 22 every structured arm moves the forecast toward the held-out target, away from its 180° flip (153–169° for
 probe-QR, radius-matched, interpolating spline, chord; 136° smoothing spline; 94° random). The shuffled null is weak by
@@ -576,8 +580,11 @@ construction (shuffled targets average 16.5° from the true ones[^s2]); it separ
 paired CI excluding 0. Position moves the right way but overshoots: R 1.3–1.8, 39–55 px from the twin against 13.2 px
 for the twin's own context. At point 12 edits barely reach the forecast (probe-QR, radius-matched, chord 84–85°;
 interpolating spline 77.9° but 104.9 px from the twin, R dir 0.31 [0.13, 0.48]); at points 2 and 8 every arm reads
-90.8–92.8°. Caveats: one stimulus, one 45° arc; the interpolating spline beats the smoothing one (the Part 2 default)
-by 33° at point 22, so spline-vs-chord depends on the variant; the readout is a linear probe of the pooled forecast, so
+90.8–92.8°. Caveats: one stimulus, one 45° arc; the interpolating spline gets closest to the target (11.3° vs 27.2°
+for the chord) but at a larger edit (0.91× vs 0.65× the natural twin change), so route and dose are confounded there,
+and the smoothing spline (the Part 2 default, 0.62×) lands at 44.2°; a norm-matched rerun is in progress
+(`results/session2_predictor_norm_matched.json`). The point-22-vs-point-12 contrast and the 180°-flip null do not
+depend on dose. The readout is a linear probe of the pooled forecast, so
 it shows "the predictor's forecast changes in the steered direction", not "the rendered future changes".
 
 **Time-reversed clips** (the forward-trained probe read on reversed clips)[^trev]. From point 1 on, the direction probe
@@ -623,8 +630,9 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
   the subspace form of the hypothesis. The steering corollary is what fails geometrically: the straight path between
   distant directions passes through the ring's interior (readout radius 0.61) where the curved path does not (0.86).
   The measured caveat is that independent readouts at the steered layer do not care; downstream, in the predictor's
-  forecast at point 22, the interpolating spline beats the chord (11.3° vs 27.2°) but the smoothing spline does not
-  (44.2°), so any functional advantage depends on the variant (§4.5). The supported statement is "for a cyclic variable
+  forecast at point 22, the interpolating spline gets closer than the chord (11.3° vs 27.2°) but at a larger edit
+  (0.91× vs 0.65× the natural twin change), so route and dose are confounded there, and the smoothing spline (0.62×)
+  lands at 44.2°; a norm-matched rerun is in progress (§4.5). The supported statement is "for a cyclic variable
   the hypothesis describes the subspace and misdescribes the moves, geometrically".
 
 ## 7. Limitations and next steps
