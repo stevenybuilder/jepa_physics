@@ -1,0 +1,151 @@
+{
+ "dataset": "direction",
+ "pool": "meanpool",
+ "clips": "direction-set train clips with motion == velocity",
+ "n_clips": 596,
+ "label": "extra: angle of the (vx, vy) probe vs the direct (sin, cos) probe",
+ "method": "out-of-fold predictions of both probes (wm.support.layer_cv, as run_step1_support.py (a)); Cartesian angle = atan2(v_y_hat, v_x_hat) -> (sin, cos); scored against the truth (circular MAE, sin/cos R2) and against the direct probe's OOF (sin, cos) predictions",
+ "reference": "results/p1a_support_onset_direction_meanpool.json",
+ "points": [
+  {
+   "point": 1,
+   "cartesian_angle_vs_truth": {
+    "r2": 0.9000310099246449,
+    "mae_deg": 12.097379772918893
+   },
+   "direct_probe_vs_truth": {
+    "r2": 0.8646007071487476,
+    "mae_deg": 12.30258568149718
+   },
+   "direct_probe_unit_vs_truth": {
+    "r2": 0.9112784115116532,
+    "mae_deg": 12.302585681497177
+   },
+   "cartesian_angle_vs_direct_probe": {
+    "r2": 0.8303679533377386,
+    "mae_deg": 13.106548129340393
+   },
+   "refit_cv_r2": {
+    "vxvy": 0.928759678767871,
+    "sincos": 0.8628987933684271
+   },
+   "stored_cv_r2": {
+    "vxvy": 0.928759678767871,
+    "sincos": 0.8628987933684271
+   },
+   "alpha": {
+    "vxvy": 0.31622776601683794,
+    "sincos": 3.1622776601683795
+   }
+  },
+  {
+   "point": 2,
+   "cartesian_angle_vs_truth": {
+    "r2": 0.9021150249140404,
+    "mae_deg": 11.229496013035968
+   },
+   "direct_probe_vs_truth": {
+    "r2": 0.9388202125603244,
+    "mae_deg": 8.27360456406251
+   },
+   "direct_probe_unit_vs_truth": {
+    "r2": 0.9607724571381354,
+    "mae_deg": 8.273604564062508
+   },
+   "cartesian_angle_vs_direct_probe": {
+    "r2": 0.9028200383012758,
+    "mae_deg": 9.665403447258724
+   },
+   "refit_cv_r2": {
+    "vxvy": 0.9392167305023339,
+    "sincos": 0.9382281006476507
+   },
+   "stored_cv_r2": {
+    "vxvy": 0.9392167305023339,
+    "sincos": 0.9382281006476507
+   },
+   "alpha": {
+    "vxvy": 1.0,
+    "sincos": 3.1622776601683795
+   }
+  },
+  {
+   "point": 3,
+   "cartesian_angle_vs_truth": {
+    "r2": 0.9033625163046024,
+    "mae_deg": 11.531196909630452
+   },
+   "direct_probe_vs_truth": {
+    "r2": 0.9543533510008153,
+    "mae_deg": 6.996481486264756
+   },
+   "direct_probe_unit_vs_truth": {
+    "r2": 0.9724970892505863,
+    "mae_deg": 6.996481486264756
+   },
+   "cartesian_angle_vs_direct_probe": {
+    "r2": 0.9058460606292738,
+    "mae_deg": 10.01687250492733
+   },
+   "refit_cv_r2": {
+    "vxvy": 0.9303428704262056,
+    "sincos": 0.9538102930095562
+   },
+   "stored_cv_r2": {
+    "vxvy": 0.9303428704262056,
+    "sincos": 0.9538102930095562
+   },
+   "alpha": {
+    "vxvy": 3.1622776601683795,
+    "sincos": 3.1622776601683795
+   }
+  },
+  {
+   "point": 9,
+   "cartesian_angle_vs_truth": {
+    "r2": 0.9484333351231332,
+    "mae_deg": 8.077731719966577
+   },
+   "direct_probe_vs_truth": {
+    "r2": 0.9839096663486633,
+    "mae_deg": 3.9099650417132192
+   },
+   "direct_probe_unit_vs_truth": {
+    "r2": 0.9921094788582268,
+    "mae_deg": 3.9099650417132192
+   },
+   "cartesian_angle_vs_direct_probe": {
+    "r2": 0.950676946762639,
+    "mae_deg": 6.868988602931563
+   },
+   "refit_cv_r2": {
+    "vxvy": 0.9674912295096298,
+    "sincos": 0.9838694784985547
+   },
+   "stored_cv_r2": {
+    "vxvy": 0.9674912295096298,
+    "sincos": 0.9838694784985547
+   },
+   "alpha": {
+    "vxvy": 31.622776601683793,
+    "sincos": 31.622776601683793
+   }
+  }
+ ],
+ "provenance": {
+  "split_file": "splits/split_v1.json",
+  "split_sha256": "98e6310c40bf29e81bd8b6bf4b1ac603b89e4104d40ac1047b15dd5dc2be2df2",
+  "seeds": {
+   "split": 0,
+   "other": "all other RNG seeds are 0 (bootstrap, folds, null draws, shuffles); random-removal controls use seeds 0..n-1"
+  },
+  "commit": "6fc252996b39e2852cf3b7cc8efea310f83ba25c",
+  "dirty": true,
+  "git_commit": "6fc252996b39e2852cf3b7cc8efea310f83ba25c",
+  "git_dirty_src_or_scripts": false,
+  "timestamp_utc": "2026-09-28T04:13:14+00:00",
+  "pool": "meanpool",
+  "model": "vjepa2",
+  "layer": null
+ }
+}
