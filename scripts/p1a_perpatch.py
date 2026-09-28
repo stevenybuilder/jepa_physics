@@ -51,8 +51,8 @@ def table(name):
     return load_table("direction", root=None if root is None else PROJECT_ROOT / root)
 
 
-def result_path(name, model):
-    suffix = "" if name == "direction" else f"_{name}"
+def result_path(name, model, subset=None):
+    suffix = ("" if name == "direction" else f"_{name}") + (f"_{subset}" if subset else "")
     return RESULTS / f"p1a_perpatch_direction_{model}{suffix}.json"
 
 
@@ -289,6 +289,11 @@ def probe(a):
     split_file = PROJECT_ROOT / SETS[a.set][1]
     Y, kind, score_fn = targets(df, "direction")
     tr, te, folds = split_rows("direction", df, split_file)
+    if a.subset == "constvel":   # the paper's Fig. 18 uses its constant-velocity dataset only
+        assert a.set == "direction"
+        vel = df["motion"].to_numpy() == "velocity"
+        keep = vel[tr]
+        tr, folds, te = tr[keep], folds[keep], te[vel[te]]
     Ytr, Yte = Y[tr], Y[te]
     left = np.array([p for p in range(NPOS) if p % GRID < GRID // 2])
     right = np.array([p for p in range(NPOS) if p % GRID >= GRID // 2])
@@ -408,7 +413,7 @@ def probe(a):
                      "cv_mean_by_point": {str(r["point"]): r["cv_mean"] for r in p1["layers"] if r["point"] in points},
                      "test_r2_by_point": {str(r["point"]): r["test_r2"] for r in p1["layers"] if r["point"] in points}}
     wall = time.time() - t_all
-    out = {"set": a.set, "model": a.model, "variable": "direction", "target": "(sin theta, cos theta)",
+    out = {"set": a.set, "subset": a.subset, "model": a.model, "variable": "direction", "target": "(sin theta, cos theta)",
            "n_train": len(tr), "n_test": len(te), "points": points, "curves": curves, "onsets": onsets,
            "part1_meanpool": part1, "layers": rows,
            "left_positions": "columns 0-7 of the 16x16 grid (128 positions); right = columns 8-15",
@@ -428,8 +433,17 @@ def probe(a):
            "provenance": {"split_file": SETS[a.set][1], "split_sha256": sha256_file(split_file), "commit": a.commit,
                           "points": points, "pooling": side["pooling"], "positions": "16x16 (no spatial pooling)",
                           "host": "vast 53030966 RTX 4060 Ti (extract GPU, probes CPU)",
+                          "subset": ("constant-velocity clips only (motion == 'velocity'), split rows filtered, same folds"
+                                     if a.subset == "constvel" else "all clips of the set"),
+                          "time_averaging": ("per-position features are averaged over the 8 token time steps before probing "
+                                             "(one 1024-vector per spatial position per clip); the paper does not state whether "
+                                             "its per-patch probes use per-token or time-averaged features"),
+                          "half_frame_design": ("the half-frame test fits ONE pooled probe over the 128 positions of one half "
+                                                "(columns 0-7 or 8-15; every (clip, position) is a sample) and scores it on the "
+                                                "other half's positions of test clips; the paper does not state its half-frame "
+                                                "probe design"),
                           "timestamp_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "seed_bootstrap": 0}}
-    path = Path(a.results_dir) / result_path(a.set, a.model).name
+    path = Path(a.results_dir) / result_path(a.set, a.model, a.subset).name
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(out, indent=1))
     print(f"wrote {path} ({wall:.0f}s)")
@@ -501,6 +515,7 @@ if __name__ == "__main__":
     ap.add_argument("--workers", type=int, default=96)
     ap.add_argument("--parent-threads", type=int, default=24)
     ap.add_argument("--commit", default="unknown")
+    ap.add_argument("--subset", default=None, choices=(None, "constvel"))
     ap.add_argument("--results-dir", default=str(RESULTS))
     a = ap.parse_args()
     {"extract": extract, "probe": probe, "figures": figures}[a.stage](a)
