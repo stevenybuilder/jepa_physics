@@ -26,7 +26,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from wm.adam_probe import fit_adam  # noqa: E402
 from wm.data import PROJECT_ROOT, load_table  # noqa: E402
 from wm.inlp import ADAM_C11, basis_path, inlp, load_basis, ridge_fit  # noqa: E402
-from wm.paperscale import direction_grouped_folds  # noqa: E402
+from wm.paperscale import ci_from_draws, direction_grouped_folds, onset_draws, probe_rows  # noqa: E402
 from wm.probes import (ALPHAS, LAST_BLOCK, RESULTS, availability, bootstrap_onset, cv_select_alpha,  # noqa: E402
                        drop_nan_clips, fit_ridge, layer_fraction, layer_matrix, load_activations, split_rows,
                        standardized_layer, targets, write_json)
@@ -126,7 +126,7 @@ def figure1(out):
              "direction_grouped": ("#eb6834", "--", "direction-grouped"),
              "start_grouped": ("#1baf7a", ":", "start-cell-grouped"),
              "speed_grouped": ("#eb6834", "--", "speed-grouped"),
-             "sector_grouped": ("#8b5cf6", "-.", "45° sector-grouped")}
+             "sector_grouped": ("#8b5cf6", "-.", "45° sector-grouped (pooled OOF R²)")}
     out = {**out, "sets": {k: dict(v) for k, v in out["sets"].items()}}   # plotting copy; the caller's dict is untouched
     for key, res in out.get("sector_grouped", {}).get("sets", {}).items():
         out["sets"][key]["sector_grouped"] = res
@@ -365,28 +365,31 @@ def item5():
     assert json.dumps(out, indent=1) == text, "stored file does not round-trip; refusing to rewrite it"
     sec = {"scheme": "whole contiguous 45 deg direction sectors held out: the 8 wm.robustness.direction_bin sectors "
                      "(edges at 19.6875 + 45 k, 8 directions each) dealt round-robin to 5 folds (2, 2, 2, 1, 1 "
-                     "sectors per fold, seed 0); outer split, onset rule and bootstrap as the other schemes. "
-                     "curve / onset use the fold-mean R2 as the stored rows; pooled_oof_r2_curve is the R2 of all "
-                     "out-of-fold predictions together (the bootstrap CI's statistic), reported because a fold "
-                     "holding one 45 deg sector has little target variance of its own, which depresses its R2",
+                     "sectors per fold, seed 0); outer split as the other schemes",
+           "score": "alpha chosen by, and curve / onset read from, the R2 of all out-of-fold predictions together "
+                    "(wm.paperscale.probe_rows select='pooled', as the 8-direction grouped runs): a fold holding one "
+                    "or two 45 deg sectors has little sin/cos variance of its own, so the fold-mean R2 the stored rows "
+                    "use is not defined in any useful sense here (it reaches -25; kept under fold_mean_diagnostic). "
+                    "For the stored schemes every fold spans the circle and fold-mean ~ pooled",
+           "onset_rule": "wm.probes.availability on the pooled curve; CI: 200-draw clip bootstrap of the fixed "
+                         "out-of-fold predictions (wm.paperscale.onset_draws, the same statistic as the stored CIs)",
            "sets": {}}
     for model in ("vjepa2", "random"):
         df, Y, kind, score_fn, tr, te, folds, acts = data("direction", "direction", model)
         f = sector_folds(df["theta_degrees"].to_numpy()[tr])
-        get = lru_cache(maxsize=1)(lambda p: layer_matrix(acts, p))
-        rows, oofs = layer_cv(get, Y, tr, f, score_fn, points=range(26))
-        curve = [r["cv_mean"] for r in rows]
+        fits = [probe_rows(layer_matrix(acts, p), tr, Y, f, score_fn, select="pooled") for p in range(26)]
+        curve = [r["pooled"] for r in fits]
+        oofs = [r["oof"] for r in fits]
         av = availability(curve[:LAST_BLOCK + 1])
-        ci, n_none = bootstrap_onset(Y[tr], oofs[:LAST_BLOCK + 1], score_fn, args.n_boot, 0)
-        pooled = [score_fn(Y[tr], o)["r2"] for o in oofs]   # a 1-sector fold has little sin/cos variance of its own
+        ci, n_none = ci_from_draws(onset_draws(Y[tr], oofs, score_fn, args.n_boot, 0))
+        fm = [r["curve_fold_mean"][int(np.argmax(r["curve_pooled"]))] for r in fits]
         sec["sets"][f"direction_{model}"] = {
-            "pooled_oof_r2_curve": pooled, "pooled_block1_r2": pooled[1], "pooled_block8_r2": pooled[8],
-            "pooled_onset": availability(pooled[:LAST_BLOCK + 1])["onset"],
-            "cv_mae_curve": [r["cv_mae_mean"] for r in rows],
             "block1_r2": curve[1], "block8_r2": curve[8], "onset": av["onset"], "onset_ci": ci,
             "onset_boot_draws_without_onset": n_none, "peak": av["peak"], "peak_score": av["peak_score"],
             "units_intact": units_intact("direction", df, tr, f), "fold_sizes": np.bincount(f).tolist(),
-            "curve": curve, "curve_sd": [r["cv_sd"] for r in rows], "alpha": [r["alpha"] for r in rows]}
+            "curve": curve, "alpha": [r["alpha"] for r in fits],
+            "cv_mae_pooled": [score_fn(Y[tr], o)["mae"] for o in oofs],
+            "fold_mean_diagnostic": {"curve_at_pooled_alpha": fm, "block1": fm[1], "block8": fm[8]}}
         print(f"direction/{model}/sector_grouped: block1 {curve[1]:.3f} block8 {curve[8]:.3f} onset {av['onset']} {ci}")
     sec["provenance"] = {"commit": subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True,
                                                   cwd=PROJECT_ROOT).stdout.strip(),
