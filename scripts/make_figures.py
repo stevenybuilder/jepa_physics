@@ -494,13 +494,22 @@ def fig3c(results, out, role="peak"):
     nulls = r["random_nulls"]
     fig, (a, b) = plt.subplots(1, 2, figsize=(11, 3.8))
     n = [row["n"] for row in nulls["rows"]]
-    for key, color, label in (("random_basis", COLORS["random"], "random basis, own solve"),
+    for key, color, label in (("random_basis", COLORS["random"], f"random basis of rank {nulls['rank']}, own solve"),
                               ("random_orientation", COLORS["velocity"], "learned dose, random orientation")):
         band = [row[key]["mae_to_target"] for row in nulls["rows"]]
         a.fill_between(n, [x["p05"] for x in band], [x["p95"] for x in band], color=color, alpha=0.25, lw=0)
         a.plot(n, [x["mean"] for x in band], color=color, lw=1.2, label=f"null: {label} (5–95%)")
         b.plot(n, [row[key]["empirical_p_to_target"] for row in nulls["rows"]], "o-", ms=3.5, color=color,
                label=label)
+    rm_file = results / f"p1c_direction_L{r['point']}_rankmatched.json"   # extra: rank-matched null (rank 2N)
+    if rm_file.exists():
+        rows = json.loads(rm_file.read_text())["rank_matched_null"]["rows"]
+        nr, band = [row["n"] for row in rows], [row["rank_matched"]["mae_to_target"] for row in rows]
+        a.fill_between(nr, [x["p05"] for x in band], [x["p95"] for x in band], color=COLORS["speed"], alpha=0.2, lw=0)
+        a.plot(nr, [x["mean"] for x in band], color=COLORS["speed"], lw=1.2,
+               label="null: random basis of rank 2N, own solve (5–95%)")
+        b.plot(nr, [row["rank_matched"]["empirical_p_to_target"] for row in rows], "o-", ms=3.5,
+               color=COLORS["speed"], label="random basis of rank 2N")
     a.plot(n, [row["learned"]["mae_to_target"] for row in nulls["rows"]], "o-", ms=3.5,
            color=COLORS["direction"], label="learned subspace, unit target")
     if "radius_matched" in r:
