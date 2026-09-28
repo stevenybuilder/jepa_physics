@@ -771,8 +771,9 @@ point-22 endpoint on 1 of 16 arcs (+3.7°) and on the headline arc (+3.80°), an
   every point. Our label-free knot order favours the spline at points 8 and 12 and, at point 22, gives the chord a lead
   on the interpolating spline (0.67 vs 0.75) and a tie on the smoothing one (0.758 vs 0.752); Goodfire's own angle
   puts the chord ahead everywhere. At point 22 the reversal therefore stands under every label-free ordering tried
-  so far and disappears only with the labels; none of these files carries a confidence interval, and the stored
-  point-22 intervals (`p2_isometry_linear.json`) overlap, so the point-22 call is a lead-or-tie, not a settled gap.
+  so far and disappears only with the labels; none of these files carries a confidence interval, and the stored intervals (`p2_isometry_linear.json`, clips
+  resampled within each value) are biased low for the chord (20 of 48 exclude their own point estimate), so the
+  point-22 call is a lead-or-tie until the bias-corrected paired intervals now being computed land.
 
 ### 4.5 Beyond the steered layer (GPU session 2)
 
