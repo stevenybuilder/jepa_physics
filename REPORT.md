@@ -1052,6 +1052,24 @@ point-12 arcs, and the position sheet.
   lead depending on the interval method. The point-22 reversal is undecidable
   without labels.
 
+**Energy geodesic (Goodfire Eq. 4–6), lite run**[^geo]. The paper defines the geodesic as the shortest path under
+G_E(h) = (α e^{−E(h)} + β)^{−1} I (l.1396–1411) but never computes one, and causalab has no implementation, so
+this is ours: 50 free nodes between pinned endpoints, Simpson quadrature, torch L-BFGS, two energies fit on knot clips
+only (a kNN energy with the Levina–Bickel dimension, 13.1 at point 12 and 7.3 at point 22, and a whitened top-10-PC
+KDE with cross-validated bandwidth), α, β calibrated as in Béthune et al. 2505.18230 §3.3 since the paper gives no
+values. Lite scope: 3 of 8 held-out targets, 16 carriers, ≤ 100 L-BFGS steps, and none of the 96 solves reached the
+tolerance, so all path lengths are upper bounds; endpoints are pinned to the raw chord's end state, so endpoint error
+and nearest-real R equal the chord's by construction. Result: the geodesic does not follow the ring. Its bend has an
+in-plane share of 0.08–0.13 (spline 0.13–0.35, random direction 0.03) and a cosine with the spline's bend of −0.00 to
+0.08 from the chord initialisation; it sits 1.8–2.7 from the chord and 3.1–4.1 from the spline. On the readouts it
+matches the chord (minimum readout radius 0.77 / 0.69 for the kNN / KDE geodesic at point 12 against 0.70 chord and
+0.90 spline; A.7 E_BC 1.35 / 1.18 against 1.42 and 0.86; the spline is better on both in all 3 targets, CIs excluding
+0), while it wins on what it minimises (its own length 8.2 vs 14.3 chord vs 133.6 spline under the kNN energy; excess
+distance to the nearest real clips −0.66 vs +0.25 vs +1.09). At point 22 the same holds (radius 0.70 / 0.68 vs 0.71
+and 0.88). So under a density metric fit on the knot clips the shortest path is close to the straight one, and the
+spline's ring-following is not what the energy geodesic selects; the full run (8 targets, 3 restarts, tol 1e-5) is in
+progress and will replace these numbers. Point 12 uses the label-free angle and point 22 the labels, as elsewhere.
+
 ### 4.5 Beyond the steered layer (GPU session 2)
 
 Design[^s2]: 200 test carriers × 4 targets on the held-out arc × 6 arms (probe-QR, radius-matched, interpolating
@@ -1406,10 +1424,9 @@ held-out ridge probe on the predictor's forecast and, as a check, on the encoder
 The encoder-output reader gives the same curve within 0.03 at every point. Up to point 12 the predictor reads the
 disk's direction from the disk's own tokens: swapping 9–13% of the tokens moves the forecast 88–99% of the way,
 swapping the other 87–91% moves it 1–12%. Between points 12 and 22 that reverses. At point 22 the disk tokens carry
-0.18–0.22 and the background 0.77–0.84, close to the token shares themselves (0.09–0.13 and 0.87–0.91), so by the
+0.18–0.22 and the background 0.77–0.84, about twice the disk's token share (0.09–0.13) and near the background's (0.87–0.91), so by the
 last blocks the direction code is spread across the whole frame rather than held by the object. The position-matched
-pairs rule out the disk's location as the carrier. This is the pattern the hypothesis predicts: an object-bound code
-through the emergence zone, then a delocalised code where the predictor reads it. It also says why edits at point 22
+pairs rule out the disk's location as the carrier. Read against the paper's C.1.4 hypothesis (velocity "most bound" to the object in the middle layers), the disk-token share falls monotonically from the input, 0.99 / 0.98 / 0.88 / 0.76 / 0.22 at points 0 / 8 / 12 / 16 / 22: there is no mid-network binding peak; the code is object-bound from the start and delocalises late, which agrees with the two-disk result in §5 (binding lowest in the zone) rather than with the hypothesis as stated. No untrained control was run for the patching itself. It also says why edits at point 22
 reach the forecast when a per-token object code would not: a pooled edit at 22 lands on the tokens the predictor
 actually reads. Provenance: forward on box 1 at commit 8a54162, clean tree; scored locally; 480 probe clips per reader,
 5-fold ridge, CV R² 0.91 (forecast) and 0.94 (encoder output). Limits: one object, one render, five points, pair
@@ -1423,11 +1440,11 @@ reads direction at R² 0.987 from the object pool, 0.978 from the background and
 and 4.5°), and at point 22 0.995, 0.991 and 0.992; the untrained copy's scene pool stays at 0.87–0.88 at every point.
 What separates them is the axes. A probe fit on the object pool and read on the background pool transfers with R² 0.27
 at point 8 and 0.17 at point 12 but 0.77 at point 22 (background→object 0.72, 0.44 and 0.88), and the angle between
-the object and background ring planes is 78–86° at points 8 and 12 and 53–56° at point 22. So through the emergence
+the object and background ring planes is 78–89° at points 8 and 12 and 53–56° at point 22. So through the emergence
 zone the disk tokens and the rest of the frame both decode direction but on nearly orthogonal directions of the
 residual stream, and by the late blocks they converge on one shared code, which is the token-patching result read at
 the encoder rather than at the predictor. The object pool's ring at point 8 is also rounder than the scene's (b/a
-0.97 against 0.74, saddle share 0.17 against 0.28). Every pool decodes θ + 180° on 100% of time-reversed clips from
+0.97 against 0.74, saddle share 0.17 against 0.28). Every pool decodes θ + 180° on 99–100% of time-reversed clips from
 point 1 on, so this is a motion code and not a trajectory-shape artefact. Limits: the background pool decodes
 direction at R² 0.52 already at point 0 (edge pixels below the disk-mask threshold and the 2-frame tubelet leak
 motion into "background" patches, so the background is not disk-free input); there is no untrained control for the
@@ -1638,3 +1655,4 @@ set. The held-out-arc numbers in this file use a clip bootstrap whose intervals 
 [^offt]: `results/p2_offtarget_direction_L{12,22}.json` (`arms.{spline,chord_smoothed,chord_raw,probe_qr,probe_qr_norm_matched,random_curve}.{speed,start}.{mean,ci95,ratio_to_natural_spread,ratio_ci95,signed_mean_mps}`, `natural_spread`, `readout_quality.speed_probe_on_direction_test_velocity_clips_{mae_mps,r}`, `regeneration_checks.max_rel_diff`; at point 22 `identical_within_1e-6` is false, max relative difference 1.7e-6); `scripts/run_offtarget.py` (start position = metres × 32 px/m). The file records no provenance block of its own; script uncommitted.
 [^str]: `results/p5_straightening.json` (`latent_curvature_by_point.{constvel,accel_direction_set,random_init_constvel,null_isotropic_constvel,null_covmatched_constvel}.mean`, `pixel_curvature`, `straightening_index_by_point.constvel`, `zone_test.constvel.{argmin_point,boot_argmin_counts,zone_min_minus_point25_deg}`, `reversed_minus_forward.constvel`, `geometry_links_by_point[].constvel_spearman_curv_speed`, `pixel_links.constvel_spearman_pixelcurv_speed`); `scripts/run_straightening.py` (2,000 clip bootstraps). The file records no commit; script uncommitted.
 [^ovs]: `results/p5_object_vs_scene_direction.json` (`direction.probe.{object,background,scene,random_scene}[point].{r2,mae,ci}`, `direction.transfer[point]` (row = fit pool, column = test pool; the point-8 matrix is also spelled out in `summary`), `direction.chart_plane_angles[point].object_vs_background`, `direction.geometry`, `direction.timerev[point].*.frac_decoded_closer_to_theta_plus_180`, `direction.heldout`, `binding.curves.*.zones`, `not_computable`, `provenance` (commit cbd0b38, `git_dirty_src_or_scripts: true`; activation hashes match box 1's `sha256_box.txt` for all 10 hashed files); `scripts/run_object_vs_scene.py` (`--binding`), `tests/test_object_vs_scene.py`; `figures/fig_object_vs_scene.png`. CPU only, Mac, 16:27–16:45 ET.
+[^geo]: `results/p2_geodesic_direction_L{12,22}.json` and `results/GEODESIC_NOTES.md` (path metrics per arm: min readout radius, A.7 E_BC, excess nearest-real distance, L_G under each energy, in-plane share and cosine of the bend, closest-point distances; `targets_run` is empty in the lite files and the shards live outside the repo; no git commit recorded); `scripts/run_geodesic.py` (`length`, `g_sqrt`), `tests/test_geodesic.py`. CPU on box 53235298, 16:05–16:33 ET.
