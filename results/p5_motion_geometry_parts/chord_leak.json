@@ -1,0 +1,51 @@
+{
+ "method": "Why does the raw-centroid direction chord leak into the speed readout while the joint-encoding (Fourier) edit does not?\nHypothesis: centroid imbalance. A per-value centroid averages whatever nuisance values its clips happen to have; the chord\nc(target) - c(source) then carries (nuisance imbalance) x (nuisance encoding direction). Direction set, meanpool, knot\nfolds 0-2 at kept values (the exp3 fourier setup, held-out arc 303.75-343.125). For each carrier the chord's signed\nspeed-readout change (speed-set ridge probe, transferred) is compared with the imbalance in TRUE mean speed and in the\nshare of constant-velocity clips between the clips that build the target (interpolated) and source centroids.\nWrites results/p5_motion_geometry_parts/chord_leak.json.",
+ "points": {
+  "12": {
+   "mean_abs_leak_mps": 0.42805873830191504,
+   "pearson_leak_vs_true_speed_imbalance": [
+    0.8779207599781227,
+    9.002990773552667e-258
+   ],
+   "pearson_leak_vs_velocity_share_imbalance": [
+    0.43054903035896974,
+    1.747074118385495e-37
+   ],
+   "pearson_leak_vs_accel_imbalance": [
+    -0.020125850929713612,
+    0.569513069222695
+   ],
+   "r2_leak_on_imbalances": 0.9698104053372611,
+   "coef_speed_vel_acc_const": [
+    0.7612807439813238,
+    0.24778264889365725,
+    0.28465111039547575,
+    0.019708830055569976
+   ],
+   "n_rows": 801
+  },
+  "22": {
+   "mean_abs_leak_mps": 0.48911989983808113,
+   "pearson_leak_vs_true_speed_imbalance": [
+    0.873238045427144,
+    1.132914727553364e-251
+   ],
+   "pearson_leak_vs_velocity_share_imbalance": [
+    0.4406101816767027,
+    2.2674533181368005e-39
+   ],
+   "pearson_leak_vs_accel_imbalance": [
+    -0.02814708353053904,
+    0.42630484255704315
+   ],
+   "r2_leak_on_imbalances": 0.9635531989387738,
+   "coef_speed_vel_acc_const": [
+    0.8426555367962931,
+    0.3522205375724479,
+    0.33162496421285487,
+    -0.004174753345891846
+   ],
+   "n_rows": 801
+  }
+ }
+}

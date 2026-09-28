@@ -367,11 +367,37 @@ def score(args):
         for a, pc in pcs.items():
             rows_c[a] = {m: boot_ci(v) for m, v in pc.items()}
         res["per_condition"][cond] = rows_c
-        best = min(CMP_ARMS, key=lambda a: pcs[a]["dir_err_to_target"].mean())
-        bestr = min(TWIN_ARMS, key=lambda a: pcs[a]["dir_err_to_target"].mean())
+        # comparison-arm predictor readouts exist only with --pred-compare or the (point-22-only) norm-matched cache;
+        # without them (point 12) select on the encoder-output error instead and say so
+        sel = ("dir_err_to_target" if all("dir_err_to_target" in pcs[a] for a in CMP_ARMS)
+               else "enc_out_err_to_target")
+        best = min(CMP_ARMS, key=lambda a: pcs[a][sel].mean())
+        bestr = min(TWIN_ARMS, key=lambda a: pcs[a][sel].mean())
         res["twin_minus_best_comparison"][cond] = {
-            "best_comparison_arm": best, "best_twin_arm": bestr,
+            "best_comparison_arm": best, "best_twin_arm": bestr, "selection_metric": sel,
             **{m: boot_ci(pcs[bestr][m] - pcs[best][m]) for m in pcs[best] if m in pcs[bestr]}}
+    if "pred_compare" not in z.files and nm is None:
+        # no norm-matched predictor readouts for the comparison arms at this point: report instead (a) the session-2
+        # cache's own-norm predictor readouts of the comparison arms and (b) twin (chord_norm) minus the unscaled chord
+        # forwarded here, which IS norm-matched by construction (chord_norm rescales every twin edit to ||chord||)
+        s2 = load_groups(S2 / "forward", keys={f"edit_pred_pooled_L{L}"})[f"edit_pred_pooled_L{L}"]
+        s2_arms = json.loads((S2 / "plan.json").read_text())["arms"]
+        own = {a: pred_rows(s2[:, s2_arms.index(a)]) for a in CMP_ARMS}
+        raw = pred_rows(z["pred_chord_unscaled"])
+        cn = ship[f"cmp_deltas_L{L}"].astype(np.float64)
+        nrm = np.linalg.norm(cn, axis=-1)                                               # [C, 3, T]
+        res["predictor_comparison_own_norm_session2_cache"] = {
+            "note": "comparison arms at their own (unmatched) norm, predictor readouts from the session-2 forward cache "
+                    "(edit_pred_pooled_L%d); the chord's own norm equals chord_norm, the spline's and probe-QR's do not" % L,
+            "norm_over_chord_median": {a: float(np.median(nrm[:, k] / nrm[:, CMP_ARMS.index("chord")]))
+                                       for k, a in enumerate(CMP_ARMS)},
+            "arms": {a: {m: boot_ci(v) for m, v in own[a].items()} for a in CMP_ARMS},
+            "raw_chord_forwarded_here": {m: boot_ci(v) for m, v in raw.items()}}
+        if "chord_norm" in conds:
+            ci = conds.index("chord_norm")
+            res["twin_minus_raw_chord_chord_norm"] = {
+                a: {m: boot_ci(v - raw[m]) for m, v in pred_rows(z["pred_twin"][:, ci, k]).items()}
+                for k, a in enumerate(TWIN_ARMS)}
     res["session2_propagation_unmatched_pt25"] = {
         a: {"enc_out_err_to_target": prop["readout_a"][str(L)][a]["err_to_target"][-1]["mean"],
             "nearest_real_R_pt25": prop["readout_b"][str(L)][a]["nearest_real_agreement"][-1]["mean"]}
@@ -388,7 +414,13 @@ def score(args):
         "R_act_twin_pt25": "<x_edit - x_src, x_twin - x_src> / ||x_twin - x_src||^2 at point 25",
         "comparison arms": "session-2 deltas (plan.npz) at the same norm condition; encoder readouts forwarded here; "
                            "predictor readouts " + ("forwarded here" if "pred_compare" in z.files else
-                                                    "from artifacts/session2/norm_matched/pred_pooled.npz")}
+                                                    "from artifacts/session2/norm_matched/pred_pooled.npz"
+                                                    if nm is not None else
+                                                    "not available at matched norm at this point (forward run "
+                                                    "without --pred-compare; norm-matched cache is point 22 only): "
+                                                    "per_condition comparison arms carry encoder readouts only; see "
+                                                    "predictor_comparison_own_norm_session2_cache and "
+                                                    "twin_minus_raw_chord_chord_norm")}
     write(RES / f"session2_twin_difference_L{L}.json", res, stage="twin_difference_score", seeds={"fit": 0, "bootstrap": 0},
           cache=str(fdir / "fwd.npz"))
     for cond in conds:

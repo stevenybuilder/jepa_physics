@@ -1,3 +1,4 @@
+**Convergence: 1 of 42 batched L-BFGS solves converged (7 per target x 3 targets x 2 points, 16 paths each); the other 41 hit the 100-step cap, so every L_G is an upper bound and "geodesic" means "100-step Eq. 4 descent".**
 # True G_E geodesic vs spline vs raw chord (direction, points 12 and 22), LITE run
 
 **Answer (3 held-out targets x 16 carriers, per layer):** the Eq. 6 geodesic does **not** follow the direction ring, and it does **not** beat the spline on the readouts. It does beat both on the quantities it minimises: its Eq. 4 length and its distance to real clips. Its readouts sit at the chord's level.
@@ -9,7 +10,7 @@
 - **Discretisation.** 50 free nodes between fixed endpoints, Simpson quadrature on each segment, torch L-BFGS (strong Wolfe) from session2_pullback_goodfire.optimise. The path is resampled to 50 waypoints uniform in arc length and read with run_part2.evaluate.
 - **Deviations (lite, for the 17:10 deadline).**
   - Only targets 303.75, 326.25 and 343.125 (of the 8), 16 carriers each, with no random-restart null.
-  - L-BFGS was run for ≤100 outer steps with max_iter 5 and tol 1e-5. **Every solve stopped at the step cap, so none converged.** Treat the L_G values as upper bounds.
+  - L-BFGS was run for ≤100 outer steps with max_iter 5 and tol 1e-5. **41 of 42 solves stopped at the step cap (only the point-12 spline-end kNN solve at 326.25 converged).** Treat the L_G values as upper bounds.
   - Endpoints are pinned to the raw chord's end state, so endpoint error and nearest-real R equal the chord's by construction ("pinned"). `geo_knn_spline_end` is pinned to the spline's end state instead.
 - **Parity (G = I, started from the spline).** It reaches L = 1.005× the chord at point 22 and 1.025× at point 12. Its mean closest-point distance to the chord is 0.24 and 0.33, against 3.9 and 4.6 for the spline. That is close to the chord but not exact at 100 steps.
 - **Path metrics, point 12** (chord / spline / kNN geodesic from the chord / KDE geodesic from the chord):
@@ -41,7 +42,13 @@
   - Under G_E, the spline is 1.4-9.4× *longer* than the chord, so the density metric does not prefer the ring route.
 - **Multimodality.** The initialisations disagree: L_G differs by more than 1% in 25-69% of kNN paths and 50-100% of KDE paths, and the two geodesics lie 0.8-2.2 apart. Because no solve converged, this does not separate a multimodal landscape from an unfinished optimisation.
 - **Refit on all values.** It barely changes the route: the geodesic lies 0.73 (point 12) and 0.87 (point 22) from the train-only geodesic, with ring-plane share 0.07-0.08.
+- **Angle plane differs by point** (as in the other Part 2 runs): the ring angle is label-free at point 12 (unsupervised angle, centroid plane) and falls back to labels at point 22. The ring plane used for the in-plane share is the top-2 axes of the kept centroids at both points.
 - **Files.**
   - results/p2_geodesic_direction_L{12,22}.json: merged from per-target shards; shard sha256 values are in the provenance block.
   - figures/fig_geodesic_direction_L{12,22}.png: one carrier, target 303.75.
   - scripts/run_geodesic.py and tests/test_geodesic.py.
+- **FULL run (landed 17:34 ET): results/p2_geodesic_direction_L{12,22}_full.json + figures/fig_geodesic_direction_L{12,22}_full.png.** All 8 targets x 48 carriers + restart null (3 x 8 clips/target); same optimiser; **0 of 112 batched solves converged** (all at the 100-step cap).
+  - L12 chord / spline / kNN geo / KDE geo: min radius .63 / .88 / .71 / .62; E_BC 1.52 / 0.88 / 1.28 / 1.31; excess to real +0.33 / +1.23 / −0.62 / +0.07. kNN geo − chord radius +0.08 (all 8 target CIs > 0); geo − spline radius −0.17 (all CIs < 0).
+  - L22: min radius .63 / .85 / .65 / .63; E_BC 3.80 / 3.84 / 4.01 / 3.91; excess +0.64 / +0.75 / −0.20 / +0.38. Geo ties the chord on radius and loses to the spline.
+  - Ring: in-plane bend share 0.08-0.12 (spline 0.15-0.41); bend cosine with spline 0.03-0.08 from chord init. Restarts land 0.6-2.1 from the chord-init geodesic, and 27-67% reach L_G >1% lower, so the chord-init result is not the global minimum. Multimodal or unconverged: still not separable.
+  - Parity vs rawchord file: chord arm reproduces it exactly at both points (L12 radius .629, E_BC 1.520, err 4.71; L22 .631, 3.798, 3.64). The L22 spline also matches. **The L12 spline does NOT match** (endpoint error 14.9 vs 9.7 deg, R 0.000 vs 0.196, with the gap growing along the arc). The code path is identical (aim=coord). Suspected cause, unproven: box scipy 1.15.3 vs Mac 1.17.1 periodic FITPACK `splrep` on the uneven label-free knots. Treat the L12 spline-referenced numbers as provisional.

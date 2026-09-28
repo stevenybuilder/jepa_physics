@@ -64,6 +64,7 @@ def main():
     ap.add_argument("--act-root", default=str(PROJECT_ROOT / "artifacts" / "activations"))
     ap.add_argument("--layers", type=int, nargs="+", default=[1, 4, 8, 12, 19, 22])
     ap.add_argument("--jobs", type=int, default=8)
+    ap.add_argument("--steer-layers", type=int, nargs="+", default=[12, 22])
     ap.add_argument("--out", default=str(PROJECT_ROOT / "results" / "p5_time_manifold_controls.json"))
     args = ap.parse_args()
     t0 = time.time()
@@ -81,8 +82,11 @@ def main():
     jobs = [(e, sec, l, delayed(job)(fn, p, l)) for e, p in encs.items()
             for sec, fn in (("clock", tmr.clock_layer), ("decode", tmr.decode_layer), ("geometry", tmr.geometry_layer))
             for l in args.layers]
+    def steer_job(path, l):
+        return tmr.steer_layer(path, l)
+    jobs += [(e, "steer", l, delayed(steer_job)(p, l)) for e, p in encs.items() for l in args.steer_layers]
     outs = Parallel(n_jobs=args.jobs, verbose=5)(j[3] for j in jobs)
-    res = {e: {"clock": {}, "decode": {}, "geometry": {}} for e in encs}
+    res = {e: {"clock": {}, "decode": {}, "geometry": {}, "steer": {}} for e in encs}
     for (e, sec, l, _), (_, o) in zip(jobs, outs):
         res[e][sec][str(l)] = o
     res["subset"] = {"n_clips_with_random_features": None if SUBSET is None else int(len(SUBSET)),

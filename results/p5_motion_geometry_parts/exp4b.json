@@ -1,0 +1,1694 @@
+{
+ "registration": {
+  "registered_at": "2026-09-28T17:10-04:00, before any exp4 number was computed",
+  "candidates": [
+   "polar",
+   "log_polar",
+   "cartesian",
+   "fourier_polar",
+   "fourier_logpolar",
+   "fourier2_polar"
+  ],
+  "skipped": {
+   "intrinsic_sheet_spline": "needs a nonparametric 2-D chart of the sheet; the velocity-sheet engineer owns that fit (p5_velocity_sheet.json), not re-implemented here"
+  },
+  "points": [
+   1,
+   4,
+   8,
+   12,
+   16,
+   19,
+   22
+  ],
+  "primary_selection_metric": "transfer encoding R2: the linear-in-C encoding map X ~ a + phi_C A fit on all speed-set train clips predicts the direction-set constant-velocity clips' (16 dir bin x speed) cell centroids (speeds 1-4 m/s, the overlap; never fit on), each set centred on its own mean; higher is better",
+  "test": "per point, winner vs each other candidate: paired bootstrap over direction-set clips (300 draws), one-sided p = share of draws with winner <= other; Holm over all 5 x 7 = 35 comparisons",
+  "secondary_reported_not_selected": [
+   "within-set decode-through-C error (theta MAE, v MAE, 5-fold grouped CV)",
+   "within-set encoding R2 on held-out cell centroids",
+   "straight-in-C steering endpoint error and nearest-real R to held-out cells",
+   "decode transfer speed set -> direction set and back"
+  ]
+ },
+ "points": {
+  "16": {
+   "per_coordinate": {
+    "polar": {
+     "decode_cv": {
+      "theta_mae_deg": 27.444046228521636,
+      "v_mae_mps": 0.07705237976479189,
+      "coord_r2_mean": 0.916300334984709
+     },
+     "decode_transfer": {
+      "speed_to_dir": {
+       "theta_mae_deg": 25.25667075523912,
+       "v_mae_mps": 0.09504480636704159
+      },
+      "dir_to_speed": {
+       "theta_mae_deg": 36.07460380011788,
+       "v_mae_mps": 0.1121488118300959
+      }
+     },
+     "encoding_r2_within_heldout_cells": 0.3878324831008596,
+     "encoding_r2_transfer_to_dirset": 0.33605800034536115,
+     "encoding_r2_transfer_ci95": [
+      0.26599233342472295,
+      0.32233337956131775
+     ],
+     "steer_straight_in_C": {
+      "theta_err_deg": {
+       "mean": 81.59643342808836,
+       "ci95": [
+        77.3202673492192,
+        86.00410251595852
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "v_err_mps": {
+       "mean": 0.1127385212178789,
+       "ci95": [
+        0.10270527983644007,
+        0.12262357480839609
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "nearest_real_R": {
+       "mean": 0.0889038322892435,
+       "ci95": [
+        0.07295764336972475,
+        0.10686951821506398
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "edit_norm": 5.963204287738326
+     }
+    },
+    "log_polar": {
+     "decode_cv": {
+      "theta_mae_deg": 27.444046228521636,
+      "v_mae_mps": 0.0801804829915492,
+      "coord_r2_mean": 0.9165149149423424
+     },
+     "decode_transfer": {
+      "speed_to_dir": {
+       "theta_mae_deg": 25.25667075523912,
+       "v_mae_mps": 0.0973165322786771
+      },
+      "dir_to_speed": {
+       "theta_mae_deg": 36.07460380011788,
+       "v_mae_mps": 0.10639992541636516
+      }
+     },
+     "encoding_r2_within_heldout_cells": 0.4097310904740954,
+     "encoding_r2_transfer_to_dirset": 0.3363471824580684,
+     "encoding_r2_transfer_ci95": [
+      0.2684858439030858,
+      0.31995320870400634
+     ],
+     "steer_straight_in_C": {
+      "theta_err_deg": {
+       "mean": 81.98945819578272,
+       "ci95": [
+        77.7152461170315,
+        86.37982527296039
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "v_err_mps": {
+       "mean": 0.41621344447526065,
+       "ci95": [
+        0.37567577929520357,
+        0.4570665954382672
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "nearest_real_R": {
+       "mean": 0.09452078690449835,
+       "ci95": [
+        0.0782482162224216,
+        0.11241428734801658
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "edit_norm": 5.80079191645539
+     }
+    },
+    "cartesian": {
+     "decode_cv": {
+      "theta_mae_deg": 7.114008936656372,
+      "v_mae_mps": 0.18033324469771425,
+      "coord_r2_mean": 0.9843608288055089
+     },
+     "decode_transfer": {
+      "speed_to_dir": {
+       "theta_mae_deg": 4.687634172967195,
+       "v_mae_mps": 0.22780518890445803
+      },
+      "dir_to_speed": {
+       "theta_mae_deg": 6.40180718132802,
+       "v_mae_mps": 0.2816244930066875
+      }
+     },
+     "encoding_r2_within_heldout_cells": 0.2573983778210802,
+     "encoding_r2_transfer_to_dirset": 0.303456825707494,
+     "encoding_r2_transfer_ci95": [
+      0.2512322865837598,
+      0.2846233841002364
+     ],
+     "steer_straight_in_C": {
+      "theta_err_deg": {
+       "mean": 24.63149102691716,
+       "ci95": [
+        21.74998618032139,
+        27.885978227352552
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "v_err_mps": {
+       "mean": 1.041120632565758,
+       "ci95": [
+        0.9782580115291554,
+        1.104115860793657
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "nearest_real_R": {
+       "mean": 0.1191826445450456,
+       "ci95": [
+        0.10304690845169648,
+        0.13619294991774641
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "edit_norm": 4.078008121853452
+     }
+    },
+    "fourier_polar": {
+     "decode_cv": {
+      "theta_mae_deg": 3.4210794448791835,
+      "v_mae_mps": 0.07719034531727786,
+      "coord_r2_mean": 0.9877954930841963
+     },
+     "decode_transfer": {
+      "speed_to_dir": {
+       "theta_mae_deg": 3.246232373598822,
+       "v_mae_mps": 0.0935908449661865
+      },
+      "dir_to_speed": {
+       "theta_mae_deg": 3.1838171451404675,
+       "v_mae_mps": 0.11214881183009592
+      }
+     },
+     "encoding_r2_within_heldout_cells": 0.5530147763564519,
+     "encoding_r2_transfer_to_dirset": 0.5324463930368104,
+     "encoding_r2_transfer_ci95": [
+      0.44101672330142466,
+      0.495311782653936
+     ],
+     "steer_straight_in_C": {
+      "theta_err_deg": {
+       "mean": 4.65271856071857,
+       "ci95": [
+        4.169801449450654,
+        5.2089370092267275
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "v_err_mps": {
+       "mean": 0.11218288774591648,
+       "ci95": [
+        0.10233188622588356,
+        0.12197088631494715
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "nearest_real_R": {
+       "mean": 0.20825530035663858,
+       "ci95": [
+        0.19284794826232043,
+        0.2234921487535988
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "edit_norm": 6.1189909274550125
+     }
+    },
+    "fourier_logpolar": {
+     "decode_cv": {
+      "theta_mae_deg": 3.4210794448791835,
+      "v_mae_mps": 0.0828864206208183,
+      "coord_r2_mean": 0.9879652417396212
+     },
+     "decode_transfer": {
+      "speed_to_dir": {
+       "theta_mae_deg": 3.246232373598822,
+       "v_mae_mps": 0.10252549641478008
+      },
+      "dir_to_speed": {
+       "theta_mae_deg": 3.1838171451404675,
+       "v_mae_mps": 0.10639992541636516
+      }
+     },
+     "encoding_r2_within_heldout_cells": 0.5750968625200374,
+     "encoding_r2_transfer_to_dirset": 0.5321962631932059,
+     "encoding_r2_transfer_ci95": [
+      0.44129582040337717,
+      0.4915802727411268
+     ],
+     "steer_straight_in_C": {
+      "theta_err_deg": {
+       "mean": 4.650939289728999,
+       "ci95": [
+        4.1738887481904055,
+        5.197185852615951
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "v_err_mps": {
+       "mean": 0.41279268446528955,
+       "ci95": [
+        0.372931272093158,
+        0.45348058221346055
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "nearest_real_R": {
+       "mean": 0.21889549358110932,
+       "ci95": [
+        0.20462910677924,
+        0.23320991827338455
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "edit_norm": 5.951281152860756
+     }
+    },
+    "fourier2_polar": {
+     "decode_cv": {
+      "theta_mae_deg": 3.4210794448791835,
+      "v_mae_mps": 0.07719034531727786,
+      "coord_r2_mean": 0.9578369404083592
+     },
+     "decode_transfer": {
+      "speed_to_dir": {
+       "theta_mae_deg": 3.246232373598822,
+       "v_mae_mps": 0.0935908449661865
+      },
+      "dir_to_speed": {
+       "theta_mae_deg": 3.1838171451404675,
+       "v_mae_mps": 0.11214881183009592
+      }
+     },
+     "encoding_r2_within_heldout_cells": 0.6911846339633103,
+     "encoding_r2_transfer_to_dirset": 0.7236172582857079,
+     "encoding_r2_transfer_ci95": [
+      0.6109987182376431,
+      0.6677683492704598
+     ],
+     "steer_straight_in_C": {
+      "theta_err_deg": {
+       "mean": 4.6084743971078534,
+       "ci95": [
+        4.106044864426672,
+        5.14553577935005
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "v_err_mps": {
+       "mean": 0.11481949854069827,
+       "ci95": [
+        0.10480936103792951,
+        0.1262194994310009
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "nearest_real_R": {
+       "mean": 0.25038512121425094,
+       "ci95": [
+        0.2355535957947958,
+        0.2646349723162811
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "edit_norm": 6.879237627018819
+     }
+    }
+   },
+   "winner": "fourier2_polar",
+   "vs_winner": {
+    "polar": {
+     "diff": 0.38755925794034674,
+     "diff_ci95": [
+      0.3248740534593865,
+      0.36384114512387605
+     ],
+     "p_one_sided": 0.0
+    },
+    "log_polar": {
+     "diff": 0.3872700758276395,
+     "diff_ci95": [
+      0.3249922037609242,
+      0.3623098685770714
+     ],
+     "p_one_sided": 0.0
+    },
+    "cartesian": {
+     "diff": 0.4201604325782139,
+     "diff_ci95": [
+      0.3488096223990028,
+      0.39817041878448545
+     ],
+     "p_one_sided": 0.0
+    },
+    "fourier_polar": {
+     "diff": 0.19117086524889748,
+     "diff_ci95": [
+      0.15907639513869531,
+      0.18276917559007821
+     ],
+     "p_one_sided": 0.0
+    },
+    "fourier_logpolar": {
+     "diff": 0.191420995092502,
+     "diff_ci95": [
+      0.1598911658294381,
+      0.18226753846557184
+     ],
+     "p_one_sided": 0.0
+    }
+   }
+  },
+  "19": {
+   "per_coordinate": {
+    "polar": {
+     "decode_cv": {
+      "theta_mae_deg": 27.72550578855574,
+      "v_mae_mps": 0.06651391847692603,
+      "coord_r2_mean": 0.922555743404759
+     },
+     "decode_transfer": {
+      "speed_to_dir": {
+       "theta_mae_deg": 24.312201646140707,
+       "v_mae_mps": 0.08314851075640409
+      },
+      "dir_to_speed": {
+       "theta_mae_deg": 32.64765134009537,
+       "v_mae_mps": 0.09975992082812252
+      }
+     },
+     "encoding_r2_within_heldout_cells": 0.4154455840725563,
+     "encoding_r2_transfer_to_dirset": 0.3727562827109139,
+     "encoding_r2_transfer_ci95": [
+      0.31224883133145515,
+      0.3601286211794831
+     ],
+     "steer_straight_in_C": {
+      "theta_err_deg": {
+       "mean": 82.39122252671095,
+       "ci95": [
+        78.28901357023825,
+        86.70009145128097
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "v_err_mps": {
+       "mean": 0.07351965037756783,
+       "ci95": [
+        0.06680776757824954,
+        0.08021104534352859
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "nearest_real_R": {
+       "mean": 0.10568169719446593,
+       "ci95": [
+        0.08793325072149964,
+        0.1257300786083615
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "edit_norm": 7.924443989637109
+     }
+    },
+    "log_polar": {
+     "decode_cv": {
+      "theta_mae_deg": 27.72550578855574,
+      "v_mae_mps": 0.0743930710652845,
+      "coord_r2_mean": 0.9219309289341189
+     },
+     "decode_transfer": {
+      "speed_to_dir": {
+       "theta_mae_deg": 24.312201646140707,
+       "v_mae_mps": 0.09671950629440704
+      },
+      "dir_to_speed": {
+       "theta_mae_deg": 32.64765134009537,
+       "v_mae_mps": 0.09593744895415279
+      }
+     },
+     "encoding_r2_within_heldout_cells": 0.4372234130561601,
+     "encoding_r2_transfer_to_dirset": 0.37904364586965034,
+     "encoding_r2_transfer_ci95": [
+      0.3171527960501727,
+      0.36532375395447614
+     ],
+     "steer_straight_in_C": {
+      "theta_err_deg": {
+       "mean": 82.7566597322071,
+       "ci95": [
+        78.62139597165792,
+        87.05945768045801
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "v_err_mps": {
+       "mean": 0.40811472543282185,
+       "ci95": [
+        0.3688595729641781,
+        0.44949117755391316
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "nearest_real_R": {
+       "mean": 0.12078854033715565,
+       "ci95": [
+        0.1027529471825228,
+        0.14075128194215897
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "edit_norm": 7.69152400778216
+     }
+    },
+    "cartesian": {
+     "decode_cv": {
+      "theta_mae_deg": 6.096828091410745,
+      "v_mae_mps": 0.15407591036442575,
+      "coord_r2_mean": 0.9884137569661116
+     },
+     "decode_transfer": {
+      "speed_to_dir": {
+       "theta_mae_deg": 4.4605050269918936,
+       "v_mae_mps": 0.22786758139337074
+      },
+      "dir_to_speed": {
+       "theta_mae_deg": 5.57787531121102,
+       "v_mae_mps": 0.23801598693859263
+      }
+     },
+     "encoding_r2_within_heldout_cells": 0.3673428814632649,
+     "encoding_r2_transfer_to_dirset": 0.405951290601833,
+     "encoding_r2_transfer_ci95": [
+      0.34633238860191934,
+      0.38099897967173596
+     ],
+     "steer_straight_in_C": {
+      "theta_err_deg": {
+       "mean": 25.481892431413147,
+       "ci95": [
+        22.372759553669574,
+        28.899615698004613
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "v_err_mps": {
+       "mean": 1.0472270972962965,
+       "ci95": [
+        0.9856520488093964,
+        1.1123103627066089
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "nearest_real_R": {
+       "mean": 0.1847500179586649,
+       "ci95": [
+        0.16480854195060715,
+        0.20679754156166102
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "edit_norm": 5.896286284185245
+     }
+    },
+    "fourier_polar": {
+     "decode_cv": {
+      "theta_mae_deg": 3.458304074715153,
+      "v_mae_mps": 0.06651391847692603,
+      "coord_r2_mean": 0.9875933172405277
+     },
+     "decode_transfer": {
+      "speed_to_dir": {
+       "theta_mae_deg": 3.0757068845070274,
+       "v_mae_mps": 0.08314851075640409
+      },
+      "dir_to_speed": {
+       "theta_mae_deg": 3.338575997094323,
+       "v_mae_mps": 0.09975992082812254
+      }
+     },
+     "encoding_r2_within_heldout_cells": 0.640402938274033,
+     "encoding_r2_transfer_to_dirset": 0.6284838558809245,
+     "encoding_r2_transfer_ci95": [
+      0.5426116957309488,
+      0.5861888825065154
+     ],
+     "steer_straight_in_C": {
+      "theta_err_deg": {
+       "mean": 4.368285571381979,
+       "ci95": [
+        3.9008190810650563,
+        4.828805737936391
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "v_err_mps": {
+       "mean": 0.07511357287015136,
+       "ci95": [
+        0.06772078881615896,
+        0.08225643678631661
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "nearest_real_R": {
+       "mean": 0.28521887037526955,
+       "ci95": [
+        0.2671443014045499,
+        0.3032369529672816
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "edit_norm": 8.313281429916225
+     }
+    },
+    "fourier_logpolar": {
+     "decode_cv": {
+      "theta_mae_deg": 3.458304074715153,
+      "v_mae_mps": 0.0743930710652845,
+      "coord_r2_mean": 0.9871767742601009
+     },
+     "decode_transfer": {
+      "speed_to_dir": {
+       "theta_mae_deg": 3.0757068845070274,
+       "v_mae_mps": 0.09671950629440704
+      },
+      "dir_to_speed": {
+       "theta_mae_deg": 3.338575997094323,
+       "v_mae_mps": 0.09593744895415279
+      }
+     },
+     "encoding_r2_within_heldout_cells": 0.662355006332694,
+     "encoding_r2_transfer_to_dirset": 0.6339953538501781,
+     "encoding_r2_transfer_ci95": [
+      0.5484477132390427,
+      0.5895556203940119
+     ],
+     "steer_straight_in_C": {
+      "theta_err_deg": {
+       "mean": 4.28550905029512,
+       "ci95": [
+        3.837153296844967,
+        4.7459697877175575
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "v_err_mps": {
+       "mean": 0.4108278204416919,
+       "ci95": [
+        0.3716978370172943,
+        0.4525295637594758
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "nearest_real_R": {
+       "mean": 0.3000275382076189,
+       "ci95": [
+        0.28244571286608633,
+        0.3178717294628953
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "edit_norm": 8.14980343080664
+     }
+    },
+    "fourier2_polar": {
+     "decode_cv": {
+      "theta_mae_deg": 3.458304074715153,
+      "v_mae_mps": 0.06651391847692603,
+      "coord_r2_mean": 0.9553950913499236
+     },
+     "decode_transfer": {
+      "speed_to_dir": {
+       "theta_mae_deg": 3.0757068845070274,
+       "v_mae_mps": 0.08314851075640409
+      },
+      "dir_to_speed": {
+       "theta_mae_deg": 3.3385759970943227,
+       "v_mae_mps": 0.09975992082812254
+      }
+     },
+     "encoding_r2_within_heldout_cells": 0.7587483489306531,
+     "encoding_r2_transfer_to_dirset": 0.778393259744645,
+     "encoding_r2_transfer_ci95": [
+      0.6817456872207585,
+      0.722918779320181
+     ],
+     "steer_straight_in_C": {
+      "theta_err_deg": {
+       "mean": 4.307809521279122,
+       "ci95": [
+        3.8502555185280403,
+        4.781017264995987
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "v_err_mps": {
+       "mean": 0.0744368738765556,
+       "ci95": [
+        0.06743544976712183,
+        0.08128425965875509
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "nearest_real_R": {
+       "mean": 0.32987019331360873,
+       "ci95": [
+        0.3131834312523048,
+        0.3455409805326154
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "edit_norm": 9.21409891825635
+     }
+    }
+   },
+   "winner": "fourier2_polar",
+   "vs_winner": {
+    "polar": {
+     "diff": 0.40563697703373114,
+     "diff_ci95": [
+      0.34243375334401865,
+      0.38195991817461
+     ],
+     "p_one_sided": 0.0
+    },
+    "log_polar": {
+     "diff": 0.3993496138749947,
+     "diff_ci95": [
+      0.3363336501865088,
+      0.3794704469623734
+     ],
+     "p_one_sided": 0.0
+    },
+    "cartesian": {
+     "diff": 0.372441969142812,
+     "diff_ci95": [
+      0.3203813317590422,
+      0.35558604432952434
+     ],
+     "p_one_sided": 0.0
+    },
+    "fourier_polar": {
+     "diff": 0.14990940386372054,
+     "diff_ci95": [
+      0.1266933070780107,
+      0.14569606731641935
+     ],
+     "p_one_sided": 0.0
+    },
+    "fourier_logpolar": {
+     "diff": 0.14439790589446688,
+     "diff_ci95": [
+      0.12202001970779495,
+      0.14044791178994517
+     ],
+     "p_one_sided": 0.0
+    }
+   }
+  },
+  "22": {
+   "per_coordinate": {
+    "polar": {
+     "decode_cv": {
+      "theta_mae_deg": 24.8557489551003,
+      "v_mae_mps": 0.07131455029621118,
+      "coord_r2_mean": 0.9299185938356647
+     },
+     "decode_transfer": {
+      "speed_to_dir": {
+       "theta_mae_deg": 23.168196614716567,
+       "v_mae_mps": 0.09506769525056238
+      },
+      "dir_to_speed": {
+       "theta_mae_deg": 31.919850801232815,
+       "v_mae_mps": 0.10819722493584387
+      }
+     },
+     "encoding_r2_within_heldout_cells": 0.3389968191415861,
+     "encoding_r2_transfer_to_dirset": 0.30162063263356576,
+     "encoding_r2_transfer_ci95": [
+      0.23306387374261459,
+      0.2958442244504748
+     ],
+     "steer_straight_in_C": {
+      "theta_err_deg": {
+       "mean": 82.505570421637,
+       "ci95": [
+        78.20080717724059,
+        86.9955376054819
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "v_err_mps": {
+       "mean": 0.08020545030227716,
+       "ci95": [
+        0.07239453408899121,
+        0.08725223595232863
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "nearest_real_R": {
+       "mean": 0.07439293777853641,
+       "ci95": [
+        0.05600555152764817,
+        0.09437054120741109
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "edit_norm": 11.024033757900705
+     }
+    },
+    "log_polar": {
+     "decode_cv": {
+      "theta_mae_deg": 24.8557489551003,
+      "v_mae_mps": 0.07753391254294979,
+      "coord_r2_mean": 0.9294120773290829
+     },
+     "decode_transfer": {
+      "speed_to_dir": {
+       "theta_mae_deg": 23.168196614716567,
+       "v_mae_mps": 0.1098660476520297
+      },
+      "dir_to_speed": {
+       "theta_mae_deg": 31.919850801232815,
+       "v_mae_mps": 0.10291867299924702
+      }
+     },
+     "encoding_r2_within_heldout_cells": 0.3594109854978984,
+     "encoding_r2_transfer_to_dirset": 0.311965606185705,
+     "encoding_r2_transfer_ci95": [
+      0.2413929308337036,
+      0.3034659721501645
+     ],
+     "steer_straight_in_C": {
+      "theta_err_deg": {
+       "mean": 82.90569087679344,
+       "ci95": [
+        78.56862720441583,
+        87.41029568248692
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "v_err_mps": {
+       "mean": 0.4016956118050733,
+       "ci95": [
+        0.36241402709866427,
+        0.4443347334522015
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "nearest_real_R": {
+       "mean": 0.08380907542436274,
+       "ci95": [
+        0.06488781137068042,
+        0.103970522031282
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "edit_norm": 10.824169914027458
+     }
+    },
+    "cartesian": {
+     "decode_cv": {
+      "theta_mae_deg": 5.787412743519718,
+      "v_mae_mps": 0.14653837055724206,
+      "coord_r2_mean": 0.9901124461017228
+     },
+     "decode_transfer": {
+      "speed_to_dir": {
+       "theta_mae_deg": 4.59010080123144,
+       "v_mae_mps": 0.23070384595901922
+      },
+      "dir_to_speed": {
+       "theta_mae_deg": 4.5024727681182535,
+       "v_mae_mps": 0.22121939982073985
+      }
+     },
+     "encoding_r2_within_heldout_cells": 0.39505814911277337,
+     "encoding_r2_transfer_to_dirset": 0.42790703653694584,
+     "encoding_r2_transfer_ci95": [
+      0.33451926241712004,
+      0.3909170318204389
+     ],
+     "steer_straight_in_C": {
+      "theta_err_deg": {
+       "mean": 24.525984503223814,
+       "ci95": [
+        21.670585969260188,
+        27.708616057497817
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "v_err_mps": {
+       "mean": 1.0470704546067076,
+       "ci95": [
+        0.9860203150086808,
+        1.1125274898799928
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "nearest_real_R": {
+       "mean": 0.18337015762185635,
+       "ci95": [
+        0.16294030467674858,
+        0.20562358532684988
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "edit_norm": 8.995639166258135
+     }
+    },
+    "fourier_polar": {
+     "decode_cv": {
+      "theta_mae_deg": 3.550733017517737,
+      "v_mae_mps": 0.07253650265941237,
+      "coord_r2_mean": 0.9872646239080008
+     },
+     "decode_transfer": {
+      "speed_to_dir": {
+       "theta_mae_deg": 3.4978149150579676,
+       "v_mae_mps": 0.09528110743741589
+      },
+      "dir_to_speed": {
+       "theta_mae_deg": 2.967531501029458,
+       "v_mae_mps": 0.10819722493584381
+      }
+     },
+     "encoding_r2_within_heldout_cells": 0.590811581096748,
+     "encoding_r2_transfer_to_dirset": 0.5820107148802732,
+     "encoding_r2_transfer_ci95": [
+      0.46265640799228963,
+      0.5256866584622462
+     ],
+     "steer_straight_in_C": {
+      "theta_err_deg": {
+       "mean": 4.098582893882776,
+       "ci95": [
+        3.58948423581857,
+        4.6081884002781
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "v_err_mps": {
+       "mean": 0.08060071699066898,
+       "ci95": [
+        0.0727104732443634,
+        0.08783289793646737
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "nearest_real_R": {
+       "mean": 0.2542146602307602,
+       "ci95": [
+        0.23400651206887788,
+        0.2734313554151922
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "edit_norm": 11.912737937177411
+     }
+    },
+    "fourier_logpolar": {
+     "decode_cv": {
+      "theta_mae_deg": 3.598360570548326,
+      "v_mae_mps": 0.08067389416540638,
+      "coord_r2_mean": 0.9867466515260773
+     },
+     "decode_transfer": {
+      "speed_to_dir": {
+       "theta_mae_deg": 3.4978149150579676,
+       "v_mae_mps": 0.11533941308699312
+      },
+      "dir_to_speed": {
+       "theta_mae_deg": 2.967531501029458,
+       "v_mae_mps": 0.10291867299924706
+      }
+     },
+     "encoding_r2_within_heldout_cells": 0.6114181378050751,
+     "encoding_r2_transfer_to_dirset": 0.5918894269165444,
+     "encoding_r2_transfer_ci95": [
+      0.4712799441863097,
+      0.5337563311012801
+     ],
+     "steer_straight_in_C": {
+      "theta_err_deg": {
+       "mean": 4.124243715747372,
+       "ci95": [
+        3.610217485834818,
+        4.629044216453934
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "v_err_mps": {
+       "mean": 0.39624961687732185,
+       "ci95": [
+        0.35699184186076305,
+        0.43861443221064733
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "nearest_real_R": {
+       "mean": 0.2660631027702964,
+       "ci95": [
+        0.24681677125628756,
+        0.28525934972183536
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "edit_norm": 11.768912185600133
+     }
+    },
+    "fourier2_polar": {
+     "decode_cv": {
+      "theta_mae_deg": 3.504845373474566,
+      "v_mae_mps": 0.07186431024626103,
+      "coord_r2_mean": 0.9559359547741415
+     },
+     "decode_transfer": {
+      "speed_to_dir": {
+       "theta_mae_deg": 3.2673730424950187,
+       "v_mae_mps": 0.09506769525056238
+      },
+      "dir_to_speed": {
+       "theta_mae_deg": 2.967531501029457,
+       "v_mae_mps": 0.10819722493584381
+      }
+     },
+     "encoding_r2_within_heldout_cells": 0.7205542610137095,
+     "encoding_r2_transfer_to_dirset": 0.7196167402232514,
+     "encoding_r2_transfer_ci95": [
+      0.5788681773463311,
+      0.6466255470128515
+     ],
+     "steer_straight_in_C": {
+      "theta_err_deg": {
+       "mean": 4.480537444745251,
+       "ci95": [
+        3.948569251589578,
+        5.01670357594806
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "v_err_mps": {
+       "mean": 0.0811195890686697,
+       "ci95": [
+        0.073143275465829,
+        0.08826904036693957
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "nearest_real_R": {
+       "mean": 0.2934941750208707,
+       "ci95": [
+        0.2751739137241263,
+        0.3119442418421006
+       ],
+       "n": 480,
+       "n_clips": 240,
+       "p_two_sided_vs_0": 0.0
+      },
+      "edit_norm": 13.340550609554542
+     }
+    }
+   },
+   "winner": "fourier2_polar",
+   "vs_winner": {
+    "polar": {
+     "diff": 0.41799610758968564,
+     "diff_ci95": [
+      0.31559488353860815,
+      0.3808583672102161
+     ],
+     "p_one_sided": 0.0
+    },
+    "log_polar": {
+     "diff": 0.4076511340375464,
+     "diff_ci95": [
+      0.3068034641184831,
+      0.3728768420916649
+     ],
+     "p_one_sided": 0.0
+    },
+    "cartesian": {
+     "diff": 0.29170970368630555,
+     "diff_ci95": [
+      0.2287393012398827,
+      0.26964688035518963
+     ],
+     "p_one_sided": 0.0
+    },
+    "fourier_polar": {
+     "diff": 0.13760602534297817,
+     "diff_ci95": [
+      0.10630363413815916,
+      0.12900366921533038
+     ],
+     "p_one_sided": 0.0
+    },
+    "fourier_logpolar": {
+     "diff": 0.12772731330670695,
+     "diff_ci95": [
+      0.09828578102607975,
+      0.12192787012012675
+     ],
+     "p_one_sided": 0.0
+    }
+   }
+  }
+ },
+ "random_init": {
+  "16": {
+   "polar": {
+    "encoding_r2_transfer_to_dirset": 0.16133224709992444,
+    "encoding_r2_within_heldout_cells": 0.08850137100599398,
+    "decode_cv": {
+     "theta_mae_deg": 47.726266054355506,
+     "v_mae_mps": 0.23702621316181852,
+     "coord_r2_mean": 0.7410165717045674
+    }
+   },
+   "log_polar": {
+    "encoding_r2_transfer_to_dirset": 0.15186222702316188,
+    "encoding_r2_within_heldout_cells": 0.08195339833519144,
+    "decode_cv": {
+     "theta_mae_deg": 47.726266054355506,
+     "v_mae_mps": 0.48502705716724165,
+     "coord_r2_mean": 0.6318871724111468
+    }
+   },
+   "cartesian": {
+    "encoding_r2_transfer_to_dirset": 0.5181714987969603,
+    "encoding_r2_within_heldout_cells": 0.3389277590488965,
+    "decode_cv": {
+     "theta_mae_deg": 5.158439642947743,
+     "v_mae_mps": 0.12471978729428454,
+     "coord_r2_mean": 0.9913563329145768
+    }
+   },
+   "fourier_polar": {
+    "encoding_r2_transfer_to_dirset": 0.4719160559897356,
+    "encoding_r2_within_heldout_cells": 0.2917576941055785,
+    "decode_cv": {
+     "theta_mae_deg": 12.334420047117833,
+     "v_mae_mps": 0.21719492555527783,
+     "coord_r2_mean": 0.8735334584970924
+    }
+   },
+   "fourier_logpolar": {
+    "encoding_r2_transfer_to_dirset": 0.4622010228276502,
+    "encoding_r2_within_heldout_cells": 0.28540129161314687,
+    "decode_cv": {
+     "theta_mae_deg": 12.334420047117833,
+     "v_mae_mps": 0.5178521094212625,
+     "coord_r2_mean": 0.7989703246315045
+    }
+   },
+   "fourier2_polar": {
+    "encoding_r2_transfer_to_dirset": 0.4736113406883079,
+    "encoding_r2_within_heldout_cells": 0.2851567646797598,
+    "decode_cv": {
+     "theta_mae_deg": 12.334420047117831,
+     "v_mae_mps": 0.21719492555527783,
+     "coord_r2_mean": 0.7182847965223923
+    }
+   },
+   "winner": "cartesian"
+  },
+  "19": {
+   "polar": {
+    "encoding_r2_transfer_to_dirset": 0.15942346752234648,
+    "encoding_r2_within_heldout_cells": 0.08880386675241425,
+    "decode_cv": {
+     "theta_mae_deg": 47.57944604332037,
+     "v_mae_mps": 0.22987843822575474,
+     "coord_r2_mean": 0.7423912713040236
+    }
+   },
+   "log_polar": {
+    "encoding_r2_transfer_to_dirset": 0.14995231141291454,
+    "encoding_r2_within_heldout_cells": 0.08220000084898438,
+    "decode_cv": {
+     "theta_mae_deg": 47.57944604332037,
+     "v_mae_mps": 0.4880741538498909,
+     "coord_r2_mean": 0.6320808116699499
+    }
+   },
+   "cartesian": {
+    "encoding_r2_transfer_to_dirset": 0.5245151734390299,
+    "encoding_r2_within_heldout_cells": 0.34322166686824973,
+    "decode_cv": {
+     "theta_mae_deg": 5.119450854455752,
+     "v_mae_mps": 0.1239834658480067,
+     "coord_r2_mean": 0.9914119595641679
+    }
+   },
+   "fourier_polar": {
+    "encoding_r2_transfer_to_dirset": 0.4774248145257042,
+    "encoding_r2_within_heldout_cells": 0.2958817539195271,
+    "decode_cv": {
+     "theta_mae_deg": 12.33323036042291,
+     "v_mae_mps": 0.2178455010248058,
+     "coord_r2_mean": 0.8724790174455351
+    }
+   },
+   "fourier_logpolar": {
+    "encoding_r2_transfer_to_dirset": 0.467705148562781,
+    "encoding_r2_within_heldout_cells": 0.28947176618729675,
+    "decode_cv": {
+     "theta_mae_deg": 12.33323036042291,
+     "v_mae_mps": 0.5144786307685295,
+     "coord_r2_mean": 0.7981757051761754
+    }
+   },
+   "fourier2_polar": {
+    "encoding_r2_transfer_to_dirset": 0.47969841004684066,
+    "encoding_r2_within_heldout_cells": 0.28975492969370864,
+    "decode_cv": {
+     "theta_mae_deg": 12.33323036042291,
+     "v_mae_mps": 0.2178455010248058,
+     "coord_r2_mean": 0.720385519728156
+    }
+   },
+   "winner": "cartesian"
+  },
+  "22": {
+   "polar": {
+    "encoding_r2_transfer_to_dirset": 0.15971405046745013,
+    "encoding_r2_within_heldout_cells": 0.09062424595871932,
+    "decode_cv": {
+     "theta_mae_deg": 47.93310788140859,
+     "v_mae_mps": 0.2322172529984484,
+     "coord_r2_mean": 0.7372280112538134
+    }
+   },
+   "log_polar": {
+    "encoding_r2_transfer_to_dirset": 0.15067747743726057,
+    "encoding_r2_within_heldout_cells": 0.08405340057974997,
+    "decode_cv": {
+     "theta_mae_deg": 47.93310788140859,
+     "v_mae_mps": 0.4823641483007671,
+     "coord_r2_mean": 0.6285633200977643
+    }
+   },
+   "cartesian": {
+    "encoding_r2_transfer_to_dirset": 0.534402621700653,
+    "encoding_r2_within_heldout_cells": 0.3492090927601369,
+    "decode_cv": {
+     "theta_mae_deg": 5.073192041036411,
+     "v_mae_mps": 0.12436113946913062,
+     "coord_r2_mean": 0.991386894748747
+    }
+   },
+   "fourier_polar": {
+    "encoding_r2_transfer_to_dirset": 0.4845628456985476,
+    "encoding_r2_within_heldout_cells": 0.30125794779328874,
+    "decode_cv": {
+     "theta_mae_deg": 12.442899194885651,
+     "v_mae_mps": 0.21740601149816463,
+     "coord_r2_mean": 0.8716245398229941
+    }
+   },
+   "fourier_logpolar": {
+    "encoding_r2_transfer_to_dirset": 0.47530640507178146,
+    "encoding_r2_within_heldout_cells": 0.2948660173365808,
+    "decode_cv": {
+     "theta_mae_deg": 12.442899194885651,
+     "v_mae_mps": 0.5097502402274932,
+     "coord_r2_mean": 0.7977584703590704
+    }
+   },
+   "fourier2_polar": {
+    "encoding_r2_transfer_to_dirset": 0.4866445284475952,
+    "encoding_r2_within_heldout_cells": 0.29515450403212706,
+    "decode_cv": {
+     "theta_mae_deg": 12.44289919488565,
+     "v_mae_mps": 0.21740601149816463,
+     "coord_r2_mean": 0.7208446485999206
+    }
+   },
+   "winner": "cartesian"
+  }
+ },
+ "exp5": {
+  "position_residualised": {
+   "16": {
+    "polar": {
+     "encoding_r2_transfer_to_dirset": 0.34304240533011676,
+     "decode_cv": {
+      "theta_mae_deg": 27.385954411209234,
+      "v_mae_mps": 0.07686448677292701,
+      "coord_r2_mean": 0.9173378258664588
+     },
+     "decode_transfer": {
+      "speed_to_dir": {
+       "theta_mae_deg": 25.177993872468203,
+       "v_mae_mps": 0.09393994862804067
+      },
+      "dir_to_speed": {
+       "theta_mae_deg": 36.16084025186358,
+       "v_mae_mps": 0.11287203953280277
+      }
+     }
+    },
+    "log_polar": {
+     "encoding_r2_transfer_to_dirset": 0.3432690798487088,
+     "decode_cv": {
+      "theta_mae_deg": 27.385954411209234,
+      "v_mae_mps": 0.08071113691547342,
+      "coord_r2_mean": 0.9175070391009772
+     },
+     "decode_transfer": {
+      "speed_to_dir": {
+       "theta_mae_deg": 25.177993872468203,
+       "v_mae_mps": 0.09598215146408867
+      },
+      "dir_to_speed": {
+       "theta_mae_deg": 36.16084025186358,
+       "v_mae_mps": 0.1073014750051053
+      }
+     }
+    },
+    "cartesian": {
+     "encoding_r2_transfer_to_dirset": 0.2968369692410522,
+     "decode_cv": {
+      "theta_mae_deg": 7.710201298638115,
+      "v_mae_mps": 0.1894282814028535,
+      "coord_r2_mean": 0.982815681398626
+     },
+     "decode_transfer": {
+      "speed_to_dir": {
+       "theta_mae_deg": 4.750140195381825,
+       "v_mae_mps": 0.22202863677273557
+      },
+      "dir_to_speed": {
+       "theta_mae_deg": 6.397519433189185,
+       "v_mae_mps": 0.2847738535651606
+      }
+     }
+    },
+    "fourier_polar": {
+     "encoding_r2_transfer_to_dirset": 0.5394257913378246,
+     "decode_cv": {
+      "theta_mae_deg": 3.403598269696051,
+      "v_mae_mps": 0.07710025581451821,
+      "coord_r2_mean": 0.9878724316758234
+     },
+     "decode_transfer": {
+      "speed_to_dir": {
+       "theta_mae_deg": 3.2446633467021417,
+       "v_mae_mps": 0.09306515058735176
+      },
+      "dir_to_speed": {
+       "theta_mae_deg": 3.2352858416096497,
+       "v_mae_mps": 0.11287203953280274
+      }
+     }
+    },
+    "fourier_logpolar": {
+     "encoding_r2_transfer_to_dirset": 0.5391246320936849,
+     "decode_cv": {
+      "theta_mae_deg": 3.403598269696051,
+      "v_mae_mps": 0.08410786717723504,
+      "coord_r2_mean": 0.9879915656092484
+     },
+     "decode_transfer": {
+      "speed_to_dir": {
+       "theta_mae_deg": 3.2446633467021417,
+       "v_mae_mps": 0.10130864687085187
+      },
+      "dir_to_speed": {
+       "theta_mae_deg": 3.2352858416096497,
+       "v_mae_mps": 0.10730147500510524
+      }
+     }
+    },
+    "fourier2_polar": {
+     "encoding_r2_transfer_to_dirset": 0.7326244975099327,
+     "decode_cv": {
+      "theta_mae_deg": 3.403598269696051,
+      "v_mae_mps": 0.07710025581451821,
+      "coord_r2_mean": 0.9578550342633431
+     },
+     "decode_transfer": {
+      "speed_to_dir": {
+       "theta_mae_deg": 3.2446633467021417,
+       "v_mae_mps": 0.09306515058735176
+      },
+      "dir_to_speed": {
+       "theta_mae_deg": 3.2352858416096506,
+       "v_mae_mps": 0.11287203953280274
+      }
+     }
+    },
+    "winner": "fourier2_polar"
+   },
+   "19": {
+    "polar": {
+     "encoding_r2_transfer_to_dirset": 0.38137001873597776,
+     "decode_cv": {
+      "theta_mae_deg": 27.9054160100303,
+      "v_mae_mps": 0.06610778753520194,
+      "coord_r2_mean": 0.9220288368962746
+     },
+     "decode_transfer": {
+      "speed_to_dir": {
+       "theta_mae_deg": 24.811785693628636,
+       "v_mae_mps": 0.08366437526954408
+      },
+      "dir_to_speed": {
+       "theta_mae_deg": 33.26417731072883,
+       "v_mae_mps": 0.09883605855569812
+      }
+     }
+    },
+    "log_polar": {
+     "encoding_r2_transfer_to_dirset": 0.38818278440996434,
+     "decode_cv": {
+      "theta_mae_deg": 27.9054160100303,
+      "v_mae_mps": 0.07442689792217456,
+      "coord_r2_mean": 0.9213436132440765
+     },
+     "decode_transfer": {
+      "speed_to_dir": {
+       "theta_mae_deg": 24.811785693628636,
+       "v_mae_mps": 0.09836295881344863
+      },
+      "dir_to_speed": {
+       "theta_mae_deg": 33.26417731072883,
+       "v_mae_mps": 0.0967450522314425
+      }
+     }
+    },
+    "cartesian": {
+     "encoding_r2_transfer_to_dirset": 0.3772593525672773,
+     "decode_cv": {
+      "theta_mae_deg": 6.714937596567895,
+      "v_mae_mps": 0.15946370458362727,
+      "coord_r2_mean": 0.9873366680988829
+     },
+     "decode_transfer": {
+      "speed_to_dir": {
+       "theta_mae_deg": 4.28946434821599,
+       "v_mae_mps": 0.21874641767960007
+      },
+      "dir_to_speed": {
+       "theta_mae_deg": 5.751665881462992,
+       "v_mae_mps": 0.2440960637616444
+      }
+     }
+    },
+    "fourier_polar": {
+     "encoding_r2_transfer_to_dirset": 0.6256244143602306,
+     "decode_cv": {
+      "theta_mae_deg": 3.469025497819917,
+      "v_mae_mps": 0.06653077071365265,
+      "coord_r2_mean": 0.9875850593944836
+     },
+     "decode_transfer": {
+      "speed_to_dir": {
+       "theta_mae_deg": 3.0676898180503716,
+       "v_mae_mps": 0.08366437526954408
+      },
+      "dir_to_speed": {
+       "theta_mae_deg": 3.3264984843710685,
+       "v_mae_mps": 0.0988360585556981
+      }
+     }
+    },
+    "fourier_logpolar": {
+     "encoding_r2_transfer_to_dirset": 0.6318767108122711,
+     "decode_cv": {
+      "theta_mae_deg": 3.469025497819917,
+      "v_mae_mps": 0.07548209930309914,
+      "coord_r2_mean": 0.9870969850021204
+     },
+     "decode_transfer": {
+      "speed_to_dir": {
+       "theta_mae_deg": 3.0676898180503716,
+       "v_mae_mps": 0.09836295881344863
+      },
+      "dir_to_speed": {
+       "theta_mae_deg": 3.3264984843710685,
+       "v_mae_mps": 0.0967450522314424
+      }
+     }
+    },
+    "fourier2_polar": {
+     "encoding_r2_transfer_to_dirset": 0.7897211422621492,
+     "decode_cv": {
+      "theta_mae_deg": 3.4690254978199166,
+      "v_mae_mps": 0.06653077071365265,
+      "coord_r2_mean": 0.9553845517146481
+     },
+     "decode_transfer": {
+      "speed_to_dir": {
+       "theta_mae_deg": 3.0676898180503716,
+       "v_mae_mps": 0.08366437526954408
+      },
+      "dir_to_speed": {
+       "theta_mae_deg": 3.3264984843710694,
+       "v_mae_mps": 0.0988360585556981
+      }
+     }
+    },
+    "winner": "fourier2_polar"
+   },
+   "22": {
+    "polar": {
+     "encoding_r2_transfer_to_dirset": 0.315837481815733,
+     "decode_cv": {
+      "theta_mae_deg": 25.584127940077668,
+      "v_mae_mps": 0.07116765177719074,
+      "coord_r2_mean": 0.9284943174660433
+     },
+     "decode_transfer": {
+      "speed_to_dir": {
+       "theta_mae_deg": 23.76894077791939,
+       "v_mae_mps": 0.09521780847355413
+      },
+      "dir_to_speed": {
+       "theta_mae_deg": 32.1668868135534,
+       "v_mae_mps": 0.10659961508178294
+      }
+     }
+    },
+    "log_polar": {
+     "encoding_r2_transfer_to_dirset": 0.32859020658697613,
+     "decode_cv": {
+      "theta_mae_deg": 25.584127940077668,
+      "v_mae_mps": 0.07902187866421397,
+      "coord_r2_mean": 0.9279101869955166
+     },
+     "decode_transfer": {
+      "speed_to_dir": {
+       "theta_mae_deg": 23.76894077791939,
+       "v_mae_mps": 0.11144468496571462
+      },
+      "dir_to_speed": {
+       "theta_mae_deg": 32.1668868135534,
+       "v_mae_mps": 0.10348835115604768
+      }
+     }
+    },
+    "cartesian": {
+     "encoding_r2_transfer_to_dirset": 0.38136491225462144,
+     "decode_cv": {
+      "theta_mae_deg": 6.3150187597142935,
+      "v_mae_mps": 0.15425791993414353,
+      "coord_r2_mean": 0.9889119478341235
+     },
+     "decode_transfer": {
+      "speed_to_dir": {
+       "theta_mae_deg": 4.361612295610687,
+       "v_mae_mps": 0.23136258205865837
+      },
+      "dir_to_speed": {
+       "theta_mae_deg": 4.4257960938216305,
+       "v_mae_mps": 0.22601365472091808
+      }
+     }
+    },
+    "fourier_polar": {
+     "encoding_r2_transfer_to_dirset": 0.5742254228877051,
+     "decode_cv": {
+      "theta_mae_deg": 3.4729771733121937,
+      "v_mae_mps": 0.07116765177719074,
+      "coord_r2_mean": 0.9876067113743106
+     },
+     "decode_transfer": {
+      "speed_to_dir": {
+       "theta_mae_deg": 3.3133781704818017,
+       "v_mae_mps": 0.09521780847355413
+      },
+      "dir_to_speed": {
+       "theta_mae_deg": 3.0224187328340655,
+       "v_mae_mps": 0.10659961508178296
+      }
+     }
+    },
+    "fourier_logpolar": {
+     "encoding_r2_transfer_to_dirset": 0.5864876270667709,
+     "decode_cv": {
+      "theta_mae_deg": 3.4729771733121937,
+      "v_mae_mps": 0.07902187866421397,
+      "coord_r2_mean": 0.9872172910606262
+     },
+     "decode_transfer": {
+      "speed_to_dir": {
+       "theta_mae_deg": 3.3133781704818017,
+       "v_mae_mps": 0.11144468496571462
+      },
+      "dir_to_speed": {
+       "theta_mae_deg": 3.0224187328340655,
+       "v_mae_mps": 0.10348835115604775
+      }
+     }
+    },
+    "fourier2_polar": {
+     "encoding_r2_transfer_to_dirset": 0.7451876405394595,
+     "decode_cv": {
+      "theta_mae_deg": 3.4729771733121937,
+      "v_mae_mps": 0.07116765177719074,
+      "coord_r2_mean": 0.9563220687639848
+     },
+     "decode_transfer": {
+      "speed_to_dir": {
+       "theta_mae_deg": 3.3133781704818017,
+       "v_mae_mps": 0.09521780847355413
+      },
+      "dir_to_speed": {
+       "theta_mae_deg": 3.0224187328340646,
+       "v_mae_mps": 0.10659961508178296
+      }
+     }
+    },
+    "winner": "fourier2_polar"
+   }
+  }
+ }
+}

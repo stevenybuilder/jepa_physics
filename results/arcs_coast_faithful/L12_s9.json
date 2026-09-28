@@ -1,0 +1,2554 @@
+{
+ "dataset": "direction",
+ "layer": 12,
+ "seed": 9,
+ "angle_source": "unsupervised_angle",
+ "held_out_values": [
+  146.25,
+  151.875,
+  157.5,
+  163.125,
+  168.75,
+  174.375,
+  180.0,
+  185.625
+ ],
+ "holdout": {
+  "design": "contiguous",
+  "seed": 9,
+  "block_start_index": 26,
+  "block_first_value": 146.25,
+  "block_last_value": 185.625,
+  "arc_width_deg": 45.0,
+  "held_out_values": [
+   146.25,
+   151.875,
+   157.5,
+   163.125,
+   168.75,
+   174.375,
+   180.0,
+   185.625
+  ]
+ },
+ "provenance": {
+  "split_file": "/Users/stevenyang/Documents/world_mechanics_takehome/splits/split_v1.json",
+  "split_sha256": "98e6310c40bf29e81bd8b6bf4b1ac603b89e4104d40ac1047b15dd5dc2be2df2",
+  "seeds": {
+   "seed": 9,
+   "random_eigvec": 16
+  },
+  "commit": "d97502dd231197dcd393b479328dd6e35b0eada2",
+  "dirty": true,
+  "git_commit": "d97502dd231197dcd393b479328dd6e35b0eada2",
+  "git_dirty_src_or_scripts": true,
+  "timestamp_utc": "2026-09-28T21:36:49+00:00",
+  "layer": 12,
+  "pool": "meanpool (+timepool for full_tok fits)",
+  "holdout": "contiguous",
+  "spline": "smooth",
+  "k": 64
+ },
+ "n_steered": 384,
+ "unsteered_err": {
+  "probe": 92.40798088535666,
+  "mlp": 92.50328794276963
+ },
+ "frac_pairs_dtheta_gt_90": 0.484375,
+ "aperture": {
+  "full": {
+   "mean_overlap": {
+    "0.1": 0.4524044309462142,
+    "0.5": 0.39185692238938186,
+    "1.0": 0.35385123262033247,
+    "2.0": 0.3238151055150646,
+    "10.0": 0.3010246536925148
+   },
+   "selected": 0.1,
+   "in_band": false,
+   "in_band_alphas": []
+  },
+  "pca16": {
+   "mean_overlap": {
+    "0.1": 0.6204891031140133,
+    "0.5": 0.6775711631324137,
+    "1.0": 0.7378025717271123,
+    "2.0": 0.7833590221295827,
+    "10.0": 0.8130206359096598
+   },
+   "selected": 10.0,
+   "in_band": false,
+   "in_band_alphas": []
+  }
+ },
+ "diagnostics": {
+  "full": {
+   "trace_C_steer": 0.8719572263339072,
+   "chord_energy_in_range": 0.5469923518046033,
+   "cos_edit_chord": 0.17950014770678413,
+   "overlap_selected": 0.5064115333766043
+  },
+  "pca16": {
+   "trace_C_steer": 4.478445540933097,
+   "chord_energy_in_range": 0.6870692992262,
+   "cos_edit_chord": 0.21866429448071825,
+   "overlap_selected": 0.8321054177809408
+  }
+ },
+ "mean_shift_sq_over_source_total_variance": {
+  "mean": 1.2972954612422518,
+  "median": 1.4173682284269715
+ },
+ "arms": {
+  "chord_raw": {
+   "probe_own": 6.218400467117384,
+   "probe_chordnorm": 6.218400467117384,
+   "probe_splinenorm": 6.238559041282443,
+   "probe_interpnorm": 45.08106955582034,
+   "mlp_own": 28.750063734619687,
+   "mlp_chordnorm": 28.750063734619687,
+   "mlp_splinenorm": 26.86862866684126,
+   "mlp_interpnorm": 39.0579942690951,
+   "R_own": 0.21367940116979367,
+   "R_chordnorm": 0.21367940116979367,
+   "R_splinenorm": 0.2116515208123614,
+   "R_interpnorm": -28.16685728503175,
+   "norm_ratio_to_chord": 1.0,
+   "gap_vs_chord_probe_chordnorm": {
+    "mean": 0.0,
+    "ci95": [
+     0.0,
+     0.0
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_chord_probe_own": {
+    "mean": 0.0,
+    "ci95": [
+     0.0,
+     0.0
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_interpnorm": {
+    "mean": -84.02613248393448,
+    "ci95": [
+     -89.5892569928135,
+     -78.22856028492029
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_own": {
+    "mean": -122.88880157263743,
+    "ci95": [
+     -126.0426925300418,
+     -119.51055108858237
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "probe_chordnorm_dtheta_le90": 5.894426961227556,
+   "probe_chordnorm_dtheta_gt90": 6.563275489516228
+  },
+  "spline_interp": {
+   "probe_own": 129.10720203975484,
+   "probe_chordnorm": 97.89635351398795,
+   "probe_splinenorm": 98.29217344568458,
+   "probe_interpnorm": 129.10720203975484,
+   "mlp_own": 71.88950321513387,
+   "mlp_chordnorm": 93.37364456111892,
+   "mlp_splinenorm": 93.59823638895467,
+   "mlp_interpnorm": 71.88950321513387,
+   "R_own": -28.84470450623156,
+   "R_chordnorm": -0.22037047902134843,
+   "R_splinenorm": -0.24075540712966628,
+   "R_interpnorm": -28.84470450623156,
+   "norm_ratio_to_chord": 53.687177250125536,
+   "gap_vs_chord_probe_chordnorm": {
+    "mean": 91.67795304687057,
+    "ci95": [
+     84.79290059864415,
+     98.93546869254703
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_chord_probe_own": {
+    "mean": 122.88880157263743,
+    "ci95": [
+     119.51055108858237,
+     126.0426925300418
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_interpnorm": {
+    "mean": 0.0,
+    "ci95": [
+     0.0,
+     0.0
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_own": {
+    "mean": 0.0,
+    "ci95": [
+     0.0,
+     0.0
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "probe_chordnorm_dtheta_le90": 57.58353894260716,
+   "probe_chordnorm_dtheta_gt90": 140.80999483190942
+  },
+  "spline": {
+   "probe_own": 7.01272878956597,
+   "probe_chordnorm": 8.484246367207984,
+   "probe_splinenorm": 7.01272878956597,
+   "probe_interpnorm": 39.525702646559886,
+   "mlp_own": 28.03348852941035,
+   "mlp_chordnorm": 30.294757718714816,
+   "mlp_splinenorm": 28.03348852941035,
+   "mlp_interpnorm": 42.51895520931016,
+   "R_own": 0.21125997378677916,
+   "R_chordnorm": 0.2134567087406162,
+   "R_splinenorm": 0.21125997378677916,
+   "R_interpnorm": -28.17126704741734,
+   "norm_ratio_to_chord": 1.0696079172947168,
+   "gap_vs_chord_probe_chordnorm": {
+    "mean": 2.2658459000906004,
+    "ci95": [
+     1.5679507035803235,
+     3.0059874393737696
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_chord_probe_own": {
+    "mean": 0.7943283224485871,
+    "ci95": [
+     0.11890636345240134,
+     1.4989092547393064
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_interpnorm": {
+    "mean": -89.58149939319493,
+    "ci95": [
+     -95.1945912072591,
+     -83.97245732187558
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_own": {
+    "mean": -122.09447325018887,
+    "ci95": [
+     -125.15120370666178,
+     -118.6047394130507
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "probe_chordnorm_dtheta_le90": 8.928257233038154,
+   "probe_chordnorm_dtheta_gt90": 8.01158963906619
+  },
+  "centroid_transport": {
+   "probe_own": 5.813919757650041,
+   "probe_chordnorm": 5.8638850861981595,
+   "probe_splinenorm": 5.911490249796834,
+   "probe_interpnorm": 45.351167077426815,
+   "mlp_own": 29.175622029470617,
+   "mlp_chordnorm": 29.397301066321944,
+   "mlp_splinenorm": 27.22918559796906,
+   "mlp_interpnorm": 39.16543897200896,
+   "R_own": 0.21284231461719352,
+   "R_chordnorm": 0.21302238295092116,
+   "R_splinenorm": 0.2109498860285988,
+   "R_interpnorm": -28.167621114640536,
+   "norm_ratio_to_chord": 1.0072855016141717,
+   "gap_vs_chord_probe_chordnorm": {
+    "mean": -0.3545153809192229,
+    "ci95": [
+     -0.5932034323827704,
+     -0.11691790668714898
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_chord_probe_own": {
+    "mean": -0.40448070946734277,
+    "ci95": [
+     -0.6375927822651718,
+     -0.17339737221003032
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_interpnorm": {
+    "mean": -83.75603496232802,
+    "ci95": [
+     -89.41231280197746,
+     -77.97509826768015
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_own": {
+    "mean": -123.29328228210478,
+    "ci95": [
+     -126.41997471449567,
+     -119.96842142470511
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "probe_chordnorm_dtheta_le90": 5.569256152339089,
+   "probe_chordnorm_dtheta_gt90": 6.17752233837072
+  },
+  "coast_linear_caa": {
+   "probe_own": 5.567172713254919,
+   "probe_chordnorm": 5.567172713254919,
+   "probe_splinenorm": 5.471757808757121,
+   "probe_interpnorm": 44.10167495573618,
+   "mlp_own": 36.7025073450742,
+   "mlp_chordnorm": 36.7025073450742,
+   "mlp_splinenorm": 34.73418090169826,
+   "mlp_interpnorm": 45.97221402704153,
+   "R_own": 0.21834675078885815,
+   "R_chordnorm": 0.21834675078885815,
+   "R_splinenorm": 0.21629655359301267,
+   "R_interpnorm": -28.16128488658984,
+   "norm_ratio_to_chord": 1.0,
+   "gap_vs_chord_probe_chordnorm": {
+    "mean": -0.6512277538624637,
+    "ci95": [
+     -1.1273354732521845,
+     -0.1832823076906945
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_chord_probe_own": {
+    "mean": -0.6512277538624642,
+    "ci95": [
+     -1.1273354732521845,
+     -0.18328230769069484
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_interpnorm": {
+    "mean": -85.00552708401865,
+    "ci95": [
+     -90.59504526704086,
+     -79.31746593939448
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_own": {
+    "mean": -123.5400293264999,
+    "ci95": [
+     -126.64499534609504,
+     -120.19057171751632
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "probe_chordnorm_dtheta_le90": 5.528732310659188,
+   "probe_chordnorm_dtheta_gt90": 5.608093141824569
+  },
+  "full|contr|jaeger|a0.1|b0.1|unc": {
+   "probe_own": 93.40520429729578,
+   "probe_chordnorm": 92.79829770332098,
+   "probe_splinenorm": 92.80877004410915,
+   "probe_interpnorm": 105.24421115749128,
+   "mlp_own": 71.19429042764415,
+   "mlp_chordnorm": 84.35047486797767,
+   "mlp_splinenorm": 83.62394675636386,
+   "mlp_interpnorm": 33.88814215773612,
+   "R_own": -0.7209306191522006,
+   "R_chordnorm": -0.09291449057032908,
+   "R_splinenorm": -0.10892930429143495,
+   "R_interpnorm": -28.616357154940516,
+   "norm_ratio_to_chord": 3.2538313816081765,
+   "gap_vs_chord_probe_chordnorm": {
+    "mean": 86.57989723620359,
+    "ci95": [
+     79.66967886466536,
+     93.9436342775334
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_chord_probe_own": {
+    "mean": 87.1868038301784,
+    "ci95": [
+     80.40765117547487,
+     94.51482138975257
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_interpnorm": {
+    "mean": -23.862990882263563,
+    "ci95": [
+     -28.878745310312578,
+     -18.666649433271658
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_own": {
+    "mean": -35.70199774245904,
+    "ci95": [
+     -42.10640786022528,
+     -29.08745048929275
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "probe_chordnorm_dtheta_le90": 52.14908901116588,
+   "probe_chordnorm_dtheta_gt90": 136.07003598851836
+  },
+  "full|contr|jaeger|a0.1|b0.1|unc_normrestored": {
+   "probe_own": 92.45098926009747,
+   "probe_chordnorm": 92.5720082042946,
+   "probe_splinenorm": 92.70935349102753,
+   "probe_interpnorm": 92.71947492767367,
+   "mlp_own": 93.32615124792483,
+   "mlp_chordnorm": 98.31037153329521,
+   "mlp_splinenorm": 98.45481334702356,
+   "mlp_interpnorm": 139.1888751545625,
+   "R_own": -0.015117316015920595,
+   "R_chordnorm": -0.2595698809982081,
+   "R_splinenorm": -0.2817671423398351,
+   "R_interpnorm": -28.935371282357277,
+   "norm_ratio_to_chord": 0.1582908110702864,
+   "gap_vs_chord_probe_chordnorm": {
+    "mean": 86.35360773717723,
+    "ci95": [
+     79.47305830589602,
+     93.39479440379462
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_chord_probe_own": {
+    "mean": 86.2325887929801,
+    "ci95": [
+     79.4211016990305,
+     93.53755768489884
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_interpnorm": {
+    "mean": -36.387727112081144,
+    "ci95": [
+     -39.45427607258945,
+     -32.773713994294496
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_own": {
+    "mean": -36.65621277965736,
+    "ci95": [
+     -43.1623859386686,
+     -30.126846181593457
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "probe_chordnorm_dtheta_le90": 53.17253680702264,
+   "probe_chordnorm_dtheta_gt90": 134.5133809820357
+  },
+  "full|contr|jaeger|a0.1|b0.1|cen": {
+   "probe_own": 92.9833697923453,
+   "probe_chordnorm": 107.00058512543124,
+   "probe_splinenorm": 101.60173251736573,
+   "probe_interpnorm": 93.23836502023956,
+   "mlp_own": 92.90142783365722,
+   "mlp_chordnorm": 90.7944192943927,
+   "mlp_splinenorm": 86.4772440479776,
+   "mlp_interpnorm": 93.95972307446432,
+   "R_own": 0.0571233691520285,
+   "R_chordnorm": 0.33265653547804114,
+   "R_splinenorm": 0.33696132729795075,
+   "R_interpnorm": -27.98835478679706,
+   "norm_ratio_to_chord": 0.16845579506993089,
+   "gap_vs_chord_probe_chordnorm": {
+    "mean": 100.78218465831385,
+    "ci95": [
+     93.58991642587114,
+     107.6526021673274
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_chord_probe_own": {
+    "mean": 86.76496932522792,
+    "ci95": [
+     79.8972046111816,
+     94.07532137686842
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_interpnorm": {
+    "mean": -35.86883701951528,
+    "ci95": [
+     -44.73911964319755,
+     -26.749339818972707
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_own": {
+    "mean": -36.12383224740952,
+    "ci95": [
+     -42.60205250720936,
+     -29.677003392869846
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "probe_chordnorm_dtheta_le90": 75.73055190857035,
+   "probe_chordnorm_dtheta_gt90": 140.2880398401541
+  },
+  "full|contr|jaeger|a0.1|b0.3|unc": {
+   "probe_own": 96.13872060569095,
+   "probe_chordnorm": 92.79829770332098,
+   "probe_splinenorm": 92.80877004410915,
+   "probe_interpnorm": 105.24421115749128,
+   "mlp_own": 37.17520264471878,
+   "mlp_chordnorm": 84.35047486797768,
+   "mlp_splinenorm": 83.62394675636386,
+   "mlp_interpnorm": 33.88814215773612,
+   "R_own": -3.611051007637332,
+   "R_chordnorm": -0.09291449057032909,
+   "R_splinenorm": -0.10892930429143494,
+   "R_interpnorm": -28.616357154940516,
+   "norm_ratio_to_chord": 9.76149414482453,
+   "gap_vs_chord_probe_chordnorm": {
+    "mean": 86.57989723620359,
+    "ci95": [
+     79.66967886466536,
+     93.9436342775334
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_chord_probe_own": {
+    "mean": 89.92032013857357,
+    "ci95": [
+     83.18967867562037,
+     97.21679873754749
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_interpnorm": {
+    "mean": -23.862990882263563,
+    "ci95": [
+     -28.878745310312578,
+     -18.66664943327166
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_own": {
+    "mean": -32.96848143406388,
+    "ci95": [
+     -39.15480454416913,
+     -26.40237351444784
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "probe_chordnorm_dtheta_le90": 52.149089011165884,
+   "probe_chordnorm_dtheta_gt90": 136.07003598851836
+  },
+  "full|contr|jaeger|a0.1|b0.3|unc_normrestored": {
+   "probe_own": 92.53558714582987,
+   "probe_chordnorm": 92.57462576626904,
+   "probe_splinenorm": 92.71217874237476,
+   "probe_interpnorm": 92.7313367547252,
+   "mlp_own": 95.33809843757011,
+   "mlp_chordnorm": 98.2603320740106,
+   "mlp_splinenorm": 98.40123164490699,
+   "mlp_interpnorm": 139.29936354713038,
+   "R_own": -0.084525812854587,
+   "R_chordnorm": -0.2590225311946385,
+   "R_splinenorm": -0.28119898660158027,
+   "R_interpnorm": -28.934258003114877,
+   "norm_ratio_to_chord": 0.6055033421887196,
+   "gap_vs_chord_probe_chordnorm": {
+    "mean": 86.35622529915167,
+    "ci95": [
+     79.47682313101387,
+     93.39753725963966
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_chord_probe_own": {
+    "mean": 86.31718667871247,
+    "ci95": [
+     79.55267742651058,
+     93.43841838173996
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_interpnorm": {
+    "mean": -36.37586528502962,
+    "ci95": [
+     -39.44516940005774,
+     -32.76441818372981
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_own": {
+    "mean": -36.571614893924966,
+    "ci95": [
+     -43.031544562756146,
+     -29.98718648587282
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "probe_chordnorm_dtheta_le90": 53.175312803074746,
+   "probe_chordnorm_dtheta_gt90": 134.5158298883791
+  },
+  "full|contr|jaeger|a0.1|b0.3|cen": {
+   "probe_own": 94.60798933527205,
+   "probe_chordnorm": 107.00058512543124,
+   "probe_splinenorm": 101.60173251736573,
+   "probe_interpnorm": 93.23836502023956,
+   "mlp_own": 94.04899397320402,
+   "mlp_chordnorm": 90.79441929439274,
+   "mlp_splinenorm": 86.4772440479776,
+   "mlp_interpnorm": 93.95972307446432,
+   "R_own": 0.16145114300779587,
+   "R_chordnorm": 0.33265653547804114,
+   "R_splinenorm": 0.33696132729795075,
+   "R_interpnorm": -27.98835478679706,
+   "norm_ratio_to_chord": 0.5053673852097925,
+   "gap_vs_chord_probe_chordnorm": {
+    "mean": 100.78218465831385,
+    "ci95": [
+     93.58991642587114,
+     107.6526021673274
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_chord_probe_own": {
+    "mean": 88.38958886815465,
+    "ci95": [
+     81.63210385295781,
+     95.58235921245583
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_interpnorm": {
+    "mean": -35.86883701951529,
+    "ci95": [
+     -44.73911964319755,
+     -26.749339818972707
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_own": {
+    "mean": -34.499212704482794,
+    "ci95": [
+     -40.88171311770128,
+     -28.109289083935522
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "probe_chordnorm_dtheta_le90": 75.73055190857036,
+   "probe_chordnorm_dtheta_gt90": 140.2880398401541
+  },
+  "full|contr|jaeger|a0.1|b0.5|unc": {
+   "probe_own": 100.87339562647354,
+   "probe_chordnorm": 92.79829770332098,
+   "probe_splinenorm": 92.80877004410915,
+   "probe_interpnorm": 105.24421115749128,
+   "mlp_own": 33.011056491522616,
+   "mlp_chordnorm": 84.3504748679777,
+   "mlp_splinenorm": 83.62394675636386,
+   "mlp_interpnorm": 33.88814215773612,
+   "R_own": -6.668366284976934,
+   "R_chordnorm": -0.09291449057032909,
+   "R_splinenorm": -0.10892930429143494,
+   "R_interpnorm": -28.616357154940516,
+   "norm_ratio_to_chord": 16.269156908040884,
+   "gap_vs_chord_probe_chordnorm": {
+    "mean": 86.57989723620359,
+    "ci95": [
+     79.66967886466536,
+     93.9436342775334
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_chord_probe_own": {
+    "mean": 94.65499515935615,
+    "ci95": [
+     88.12354544580457,
+     101.8958847435362
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_interpnorm": {
+    "mean": -23.862990882263563,
+    "ci95": [
+     -28.878745310312567,
+     -18.666649433271658
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_own": {
+    "mean": -28.23380641328131,
+    "ci95": [
+     -34.76156633147677,
+     -21.563340825477997
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "probe_chordnorm_dtheta_le90": 52.14908901116588,
+   "probe_chordnorm_dtheta_gt90": 136.07003598851836
+  },
+  "full|contr|jaeger|a0.1|b0.5|unc_normrestored": {
+   "probe_own": 92.72342444125168,
+   "probe_chordnorm": 92.57922134072976,
+   "probe_splinenorm": 92.71715439210841,
+   "probe_interpnorm": 92.7524619105759,
+   "mlp_own": 99.16124674333976,
+   "mlp_chordnorm": 98.17177220278056,
+   "mlp_splinenorm": 98.30556134067733,
+   "mlp_interpnorm": 139.4835291520051,
+   "R_own": -0.285040150212933,
+   "R_chordnorm": -0.2580501376234675,
+   "R_splinenorm": -0.28018973149399184,
+   "R_interpnorm": -28.93227914747659,
+   "norm_ratio_to_chord": 1.3916884189327499,
+   "gap_vs_chord_probe_chordnorm": {
+    "mean": 86.36082087361238,
+    "ci95": [
+     79.48360608021021,
+     93.40239036247655
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_chord_probe_own": {
+    "mean": 86.50502397413432,
+    "ci95": [
+     79.72968097625274,
+     93.670824362409
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_interpnorm": {
+    "mean": -36.354740129178936,
+    "ci95": [
+     -39.425899651682684,
+     -32.74773834876563
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_own": {
+    "mean": -36.38377759850314,
+    "ci95": [
+     -42.82728991769807,
+     -29.85374491001344
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "probe_chordnorm_dtheta_le90": 53.1801448393628,
+   "probe_chordnorm_dtheta_gt90": 134.52017374541072
+  },
+  "full|contr|jaeger|a0.1|b0.5|cen": {
+   "probe_own": 97.47738810715214,
+   "probe_chordnorm": 107.00058512543124,
+   "probe_splinenorm": 101.60173251736573,
+   "probe_interpnorm": 93.23836502023956,
+   "mlp_own": 96.19724044689826,
+   "mlp_chordnorm": 90.79441929439274,
+   "mlp_splinenorm": 86.4772440479776,
+   "mlp_interpnorm": 93.95972307446432,
+   "R_own": 0.24783996457806565,
+   "R_chordnorm": 0.33265653547804114,
+   "R_splinenorm": 0.33696132729795075,
+   "R_interpnorm": -27.98835478679706,
+   "norm_ratio_to_chord": 0.8422789753496542,
+   "gap_vs_chord_probe_chordnorm": {
+    "mean": 100.78218465831385,
+    "ci95": [
+     93.58991642587114,
+     107.6526021673274
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_chord_probe_own": {
+    "mean": 91.25898764003477,
+    "ci95": [
+     84.60010848636671,
+     98.27503970917856
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_interpnorm": {
+    "mean": -35.86883701951528,
+    "ci95": [
+     -44.73911964319755,
+     -26.749339818972707
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_own": {
+    "mean": -31.629813932602676,
+    "ci95": [
+     -37.87249531119136,
+     -25.37868305900737
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "probe_chordnorm_dtheta_le90": 75.73055190857035,
+   "probe_chordnorm_dtheta_gt90": 140.2880398401541
+  },
+  "full|contr|jaeger|a0.1|b1|unc": {
+   "probe_own": 111.05980095819525,
+   "probe_chordnorm": 92.79829770332098,
+   "probe_splinenorm": 92.80877004410915,
+   "probe_interpnorm": 105.24421115749128,
+   "mlp_own": 33.13888398103012,
+   "mlp_chordnorm": 84.3504748679777,
+   "mlp_splinenorm": 83.62394675636386,
+   "mlp_interpnorm": 33.88814215773612,
+   "R_own": -14.389843104740235,
+   "R_chordnorm": -0.09291449057032909,
+   "R_splinenorm": -0.10892930429143494,
+   "R_interpnorm": -28.616357154940516,
+   "norm_ratio_to_chord": 32.53831381608177,
+   "gap_vs_chord_probe_chordnorm": {
+    "mean": 86.57989723620359,
+    "ci95": [
+     79.66967886466536,
+     93.9436342775334
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_chord_probe_own": {
+    "mean": 104.84140049107788,
+    "ci95": [
+     103.33698591953066,
+     106.3125602927844
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_interpnorm": {
+    "mean": -23.862990882263563,
+    "ci95": [
+     -28.878745310312567,
+     -18.666649433271658
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_own": {
+    "mean": -18.04740108155957,
+    "ci95": [
+     -21.754313230247124,
+     -14.207936311866687
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "probe_chordnorm_dtheta_le90": 52.14908901116588,
+   "probe_chordnorm_dtheta_gt90": 136.07003598851836
+  },
+  "full|contr|jaeger|a0.1|b1|unc_normrestored": {
+   "probe_own": 95.1857438669576,
+   "probe_chordnorm": 92.77601948673437,
+   "probe_splinenorm": 92.92363288912073,
+   "probe_interpnorm": 93.92620571500902,
+   "mlp_own": 143.62862552961494,
+   "mlp_chordnorm": 94.33082766954527,
+   "mlp_splinenorm": 94.3731656817065,
+   "mlp_interpnorm": 141.14540767859606,
+   "R_own": -14.933624612746291,
+   "R_chordnorm": -0.2097226311453323,
+   "R_splinenorm": -0.2301411640064429,
+   "R_interpnorm": -28.834986383267463,
+   "norm_ratio_to_chord": 33.07880410715382,
+   "gap_vs_chord_probe_chordnorm": {
+    "mean": 86.55761901961701,
+    "ci95": [
+     79.8346118892369,
+     93.64384233824315
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_chord_probe_own": {
+    "mean": 88.96734339984022,
+    "ci95": [
+     88.1549736771664,
+     89.80869397290492
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_interpnorm": {
+    "mean": -35.1809963247458,
+    "ci95": [
+     -38.37119350030129,
+     -31.491505636662865
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_own": {
+    "mean": -33.92145817279723,
+    "ci95": [
+     -37.25465459268951,
+     -30.387457008795025
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "probe_chordnorm_dtheta_le90": 53.33143843247411,
+   "probe_chordnorm_dtheta_gt90": 134.76541222191466
+  },
+  "full|contr|jaeger|a0.1|b1|cen": {
+   "probe_own": 158.8551727387074,
+   "probe_chordnorm": 107.00058512543124,
+   "probe_splinenorm": 101.60173251736573,
+   "probe_interpnorm": 93.23836502023956,
+   "mlp_own": 112.43685681655079,
+   "mlp_chordnorm": 90.79441929439274,
+   "mlp_splinenorm": 86.4772440479776,
+   "mlp_interpnorm": 93.95972307446432,
+   "R_own": 0.3430984153740347,
+   "R_chordnorm": 0.33265653547804114,
+   "R_splinenorm": 0.33696132729795075,
+   "R_interpnorm": -27.98835478679706,
+   "norm_ratio_to_chord": 1.6845579506993085,
+   "gap_vs_chord_probe_chordnorm": {
+    "mean": 100.78218465831385,
+    "ci95": [
+     93.58991642587114,
+     107.6526021673274
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_chord_probe_own": {
+    "mean": 152.63677227159005,
+    "ci95": [
+     150.94121095887468,
+     154.37000913858955
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_interpnorm": {
+    "mean": -35.86883701951528,
+    "ci95": [
+     -44.73911964319755,
+     -26.749339818972707
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_own": {
+    "mean": 29.747970698952585,
+    "ci95": [
+     26.14346513038763,
+     33.50583955178442
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "probe_chordnorm_dtheta_le90": 75.73055190857035,
+   "probe_chordnorm_dtheta_gt90": 140.2880398401541
+  },
+  "full|pos|-|a0.1|b0.1|unc": {
+   "probe_own": 93.41020059466105,
+   "probe_chordnorm": 92.80079394323451,
+   "probe_splinenorm": 92.81143229273073,
+   "probe_interpnorm": 105.31944720673084,
+   "mlp_own": 71.22448180892225,
+   "mlp_chordnorm": 84.36902980922001,
+   "mlp_splinenorm": 83.64304805617942,
+   "mlp_interpnorm": 33.716827871202845,
+   "R_own": -0.720832987493138,
+   "R_chordnorm": -0.09305560582259993,
+   "R_splinenorm": -0.10907347205637859,
+   "R_interpnorm": -28.616613440098405,
+   "norm_ratio_to_chord": 3.252874726727549,
+   "gap_vs_chord_probe_chordnorm": {
+    "mean": 86.58239347611715,
+    "ci95": [
+     79.6717178422607,
+     93.94640052281103
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_chord_probe_own": {
+    "mean": 87.19180012754367,
+    "ci95": [
+     80.4112708278874,
+     94.52059130028243
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_interpnorm": {
+    "mean": -23.787754833023968,
+    "ci95": [
+     -28.83730904258601,
+     -18.59811048594986
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_own": {
+    "mean": -35.697001445093775,
+    "ci95": [
+     -42.102471929795996,
+     -29.082912839738785
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "probe_chordnorm_dtheta_le90": 52.149795556191535,
+   "probe_chordnorm_dtheta_gt90": 136.0744373875061
+  },
+  "full|pos|-|a0.1|b0.3|unc": {
+   "probe_own": 96.15587646687955,
+   "probe_chordnorm": 92.80079394323451,
+   "probe_splinenorm": 92.81143229273073,
+   "probe_interpnorm": 105.31944720673086,
+   "mlp_own": 37.14250883089732,
+   "mlp_chordnorm": 84.36902980922,
+   "mlp_splinenorm": 83.64304805617944,
+   "mlp_interpnorm": 33.716827871202845,
+   "R_own": -3.610135061430801,
+   "R_chordnorm": -0.09305560582259993,
+   "R_splinenorm": -0.10907347205637859,
+   "R_interpnorm": -28.616613440098405,
+   "norm_ratio_to_chord": 9.758624180182645,
+   "gap_vs_chord_probe_chordnorm": {
+    "mean": 86.58239347611715,
+    "ci95": [
+     79.6717178422607,
+     93.94640052281103
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_chord_probe_own": {
+    "mean": 89.93747599976216,
+    "ci95": [
+     83.20140086613111,
+     97.23686732264554
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_interpnorm": {
+    "mean": -23.787754833023968,
+    "ci95": [
+     -28.837309042586003,
+     -18.598110485949853
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_own": {
+    "mean": -32.951325572875284,
+    "ci95": [
+     -39.136313489123395,
+     -26.38171088547903
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "probe_chordnorm_dtheta_le90": 52.14979555619153,
+   "probe_chordnorm_dtheta_gt90": 136.0744373875061
+  },
+  "full|pos|-|a0.1|b0.5|unc": {
+   "probe_own": 100.91509069187777,
+   "probe_chordnorm": 92.80079394323451,
+   "probe_splinenorm": 92.81143229273073,
+   "probe_interpnorm": 105.31944720673089,
+   "mlp_own": 32.880935942437794,
+   "mlp_chordnorm": 84.36902980922,
+   "mlp_splinenorm": 83.64304805617942,
+   "mlp_interpnorm": 33.71682787120285,
+   "R_own": -6.666632765481052,
+   "R_chordnorm": -0.09305560582259993,
+   "R_splinenorm": -0.10907347205637859,
+   "R_interpnorm": -28.616613440098405,
+   "norm_ratio_to_chord": 16.264373633637742,
+   "gap_vs_chord_probe_chordnorm": {
+    "mean": 86.58239347611715,
+    "ci95": [
+     79.6717178422607,
+     93.94640052281103
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_chord_probe_own": {
+    "mean": 94.69669022476039,
+    "ci95": [
+     88.14831068172784,
+     101.9597867843994
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_interpnorm": {
+    "mean": -23.787754833023968,
+    "ci95": [
+     -28.837309042586003,
+     -18.598110485949853
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_own": {
+    "mean": -28.19211134787707,
+    "ci95": [
+     -34.72292096267607,
+     -21.49822006876813
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "probe_chordnorm_dtheta_le90": 52.14979555619153,
+   "probe_chordnorm_dtheta_gt90": 136.0744373875061
+  },
+  "full|pos|-|a0.1|b1|unc": {
+   "probe_own": 111.17797719428906,
+   "probe_chordnorm": 92.80079394323451,
+   "probe_splinenorm": 92.81143229273073,
+   "probe_interpnorm": 105.31944720673089,
+   "mlp_own": 32.953105720290516,
+   "mlp_chordnorm": 84.36902980922,
+   "mlp_splinenorm": 83.64304805617942,
+   "mlp_interpnorm": 33.71682787120285,
+   "R_own": -14.386086517164928,
+   "R_chordnorm": -0.09305560582259993,
+   "R_splinenorm": -0.10907347205637859,
+   "R_interpnorm": -28.616613440098405,
+   "norm_ratio_to_chord": 32.528747267275484,
+   "gap_vs_chord_probe_chordnorm": {
+    "mean": 86.58239347611715,
+    "ci95": [
+     79.6717178422607,
+     93.94640052281103
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_chord_probe_own": {
+    "mean": 104.95957672717168,
+    "ci95": [
+     103.44922519384089,
+     106.42623077903362
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_interpnorm": {
+    "mean": -23.787754833023968,
+    "ci95": [
+     -28.837309042586003,
+     -18.598110485949853
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_own": {
+    "mean": -17.929224845465757,
+    "ci95": [
+     -21.645698093541284,
+     -14.070584913575049
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "probe_chordnorm_dtheta_le90": 52.14979555619153,
+   "probe_chordnorm_dtheta_gt90": 136.0744373875061
+  },
+  "full|contr|pinv|a0.1|b0.1|unc": {
+   "probe_own": 80.90861213663415,
+   "probe_chordnorm": 93.12663026038354,
+   "probe_splinenorm": 93.13460545714311,
+   "probe_interpnorm": 92.16654362501033,
+   "mlp_own": 98.30897430373022,
+   "mlp_chordnorm": 94.76294309398406,
+   "mlp_splinenorm": 94.96652702102709,
+   "mlp_interpnorm": 99.32966244962216,
+   "R_own": -14.859668472939356,
+   "R_chordnorm": -0.1976974524762917,
+   "R_splinenorm": -0.21833127386244913,
+   "R_interpnorm": -28.799205248277218,
+   "norm_ratio_to_chord": 25.716634773358404,
+   "gap_vs_chord_probe_chordnorm": {
+    "mean": 86.90822979326617,
+    "ci95": [
+     79.91134748647188,
+     94.46915841508
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_chord_probe_own": {
+    "mean": 74.69021166951677,
+    "ci95": [
+     66.97823349886399,
+     82.12605922030252
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_interpnorm": {
+    "mean": -36.9406584147445,
+    "ci95": [
+     -44.12175287987557,
+     -29.78288008547927
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_own": {
+    "mean": -48.198589903120684,
+    "ci95": [
+     -55.52957449954238,
+     -41.08679099120369
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "probe_chordnorm_dtheta_le90": 51.39196095298423,
+   "probe_chordnorm_dtheta_gt90": 137.55385887793764
+  },
+  "full|contr|pinv|a0.1|b0.3|unc": {
+   "probe_own": 80.26563488328345,
+   "probe_chordnorm": 93.12663026038354,
+   "probe_splinenorm": 93.13460545714311,
+   "probe_interpnorm": 92.16654362501033,
+   "mlp_own": 98.36657636721696,
+   "mlp_chordnorm": 94.76294309398406,
+   "mlp_splinenorm": 94.9665270210271,
+   "mlp_interpnorm": 99.32966244962218,
+   "R_own": -46.34921616326465,
+   "R_chordnorm": -0.1976974524762917,
+   "R_splinenorm": -0.21833127386244913,
+   "R_interpnorm": -28.799205248277218,
+   "norm_ratio_to_chord": 77.14990432007521,
+   "gap_vs_chord_probe_chordnorm": {
+    "mean": 86.90822979326616,
+    "ci95": [
+     79.91134748647187,
+     94.46915841508
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_chord_probe_own": {
+    "mean": 74.04723441616606,
+    "ci95": [
+     66.69464824500973,
+     81.4826717412995
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_interpnorm": {
+    "mean": -36.9406584147445,
+    "ci95": [
+     -44.12175287987558,
+     -29.782880085479274
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_own": {
+    "mean": -48.84156715647138,
+    "ci95": [
+     -55.88305936787493,
+     -41.662025215399396
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "probe_chordnorm_dtheta_le90": 51.39196095298423,
+   "probe_chordnorm_dtheta_gt90": 137.55385887793764
+  },
+  "full|contr|pinv|a0.1|b0.5|unc": {
+   "probe_own": 81.80831190901615,
+   "probe_chordnorm": 93.12663026038354,
+   "probe_splinenorm": 93.13460545714311,
+   "probe_interpnorm": 92.16654362501033,
+   "mlp_own": 98.70260342714141,
+   "mlp_chordnorm": 94.76294309398406,
+   "mlp_splinenorm": 94.9665270210271,
+   "mlp_interpnorm": 99.32966244962215,
+   "R_own": -77.87148311057088,
+   "R_chordnorm": -0.1976974524762917,
+   "R_splinenorm": -0.21833127386244913,
+   "R_interpnorm": -28.799205248277215,
+   "norm_ratio_to_chord": 128.583173866792,
+   "gap_vs_chord_probe_chordnorm": {
+    "mean": 86.90822979326613,
+    "ci95": [
+     79.91134748647188,
+     94.46915841508
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_chord_probe_own": {
+    "mean": 75.58991144189878,
+    "ci95": [
+     68.41646336793922,
+     82.87950104516935
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_interpnorm": {
+    "mean": -36.9406584147445,
+    "ci95": [
+     -44.12175287987557,
+     -29.78288008547927
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_own": {
+    "mean": -47.29889013073867,
+    "ci95": [
+     -54.27760831858497,
+     -39.96417363605058
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "probe_chordnorm_dtheta_le90": 51.39196095298423,
+   "probe_chordnorm_dtheta_gt90": 137.55385887793764
+  },
+  "full|contr|pinv|a0.1|b1|unc": {
+   "probe_own": 91.85508827517697,
+   "probe_chordnorm": 93.12663026038354,
+   "probe_splinenorm": 93.13460545714311,
+   "probe_interpnorm": 92.16654362501033,
+   "mlp_own": 98.9940046760636,
+   "mlp_chordnorm": 94.76294309398406,
+   "mlp_splinenorm": 94.9665270210271,
+   "mlp_interpnorm": 99.32966244962215,
+   "R_own": -156.6922934396917,
+   "R_chordnorm": -0.1976974524762917,
+   "R_splinenorm": -0.21833127386244913,
+   "R_interpnorm": -28.799205248277215,
+   "norm_ratio_to_chord": 257.166347733584,
+   "gap_vs_chord_probe_chordnorm": {
+    "mean": 86.90822979326613,
+    "ci95": [
+     79.91134748647188,
+     94.46915841508
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_chord_probe_own": {
+    "mean": 85.63668780805956,
+    "ci95": [
+     78.76524084673187,
+     92.80289259171387
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_interpnorm": {
+    "mean": -36.9406584147445,
+    "ci95": [
+     -44.12175287987557,
+     -29.78288008547927
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_own": {
+    "mean": -37.25211376457787,
+    "ci95": [
+     -44.79566790209896,
+     -29.716544266094463
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "probe_chordnorm_dtheta_le90": 51.39196095298423,
+   "probe_chordnorm_dtheta_gt90": 137.55385887793764
+  },
+  "pca16|contr|jaeger|a10|b0.1|unc": {
+   "probe_own": 88.96071021754376,
+   "probe_chordnorm": 90.12521558748223,
+   "probe_splinenorm": 89.87637620875898,
+   "probe_interpnorm": 70.86486454312826,
+   "mlp_own": 79.51422174312658,
+   "mlp_chordnorm": 84.59893335658698,
+   "mlp_splinenorm": 83.63293508257208,
+   "mlp_interpnorm": 45.477780762978,
+   "R_own": -0.283524201753728,
+   "R_chordnorm": -0.07628507028627612,
+   "R_splinenorm": -0.09136366444003458,
+   "R_interpnorm": -28.59203269916456,
+   "norm_ratio_to_chord": 2.110016977480349,
+   "gap_vs_chord_probe_chordnorm": {
+    "mean": 83.90681512036484,
+    "ci95": [
+     77.16704418256995,
+     91.11430919156902
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_chord_probe_own": {
+    "mean": 82.74230975042637,
+    "ci95": [
+     75.93167491141739,
+     90.23237599717295
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_interpnorm": {
+    "mean": -58.24233749662657,
+    "ci95": [
+     -64.70132623685048,
+     -52.01901339933628
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_own": {
+    "mean": -40.14649182221107,
+    "ci95": [
+     -46.45144562377927,
+     -33.35355201952934
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "probe_chordnorm_dtheta_le90": 50.342622152333206,
+   "probe_chordnorm_dtheta_gt90": 132.47442795393118
+  },
+  "pca16|contr|jaeger|a10|b0.1|unc_normrestored": {
+   "probe_own": 88.79406161294821,
+   "probe_chordnorm": 89.25387504168675,
+   "probe_splinenorm": 88.95117784358683,
+   "probe_interpnorm": 68.99856511526902,
+   "mlp_own": 87.75243101917523,
+   "mlp_chordnorm": 87.36615032107555,
+   "mlp_splinenorm": 86.3027970529361,
+   "mlp_interpnorm": 67.15134907365382,
+   "R_own": -0.2153817608104378,
+   "R_chordnorm": -0.12093119037410137,
+   "R_splinenorm": -0.13792997514116645,
+   "R_interpnorm": -28.666963495896272,
+   "norm_ratio_to_chord": 1.6654287204851181,
+   "gap_vs_chord_probe_chordnorm": {
+    "mean": 83.03547457456939,
+    "ci95": [
+     76.085253368087,
+     90.42762547219891
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_chord_probe_own": {
+    "mean": 82.57566114583082,
+    "ci95": [
+     75.63681872251998,
+     90.11041288104128
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_interpnorm": {
+    "mean": -60.10863692448583,
+    "ci95": [
+     -66.36853202024278,
+     -53.75043889779802
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_own": {
+    "mean": -40.31314042680662,
+    "ci95": [
+     -46.75959084049639,
+     -33.49558278617397
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "probe_chordnorm_dtheta_le90": 49.769803280862064,
+   "probe_chordnorm_dtheta_gt90": 131.28530627095176
+  },
+  "pca16|contr|jaeger|a10|b0.1|cen": {
+   "probe_own": 93.01385081732894,
+   "probe_chordnorm": 95.41571800364216,
+   "probe_splinenorm": 94.1967989791792,
+   "probe_interpnorm": 102.2371061197212,
+   "mlp_own": 93.45746748744712,
+   "mlp_chordnorm": 100.93306170014148,
+   "mlp_splinenorm": 100.34661734691787,
+   "mlp_interpnorm": 103.47660078543326,
+   "R_own": 0.03530185182567742,
+   "R_chordnorm": 0.17602672150246387,
+   "R_splinenorm": 0.17261332622477088,
+   "R_interpnorm": -28.172851072952295,
+   "norm_ratio_to_chord": 0.1419389711200861,
+   "gap_vs_chord_probe_chordnorm": {
+    "mean": 89.19731753652478,
+    "ci95": [
+     82.7349795154517,
+     95.33926109777919
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_chord_probe_own": {
+    "mean": 86.79545035021154,
+    "ci95": [
+     79.99988166756272,
+     94.09103095434803
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_interpnorm": {
+    "mean": -26.870095920033624,
+    "ci95": [
+     -36.45281261909504,
+     -17.304119382416754
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_own": {
+    "mean": -36.0933512224259,
+    "ci95": [
+     -42.585680119167485,
+     -29.626634282725433
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "probe_chordnorm_dtheta_le90": 70.59948467202226,
+   "probe_chordnorm_dtheta_gt90": 121.83299864697948
+  },
+  "pca16|contr|jaeger|a10|b0.3|unc": {
+   "probe_own": 78.3264696729192,
+   "probe_chordnorm": 90.12521558748222,
+   "probe_splinenorm": 89.87637620875898,
+   "probe_interpnorm": 70.86486454312826,
+   "mlp_own": 57.861547724545794,
+   "mlp_chordnorm": 84.59893335658698,
+   "mlp_splinenorm": 83.63293508257208,
+   "mlp_interpnorm": 45.47778076297799,
+   "R_own": -1.948755590835373,
+   "R_chordnorm": -0.07628507028627614,
+   "R_splinenorm": -0.09136366444003459,
+   "R_interpnorm": -28.59203269916456,
+   "norm_ratio_to_chord": 6.330050932441047,
+   "gap_vs_chord_probe_chordnorm": {
+    "mean": 83.90681512036485,
+    "ci95": [
+     77.16704418256995,
+     91.11430919156902
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_chord_probe_own": {
+    "mean": 72.10806920580183,
+    "ci95": [
+     64.93216540570593,
+     79.30442517221954
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_interpnorm": {
+    "mean": -58.24233749662657,
+    "ci95": [
+     -64.70132623685048,
+     -52.01901339933628
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_own": {
+    "mean": -50.78073236683563,
+    "ci95": [
+     -57.55699800713849,
+     -44.53996114481226
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "probe_chordnorm_dtheta_le90": 50.342622152333206,
+   "probe_chordnorm_dtheta_gt90": 132.47442795393115
+  },
+  "pca16|contr|jaeger|a10|b0.3|unc_normrestored": {
+   "probe_own": 77.70036862690206,
+   "probe_chordnorm": 89.26436734698665,
+   "probe_splinenorm": 88.96123755463604,
+   "probe_interpnorm": 69.15309654226166,
+   "mlp_own": 72.82369209140359,
+   "mlp_chordnorm": 86.95780317289181,
+   "mlp_splinenorm": 85.85544381955754,
+   "mlp_interpnorm": 65.4071391657957,
+   "R_own": -1.6361691137820265,
+   "R_chordnorm": -0.11586757932677978,
+   "R_splinenorm": -0.13264619149938642,
+   "R_interpnorm": -28.658403842378462,
+   "norm_ratio_to_chord": 5.4207126542453326,
+   "gap_vs_chord_probe_chordnorm": {
+    "mean": 83.04596687986925,
+    "ci95": [
+     76.100032490863,
+     90.44044727105515
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_chord_probe_own": {
+    "mean": 71.48196815978469,
+    "ci95": [
+     64.45703848022457,
+     78.71877642041657
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_interpnorm": {
+    "mean": -59.954105497493174,
+    "ci95": [
+     -66.21148820545052,
+     -53.602271912768344
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_own": {
+    "mean": -51.40683341285276,
+    "ci95": [
+     -58.42637982285586,
+     -44.8569818636896
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "probe_chordnorm_dtheta_le90": 49.77651676431627,
+   "probe_chordnorm_dtheta_gt90": 131.29982119305507
+  },
+  "pca16|contr|jaeger|a10|b0.3|cen": {
+   "probe_own": 94.3332933375976,
+   "probe_chordnorm": 95.41571800364216,
+   "probe_splinenorm": 94.19679897917922,
+   "probe_interpnorm": 102.2371061197212,
+   "mlp_own": 96.02122297398203,
+   "mlp_chordnorm": 100.93306170014148,
+   "mlp_splinenorm": 100.34661734691788,
+   "mlp_interpnorm": 103.47660078543326,
+   "R_own": 0.09674647650694827,
+   "R_chordnorm": 0.17602672150246387,
+   "R_splinenorm": 0.17261332622477088,
+   "R_interpnorm": -28.172851072952295,
+   "norm_ratio_to_chord": 0.4258169133602583,
+   "gap_vs_chord_probe_chordnorm": {
+    "mean": 89.19731753652478,
+    "ci95": [
+     82.7349795154517,
+     95.33926109777919
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_chord_probe_own": {
+    "mean": 88.11489287048022,
+    "ci95": [
+     81.59169409068872,
+     95.26101547611745
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_interpnorm": {
+    "mean": -26.87009592003363,
+    "ci95": [
+     -36.45281261909505,
+     -17.304119382416758
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_own": {
+    "mean": -34.77390870215723,
+    "ci95": [
+     -41.20331216766386,
+     -28.315071821568107
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "probe_chordnorm_dtheta_le90": 70.59948467202226,
+   "probe_chordnorm_dtheta_gt90": 121.83299864697948
+  },
+  "pca16|contr|jaeger|a10|b0.5|unc": {
+   "probe_own": 73.55148781440644,
+   "probe_chordnorm": 90.12521558748223,
+   "probe_splinenorm": 89.87637620875898,
+   "probe_interpnorm": 70.86486454312826,
+   "mlp_own": 50.382850086243444,
+   "mlp_chordnorm": 84.59893335658698,
+   "mlp_splinenorm": 83.63293508257208,
+   "mlp_interpnorm": 45.47778076297799,
+   "R_own": -3.845911123515624,
+   "R_chordnorm": -0.07628507028627614,
+   "R_splinenorm": -0.09136366444003459,
+   "R_interpnorm": -28.592032699164548,
+   "norm_ratio_to_chord": 10.550084887401745,
+   "gap_vs_chord_probe_chordnorm": {
+    "mean": 83.90681512036484,
+    "ci95": [
+     77.16704418256995,
+     91.11430919156905
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_chord_probe_own": {
+    "mean": 67.33308734728907,
+    "ci95": [
+     60.818554338131584,
+     73.97106911533714
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_interpnorm": {
+    "mean": -58.24233749662657,
+    "ci95": [
+     -64.70132623685048,
+     -52.019013399336295
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_own": {
+    "mean": -55.555714225348375,
+    "ci95": [
+     -62.09416797747022,
+     -49.33068770447555
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "probe_chordnorm_dtheta_le90": 50.342622152333206,
+   "probe_chordnorm_dtheta_gt90": 132.47442795393115
+  },
+  "pca16|contr|jaeger|a10|b0.5|unc_normrestored": {
+   "probe_own": 72.23578991022659,
+   "probe_chordnorm": 89.29134168473541,
+   "probe_splinenorm": 88.98871876711605,
+   "probe_interpnorm": 69.29646763788357,
+   "mlp_own": 66.03342741556891,
+   "mlp_chordnorm": 86.51069770827019,
+   "mlp_splinenorm": 85.37781200601198,
+   "mlp_interpnorm": 63.198290815705924,
+   "R_own": -3.5590611269785914,
+   "R_chordnorm": -0.11028291689200925,
+   "R_splinenorm": -0.12681847965612414,
+   "R_interpnorm": -28.64900341562543,
+   "norm_ratio_to_chord": 9.756420141030643,
+   "gap_vs_chord_probe_chordnorm": {
+    "mean": 83.07294121761804,
+    "ci95": [
+     76.13012588191705,
+     90.46736965767235
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_chord_probe_own": {
+    "mean": 66.01738944310921,
+    "ci95": [
+     59.40657951104806,
+     72.77484034654735
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_interpnorm": {
+    "mean": -59.81073440187125,
+    "ci95": [
+     -66.0499796806337,
+     -53.4187872770835
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_own": {
+    "mean": -56.87141212952823,
+    "ci95": [
+     -63.31504475954017,
+     -50.530680576441306
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "probe_chordnorm_dtheta_le90": 49.79379478702375,
+   "probe_chordnorm_dtheta_gt90": 131.3371174145575
+  },
+  "pca16|contr|jaeger|a10|b0.5|cen": {
+   "probe_own": 95.99139049436438,
+   "probe_chordnorm": 95.41571800364217,
+   "probe_splinenorm": 94.1967989791792,
+   "probe_interpnorm": 102.23710611972119,
+   "mlp_own": 99.73468799018099,
+   "mlp_chordnorm": 100.93306170014148,
+   "mlp_splinenorm": 100.34661734691788,
+   "mlp_interpnorm": 103.47660078543326,
+   "R_own": 0.1436043736271416,
+   "R_chordnorm": 0.17602672150246387,
+   "R_splinenorm": 0.17261332622477088,
+   "R_interpnorm": -28.172851072952295,
+   "norm_ratio_to_chord": 0.7096948556004307,
+   "gap_vs_chord_probe_chordnorm": {
+    "mean": 89.19731753652478,
+    "ci95": [
+     82.7349795154517,
+     95.33926109777919
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_chord_probe_own": {
+    "mean": 89.77299002724699,
+    "ci95": [
+     83.26101395997162,
+     96.71672408107351
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_interpnorm": {
+    "mean": -26.87009592003363,
+    "ci95": [
+     -36.45281261909504,
+     -17.304119382416758
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_own": {
+    "mean": -33.11581154539044,
+    "ci95": [
+     -39.226968596608245,
+     -26.983440531094548
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "probe_chordnorm_dtheta_le90": 70.59948467202226,
+   "probe_chordnorm_dtheta_gt90": 121.83299864697948
+  },
+  "pca16|contr|jaeger|a10|b1|unc": {
+   "probe_own": 71.41287835529555,
+   "probe_chordnorm": 90.12521558748223,
+   "probe_splinenorm": 89.87637620875898,
+   "probe_interpnorm": 70.86486454312826,
+   "mlp_own": 45.51981044766452,
+   "mlp_chordnorm": 84.59893335658698,
+   "mlp_splinenorm": 83.63293508257208,
+   "mlp_interpnorm": 45.47778076297799,
+   "R_own": -8.711981881648269,
+   "R_chordnorm": -0.07628507028627614,
+   "R_splinenorm": -0.09136366444003459,
+   "R_interpnorm": -28.592032699164548,
+   "norm_ratio_to_chord": 21.10016977480349,
+   "gap_vs_chord_probe_chordnorm": {
+    "mean": 83.90681512036484,
+    "ci95": [
+     77.16704418256995,
+     91.11430919156905
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_chord_probe_own": {
+    "mean": 65.19447788817816,
+    "ci95": [
+     58.77950307683612,
+     71.59739582365685
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_interpnorm": {
+    "mean": -58.24233749662657,
+    "ci95": [
+     -64.70132623685048,
+     -52.019013399336295
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_own": {
+    "mean": -57.6943236844593,
+    "ci95": [
+     -64.29153771667643,
+     -51.140697712915724
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "probe_chordnorm_dtheta_le90": 50.342622152333206,
+   "probe_chordnorm_dtheta_gt90": 132.47442795393115
+  },
+  "pca16|contr|jaeger|a10|b1|unc_normrestored": {
+   "probe_own": 69.32538412650638,
+   "probe_chordnorm": 89.46581398504247,
+   "probe_splinenorm": 89.17297349368995,
+   "probe_interpnorm": 69.60041433013276,
+   "mlp_own": 57.131464306357664,
+   "mlp_chordnorm": 85.40162629960874,
+   "mlp_splinenorm": 84.26579045844262,
+   "mlp_interpnorm": 56.33060361943658,
+   "R_own": -9.33279120078373,
+   "R_chordnorm": -0.09548757802051593,
+   "R_splinenorm": -0.11138029807058847,
+   "R_interpnorm": -28.624252416465783,
+   "norm_ratio_to_chord": 22.437337158880496,
+   "gap_vs_chord_probe_chordnorm": {
+    "mean": 83.2474135179251,
+    "ci95": [
+     76.35832764528239,
+     90.62019171308735
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_chord_probe_own": {
+    "mean": 63.106983659388995,
+    "ci95": [
+     56.7140761784766,
+     69.71085008891048
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_interpnorm": {
+    "mean": -59.50678770962207,
+    "ci95": [
+     -65.76909484568922,
+     -53.18801377998092
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_own": {
+    "mean": -59.78181791324845,
+    "ci95": [
+     -66.63420869592207,
+     -53.12730532542616
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "probe_chordnorm_dtheta_le90": 49.90745555985187,
+   "probe_chordnorm_dtheta_gt90": 131.576324566697
+  },
+  "pca16|contr|jaeger|a10|b1|cen": {
+   "probe_own": 107.96932023475658,
+   "probe_chordnorm": 95.41571800364217,
+   "probe_splinenorm": 94.1967989791792,
+   "probe_interpnorm": 102.23710611972119,
+   "mlp_own": 112.2182962665998,
+   "mlp_chordnorm": 100.93306170014148,
+   "mlp_splinenorm": 100.34661734691788,
+   "mlp_interpnorm": 103.47660078543326,
+   "R_own": 0.18169354829619952,
+   "R_chordnorm": 0.17602672150246387,
+   "R_splinenorm": 0.17261332622477088,
+   "R_interpnorm": -28.172851072952295,
+   "norm_ratio_to_chord": 1.4193897112008613,
+   "gap_vs_chord_probe_chordnorm": {
+    "mean": 89.19731753652478,
+    "ci95": [
+     82.7349795154517,
+     95.33926109777919
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_chord_probe_own": {
+    "mean": 101.75091976763918,
+    "ci95": [
+     96.24386181218387,
+     107.4400140722104
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_interpnorm": {
+    "mean": -26.87009592003363,
+    "ci95": [
+     -36.45281261909504,
+     -17.304119382416758
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_own": {
+    "mean": -21.137881804998262,
+    "ci95": [
+     -26.43717969544603,
+     -15.86903471019237
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "probe_chordnorm_dtheta_le90": 70.59948467202226,
+   "probe_chordnorm_dtheta_gt90": 121.83299864697948
+  },
+  "pca16|pos|-|a10|b0.1|unc": {
+   "probe_own": 90.23111618662199,
+   "probe_chordnorm": 36.750145063225155,
+   "probe_splinenorm": 35.130201507597064,
+   "probe_interpnorm": 22.030888826479043,
+   "mlp_own": 90.31683038554814,
+   "mlp_chordnorm": 43.25275076597245,
+   "mlp_splinenorm": 40.191222059466085,
+   "mlp_interpnorm": 13.535807685521638,
+   "R_own": 0.007714325850929672,
+   "R_chordnorm": -0.0751500487851322,
+   "R_splinenorm": -0.08970186008588237,
+   "R_interpnorm": -28.602434969408268,
+   "norm_ratio_to_chord": 0.09111685258595059,
+   "gap_vs_chord_probe_chordnorm": {
+    "mean": 30.531744596107774,
+    "ci95": [
+     27.784144952387418,
+     32.94040706867228
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_chord_probe_own": {
+    "mean": 84.01271571950461,
+    "ci95": [
+     77.24767350442404,
+     91.28204981406854
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_interpnorm": {
+    "mean": -107.0763132132758,
+    "ci95": [
+     -111.42907115989951,
+     -102.55574214270725
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_own": {
+    "mean": -38.87608585313285,
+    "ci95": [
+     -45.324138748515644,
+     -32.373316306698534
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "probe_chordnorm_dtheta_le90": 32.25840548571179,
+   "probe_chordnorm_dtheta_gt90": 41.531674290900675
+  },
+  "pca16|pos|-|a10|b0.3|unc": {
+   "probe_own": 84.93654139962241,
+   "probe_chordnorm": 36.750145063225155,
+   "probe_splinenorm": 35.13020150759706,
+   "probe_interpnorm": 22.030888826479043,
+   "mlp_own": 85.08116571121018,
+   "mlp_chordnorm": 43.25275076597245,
+   "mlp_splinenorm": 40.19122205946608,
+   "mlp_interpnorm": 13.535807685521634,
+   "R_own": 0.016986072320343517,
+   "R_chordnorm": -0.0751500487851322,
+   "R_splinenorm": -0.08970186008588234,
+   "R_interpnorm": -28.602434969408268,
+   "norm_ratio_to_chord": 0.27335055775785183,
+   "gap_vs_chord_probe_chordnorm": {
+    "mean": 30.531744596107767,
+    "ci95": [
+     27.784144952387418,
+     32.94040706867228
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_chord_probe_own": {
+    "mean": 78.71814093250502,
+    "ci95": [
+     72.34679067557302,
+     85.47120591753443
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_interpnorm": {
+    "mean": -107.0763132132758,
+    "ci95": [
+     -111.42907115989951,
+     -102.55574214270725
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_own": {
+    "mean": -44.17066064013242,
+    "ci95": [
+     -50.20989158510009,
+     -37.873819979720096
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "probe_chordnorm_dtheta_le90": 32.25840548571179,
+   "probe_chordnorm_dtheta_gt90": 41.531674290900675
+  },
+  "pca16|pos|-|a10|b0.5|unc": {
+   "probe_own": 77.7756789010357,
+   "probe_chordnorm": 36.750145063225155,
+   "probe_splinenorm": 35.130201507597064,
+   "probe_interpnorm": 22.030888826479043,
+   "mlp_own": 78.31840231612308,
+   "mlp_chordnorm": 43.25275076597245,
+   "mlp_splinenorm": 40.191222059466085,
+   "mlp_interpnorm": 13.535807685521638,
+   "R_own": 0.017758685872174274,
+   "R_chordnorm": -0.07515004878513222,
+   "R_splinenorm": -0.08970186008588234,
+   "R_interpnorm": -28.602434969408268,
+   "norm_ratio_to_chord": 0.45558426292975307,
+   "gap_vs_chord_probe_chordnorm": {
+    "mean": 30.531744596107774,
+    "ci95": [
+     27.784144952387418,
+     32.94040706867228
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_chord_probe_own": {
+    "mean": 71.55727843391831,
+    "ci95": [
+     65.650312718827,
+     77.85107256643504
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_interpnorm": {
+    "mean": -107.0763132132758,
+    "ci95": [
+     -111.42907115989951,
+     -102.55574214270725
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_own": {
+    "mean": -51.33152313871913,
+    "ci95": [
+     -56.983834185905145,
+     -45.506408067703376
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "probe_chordnorm_dtheta_le90": 32.25840548571179,
+   "probe_chordnorm_dtheta_gt90": 41.531674290900675
+  },
+  "pca16|pos|-|a10|b1|unc": {
+   "probe_own": 50.240653904022714,
+   "probe_chordnorm": 36.750145063225155,
+   "probe_splinenorm": 35.130201507597064,
+   "probe_interpnorm": 22.030888826479043,
+   "mlp_own": 57.98314402223056,
+   "mlp_chordnorm": 43.25275076597245,
+   "mlp_splinenorm": 40.191222059466085,
+   "mlp_interpnorm": 13.535807685521638,
+   "R_own": -0.01792707051021467,
+   "R_chordnorm": -0.07515004878513222,
+   "R_splinenorm": -0.08970186008588234,
+   "R_interpnorm": -28.602434969408268,
+   "norm_ratio_to_chord": 0.9111685258595061,
+   "gap_vs_chord_probe_chordnorm": {
+    "mean": 30.531744596107774,
+    "ci95": [
+     27.784144952387418,
+     32.94040706867228
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_chord_probe_own": {
+    "mean": 44.022253436905324,
+    "ci95": [
+     40.50532148586375,
+     47.324063260944975
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_interpnorm": {
+    "mean": -107.0763132132758,
+    "ci95": [
+     -111.42907115989951,
+     -102.55574214270725
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_own": {
+    "mean": -78.86654813573212,
+    "ci95": [
+     -82.4251392970846,
+     -75.16761376885647
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "probe_chordnorm_dtheta_le90": 32.25840548571179,
+   "probe_chordnorm_dtheta_gt90": 41.531674290900675
+  },
+  "pca16|contr|pinv|a10|b0.1|unc": {
+   "probe_own": 88.96071021754362,
+   "probe_chordnorm": 90.1252155874822,
+   "probe_splinenorm": 89.87637620875894,
+   "probe_interpnorm": 70.86486454312595,
+   "mlp_own": 79.51422174312673,
+   "mlp_chordnorm": 84.59893335658707,
+   "mlp_splinenorm": 83.63293508257216,
+   "mlp_interpnorm": 45.477780762977964,
+   "R_own": -0.283524201753727,
+   "R_chordnorm": -0.07628507028627539,
+   "R_splinenorm": -0.09136366444003374,
+   "R_interpnorm": -28.59203269916455,
+   "norm_ratio_to_chord": 2.110016977480349,
+   "gap_vs_chord_probe_chordnorm": {
+    "mean": 83.90681512036481,
+    "ci95": [
+     77.16704418256998,
+     91.11430919156905
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_chord_probe_own": {
+    "mean": 82.74230975042626,
+    "ci95": [
+     75.9316749114173,
+     90.23237599717272
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_interpnorm": {
+    "mean": -58.242337496628885,
+    "ci95": [
+     -64.70132623685498,
+     -52.01901339934049
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_own": {
+    "mean": -40.146491822211196,
+    "ci95": [
+     -46.45144562377953,
+     -33.35355201952946
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "probe_chordnorm_dtheta_le90": 50.34262215233312,
+   "probe_chordnorm_dtheta_gt90": 132.4744279539312
+  },
+  "pca16|contr|pinv|a10|b0.3|unc": {
+   "probe_own": 78.32646967291875,
+   "probe_chordnorm": 90.1252155874822,
+   "probe_splinenorm": 89.87637620875894,
+   "probe_interpnorm": 70.86486454312595,
+   "mlp_own": 57.86154772454495,
+   "mlp_chordnorm": 84.59893335658707,
+   "mlp_splinenorm": 83.63293508257217,
+   "mlp_interpnorm": 45.47778076297795,
+   "R_own": -1.948755590835372,
+   "R_chordnorm": -0.07628507028627539,
+   "R_splinenorm": -0.09136366444003374,
+   "R_interpnorm": -28.592032699164548,
+   "norm_ratio_to_chord": 6.330050932441047,
+   "gap_vs_chord_probe_chordnorm": {
+    "mean": 83.90681512036481,
+    "ci95": [
+     77.16704418256998,
+     91.11430919156905
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_chord_probe_own": {
+    "mean": 72.10806920580137,
+    "ci95": [
+     64.93216540570585,
+     79.30442517221883
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_interpnorm": {
+    "mean": -58.24233749662889,
+    "ci95": [
+     -64.70132623685498,
+     -52.0190133993405
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_own": {
+    "mean": -50.78073236683607,
+    "ci95": [
+     -57.556998007138716,
+     -44.539961144813304
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "probe_chordnorm_dtheta_le90": 50.342622152333135,
+   "probe_chordnorm_dtheta_gt90": 132.4744279539312
+  },
+  "pca16|contr|pinv|a10|b0.5|unc": {
+   "probe_own": 73.55148781440529,
+   "probe_chordnorm": 90.1252155874822,
+   "probe_splinenorm": 89.87637620875894,
+   "probe_interpnorm": 70.86486454312593,
+   "mlp_own": 50.38285008624187,
+   "mlp_chordnorm": 84.59893335658707,
+   "mlp_splinenorm": 83.63293508257216,
+   "mlp_interpnorm": 45.477780762977964,
+   "R_own": -3.8459111235156236,
+   "R_chordnorm": -0.07628507028627539,
+   "R_splinenorm": -0.09136366444003374,
+   "R_interpnorm": -28.592032699164548,
+   "norm_ratio_to_chord": 10.550084887401745,
+   "gap_vs_chord_probe_chordnorm": {
+    "mean": 83.90681512036481,
+    "ci95": [
+     77.16704418256998,
+     91.11430919156905
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_chord_probe_own": {
+    "mean": 67.33308734728793,
+    "ci95": [
+     60.818554338131705,
+     73.9710691153379
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_interpnorm": {
+    "mean": -58.242337496628885,
+    "ci95": [
+     -64.70132623685498,
+     -52.01901339934049
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_own": {
+    "mean": -55.55571422534953,
+    "ci95": [
+     -62.09416797747064,
+     -49.33068770447877
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "probe_chordnorm_dtheta_le90": 50.34262215233312,
+   "probe_chordnorm_dtheta_gt90": 132.47442795393124
+  },
+  "pca16|contr|pinv|a10|b1|unc": {
+   "probe_own": 71.41287835529344,
+   "probe_chordnorm": 90.1252155874822,
+   "probe_splinenorm": 89.87637620875894,
+   "probe_interpnorm": 70.86486454312593,
+   "mlp_own": 45.51981044766391,
+   "mlp_chordnorm": 84.59893335658707,
+   "mlp_splinenorm": 83.63293508257216,
+   "mlp_interpnorm": 45.477780762977964,
+   "R_own": -8.711981881648269,
+   "R_chordnorm": -0.07628507028627539,
+   "R_splinenorm": -0.09136366444003374,
+   "R_interpnorm": -28.592032699164548,
+   "norm_ratio_to_chord": 21.10016977480349,
+   "gap_vs_chord_probe_chordnorm": {
+    "mean": 83.90681512036481,
+    "ci95": [
+     77.16704418256998,
+     91.11430919156905
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_chord_probe_own": {
+    "mean": 65.19447788817605,
+    "ci95": [
+     58.77950307683343,
+     71.59739582365565
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_interpnorm": {
+    "mean": -58.242337496628885,
+    "ci95": [
+     -64.70132623685498,
+     -52.01901339934049
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "gap_vs_interp_probe_own": {
+    "mean": -57.69432368446138,
+    "ci95": [
+     -64.29153771667997,
+     -51.140697712917195
+    ],
+    "n": 384,
+    "n_clips": 223
+   },
+   "probe_chordnorm_dtheta_le90": 50.34262215233312,
+   "probe_chordnorm_dtheta_gt90": 132.47442795393124
+  }
+ },
+ "arm_key": "space|kind|AND|alpha|beta|gate; space: full (1024-d, COAST), pca16/pca64 (adaptation), full_tok (fit on 8 time tokens per clip), full_jaegerR (uncentred Jaeger Def. 1 correlation); kind: contr = C_t AND NOT C_s (Eq. 4), pos = C_t only; gate: unc = COAST h M^T on the raw h (Eq. 5/9), cen = about the knot mean, unc_normrestored = unc then rescaled to ||h||. Metrics: {probe,mlp}_{own,chordnorm,splinenorm,interpnorm} = mean abs angle error to target (deg), edit rescaled per clip to the raw chord / stored smoothing spline / paper's interpolating spline ||delta||; R_* = nearest-real R (higher better); norm_ratio_to_chord = ||edit|| / ||raw-chord edit||.",
+ "config": {
+  "alphas": [
+   0.1,
+   0.5,
+   1.0,
+   2.0,
+   10.0
+  ],
+  "betas": [
+   0.1,
+   0.3,
+   0.5,
+   1.0
+  ],
+  "n_clips": 48,
+  "alpha_stride": 8,
+  "pca_k": [
+   16,
+   64
+  ],
+  "alpha_sweep_variants": [],
+  "variants": [
+   "full",
+   "pca16"
+  ],
+  "cond_aim": "arc",
+  "chord_aim": "coord",
+  "target_condition_knots": {
+   "146.25": {
+    "191.25": 0.1111111111111111,
+    "140.625": 0.8888888888888888
+   },
+   "151.875": {
+    "191.25": 0.2222222222222222,
+    "140.625": 0.7777777777777778
+   },
+   "157.5": {
+    "191.25": 0.3333333333333333,
+    "140.625": 0.6666666666666667
+   },
+   "163.125": {
+    "191.25": 0.4444444444444444,
+    "140.625": 0.5555555555555556
+   },
+   "168.75": {
+    "191.25": 0.5555555555555556,
+    "140.625": 0.4444444444444444
+   },
+   "174.375": {
+    "191.25": 0.6666666666666666,
+    "140.625": 0.33333333333333337
+   },
+   "180.0": {
+    "191.25": 0.7777777777777778,
+    "140.625": 0.2222222222222222
+   },
+   "185.625": {
+    "191.25": 0.8888888888888888,
+    "140.625": 0.11111111111111116
+   }
+  },
+  "tokens": false
+ },
+ "runtime_s": 18.63069987297058
+}

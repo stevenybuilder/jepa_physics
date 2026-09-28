@@ -225,7 +225,7 @@ def _prefix_f32(model, pv, points):
     return saved, final, final.float().mean(1)
 
 
-def forward(root, batch=8, smoke=False):
+def forward(root, batch=8, smoke=False, model_kind="vjepa2"):
     import torch
     from wm.data import decode, load_table
     from wm.extract import load_model, pick_device, preprocess, set_precision
@@ -249,7 +249,7 @@ def forward(root, batch=8, smoke=False):
         waited = time.time() - t_wait
         print(f"lock acquired after {waited:.0f}s", flush=True)
         t0 = time.time()
-        model = load_model("vjepa2", dev)
+        model = load_model(model_kind, dev)      # "random" = VJEPA2Config + torch.manual_seed(0) (encoder AND predictor)
         # ---- encoder-output probe inputs + bf16 forecasts of the probe clips
         enc_mp, fc = [], []
         for s in range(0, len(probe_ids), 16):
@@ -296,7 +296,8 @@ def forward(root, batch=8, smoke=False):
     info = {"seconds_gpu_total": seconds, "seconds_probe_clips": t_probe, "lock_wait_s": waited,
             "gpu": torch.cuda.get_device_name(0), "torch": torch.__version__,
             "precision": "bf16 autocast forward, fp32 residual stream, fp32 outputs", "smoke": smoke, "batch": batch,
-            "points": POINTS, "conditions": {str(p): conditions(p) for p in POINTS}, "n_probe_clips": int(len(probe_ids))}
+            "points": POINTS, "conditions": {str(p): conditions(p) for p in POINTS}, "n_probe_clips": int(len(probe_ids)),
+            "model": model_kind}
     np.savez(root / "forward.npz", **out)
     (root / "forward_info.json").write_text(json.dumps(info, indent=1, default=float))
     print("done", seconds, flush=True)
@@ -304,7 +305,7 @@ def forward(root, batch=8, smoke=False):
 
 # ================================================================ score (CPU, local)
 
-def score(root):
+def score(root, model_kind="vjepa2"):
     from run_session2 import angle_of, wrap, write
     from wm.data import load_table
     from wm.probes import Standardizer, cv_select_alpha, fit_ridge, predict, score as pscore, targets
@@ -322,8 +323,11 @@ def score(root):
     pids = P["probe_ids"][:len(F["probe_enc_mp"])]
     prow = np.array([row_of[int(i)] for i in pids])
     folds5 = np.random.default_rng(0).permutation(np.arange(len(prow)) % 5)
-    Zall = np.load(PROJECT_ROOT / "artifacts/session2/native/pred_pooled_all.npy").astype(np.float64)
-    native_sha = sha256_file(PROJECT_ROOT / "artifacts/session2/native/pred_pooled_all.npy")
+    if model_kind == "vjepa2":
+        Zall = np.load(PROJECT_ROOT / "artifacts/session2/native/pred_pooled_all.npy").astype(np.float64)
+        native_sha = sha256_file(PROJECT_ROOT / "artifacts/session2/native/pred_pooled_all.npy")
+    else:   # untrained copy: its forecast reader is refit on ITS OWN (bf16) forecasts of the same probe clips
+        Zall, native_sha = None, None
 
     def fit(X, Yt):
         st = Standardizer().fit(X)
@@ -336,9 +340,10 @@ def score(root):
         return predict(st.transform(X), W, b)
 
     probes, pinfo = {}, {}
-    probes["forecast"], pinfo["forecast"] = fit(Zall[prow].mean(1), Y[prow])
+    probes["forecast"], pinfo["forecast"] = fit(Zall[prow].mean(1) if Zall is not None
+                                                else F["probe_pred"].astype(np.float64).mean(1), Y[prow])
     probes["encoder_output"], pinfo["encoder_output"] = fit(F["probe_enc_mp"].astype(np.float64), Y[prow])
-    parity = {"bf16_vs_fp32_native_forecast_rel_maxabs":
+    parity = None if Zall is None else {"bf16_vs_fp32_native_forecast_rel_maxabs":
               float(np.abs(F["probe_pred"] - Zall[prow]).max() / np.abs(Zall[prow]).max()),
               "bf16_vs_fp32_forecast_direction_abs_deg":
               summarize(wrap(angle_of(apply(probes["forecast"], F["probe_pred"].mean(1)))
@@ -348,7 +353,12 @@ def score(root):
         X = F[key].astype(np.float64)
         return X.mean(1) if reader == "forecast" else X
 
-    res = {"question": "which context tokens does the V-JEPA 2 predictor read motion direction from, by encoder depth?",
+    res = {"model": model_kind,
+           **({"control": ("untrained copy: VJEPA2Config + torch.manual_seed(0) encoder and predictor (wm.extract.load_model('random'), "
+                           "the copy behind results/p1a_*_random.json); same plan (pairs, token sets); both readers refit on this "
+                           "copy's own probe-clip outputs (forecast reader on its bf16 forecasts, not the fp32 native cache)")}
+              if model_kind != "vjepa2" else {}),
+           "question": "which context tokens does the V-JEPA 2 predictor read motion direction from, by encoder depth?",
            "hypothesis": {"file": "refs/physics_paper.txt", "lines": "795-798",
                           "text": "we hypothesize it may be related to feature object binding, in which velocity information "
                                   "is most \"bound\" to the corresponding object. At the end of the network, information is "
@@ -368,7 +378,7 @@ def score(root):
                               "none": "A unpatched", "all": "B unpatched (patching every token = B's forward)"},
                "zone": "paper's physics emergence zone = middle third, points 8-16; our per-patch onset points 8-9"},
            "readers": pinfo, "parity": parity,
-           "config": {"points": POINTS, "pair_rule": meta["pair_rule"], "plan": {t: meta[t] for t in PAIR_TYPES},
+           "config": {"points": list(POINTS), "pair_rule": meta["pair_rule"], "plan": {t: meta[t] for t in PAIR_TYPES},
                       "forward": finfo},
            "pair_types": {}}
     curves = {}
@@ -411,14 +421,14 @@ def score(root):
     res["verdict_inputs"] = {t: {r: {str(p): {c: res["pair_types"][t]["readers"][r]["points"][str(p)][c]["binding_fraction"]["mean"]
                                               for c in ("obj", "bg")} for p in POINTS}
                                  for r in ("forecast", "encoder_output")} for t in PAIR_TYPES}
-    write(RES / "p5_token_patching.json", res, seeds={"pairs": 0, "probe_folds": 0, "bootstrap": 0},
+    write(RES / ("p5_token_patching.json" if model_kind == "vjepa2" else f"p5_token_patching_{model_kind}.json"), res, seeds={"pairs": 0, "probe_folds": 0, "bootstrap": 0},
           activation_sha256={"forward_npz": sha256_file(root / "forward.npz"), "native_forecast_cache": native_sha,
                              "plan_npz": sha256_file(ART / "plan.npz")},
           script="scripts/run_token_patching.py")
-    figure(res)
+    figure(res, model_kind)
 
 
-def figure(res):
+def figure(res, model_kind="vjepa2"):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -449,11 +459,13 @@ def figure(res):
     axes[0].set_ylabel("fraction of the A→B direction change\n(patch this token set with B's tokens)")
     h, lb = axes[0].get_legend_handles_labels()
     fig.legend(h, lb, loc="lower center", ncol=3, fontsize=8, frameon=False)
-    fig.suptitle("Which context tokens carry motion direction to the V-JEPA 2 predictor?", fontsize=11)
+    fig.suptitle("Which context tokens carry motion direction to the V-JEPA 2 predictor?" if model_kind == "vjepa2" else
+                 "Untrained V-JEPA 2 copy (random init): which context tokens carry direction to its predictor?", fontsize=11)
     fig.tight_layout(rect=(0, 0.12, 1, 0.95))
     FIG.mkdir(exist_ok=True)
-    fig.savefig(FIG / "fig_token_patching.png", dpi=150)
-    print("wrote", FIG / "fig_token_patching.png")
+    name = "fig_token_patching.png" if model_kind == "vjepa2" else f"fig_token_patching_{model_kind}.png"
+    fig.savefig(FIG / name, dpi=150)
+    print("wrote", FIG / name)
 
 
 if __name__ == "__main__":
@@ -462,10 +474,16 @@ if __name__ == "__main__":
     ap.add_argument("--root", default=str(ART / "forward"))
     ap.add_argument("--smoke", action="store_true")
     ap.add_argument("--batch", type=int, default=8)
+    ap.add_argument("--model", default="vjepa2", choices=("vjepa2", "random"))
+    ap.add_argument("--points", type=int, nargs="*", default=None, help="override POINTS (e.g. 8 12 22)")
     a = ap.parse_args()
+    if a.points:
+        POINTS = tuple(a.points)
     if a.cmd == "plan":
         plan()
     elif a.cmd == "forward":
-        forward(a.root, a.batch, a.smoke)
+        forward(a.root, a.batch, a.smoke, a.model)
     else:
-        score(a.root)
+        if a.points is None:     # score on the points the forward ran
+            POINTS = tuple(json.loads((Path(a.root) / "forward_info.json").read_text())["points"])
+        score(a.root, a.model)

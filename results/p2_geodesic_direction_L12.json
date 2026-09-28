@@ -78,7 +78,8 @@
     "sha256": "97d4d971015315516a3a75bd23bfa60a2d95c473effcf22156832f3ff5b3af22",
     "targets_run": null
    }
-  ]
+  ],
+  "targets_run_note": "filled post hoc from the shard index (np.linspace(0,7,3).round() -> block positions 0,4,7); the shard code predates the targets_run field"
  },
  "matches": "results/p2_steer_direction_direction_L12_contiguous_rawchord.json (seed 0)",
  "metric": "Goodfire 2605.05115 Eq. 4 length under Eq. 6 G_E = (alpha e^-E + beta)^-1 I",
@@ -103,7 +104,11 @@
   "n_free_nodes": 50,
   "quadrature": "Simpson per segment (optimised); 16-subinterval trapezoid (reported LG_*)"
  },
- "targets_run": [],
+ "targets_run": [
+  303.75,
+  326.25,
+  343.125
+ ],
  "headline": {
   "pooled_arms_mean": {
    "chord": {
@@ -6428,7 +6433,10 @@
       ]
      }
     },
-    "restart_null": {}
+    "restart_null": {},
+    "targets_run": [
+     303.75
+    ]
    },
    {
     "seed": 0,
@@ -9191,7 +9199,10 @@
       ]
      }
     },
-    "restart_null": {}
+    "restart_null": {},
+    "targets_run": [
+     326.25
+    ]
    },
    {
     "seed": 0,
@@ -11954,8 +11965,17 @@
       ]
      }
     },
-    "restart_null": {}
+    "restart_null": {},
+    "targets_run": [
+     343.125
+    ]
    }
   ]
- }
+ },
+ "convergence": {
+  "batched_solves": 21,
+  "converged": 1,
+  "note": "every L-BFGS solve (7 per target, 16 paths batched) stopped at the 100-outer-step cap; L_G values are upper bounds"
+ },
+ "angle_plane_note": "point 12: label-free ring angle (unsupervised_angle, centroid plane); point 22: labels-angle fallback (the label-free plane fails choose_angle_source), as in the other Part 2 runs; the ring plane for the ring-plane fraction is the top-2 axes of the kept centroids at both points"
 }

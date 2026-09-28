@@ -103,3 +103,18 @@ def test_velocity_sheet_bins_and_inputs():
     assert set(dbin.tolist()) == {0, 4}
     x = vs.sheet_inputs([90.0], [vs.V_MID + vs.V_HALF], 2.0)
     assert np.allclose(x, [[0.0, 1.0, 2.0]], atol=1e-12)
+
+
+def test_time_predictor_helpers():
+    tp = _script("time_predictor")
+    C = np.arange(8.0)[:, None] * np.array([[1.0, 2.0]])
+    S = lambda t: np.asarray(t, float)[..., None] * np.array([1.0, 2.0])    # noqa: E731  a straight time path
+    dl = tp.step_deltas(S, C)
+    assert np.allclose(dl["sp+2"], [[2, 4]] * 4) and np.allclose(dl["ch+2"], dl["sp+2"])
+    assert np.allclose(dl["null-2"], -dl["sp+2"])
+    assert np.allclose(dl["rev_sp"][:, 0], [3, 1, -1, -3])
+    al, ac = tp.along_across(np.array([[3.0, -4.0]]), np.array([53.13010235]))
+    assert al[0] == pytest.approx(5.0, abs=1e-6) and ac[0] == pytest.approx(0.0, abs=1e-6)
+    assert tp.step_px(3.0) == pytest.approx(3.0 * 2 / 24 * 32)
+    pos = np.array([[[0.0, 0.0], [0.0, -10.0]]])                            # moving up the screen = +y
+    assert tp.heading_deg(pos)[0] == pytest.approx(90.0)
