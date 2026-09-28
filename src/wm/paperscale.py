@@ -120,3 +120,10 @@ def summarise_curve(curve, oofs, Y, score_fn, n_boot=200, seed=0):
     ci, n_none = ci_from_draws(draws)
     return {"onset": av["onset"], "peak": av["peak"], "peak_score": av["peak_score"],
             "onset_ci": ci, "onset_boot_draws_without_onset": n_none}
+
+
+def motion_rows(rows, motion, keep="velocity"):
+    """The entries of `rows` whose clip has motion == keep (motion: per-clip labels over all rows of the table),
+    order preserved. The paper's velocity set is constant-speed only (App. A), so paper-scale rows use keep='velocity'."""
+    rows = np.asarray(rows)
+    return rows[np.asarray(motion)[rows] == keep]

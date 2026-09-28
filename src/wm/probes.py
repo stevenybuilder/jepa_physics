@@ -239,7 +239,7 @@ def patch_selectivity(dataset, variable, pool, results_dir=None, n_boot=200, see
     out["availability"]["selectivity_diff_ci"] = cis
     out["availability"]["selectivity_rule"] = ("POST-HOC: first point where V-JEPA's pooled OOF R2 exceeds the "
                                                "random-init ViT-L's by more than the paired 95% clip-bootstrap CI")
-    write_json(js, out)
+    write_json(js, out, out.get("provenance", {}).get("split_file"))   # keep the split the sweep recorded
     return onset
 
 
@@ -311,11 +311,12 @@ def result_name(step, dataset, variable, pool, model="vjepa2", shuffled=False):
     return name + ("" if model == "vjepa2" else f"_{model}") + ("_shuffled" if shuffled else "")
 
 
-def write_json(path, obj):
-    """Write a results file; dicts get a 'provenance' block (wm.provenance.result_provenance)."""
+def write_json(path, obj, split_path=None):
+    """Write a results file; dicts get a 'provenance' block (wm.provenance.result_provenance; split_path = the split
+    file the run read, default splits/split_v1.json)."""
     if isinstance(obj, dict):
         from wm.provenance import result_provenance as provenance
-        obj = {**obj, "provenance": provenance(obj)}
+        obj = {**obj, "provenance": provenance(obj, split_path)}
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     Path(path).write_text(json.dumps(obj, indent=1, default=lambda o: o.item() if hasattr(o, "item") else str(o)))
 
@@ -407,7 +408,7 @@ def layer_sweep(dataset, variable, pool="meanpool", model="vjepa2", shuffled=Fal
         out["test_radius"] = {str(p): readout_radius(test_preds[p]).round(4).tolist() for p in shown}
     name = result_name("p1a", dataset, variable, pool, model, shuffled)
     path = Path(results_dir or RESULTS) / (name + ".json")
-    write_json(path, out)
+    write_json(path, out, split_path)
     op = oof_path(results_dir, name, oof_dir)
     op.parent.mkdir(parents=True, exist_ok=True)
     np.savez(op, Y=Ytr, oof=np.stack(oofs))

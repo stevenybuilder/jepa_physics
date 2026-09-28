@@ -128,3 +128,23 @@ def spatial_curve(get_X, Y, side_a, side_b, folds_a, folds_b, points=range(N_POI
                          "n_fit": int(len(fit_rows)), "n_eval": int(len(eval_rows))}
         out.append(row)
     return out
+
+
+def cartesian_angle_agreement(P_cart, P_dir, Y_dir):
+    """Angle of a Cartesian (vx, vy) probe's predictions vs a direct (sin θ, cos θ) probe's, on the same clips.
+
+    P_cart [n, 2] predicts magnitude · (cos θ, sin θ) (wm.probes.targets 'vxvy'); its angle atan2(v̂y, v̂x) is turned
+    into the unit vector (sin, cos). P_dir [n, 2] predicts (sin θ, cos θ); Y_dir [n, 2] is the truth. Returns each
+    readout scored against the truth (circular MAE, sin/cos R²; the direct probe both raw and normalised to unit length, the
+    like-for-like comparison with the unit-length Cartesian angle),
+    and the Cartesian angle scored against the direct probe's predictions (circular MAE between the two angles, and
+    the R² of the Cartesian unit vector against the direct probe's (sin, cos) predictions)."""
+    ang = np.arctan2(P_cart[:, 1], P_cart[:, 0])
+    U = np.stack([np.sin(ang), np.cos(ang)], axis=1)
+    D = P_dir / np.linalg.norm(P_dir, axis=1, keepdims=True)
+    cart, direct, direct_u = (score(Y_dir, M, "circular") for M in (U, P_dir, D))
+    agree = score(P_dir, U, "circular")
+    return {"cartesian_angle_vs_truth": {"r2": cart["r2"], "mae_deg": cart["mae"]},
+            "direct_probe_vs_truth": {"r2": direct["r2"], "mae_deg": direct["mae"]},
+            "direct_probe_unit_vs_truth": {"r2": direct_u["r2"], "mae_deg": direct_u["mae"]},
+            "cartesian_angle_vs_direct_probe": {"r2": agree["r2"], "mae_deg": agree["mae"]}}

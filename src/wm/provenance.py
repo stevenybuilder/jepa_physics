@@ -81,15 +81,45 @@ def provenance(split=None, seeds=None, **fields):
             **fields}
 
 
-def result_provenance(obj=None):
+def split_record(split_path=None):
+    """(split_file, split_sha256) of the split file actually read: path relative to the project root when inside it,
+    sha256 of its bytes ("missing" if absent). Default: splits/split_v1.json."""
+    split = Path(split_path) if split_path else SPLIT_PATH
+    if not split.is_absolute():
+        split = PROJECT_ROOT / split
+    rel = split.relative_to(PROJECT_ROOT) if split.is_relative_to(PROJECT_ROOT) else split
+    return str(rel), sha256_file(split) if split.exists() else "missing"
+
+
+def result_provenance(obj=None, split_path=None):
     """Part 1 form (probes.write_json): split file + sha256, seeds, git commit, UTC timestamp, and the pool / model /
-    layer of the result when it carries them. Carries both commit key conventions."""
+    layer of the result when it carries them. Carries both commit key conventions. split_path: the split file the
+    run read (default splits/split_v1.json)."""
     obj = obj if isinstance(obj, dict) else {}
-    return {"split_file": str(SPLIT_PATH.relative_to(PROJECT_ROOT) if SPLIT_PATH.is_relative_to(PROJECT_ROOT)
-                              else SPLIT_PATH),
-            "split_sha256": sha256_file(SPLIT_PATH) if SPLIT_PATH.exists() else "missing",
+    split_file, split_sha = split_record(split_path)
+    return {"split_file": split_file,
+            "split_sha256": split_sha,
             "seeds": {"split": SEED, "other": "all other RNG seeds are 0 (bootstrap, folds, null draws, shuffles); "
                                                 "random-removal controls use seeds 0..n-1"},
             **git_commit(), "timestamp_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
             "pool": obj.get("pool"), "model": obj.get("model", "vjepa2" if "pool" in obj else None),
             "layer": obj.get("point")}
+
+
+def rewrite_split_provenance(path, split_path):
+    """Point the provenance block of an existing results JSON at the split file actually used: only the values of
+    provenance.split_file and provenance.split_sha256 change, every other byte stays. Returns (old, new) records."""
+    path = Path(path)
+    text = path.read_text()
+    prov = json.loads(text)["provenance"]
+    old = (prov["split_file"], prov["split_sha256"])
+    new = split_record(split_path)
+    start = text.rindex('"provenance": {')
+    head, block = text[:start], text[start:]
+    for key, o, n in (("split_file", *[json.dumps(v) for v in (old[0], new[0])]),
+                      ("split_sha256", *[json.dumps(v) for v in (old[1], new[1])])):
+        pat = f'"{key}": {o}'
+        assert block.count(pat) == 1, f"{path}: {pat} not unique in the provenance block"
+        block = block.replace(pat, f'"{key}": {n}')
+    path.write_text(head + block)
+    return old, new
