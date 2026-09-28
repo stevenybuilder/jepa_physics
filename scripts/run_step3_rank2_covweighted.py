@@ -18,7 +18,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from sklearn.covariance import ledoit_wolf  # noqa: E402
-from wm.inlp import basis_path, load_basis  # noqa: E402
+from wm.inlp import INLP_DIR, basis_path, load_basis  # noqa: E402
 from wm.metrics import readout_radius  # noqa: E402
 from wm.adam_probe import fit_adam  # noqa: E402
 from wm.probes import (RESULTS, drop_nan_clips, fit_ridge, load_activations, load_table, predict, split_rows,  # noqa: E402
@@ -91,6 +91,7 @@ V = build_basis(probes["W"])
 euclid = scores(lambda y: steer(Xte, V, probes, y, 1) - Xte)
 euclid_null = null(W1, b1, np.eye(d), U_draws)   # Σ = I: exactly rank_matched_null's N = 1 draws
 
+null_store = {}                                  # full-precision null rows per (reader, edit), for null_medians
 edits = {}
 for name, W, b, S, desc in (
         ("euclidean_N1", W1, b1, np.eye(d), "step 3 at N = 1 recomputed (Σ = I): Euclidean minimum-norm edit through "
@@ -104,6 +105,7 @@ for name, W, b, S, desc in (
          "then reads y* exactly by construction, so error to target is 0 up to float error. Upper bound only")):
     learned = euclid if name == "euclidean_N1" else scores(lambda y: cov_weighted_delta(Xte, W, b, S, y))
     nl = euclid_null if name == "euclidean_N1" else null(W, b, S, U_draws)
+    null_store[("ridge_alpha_100_stored", name)] = nl
     edits[name] = {"rule": desc, "WtSigmaW_cond": float(np.linalg.cond(W.T @ S @ W)), **learned,
                    "rank_matched_null": {**nl, "empirical_p_to_target": empirical_p(learned["mae_to_target"],
                                                                                    nl["mae_to_target"]["draws"]),
@@ -149,6 +151,7 @@ for vname, (vdesc, read) in readers.items():
         else:
             lrn = scores(lambda y, W=W, b=b, S=S: cov_weighted_delta(Xte, W, b, S, y), read)
         nl = null(W, b, S, U_draws, read)
+        null_store[(vname, ename)] = nl
         variants[vname][ename] = {
             **{k: lrn[k] for k in KEYS}, "off_target_speed_mean_abs_change": lrn["off_target"]["mean_abs_change"],
             "all_targets_mae_to_target": lrn["all_targets_mae_to_target"],
@@ -170,6 +173,60 @@ evalprobe_variants = {"rule": "each evaluation probe reads the same steered clip
                       "split_half_eval_probes": {"A": rep_A, "B": rep_B, "n_A": int(in_a.sum()),
                                                  "n_B": int((~in_a).sum())},
                       **variants}
+
+# Adam W1: the same edits with the first probe of the Adam C.11 sequence (artifacts/inlp/direction_direction_L9_adam_b64
+# .npz, run_step3_adam_basis.py) in place of ridge probe 1; same Σ, evaluation probes, off-target probe and U draws
+adam_npz = Path(INLP_DIR) / "direction_direction_L9_adam_b64.npz"
+adam_probes = load_basis(adam_npz)
+Wa1, ba1 = adam_probes["W"][0], adam_probes["b"][0]
+adam_w1 = {"rule": "as edits.covweighted_probe1 / euclidean_N1 and evalprobe_variants, with W1, b1 = probe 1 of the Adam "
+                   "C.11 sequence (batch 64) instead of stored ridge probe 1; same sample Σ, evaluation probes, off-target "
+                   "speed probe and the same 20 U draws (R_j[:, :2], R_j from [d, 2 x 37] Gaussians, seed 0; the Adam "
+                   "basis' own rank-matched stream draws [d, 2 x 84] and would differ)",
+           "weights_file": str(adam_npz.relative_to(adam_npz.parents[2])),
+           "W1_cosine_to_ridge_W1": [float(Wa1[:, j] @ W1[:, j] / np.linalg.norm(Wa1[:, j]) / np.linalg.norm(W1[:, j]))
+                                     for j in range(W1.shape[1])],
+           "W1_train_r2_as_readout": float(1 - ((Xtr @ Wa1 + ba1 - Y[tr]) ** 2).sum()
+                                           / ((Y[tr] - Y[tr].mean(0)) ** 2).sum()),
+           "WtSigmaW_cond": float(np.linalg.cond(Wa1.T @ Sigma @ Wa1))}
+for vname, (vdesc, read) in readers.items():
+    adam_w1[vname] = {}
+    for ename, S in (("euclidean_N1_adamW1", np.eye(d)), ("covweighted_adamW1", Sigma)):
+        lrn = scores(lambda y, S=S: cov_weighted_delta(Xte, Wa1, ba1, S, y), read)
+        nl = null(Wa1, ba1, S, U_draws, read)
+        null_store[(vname, ename)] = nl
+        ridge_ref = variants[vname]["euclidean_N1" if ename.startswith("euclid") else "covweighted_probe1"]
+        adam_w1[vname][ename] = {
+            **{k: lrn[k] for k in KEYS}, "off_target_speed_mean_abs_change": lrn["off_target"]["mean_abs_change"],
+            "all_targets_mae_to_target": lrn["all_targets_mae_to_target"],
+            "ridge_W1_same_edit": {k: ridge_ref[k] for k in (*KEYS, "off_target_speed_mean_abs_change")},
+            "null": {**{k: nl[k]["mean"] for k in KEYS},
+                     **{f"{k}_median": float(np.median(nl[k]["draws"])) for k in KEYS},
+                     "off_target_speed_mean_abs_change": nl["off_target_mean_abs_change"]["mean"],
+                     "off_target_speed_mean_abs_change_median": float(np.median(nl["off_target_mean_abs_change"]["draws"])),
+                     "mae_to_target_draws": nl["mae_to_target"]["draws"],
+                     "empirical_p_to_target": empirical_p(lrn["mae_to_target"], nl["mae_to_target"]["draws"]),
+                     "empirical_p_off_target_change": empirical_p(lrn["off_target"]["mean_abs_change"],
+                                                                  nl["off_target_mean_abs_change"]["draws"]),
+                     "empirical_p_edit_norm": empirical_p(lrn["edit_norm_median"], nl["edit_norm_median"]["draws"])}}
+        e = adam_w1[vname][ename]
+        print(f"[adam W1 | {vname}] {ename}: to target {e['mae_to_target']:.2f}, to true {e['mae_to_true']:.2f}, off "
+              f"{e['off_target_speed_mean_abs_change']:.4f}, |dx| {e['edit_norm_median']:.2f}; null mean "
+              f"{e['null']['mae_to_target']:.2f} median {e['null']['mae_to_target_median']:.2f} "
+              f"p={e['null']['empirical_p_to_target']:.3f}")
+NKEYS = {"mae_to_target": "mae_to_target", "mae_to_true": "mae_to_true", "edit_norm_median": "edit_norm_median",
+         "off_target_speed_mean_abs_change": "off_target_mean_abs_change"}
+null_medians = {"rule": "median (and mean, for comparison) over the 20 null draws of each null in edits (read by the "
+                        "stored alpha = 100 probe), evalprobe_variants and adam_w1; the means are pulled up by one draw "
+                        "(draw index given) whose Σ-weighted edit is far larger than the rest",
+                "rows": {}}
+for (vname, ename), nl in null_store.items():
+    norms = np.array(nl["edit_norm_median"]["draws"])
+    null_medians["rows"].setdefault(vname, {})[ename] = {
+        **{f"{k}_median": float(np.median(nl[v]["draws"])) for k, v in NKEYS.items()},
+        **{f"{k}_mean": nl[v]["mean"] for k, v in NKEYS.items()},
+        "largest_edit_norm_draw": {"index": int(norms.argmax()), "edit_norm_median": float(norms.max()),
+                                   "mae_to_target": float(nl["mae_to_target"]["draws"][int(norms.argmax())])}}
 
 stored = RESULTS / "p1c_direction_L9.json"
 out = {"dataset": DATASET, "variable": DATASET, "kind": kind, "pool": "meanpool", "model": "vjepa2", "point": POINT,
@@ -196,4 +253,31 @@ out = {"dataset": DATASET, "variable": DATASET, "kind": kind, "pool": "meanpool"
                             "euclidean_N1_single": next(r for r in json.loads(stored.read_text())["single"]
                                                         if r["n"] == 1)},
        "edits": edits, "evalprobe_variants": evalprobe_variants}
-write_json(RESULTS / "p1c_direction_L9_rank2_covweighted.json", out)
+# existing keys are kept as stored (checked to reproduce, floats to 1e-9 relative); only adam_w1 and null_medians are
+# added, with their own provenance block
+out_path = RESULTS / "p1c_direction_L9_rank2_covweighted.json"
+if out_path.exists():
+    from wm.provenance import result_provenance
+    old = json.loads(out_path.read_text())
+
+    def same(a, b):
+        if isinstance(a, dict):
+            return isinstance(b, dict) and a.keys() == b.keys() and all(same(a[k], b[k]) for k in a)
+        if isinstance(a, list):
+            return isinstance(b, list) and len(a) == len(b) and all(same(x, y) for x, y in zip(a, b))
+        if isinstance(a, float) or isinstance(b, float):
+            return bool(np.isclose(a, b, rtol=1e-9, atol=1e-9))
+        return a == b
+    new = json.loads(json.dumps(out))
+    bad = [k for k in old if k not in ("provenance", "adam_w1", "null_medians") and not same(old[k], new.get(k))]
+    assert not bad, f"stored keys do not reproduce: {bad}"
+    merged = {k: v for k, v in old.items() if k not in ("adam_w1", "null_medians")}
+    prov = merged.pop("provenance")
+    merged["adam_w1"] = adam_w1
+    merged["null_medians"] = null_medians
+    merged["provenance"] = prov
+    merged["provenance_adam_w1_null_medians"] = result_provenance(out, None)
+    out_path.write_text(json.dumps(merged, indent=1))
+else:
+    out["adam_w1"], out["null_medians"] = adam_w1, null_medians
+    write_json(out_path, out)
