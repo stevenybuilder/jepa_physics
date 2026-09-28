@@ -26,8 +26,9 @@ W >= 81; A.5's shared-geodesic exclusion is then empty):
                        (artifacts/session2/native/pred_pooled_all.npy, mean over the 4 steps), PCA-64
       concept          the true angular distance |d theta| (the conceptual metric d_Z)
   CIs: 200 bootstrap draws resampling clips within each value on both sides (PCA bases fixed), raw percentile
-      intervals (biased low: centroid noise pulls the draws below the estimate); --angle goodfire_full uses the same
-      draws for four activation coordinates at once and reports bias and bias-corrected intervals (BOOT_SCHEME).
+      intervals (off-centre: centroid noise pulls chord r below the estimate); --angle goodfire_full uses the same
+      draws for four activation coordinates at once and reports bias and percentile / shifted / basic intervals
+      (BOOT_SCHEME).
 
   python scripts/run_isometry_linear.py --layers 8 12 22
   python scripts/run_isometry_linear.py --goodfire-method --angle goodfire   # -> p2_isometry_goodfire_coord.json
@@ -48,8 +49,9 @@ from wm.p2_data import load_inputs
 from wm.provenance import layer_role, provenance
 
 PRED = PROJECT_ROOT / "artifacts" / "session2" / "native" / "pred_pooled_all.npy"
-N_INTERIOR_NOTE = ("0 here (vertices only); causalab's published runners use n_interior_per_pair = 1, adding one "
-                   "interior point between each adjacent vertex pair")
+N_INTERIOR_NOTE = ("0 here (vertices only); causalab's runner configs set n_interior_per_pair (interior points added "
+                   "between each adjacent vertex pair) to 4 for weekdays 8B, 1 for months / alphabet 8B and every 70B "
+                   "runner, and leave the default 0 for age 8B")
 
 
 def geo_matrix(curve, n=4000):
@@ -169,6 +171,12 @@ def side_record(g, Cpca, values):
            "atan2_angle_circular_corr_with_labels": mf.compare_angles(g["angle"], values)["circular_corr"],
            "pc1_circular_linear_corr_with_labels": circ_lin_corr(Cpca[:, 0], values)}
     rec["coordinate_used"] = ("sqrtvar_atan2_angle" if g["passes"] else "pc1")
+    ca = mf.compare_angles(g["angle"], values)
+    rec["angle_vs_labels"] = {
+        "atan2_angle": {q: ca[q] for q in ("circular_corr", "max_dev_deg", "mean_dev_deg")},
+        "pc1": {"circular_linear_corr": rec["pc1_circular_linear_corr_with_labels"],
+                "note": "PC1 is a linear coordinate: no angular deviation from theta is defined"},
+        "used": "atan2_angle" if g["passes"] else "pc1"}
     return rec
 
 
@@ -223,29 +231,38 @@ def boot_chunk(L, idx, fixed, n_steps):
 
 BOOT_SCHEME = ("paired within-value clip resampling (run_layer's draws: knot clips then probe clips per draw, PCA "
                "bases and coordinate choices fixed, all four variants and both arms on the same draw); geo - lin "
-               "bootstrapped per draw; per statistic: point estimate, bootstrap mean, bias = mean - point, raw 95% "
-               "percentile CI, and the bias-corrected CI = the percentile CI shifted by -bias (recentred on the "
-               "full-sample estimate). Resampling clips within a value adds noise to every centroid and biases the "
-               "raw percentile interval downward (p2_isometry_linear.json: 20 of 48 intervals exclude their own "
-               "estimate). BCa not used: its jackknife acceleration would need one refit per clip under this "
-               "stratified scheme. Verdicts use the corrected geo - lin interval.")
+               "bootstrapped per draw; per statistic: point estimate, bootstrap mean, bias = mean - point, and three "
+               "95% intervals from the same draws: percentile [q2.5, q97.5], shifted (percentile minus bias, i.e. "
+               "recentred on the full-sample estimate) and basic (reverse percentile [2*est - q97.5, 2*est - q2.5]); "
+               "r intervals clipped to [-1, 1]. The bias is not one-signed: resampled centroid noise pulls chord r "
+               "down (p2_isometry_linear.json: 20 of 48 percentile intervals exclude their estimate), but the "
+               "per-draw recomputation of the knot angle / order moves geo r either way (-0.23 to +0.12 here). BCa "
+               "not used: its jackknife acceleration would need one refit per clip under this stratified scheme. "
+               "geo - lin call under each interval: spline if > 0, chord if < 0, tie otherwise; draws stored.")
 
 
-def boot_summary(point, draws):
-    """Point estimate, bootstrap mean, bias, raw percentile 95% CI and bias-corrected (recentred) 95% CI."""
+def boot_summary(point, draws, clip=None):
+    """Point estimate, bootstrap mean, bias and the three 95% intervals of BOOT_SCHEME (clip: (lo, hi) bounds, for r);
+    for a difference (clip None) also the spline / chord / tie call under each interval."""
     lo, hi = float(np.percentile(draws, 2.5)), float(np.percentile(draws, 97.5))
     bias = float(np.mean(draws) - point)
-    return {"point": float(point), "boot_mean": float(np.mean(draws)), "bias": bias, "ci95_percentile": [lo, hi],
-            "ci95_corrected": [lo - bias, hi - bias]}
+    cis = {"percentile": [lo, hi], "shifted": [lo - bias, hi - bias], "basic": [2 * point - hi, 2 * point - lo]}
+    if clip is not None:
+        cis = {k: [float(np.clip(v, *clip)) for v in c] for k, c in cis.items()}
+    out = {"point": float(point), "boot_mean": float(np.mean(draws)), "bias": bias,
+           **{f"ci95_{k}": [float(v) for v in c] for k, c in cis.items()}}
+    if clip is None:
+        out["call"] = {k: "spline" if c[0] > 0 else "chord" if c[1] < 0 else "tie" for k, c in cis.items()}
+    return out
 
 
 def bootstrap_variants(L, n_boot=200, seed=0, n_steps=150, workers=1):
     """95% CIs on geo_pearson, lin_pearson and the paired geo - lin for the four VARIANTS (boot_summary per statistic;
     scheme in BOOT_SCHEME): n_boot draws of run_layer's resampling, clips within each value, knot clips (activation
     side) then probe clips (behaviour side), from default_rng(seed); PCA bases and the point estimate's coordinate
-    choices fixed; the same draw is shared by all four variants and both arms (paired). The raw percentile interval
-    is biased low by centroid noise, so each statistic also carries the bias and the interval recentred on the
-    full-sample estimate. Draw indices are generated in order in
+    choices fixed; the same draw is shared by all four variants and both arms (paired). The draws are off-centre
+    (centroid noise lowers chord r; per-draw knot angle / order moves geo r either way), so each statistic carries
+    its bias and percentile, shifted and basic intervals. Draw indices are generated in order in
     this process, then evaluated in `workers` processes (results do not depend on workers)."""
     Zk, yk, pred, yp = boot_inputs(L)
     cent = mf.centroids(Zk, yk)
@@ -275,9 +292,10 @@ def bootstrap_variants(L, n_boot=200, seed=0, n_steps=150, workers=1):
             g = np.array([b[name][sp]["geo_pearson"] for b in boots])
             li = np.array([b[name][sp]["lin_pearson"] for b in boots])
             pt = point[name][sp]
-            res[name][sp] = {"geo_pearson": boot_summary(pt["geo_pearson"], g),
-                             "lin_pearson": boot_summary(pt["lin_pearson"], li),
-                             "geo_minus_lin": boot_summary(pt["geo_pearson"] - pt["lin_pearson"], g - li)}
+            res[name][sp] = {"geo_pearson": boot_summary(pt["geo_pearson"], g, (-1, 1)),
+                             "lin_pearson": boot_summary(pt["lin_pearson"], li, (-1, 1)),
+                             "geo_minus_lin": boot_summary(pt["geo_pearson"] - pt["lin_pearson"], g - li),
+                             "draws": {"geo_pearson": np.round(g, 6).tolist(), "lin_pearson": np.round(li, 6).tolist()}}
     return {"n_boot": n_boot, "seed": seed, "scheme": BOOT_SCHEME, "fixed_choices": {"label_free_knot_order": fixed["auto"],
             "goodfire_full_activation_branch": fixed["act_branch"], "goodfire_full_behaviour_branch":
             fixed["beh_branch"]}, "variants": res}
@@ -457,11 +475,9 @@ def run_goodfire_full(layers, n_boot, workers=6):
                                       for L, v in g.items()}
     res["circular_corr_with_labels"] = {str(L): {s: v[f"{s}_side"]["atan2_angle_circular_corr_with_labels"]
                                                  for s in ("activation", "behaviour")} for L, v in g.items()}
-    res["geo_minus_lin_verdict"] = {str(L): {k: {sp: ("spline" if lo > 0 else "chord" if hi < 0 else "tie")
-                                                 for sp, (lo, hi) in ((sp, vv[sp]["geo_minus_lin"]["ci95_corrected"])
-                                                                      for sp in ("interp", "smooth"))}
-                                             for k, vv in res["layers"][str(L)]["bootstrap"]["variants"].items()}
-                                    for L in layers}
+    res["geo_minus_lin_calls"] = {str(L): {k: {sp: vv[sp]["geo_minus_lin"]["call"] for sp in ("interp", "smooth")}
+                                           for k, vv in res["layers"][str(L)]["bootstrap"]["variants"].items()}
+                                  for L in layers}
     path = PROJECT_ROOT / "results" / "p2_isometry_goodfire_full.json"
     path.write_text(json.dumps(res, indent=1))
     print("wrote", path)
