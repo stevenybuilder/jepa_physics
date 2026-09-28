@@ -7,14 +7,14 @@
 <tr style="background:#F1F0EA"><th style="width:40%; text-align:left">CV R²</th><th style="width:30%">block 1</th><th style="width:30%">peak</th></tr>
 <tr><td>direction</td><td>0.875</td><td>0.991 (pt 22)</td></tr>
 <tr><td>speed</td><td>0.983</td><td>0.994 (pt 19)</td></tr>
-<tr><td>acceleration</td><td>0.977</td><td>0.992 (pt 21)</td></tr>
+<tr><td>acceleration (= mean speed here: every clip starts at rest)</td><td>0.977</td><td>0.992 (pt 21)</td></tr>
 <tr style="background:#F1F0EA"><td>random-init ViT-L, direction</td><td>0.848</td><td>0.868</td></tr>
 <tr style="background:#F1F0EA"><td>random ReLU features of the trajectory</td><td>0.875</td><td>—</td></tr>
 </table>
 <p style="font-size:26px; line-height:1.4; color:#4A5568">Paper: speed and acceleration early, direction only at one-third depth, decline toward the output. Here, mean-pooled: speed before direction by one block, no late decline (under 0.003 R²). Direction onset is 2 under stratified, direction-grouped and start-grouped folds, and 2 again at the paper's 392 clips.</p>
 </div>
 </div>
-<p style="font-size:28px; line-height:1.4; color:#C8553D"><b>The wrong readout for the zone.</b> The paper's C.5 says pooled probes rise gradually and puts the step in per-patch probes. Per patch: early on these clips (0.56 at block 1, 0.96 by block 6, no step at 8→9), training-selective (random init mean never above 0.39), and on a harder render the largest rise is at points 4→6 on all three seeds; only the half-frame dip and jump sit at her depth.</p>
+<p style="font-size:28px; line-height:1.4; color:#C8553D"><b>The wrong readout for the zone.</b> The paper's C.5 says pooled probes rise gradually and puts the step in per-patch probes. Per patch: early on these clips (0.56 at block 1, 0.96 by block 6, no step at 8→9), training-selective (random init mean never above 0.39), and on a harder render the 90%-of-max onset is 9 [9, 9] / 8 [8, 9] / 8 [8, 9], her depth, with the largest single step at 4→6 and the half-frame dip and jump at 8→9.</p>
 <p style="position:absolute; left:128px; bottom:64px; font-size:24px; color:#6a7179">Part 1 · results/p1a_*.json, p1a_grouped_cv.json, p1a_paperscale_velocity_only.json, results/stimuli · 4 / 17</p>
 <aside>If she asks for the onset rule: first point at 90 percent of max, 200-draw clip bootstrap; direction onset is 2, CI [2, 2]. Shuffled labels and a pixel baseline are in the files too. I used to blame sample size for the missing zone; that is withdrawn, because 392 velocity clips and the rendered 392-clip set both give onset 2. The per-patch picture is on the next slide.</aside>
 </section>

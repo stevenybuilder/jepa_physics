@@ -7,7 +7,7 @@
 <tr style="background:#F1F0EA"><th style="width:40%; text-align:left">point 9 (paper layer 8)</th><th style="width:30%">nested K</th><th style="width:30%">paper-protocol K</th></tr>
 <tr><td>direction</td><td>37</td><td>46</td></tr>
 <tr><td>speed</td><td>39</td><td>45</td></tr>
-<tr><td>acceleration</td><td>41</td><td>47</td></tr>
+<tr><td>acceleration (= mean speed here)</td><td>41</td><td>47</td></tr>
 </table>
 <p style="font-size:26px; line-height:1.4; color:#4A5568">Removing the same number of random dimensions leaves R² at 0.980, so the count means something. Scoring each round on the test split, as the paper does, gives K = 46 / 45 / 47; the nested count fits the whole sequence inside each train fold and never reads test.</p>
 <p style="font-size:26px; line-height:1.4; color:#4A5568">Under ridge neither variable shows a sawtooth. With the paper's literal Adam recipe both curves go jagged and K grows 1.1–2.3× the paper-protocol K, for speed as much as for direction on 8-bin accuracy. In raw coordinates nested K is 1.4–1.6× larger (paper protocol 0.8–1.8×) and still equal at point 9 (51 vs 55). The paper reads both variables off one clip set; on the same 750 constant-velocity clips direction vs speed is 17 vs 26 nested and 36 vs 28 paper-protocol at point 9 under C.11, and 11 vs 29 / 19 vs ≥28 under the figure's thresholds.</p>

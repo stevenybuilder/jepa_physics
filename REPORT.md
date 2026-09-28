@@ -20,7 +20,9 @@ in the ring plane (in the 64-D subspace it is as close to real clips at point 12
 the minimum readout radius is higher for the spline on every arc (point 22 on the labels angle[^src]).
 
 **Two disagreements with the paper.** (1) On the harder set transfer does not appear only after the zone: it is 0.7 at
-point 1, and the per-position curve rises most between points 4 and 6 on every seed (§3.1). (2) Whether speed needs
+point 1, and the per-position curve rises most between points 4 and 6 on every seed, though under the 90%-of-max rule
+its onset is 9 / 8 / 8, her depth, and the sigmoid inflection 5.7–5.9 (§3.1): partial agreement on a harder stimulus,
+not on the supplied one. (2) Whether speed needs
 fewer probes than direction depends on the stop rule and the probe recipe more than on the network. Under ridge on the
 same clips speed needs fewer under C.11's thresholds (7 of 8 cells in probes, 8 of 8 in the paper's unit, dimensions),
 and the paper's plotted Fig. 22 (direction ≈ 44, speed ≈ 28 at layer 8; Fig. 23's speed curve ends near R² 0.05) sits
@@ -112,7 +114,7 @@ verdict; §2 lists every deviation from the paper and what the parity audit chan
 
 **What the parity audit changed.** A paper-first audit of our own methods moved eight verdicts:
 
-- Part 1, emergence zone: read per patch on the hard render across three seeds, the largest rise is at points 4 → 6 on every seed, and the half-frame dip-and-jump at points 8 → 9 (paper layers 7 → 8) is training-specific (§3.1).
+- Part 1, emergence zone: read per patch on the hard render across three seeds, the 90%-of-max onset is 9 / 8 / 8 (her depth) while the largest rise is at points 4 → 6 on every seed, and the half-frame dip-and-jump at points 8 → 9 (paper layers 7 → 8) is training-specific (§3.1).
 - Part 1, Step 3: with our refit of the paper's C.11 Adam probe sequence as the steering basis the probe count reproduces, 18 probes to 10° and 16 to the paper's 12° at about 20 (§3.3).
 - Part 1: a covariance-weighted edit built from one probe steers to 3–5°, outside the probe's plane, as does the same construction on a random 2-D subspace (median 4.2°), so the learned probe adds specificity, not reach (§3.3, §6).
 - Part 2: the isometry verdict is set by the knot coordinate; under every label-free ordering point 22 is a tie (spline only under the basic interval in the fully faithful run), and Goodfire's own angle loses to the chord at point 12 (§4.4).
