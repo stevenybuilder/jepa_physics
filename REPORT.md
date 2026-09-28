@@ -21,9 +21,9 @@ the minimum readout radius is higher for the spline on every arc (point 22 on th
 **Three disagreements with the paper.** (1) On the harder set transfer does not appear only after the zone: it is 0.7 at
 point 1, and the per-position curve rises most between points 4 and 6 on every seed (§3.1). (2) Speed does not need
 fewer probes than direction (except the paper protocol at point 8), and neither the ridge curves nor the paper's literal
-Adam recipe give a direction-specific sawtooth. (3) "One probe fails" is the edit, not the subspace: one probe's 2-D
-subspace steers to 3.2° once the edit is weighted by the activation covariance, though a random 2-D subspace weighted
-the same way reaches 9.6–12.0°, so what the learned subspace buys is specificity, not target error.
+Adam recipe give a direction-specific sawtooth. (3) "One probe fails" is the Euclidean edit: an edit built from one probe steers to
+3.2° once it is weighted by the activation covariance (it then leaves the probe's plane), though the same construction
+on a random 2-D subspace reaches a median 4.2°, so what the learned probe buys is specificity, not target error.
 
 **One new thing.** Edits at points ≤ 12 wash out within a few blocks and barely reach the predictor's forecast; point-22
 edits survive to the output, and along the point-22 path the forecast follows the intermediate directions along the
@@ -70,7 +70,8 @@ verdict; §2 lists every deviation from the paper and what the parity audit chan
 | Data | 8 directions, separate sets | 64 directions, mixed motion types | direction also reported per motion type |
 | Split | 70/30, C.11 stopping on test | 80/20, stopping on fold-mean CV | "paper protocol" also run; Part 1 and Part 2's contiguous steering runs rerun at 70/30, no verdict changes (§3.4); session 2, isometry and pullback not rerun |
 | INLP K | probes until test at chance | nested K (held-out folds), paper-protocol K beside it | both below |
-| Steering basis length | until R² < 0.1 on train | all-train sequence cut at nested K | length never chosen on test |
+| Steering basis length | until R² < 0.1 on train | ridge: all-train sequence cut at nested K; Adam refit (§3.3): K = 84 by C.11's stop rule read on the test clips | ridge length never chosen on test; the Adam length is, which touches N = K and the rank-2K null only |
+| Steering solve (C.12 l.1235 "least squares") | c* via least squares such that all probes predict θ* | minimum-change c* = c + A⁺(y* − ŷ) in the full rank-2K basis at every N | a literal minimum-norm solve in V_K would also erase the clip's other 2K − 2N coordinates; the two coincide when V is built from the first N probes; the erase reading was not run |
 | INLP recipe | Adam lr 1e-3, wd 1e-4 | ridge; literal Adam sequence run once at points 8 and 9 | curves jagged and K ≈ 2× under Adam; no direction-specific sawtooth (§3.2) |
 | INLP coordinates | no normalisation stated (C.11), raw features implied | train-z-scored features | raw centred coordinates raise nested K 1.4–1.6×; direction vs speed equal at point 9, not at 8 (§3.2) |
 | INLP stop rule | R² or MAE rule, whichever fires (C.11) | the same rules, with C.11's undefined "random baseline" for speed read as the fit-set mean predictor (a shuffled-prediction reading would leave speed to its R² rule alone; at nested point 8 that gives speed 83 against direction's 80 dimensions) | the MAE rule stops speed and acceleration at R² 0.15–0.20, direction runs to R² just under 0.1 (§3.2) |
@@ -96,7 +97,7 @@ verdict; §2 lists every deviation from the paper and what the parity audit chan
 
 - Part 1, emergence zone: read per patch on the hard render across three seeds, the largest rise is at points 4 → 6 on every seed, and the half-frame dip-and-jump at points 8 → 9 (paper layers 7 → 8) is training-specific (§3.1).
 - Part 1, Step 3: with the paper's own Adam steering basis the probe count reproduces, 18 probes to 10° against the paper's about 20 (§3.3).
-- Part 1: a covariance-weighted edit in one probe's 2-D subspace steers to 3–5° (§3.3, §6).
+- Part 1: a covariance-weighted edit built from one probe steers to 3–5°, outside the probe's plane (§3.3, §6).
 - Part 2: the isometry verdict is set by the knot coordinate, and under every label-free ordering point 22 is a tie (§4.4).
 - Part 2: at the encoder output the verdict is mixed (the spline trails the chord by 10.8° at the chord's norm and leads by 2.1° at the natural norm), and in scalar extrapolation the spline trails the chord by 0.02–0.07 (§4.5, §4.3).
 - Part 2: Goodfire's cyclic 8B runs take the coordinate label-free, as atan2(PC2, PC1), and only its 70B cyclic configs use the labels (§2).
@@ -106,7 +107,7 @@ threshold for direction is R² < 0.1 in C.11 and R² < 0.3 in the Fig. 22 captio
 `K_loose`; §3.2). (b) The split is 80/20 in C.11 and 70/30 in C.12: I ran both (§3.4). (c) C.12 fits its evaluation
 probe on the test clips it then steers and scores (independent of the steering probes but not of those clips): her
 protocol is our §3.3 headline, with a split-half version beside it (12.4° / 17.1° at N = 5 vs 8.7°). (d) The main text
-reports < 0.5° with all probe directions, the appendix 11.9° held-out with 20 probes: I report every N. (e) The velocity
+reports < 0.5° with all probe directions, the appendix 11.9° held-out with 20 probes: I report every N (all probes: 2.7° ridge, 2.9° Adam). (e) The velocity
 set has 392 videos in App. A, but C.12's split is 240 + 103 = 343. (f) The main text measures motion "in pixels per
 frame", App. A in m/s. (g) Probe counts disagree across C.10–C.12: C.12 trains "25 probes until R² < 0.1" at layer 8
 and reports 20; Table 3 gives a layer-8 direction dimension of 136 (68 probes); C.11 says 14–136 while Table 3 lists 400
@@ -426,7 +427,7 @@ p = 0.048 at every N (mean 87.4° at N = 1). Source: `p1c_direction_L{2,9,22}.js
   gives the same MAE curve (`fig3_steering_paper.png`, right).
 - **Off-target.** Steering direction and reading speed (speed probe fit on the direction set's constant-velocity
   clips, unsteered MAE 0.17 m/s): the mean absolute change in the speed readout is 0.16 m/s at N = 5, 0.21 at N = 20
-  and 0.18 at N = K at point 9. At point 22 it is 2.85 m/s at N = K = 88. Steering speed and reading direction: 2.9°
+  and 0.18 at N = K at point 9, with a hump of 0.33–0.49 m/s at N = 8–12. At point 22 it is 2.85 m/s at N = K = 88. Steering speed and reading direction: 2.9°
   (N = 5), 1.5° (N = 20), 3.9° (N = K) at point 9, and 8–30° at point 1.
 - **Speed and acceleration** (point 9; target 2.15 m/s and 5.20 m/s²): speed 0.95 → 0.16 (N = 5) → 0.08 m/s (N ≥ 10),
   random-basis p 0.52 / 0.14 / 0.048 at N = 5 / 10 / K. Acceleration 2.48 → 0.40 → 0.23 m/s², p 0.43 / 0.095 / 0.048.
@@ -448,14 +449,17 @@ p = 0.048 at every N (mean 87.4° at N = 1). Source: `p1c_direction_L{2,9,22}.js
   target (ridge basis: 78.4° / 61.1° / 25.4° / 8.7° / 3.1° / 2.9° / 2.7° at N = 37). Eighteen Adam probes reach 10°,
   against five ridge probes and the paper's about 20; N = 1–5 give 84–69°, the paper's "modest improvement (MAE > 50)".
   The Adam basis beats the rank-matched null at the 1/21 floor from N = 12 but falls back to p = 0.095 at several N up
-  to 24, and beats the rank-2K (168-d) null only from N = 30.
-- **One probe's subspace, weighted by the covariance**[^r2cov]. The N = 1 edit above is Euclidean. The
-  covariance-weighted edit x + ΣW(WᵀΣW)⁻¹(y* − ŷ) in the same 2-D subspace (sample train covariance, no shrinkage;
-  Ledoit-Wolf gives the same) reaches 3.20° to target (85.96° to true) under the stored evaluation probe, and 4.05° /
+  to 23, and beats the rank-2K (168-d) null only from N = 30. Her basis has K = 25, so her 20 probes are 80% of it;
+  our refit has K = 84 (batch 64, our choice), so 18 is 21%; 16 reach her 12° threshold; her full basis reaches < 0.5°
+  (§7.2), ours 2.9°.
+- **An edit built from one probe, weighted by the covariance**[^r2cov]. The N = 1 edit above is Euclidean and stays in
+  the probe's 2-D plane. The covariance-weighted edit x + ΣW(WᵀΣW)⁻¹(y* − ŷ), with W the first ridge probe (sample train
+  covariance, no shrinkage; Ledoit-Wolf gives the same), lies in span(ΣW), not in the probe's plane, and reaches 3.20° to target (85.96° to true) under the stored evaluation probe, and 4.05° /
   3.61° / 5.19° under the α = 1e-3, Adam and split-half probes, against 78.4° / 58.0° / 68.6° / 82.3° for the Euclidean
-  edit. A random 2-D subspace weighted the same way reaches 9.6–12.0° (p = 0.14–0.33), with edits 5.6× larger (111 vs
-  19.8) and 390× more off-target speed change (13.0 vs 0.034 m/s); the learned subspace beats all 20 draws on both
-  (p = 1/21). The oracle (W = the evaluation probe) gives 0° by construction.
+  edit. A random 2-D subspace weighted the same way reaches a mean 9.6–12.0° (p = 0.14–0.33; the means carry one
+  outlier draw of norm 982, the medians are 4.2 / 4.5 / 5.7 / 6.4°), with edits larger (median 2.5×, mean 5.6×) and more
+  off-target speed change (median 125×, mean 390×); the learned probe beats all 20 draws on both (p = 1/21). The paper's
+  unit circle in §7.1 is a population of MLP units at fc1/fc2; this test is at the block-output residual stream. The oracle (W = the evaluation probe) gives 0° by construction.
 
 **Verdict.** Fig. 24's shape reproduces, and so does its count once the basis is the paper's: 18 Adam probes to 10°
 against its about 20, where a ridge basis needs 3–5 (3–4 under the near-unregularised and Adam evaluation probes, 5
@@ -463,8 +467,9 @@ under my CV-chosen one; C.12 gives no recipe). The ridge probes beat a random su
 (N = 3 under the near-unregularised probes) and a rank-2K random basis from N = 5 under those probes but only from
 N = 14 under mine; the Adam basis reaches the rank-matched floor only intermittently between N = 12 and 25 (p = 0.048
 at nine N, 0.095 at the others) and the rank-2K floor only from N = 30, so at its N = 18–20 it steers little better
-than a random subspace of the same rank. "One probe fails" is the Euclidean edit: covariance-weighted, one probe's 2-D subspace
-steers to 3–5°, though no better on target error than a random covariance-weighted 2-D subspace. An untrained network
+than a random subspace of the same rank. "One probe fails" is the Euclidean edit: covariance-weighted, an edit built from one probe
+steers to 3–5° outside the probe's plane, though no better on target error than the same construction on a random 2-D
+subspace. An untrained network
 shows the same curve.
 
 ### 3.4 The paper's 70/30 split
@@ -960,7 +965,7 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
 | Object permanence | Direction decoded from time steps whose frames contain no disk (89 clips; test 15 clips / 22 tokens): MAE 7.5° [5.6, 9.4] at point 8 (visible 5.4°), 6.1° at point 22 (visible 3.8°); shuffled-label null 84.5°, p = 0.001. The random-init encoder, same clips and protocol, does as well: test-clip absent-step MAE 5.9–7.2° across points vs 6.1–13.4° for V-JEPA 2 (null ≈ 90° for both). V-JEPA 2 is ahead only late, by ≤ 1.0° on test clips (points 16–25) and 2.4° / 2.0° pooled at points 22 / 25; it is behind at points 1–12. On visible steps V-JEPA 2 is 5–7° better from point 8 on. So above-null decoding after the disk leaves is attention mixing within the clip (no causal mask), not learned carrying. | `p1a_object_permanence.json` (`random_init.side_by_side`), `fig6_object_permanence.png` (random-init overlaid) |
 | Cartesian vs polar | On constant-velocity clips (596), (vx, vy) reaches onset at point 1 and (sin θ, cos θ) at point 2 (difference −1, CI [−1, −1]); block 1 R² 0.929 vs 0.863. Speed set: 0.985 vs 0.855. The one-block "emergence" of direction is the normalisation v/‖v‖. Direct test at block 1: the angle of the (vx, vy) probe's output has MAE 12.1° against 12.3° for the direct (sin, cos) probe, and R² 0.900 against 0.911 once the direct output is scaled to unit length, so the direct probe's lower R² there is its radius, not its angle; the two angles disagree clip by clip by 13.1°. From point 2 the direct probe is better (8.3° vs 11.2°). | `p1a_support_onset_*_meanpool.json`, `fig1d`, `p1a_support_cartesian_angle.json` |
 | Direction transfer (held-out context) | Direction probe fit on the direction set, read on the speed set at point 9: MAE 4.4° (source CV 4.0°); 8.7° below 1 m/s, 3.3° at 1–4 m/s. On the acceleration set: 5.8°. At point 1: 10.8° (23.9° below 1 m/s). | `p1a_support_transfer_meanpool.json`, `fig1c` |
-| Spatial generalisation | Train on start x < 0, test on x > 0: at block 1 already R² 0.828 / 0.815 across sides against 0.810 / 0.806 within (a second refutation of C.5's "generalize to unseen regions only after the emergence zone"); point 9: 0.971 (MAE 4.9°) vs 0.972 within-side. At point 22, mean-pool 0.957 / 0.975 vs disk-pool 0.988 / 0.987 (negative-to-positive / positive-to-negative side). | `p1a_support_spatial_{meanpool,diskpool}.json`, `fig1e` |
+| Spatial generalisation | Train on start x < 0, test on x > 0: at block 1 already R² 0.828 / 0.815 across sides against 0.810 / 0.806 within (consistent with the half-frame finding against C.5's "generalize to unseen regions only after the emergence zone", though this is a whole-frame probe split by start side, not a region-of-frame probe); point 9: 0.971 (MAE 4.9°) vs 0.972 within-side. At point 22, mean-pool 0.957 / 0.975 vs disk-pool 0.988 / 0.987 (negative-to-positive / positive-to-negative side). | `p1a_support_spatial_{meanpool,diskpool}.json`, `fig1e` |
 | Direction vs speed subspace (paper C.4 method) | Overlap direction←speed 0.0740 at point 8 (random expectation 0.0781, 5–95% band 0.0756–0.0808); 0.0733 at point 9 (0.0723, band 0.0694–0.0740). Direction vs acceleration 0.0762 and 0.0739, inside or at the edge of the band. The INLP bases are as orthogonal as random ones, yet steering direction still moves the speed readout (§3.3 off-target). | `step2_subspace_angles.json` |
 | Objective axis | V-JEPA vs random-init at the direction peak: probes needed to reach ≤ 10° MAE 4 vs 10; nested K 88 vs 26. VideoMAE matches V-JEPA 2 on all three variables with the same onsets (§3.1): 4 probes to the bar, nested K 67, peak 0.992. | `objective_axis.json`, `fig5_objective_axis.png` |
 | Position sheet | Start (x, y) is decodable; 36-cell centroid PR 7.46 (point 12) / 3.76 (point 19), Procrustes to (x, y) 0.38 / 0.66; spline steering gives no path advantage (§4.3). | `p2_sheet_speed_L{12,19}.json` |
@@ -987,10 +992,11 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
   (R²≥.43), regardless of objective", classification CNNs included, so availability is their own finding; training buys
   precision, fewer probes to steer (4 vs 10 to reach 10°[^obj]) and a label-free ring.
 - **The linear representation hypothesis: right about the subspace, wrong about the moves.** Direction lives in a 2-D
-  linear subspace (sin, cos) with a ring on it, and the paper's §7.1 says "manipulating only the unit-circle subspace does not effectively steer direction". Here it
-  does, once the edit is covariance-weighted (3.2° from one probe's 2-D subspace, §3.3), but so does a random
-  covariance-weighted 2-D subspace on target error, so the subspace is right and its privilege is specificity, not
-  reach. The
+  linear subspace (sin, cos) with a ring on it, and the paper's §7.1 says "manipulating only the unit-circle subspace does not effectively steer direction". An edit built from one
+  probe does steer once it is covariance-weighted (3.2°, §3.3), but that edit leaves the probe's plane, the same
+  construction on a random 2-D subspace reaches a median 4.2°, and her unit circle sits in the MLP units, not the
+  residual stream tested here; so the 2-D subspace is where the code lives, and what the learned probe buys is
+  specificity, not reach. The
   steering corollary is what fails geometrically: in the ring plane the straight path between distant directions
   crosses the empty interior (readout radius 0.61) where the curved path does not (0.86), though in the 64-D edit
   subspace it is no farther from real clips (§4.3). Independent readouts at the steered layer do not care; the
