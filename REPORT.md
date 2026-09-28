@@ -1384,6 +1384,58 @@ correlation, and at point 22 on these carriers it is not a speed channel the for
 16 carriers, no target (the angle is kept), and a direction-set speed label that puts the 750 accelerating clips at 0,
 so the curve that converts radius to speed mixes motion types.
 
+### 4.6 Which tokens carry direction, by depth (token-source patching at the predictor)
+
+The paper's own future-work hypothesis (l.795–798) is that velocity is "bound" to the object in the middle of the
+network and that the end of the network is "catered to the optimization objective of predicting the next frame in
+latent space". Token-source patching tests this directly. For 64 random pairs and 64 position-matched pairs of
+direction clips (same speed, ≥ 90° apart; matched pairs start within 0.15 m), clip B's tokens replace clip A's at
+one encoder point, either the disk tokens (the disk masks of A and B plus a one-patch ring, 9–13% of the 2,048
+tokens) or the background (the complement), and the rest of the encoder plus the predictor run on the patched
+state. The binding fraction is how far the direction readout moves from A toward B (1 = all the way), read by a
+held-out ridge probe on the predictor's forecast and, as a check, on the encoder output
+(`results/p5_token_patching.json`, `pair_types.{random,posmatch}.readers.{forecast,encoder_output}.points`).
+
+| tokens patched | point 0 | point 8 | point 12 | point 16 | point 22 |
+|---|---|---|---|---|---|
+| disk tokens, random pairs, forecast reader | 0.99 [0.97, 1.00] | 0.98 [0.96, 0.99] | 0.88 [0.86, 0.90] | 0.76 [0.73, 0.79] | 0.22 [0.20, 0.24] |
+| background tokens, same | 0.02 [0.01, 0.04] | 0.04 [0.02, 0.05] | 0.12 [0.09, 0.15] | 0.24 [0.21, 0.27] | 0.77 [0.75, 0.79] |
+| disk tokens, position-matched pairs, forecast reader | 0.99 [0.99, 1.00] | 0.98 [0.96, 0.99] | 0.89 [0.87, 0.91] | 0.74 [0.71, 0.77] | 0.18 [0.17, 0.20] |
+| background tokens, same | 0.01 [0.00, 0.02] | 0.03 [0.01, 0.05] | 0.12 [0.09, 0.14] | 0.26 [0.23, 0.29] | 0.82 [0.80, 0.84] |
+
+The encoder-output reader gives the same curve within 0.03 at every point. Up to point 12 the predictor reads the
+disk's direction from the disk's own tokens: swapping 9–13% of the tokens moves the forecast 88–99% of the way,
+swapping the other 87–91% moves it 1–12%. Between points 12 and 22 that reverses. At point 22 the disk tokens carry
+0.18–0.22 and the background 0.77–0.84, close to the token shares themselves (0.09–0.13 and 0.87–0.91), so by the
+last blocks the direction code is spread across the whole frame rather than held by the object. The position-matched
+pairs rule out the disk's location as the carrier. This is the pattern the hypothesis predicts: an object-bound code
+through the emergence zone, then a delocalised code where the predictor reads it. It also says why edits at point 22
+reach the forecast when a per-token object code would not: a pooled edit at 22 lands on the tokens the predictor
+actually reads. Provenance: forward on box 1 at commit 8a54162, clean tree; scored locally; 480 probe clips per reader,
+5-fold ridge, CV R² 0.91 (forecast) and 0.94 (encoder output). Limits: one object, one render, five points, pair
+bootstrap CIs over 64 pairs; a swapped disk also swaps the disk's appearance, which is identical across clips here.
+
+**The same question from the encoder side (pooled object, background and scene tokens)**[^ovs]. Before the
+predictor, does the encoder itself keep direction on the disk? Three pools per clip, built exactly from the stored
+time-pool, disk-pool and disk-mask arrays: the mean of the disk tokens (object), the mean of every other token
+(background) and the stored mean over all tokens (scene). Accuracy cannot tell them apart: at point 8 a ridge probe
+reads direction at R² 0.987 from the object pool, 0.978 from the background and 0.979 from the scene (MAE 3.1°, 4.7°
+and 4.5°), and at point 22 0.995, 0.991 and 0.992; the untrained copy's scene pool stays at 0.87–0.88 at every point.
+What separates them is the axes. A probe fit on the object pool and read on the background pool transfers with R² 0.27
+at point 8 and 0.17 at point 12 but 0.77 at point 22 (background→object 0.72, 0.44 and 0.88), and the angle between
+the object and background ring planes is 78–86° at points 8 and 12 and 53–56° at point 22. So through the emergence
+zone the disk tokens and the rest of the frame both decode direction but on nearly orthogonal directions of the
+residual stream, and by the late blocks they converge on one shared code, which is the token-patching result read at
+the encoder rather than at the predictor. The object pool's ring at point 8 is also rounder than the scene's (b/a
+0.97 against 0.74, saddle share 0.17 against 0.28). Every pool decodes θ + 180° on 100% of time-reversed clips from
+point 1 on, so this is a motion code and not a trajectory-shape artefact. Limits: the background pool decodes
+direction at R² 0.52 already at point 0 (edge pixels below the disk-mask threshold and the 2-frame tubelet leak
+motion into "background" patches, so the background is not disk-free input); there is no untrained control for the
+object/background split, because the stored random-init extraction has no disk pool; and pooled tokens cannot say
+whether the background's code is written there by attention from the disk or reflects a disk-dependent complement
+set. The held-out-arc numbers in this file use a clip bootstrap whose intervals often exclude the point estimate
+(duplicate clips bias the smoothing spline), so only point estimates are quoted here and none is used above.
+
 ## 5. Beyond the three variables
 
 | Question | Result | Source |
@@ -1582,3 +1634,4 @@ so the curve that converts radius to speed mixes motion types.
 [^coast]: `results/p2_conceptor_direction_L{12,22}.json` (`arms.{manifold,linear_raw,coast_a,coast_a_b0.3,coast_a_centered,coast_b,coast_b_dose_matched}.{endpoint_err_deg,delta_norm_ratio_to_raw_chord.ratio_of_means,off_target.{abs_change_speed_mps,abs_change_start_position_m,ring_plane_energy_frac},trace_C_mean,unsteered_err_deg}`, `aperture.{mean_overlap,selected,in_band,pinv_AND_invalid_frac_by_alpha,pinv_AND_invalid_frac_steered_pairs,and_mode_used}`, `random_projector_null.{random_a,random_b}.probe_err_to_target.{draws_mean,conceptor_same_clips,frac_draws_conceptor_beats}`, `reproduction_check`, `off_target_readouts.start_pos_mean_dist_to_centroid_m`); `scripts/run_conceptor.py`, `src/wm/conceptor.py` (formulas and page numbers of `refs/coast.txt` in the module docstring; Jaeger's AND quoted from memory there). Point 12 on the label-free angle, point 22 on the labels; `--lite` (no β = 0.1 arm, no α sweep for the aimed arm); commit 3c13095 with `git_dirty_src_or_scripts: true` (scripts uncommitted).
 [^offt]: `results/p2_offtarget_direction_L{12,22}.json` (`arms.{spline,chord_smoothed,chord_raw,probe_qr,probe_qr_norm_matched,random_curve}.{speed,start}.{mean,ci95,ratio_to_natural_spread,ratio_ci95,signed_mean_mps}`, `natural_spread`, `readout_quality.speed_probe_on_direction_test_velocity_clips_{mae_mps,r}`, `regeneration_checks.max_rel_diff`; at point 22 `identical_within_1e-6` is false, max relative difference 1.7e-6); `scripts/run_offtarget.py` (start position = metres × 32 px/m). The file records no provenance block of its own; script uncommitted.
 [^str]: `results/p5_straightening.json` (`latent_curvature_by_point.{constvel,accel_direction_set,random_init_constvel,null_isotropic_constvel,null_covmatched_constvel}.mean`, `pixel_curvature`, `straightening_index_by_point.constvel`, `zone_test.constvel.{argmin_point,boot_argmin_counts,zone_min_minus_point25_deg}`, `reversed_minus_forward.constvel`, `geometry_links_by_point[].constvel_spearman_curv_speed`, `pixel_links.constvel_spearman_pixelcurv_speed`); `scripts/run_straightening.py` (2,000 clip bootstraps). The file records no commit; script uncommitted.
+[^ovs]: `results/p5_object_vs_scene_direction.json` (`direction.probe.{object,background,scene,random_scene}[point].{r2,mae,ci}`, `direction.transfer[point]` (row = fit pool, column = test pool; the point-8 matrix is also spelled out in `summary`), `direction.chart_plane_angles[point].object_vs_background`, `direction.geometry`, `direction.timerev[point].*.frac_decoded_closer_to_theta_plus_180`, `direction.heldout`, `binding.curves.*.zones`, `not_computable`, `provenance` (commit cbd0b38, `git_dirty_src_or_scripts: true`; activation hashes match box 1's `sha256_box.txt` for all 10 hashed files); `scripts/run_object_vs_scene.py` (`--binding`), `tests/test_object_vs_scene.py`; `figures/fig_object_vs_scene.png`. CPU only, Mac, 16:27–16:45 ET.

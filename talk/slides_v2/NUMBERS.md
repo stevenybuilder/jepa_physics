@@ -52,3 +52,4 @@ Every number shown on a slide, with the file and key it was read from. Numbers i
 | p1-zone | transfer 0.71 / 0.18 / 0.58 (blocks 1 / 9 / 12) | results/p1a_perpatch_hard_seeds.json by_point[point].cross_half_r2.mean (0.708, 0.181, 0.580) |
 | p2-compare | forecast 17° / 27° / 44° (interpolating 11°) | results/session2_predictor_native_readout.json per_layer.22.{probe_qr,chord,spline_smooth,spline}.dir_err_to_target.mean (17.13, 27.25, 44.19, 11.32) |
 | p2-readuse | speed 0.31 m/s; spline − chord −0.005 [−0.007, −0.004] | results/session3_speed_predictor.json predictor.22.own.spline.direct_err_to_target (0.312); paired.22.own.spline_minus_chord_direct_err |
+| interpret | disk tokens 0.88 → 0.22, background 0.12 → 0.77 (blocks 12 → 22); token shares 0.13 / 0.87 | results/p5_token_patching.json pair_types.random.readers.forecast.points.{12,22}.{obj,bg}.binding_fraction.mean (0.880, 0.218, 0.120, 0.770); config.plan.random.token_frac_mean.obj 0.1336 |

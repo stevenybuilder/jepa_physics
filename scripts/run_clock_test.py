@@ -295,7 +295,7 @@ def main():
 "split_file": str(SPLIT_PATH.relative_to(PROJECT_ROOT)), "split_sha256": sha256_file(SPLIT_PATH),
                          **git_commit(), "activation_index": idx, "n_boot": N_BOOT, "seed": SEED,
                          "detail_points": list(DETAIL), "points_run": list(POINTS)}
-    out = PROJECT_ROOT / "results" / "p5_clock_test.json"
+    out = PROJECT_ROOT / "results" / ("p5_clock_test_linearity.json")
     out.write_text(json.dumps(res, indent=1))
     print("->", out)
     figure(res)

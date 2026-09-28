@@ -390,6 +390,19 @@ def merge_cpu(set_name, model_kind):
 EMERGENCE = {"paper_middle_third_points": [8, 16], "our_perpatch_onset_points": [8, 9]}
 PAPER_TABLE1 = {"file": "refs/physics_paper.txt", "lines": "88-90 (Table 1, row \"Object-centric state slots\")",
                 "text": "Direction becomes spatially redundant across patches post-Physics Emergence Zone (App. C.5)"}
+BINDING_NOTES = [
+    "full-data R2 binding index is at ceiling (both pools R2 > 0.98) from point 9 (direction), 6 (speed), 11 (hard) on; "
+    "read the error-based index, the 64-clip low-data index, and the cross-pool transfer there",
+    "the index is undefined where R2_object is near 0 (point 0 direction/hard; low-data points 0-2 on hard)",
+    "point 0 is the floor: background R2 0.52 (direction) at the embedding shows pixel-level leakage into non-disk "
+    "patches (anti-aliased edge pixels below the 128 red threshold, 2-frame tubelet); the background pool is not "
+    "disk-free input",
+    "held-out-arc bootstrap CIs are biased (resampling with replacement duplicates clips, which changes the "
+    "count-weighted smoothing spline; CIs often exclude the point estimate): use the point estimates and "
+    "frac_arcs_spline_better, not those CIs; geometry CIs from 50 refit draws only",
+    "an encoder-pool decoding test cannot settle what the predictor uses; the follow-up is a token-source patching "
+    "test at the predictor (run separately)",
+]
 UNITS = ("object pool = mean over ALL disk tokens of the clip (per-step masked, count-weighted over the 8 token time "
          "steps). NOT comparable with Part 1's diskpool probes (unweighted nanmean of per-step disk means; e.g. its "
          "0.994) nor with the per-position curves of p1a_perpatch (time-pooled single spatial positions)")
@@ -595,6 +608,7 @@ def run_binding(a):
         B["curves"][f"{set_name}/{model}"] = c
     if a.cache_only:
         return
+    B["notes"] = BINDING_NOTES
     res["binding"] = B
     done = {k for k in B["curves"]}
     missing = [f"{sn}/{m}_cpu" for sn, m in CPU_SETS if f"{sn}/{m}_cpu" not in done]
@@ -635,16 +649,61 @@ def probe_block(pools, tr, te, folds, Ytr, Yte, score_fn, n_boot):
     return out, probes
 
 
+def _direction_point(args):
+    point, n_boot = args
+    df, Y, kind, score_fn, tr, te, folds = split_setup("direction", "direction")
+    theta = df["theta_degrees"].to_numpy(float)
+    Y_rev = np.stack([np.sin(np.radians(theta + 180)), np.cos(np.radians(theta + 180))], 1)
+    pools = load_pools("direction", point)
+    ident = {"scene_vs_recon_max_rel_err": pools.pop("_identity_rel_err"),
+             "mean_disk_tokens_per_clip": pools.pop("_n_obj_mean")}
+    rnd = load_pools("direction", point, "random")["scene"]
+    pb, probes = probe_block({**pools, "random_scene": rnd}, tr, te, folds, Y[tr], Y[te], score_fn, n_boot)
+    M, _ = transfer_matrix(pools, tr, te, Y[tr], Y[te], folds, score_fn, n_boot, {q: probes[q] for q in POOLS})
+    rev = load_pools("direction", point, "vjepa2_timerev")
+    trv = {}
+    for name in POOLS:
+        P = apply_probe(probes[name], rev[name][te], rev[name][tr])
+        ang = np.degrees(np.arctan2(P[:, 0], P[:, 1]))
+        e_fwd = np.abs((ang - theta[te] + 180) % 360 - 180)
+        e_rev = np.abs((ang - theta[te]) % 360 - 180)
+        flip = (e_rev < e_fwd).astype(float)
+        rng = np.random.default_rng(0)
+        bd = [flip[rng.integers(0, len(flip), len(flip))].mean() for _ in range(n_boot)]
+        trv[name] = {"frac_decoded_closer_to_theta_plus_180": float(flip.mean()), "ci": ci(bd),
+                     "mae_vs_theta_plus_180": float(e_rev.mean()), "mae_vs_theta": float(e_fwd.mean()),
+                     "r2_vs_reversed_target": score_fn(Y_rev[te], P)["r2"]}
+    out = {"point": point, "probe": pb, "transfer": M, "timerev": trv, "identity": ident}
+    if point in GEOM_POINTS:
+        out["chart_plane_angles"] = {f"{p}_vs_{q}": principal_angles(pools[p][tr], pools[q][tr], theta[tr])
+                                     for i, p in enumerate(POOLS) for q in POOLS[i + 1:]}
+    print(f"direction point {point:2d}: " + "  ".join(f"{n} R2={pb[n]['r2']:.3f}" for n in pb), flush=True)
+    return out
+
+
+def _speed_point(args):
+    point, n_boot = args
+    df, Y, kind, score_fn, tr, te, folds = split_setup("speed", "speed")
+    pools = load_pools("speed", point)
+    ident = {"scene_vs_recon_max_rel_err": pools.pop("_identity_rel_err"),
+             "mean_disk_tokens_per_clip": pools.pop("_n_obj_mean")}
+    rnd = load_pools("speed", point, "random")["scene"]
+    pb, probes = probe_block({**pools, "random_scene": rnd}, tr, te, folds, Y[tr], Y[te], score_fn, n_boot)
+    M, _ = transfer_matrix(pools, tr, te, Y[tr], Y[te], folds, score_fn, n_boot, {q: probes[q] for q in POOLS})
+    print(f"speed point {point:2d}: " + "  ".join(f"{n} R2={pb[n]['r2']:.3f}" for n in pb), flush=True)
+    return {"point": point, "probe": pb, "transfer": M, "identity": ident}
+
+
 def run(a):
     n_boot = a.n_boot
-    res = {"question": "is the direction ring object-bound (disk tokens) or scene-wide (background tokens)?",
+    res = {"n_boot_geom": a.n_boot_geom, "question": "is the direction ring object-bound (disk tokens) or scene-wide (background tokens)?",
            "config": {"n_boot": n_boot, "geom_points": list(GEOM_POINTS), "arc_seeds": list(ARC_SEEDS), "k": 64,
                       "pools": {"scene": "stored meanpool (all 2048 tokens)",
                                 "object": "disk-patch tokens, count-weighted over the 8 steps (diskmask any-pixel rule)",
                                 "background": "non-disk tokens, (256*sum_t timepool - sum_t p_t*diskpool)/(2048 - sum p_t)",
                                 "random_scene": "random-init ViT-L meanpool (no diskpool stored -> no object/background)"},
                       "ci": "2.5-97.5 percentile; probe/transfer/timerev: test-clip bootstrap over fixed predictions; "
-                            "geometry: train-clip bootstrap with refit; heldout: knot-clip bootstrap with refit. Point "
+                            "geometry: train-clip bootstrap with refit (n_boot_geom draws); heldout: knot-clip bootstrap with refit. Point "
                             "estimates use mf.fit_pca; bootstrap draws use the Gram-matrix PCA (same subspace, component "
                             "signs arbitrary; the label-free smoothing spline is slightly sign-sensitive, so bootstrap "
                             "spreads include that ambiguity)",
@@ -672,68 +731,42 @@ def run(a):
                          "gpu_session1_verification": json.loads((PROJECT_ROOT / "artifacts" / "gpu_session1.json")
                                                                  .read_text())["verification"]["sha256"]}
 
-    # ---- direction
-    df, Y, kind, score_fn, tr, te, folds = split_setup("direction", "direction")
-    Ytr, Yte = Y[tr], Y[te]
-    theta = df["theta_degrees"].to_numpy(float)
-    fold_all = np.full(len(df), -1)
+    # ---- direction + speed per point, in parallel
+    theta_df, _, _, _, tr, te, folds = split_setup("direction", "direction")
+    theta = theta_df["theta_degrees"].to_numpy(float)
+    fold_all = np.full(len(theta_df), -1)
     fold_all[tr] = folds
     knot = np.isin(fold_all, KNOT_FOLDS)
-    Y_rev = np.stack([np.sin(np.radians(theta + 180)), np.cos(np.radians(theta + 180))], 1)
+    with ProcessPoolExecutor(a.workers) as ex:
+        dir_rows = list(ex.map(_direction_point, [(p, n_boot) for p in range(N_POINTS)]))
+        spd_rows = list(ex.map(_speed_point, [(p, n_boot) for p in range(N_POINTS)]))
     D = {"probe": {p: [] for p in POOLS + ("random_scene",)}, "transfer": {}, "timerev": {}, "chart_plane_angles": {},
          "identity": {}, "geometry": {}, "heldout": {}}
+    for r in dir_rows:
+        k = str(r["point"])
+        for name, sc in r["probe"].items():
+            D["probe"][name].append({"point": r["point"], **sc})
+        D["transfer"][k], D["timerev"][k], D["identity"][k] = r["transfer"], r["timerev"], r["identity"]
+        if "chart_plane_angles" in r:
+            D["chart_plane_angles"][k] = r["chart_plane_angles"]
     jobs = {}
-    for point in range(N_POINTS):
+    for point in GEOM_POINTS:
         pools = load_pools("direction", point)
-        D["identity"][str(point)] = {"scene_vs_recon_max_rel_err": pools.pop("_identity_rel_err"),
-                                "mean_disk_tokens_per_clip": pools.pop("_n_obj_mean")}
-        rnd = load_pools("direction", point, "random")["scene"]
-        pb, probes = probe_block({**pools, "random_scene": rnd}, tr, te, folds, Ytr, Yte, score_fn, n_boot)
-        for name, s in pb.items():
-            D["probe"][name].append({"point": point, **s})
-        M, _ = transfer_matrix(pools, tr, te, Ytr, Yte, folds, score_fn, n_boot, {q: probes[q] for q in POOLS})
-        D["transfer"][str(point)] = M
-        rev = load_pools("direction", point, "vjepa2_timerev")
-        D["timerev"][str(point)] = {}
-        for name in POOLS:
-            P = apply_probe(probes[name], rev[name][te], rev[name][tr])
-            ang = np.degrees(np.arctan2(P[:, 0], P[:, 1]))
-            e_fwd = np.abs((ang - theta[te] + 180) % 360 - 180)
-            e_rev = np.abs((ang - theta[te]) % 360 - 180)
-            flip = (e_rev < e_fwd).astype(float)
-            rng = np.random.default_rng(0)
-            bd = [flip[rng.integers(0, len(flip), len(flip))].mean() for _ in range(n_boot)]
-            D["timerev"][str(point)][name] = {"frac_decoded_closer_to_theta_plus_180": float(flip.mean()), "ci": ci(bd),
-                                        "mae_vs_theta_plus_180": float(e_rev.mean()),
-                                        "mae_vs_theta": float(e_fwd.mean()),
-                                        "r2_vs_reversed_target": score_fn(Y_rev[te], P)["r2"]}
-        if point in GEOM_POINTS:
-            D["chart_plane_angles"][str(point)] = {f"{p}_vs_{q}": principal_angles(pools[p][tr], pools[q][tr], theta[tr])
-                                              for i, p in enumerate(POOLS) for q in POOLS[i + 1:]}
-            for name, X in {**pools, "random_scene": rnd}.items():
-                jobs[(point, name)] = (X[tr], theta[tr], X[knot], theta[knot])
-        print(f"direction point {point:2d}: " + "  ".join(f"{n} R2={pb[n]['r2']:.3f}" for n in pb), flush=True)
-
-    outs = geometry_all(jobs, n_boot, a.workers)
+        pools = {q: pools[q] for q in POOLS}
+        pools["random_scene"] = load_pools("direction", point, "random")["scene"]
+        for name, X in pools.items():
+            jobs[(point, name)] = (X[tr], theta[tr], X[knot], theta[knot])
+    outs = geometry_all(jobs, a.n_boot_geom, a.workers)
     for (point, name), (g, h) in outs.items():
         D["geometry"].setdefault(str(point), {})[name] = g
         D["heldout"].setdefault(str(point), {})[name] = h
     res["direction"] = D
-
-    # ---- speed
-    df, Y, kind, score_fn, tr, te, folds = split_setup("speed", "speed")
     S = {"probe": {p: [] for p in POOLS + ("random_scene",)}, "transfer": {}, "identity": {}}
-    for point in range(N_POINTS):
-        pools = load_pools("speed", point)
-        S["identity"][str(point)] = {"scene_vs_recon_max_rel_err": pools.pop("_identity_rel_err"),
-                                "mean_disk_tokens_per_clip": pools.pop("_n_obj_mean")}
-        rnd = load_pools("speed", point, "random")["scene"]
-        pb, probes = probe_block({**pools, "random_scene": rnd}, tr, te, folds, Y[tr], Y[te], score_fn, n_boot)
-        for name, s in pb.items():
-            S["probe"][name].append({"point": point, **s})
-        S["transfer"][str(point)], _ = transfer_matrix(pools, tr, te, Y[tr], Y[te], folds, score_fn, n_boot,
-                                                  {q: probes[q] for q in POOLS})
-        print(f"speed point {point:2d}: " + "  ".join(f"{n} R2={pb[n]['r2']:.3f}" for n in pb), flush=True)
+    for r in spd_rows:
+        k = str(r["point"])
+        for name, sc in r["probe"].items():
+            S["probe"][name].append({"point": r["point"], **sc})
+        S["transfer"][k], S["identity"][k] = r["transfer"], r["identity"]
     res["speed"] = S
 
     # ---- parity with stored results
@@ -825,6 +858,8 @@ def plot(res, path):
     _zone(ax)
     ax.axhline(0, color="0.5", lw=0.8)
     ax.set_xlabel(xlab)
+    ax.set_ylim(-0.1, 0.25)
+    ax.text(0.2, -0.095, "point 0 off-axis (R²_object ≈ 0: index undefined; see JSON)", fontsize=7, color="0.4")
     ax.set_ylabel("binding index (R²_object − R²_background) / R²_object")
     ax.set_title("A  Object-boundness by depth (grey: paper's middle third; dark: our per-patch onset 8-9)", fontsize=9)
     ax.legend(fontsize=7, frameon=False)
@@ -868,7 +903,7 @@ def plot(res, path):
             for ni, n in enumerate(names):
                 g = D["geometry"][str(p)][n]
                 v, lo_hi = g[metric], g["ci"][metric]
-                ax.errorbar(x0 + (ni - (len(names) - 1) / 2) * w, v, yerr=[[v - lo_hi[0]], [lo_hi[1] - v]], fmt="o",
+                ax.errorbar(x0 + (ni - (len(names) - 1) / 2) * w, v, yerr=[[max(v - lo_hi[0], 0)], [max(lo_hi[1] - v, 0)]], fmt="o",
                             ms=6, color=COLORS[n], capsize=0, lw=1.5, label=LABELS[n] if (mi, pi) == (0, 0) else None)
     ticks = [mi * (len(GEOM_POINTS) + 0.8) + pi for mi in range(2) for pi in range(len(GEOM_POINTS))]
     ax.set_xticks(ticks, [f"{t}\npt {p}" for t in ("b/a", "saddle") for p in GEOM_POINTS], fontsize=8)
@@ -920,6 +955,7 @@ def plot(res, path):
 def parse(argv=None):
     p = argparse.ArgumentParser()
     p.add_argument("--n-boot", type=int, default=200)
+    p.add_argument("--n-boot-geom", type=int, default=200, help="bootstrap draws for geometry / held-out arcs (refits)")
     p.add_argument("--workers", type=int, default=max(1, (os.cpu_count() or 2) - 1))
     p.add_argument("--skip-sha", action="store_true")
     p.add_argument("--plot-only", action="store_true")
