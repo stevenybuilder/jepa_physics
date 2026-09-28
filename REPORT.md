@@ -94,7 +94,7 @@ verdict; §2 lists every deviation from the paper and what the parity audit chan
 | Part 2: Eq. 10 temperature | τ = 0.5 on a LayerNorm'd 64-d latent (B.1) | τ = 0.5 in raw PCA-64 units | absolute energies not comparable; τ 0.25–2 keeps the point-12 ordering (`tau_sensitivity` in `p2_steer_direction_direction_L12_contiguous.json`) |
 | Part 2: behaviour manifold | smoothing spline through 128 bin centroids (B.1) | interpolating spline through the 64 per-value centroids in the Hellinger tangent plane (A.4), F over 128 bins | circular at the steered layer either way (§4.2) |
 | Part 2: carriers | 16 fixed base prompts per task, one set for every pair (A.6) | 48 test clips per target, each steered from its own value | Goodfire starts every carrier at the centroid c_a whatever the carrier's own value (A.6); ours starts each carrier at its true value (an oracle source) and averages over sources |
-| Part 2: pullback (A.8–A.9, C.3) | one path per (source, target) pair, loss averaged over 16 carriers (A.8); replace the top-32 PCs, other PCs and residual held; L-BFGS; path = natural cubic through 10 free control vectors evaluated at K = 20, chord init (A.8), 20 free points with kNN-graph init in the causalab config, K = 30 all free with 30 pairs for the world model (C.3); squared-Hellinger target on M_y; norm regulariser off for weekdays only (5·10⁻⁴ months, 10⁻³ age); scored by closest-point residual and intrinsic R² (A.9), and for the world model by mean distance to M_h (C.3: chord 2.22, geometric 0.20, pullback 0.29) | one path per carrier; additive edit in PCA-64; Adam, zero init, 8 free waypoints; 1 − cos loss on the forecast angle; hard cap 1.2× natural change; equal-t distances | rerun with their recipe (8 pairs, 32 evaluations per pair, unconverged), scored against the ring of the edited context-only activation: the path sits 0.81 from both spline and chord (tie), five times the chord's 0.16 from the spline, with the carriers on the ring (0.14); neither protocol recovers the ring (§4.5) |
+| Part 2: pullback (A.8–A.9, C.3) | one path per (source, target) pair, loss averaged over 16 carriers (A.8); replace the top-32 PCs, other PCs and residual held; L-BFGS; path = natural cubic through 10 free control vectors evaluated at K = 20, chord init (A.8), 20 free points with kNN-graph init in the causalab config, K = 30 all free with 30 pairs for the world model (C.3); squared-Hellinger target on M_y; norm regulariser off for weekdays only (5·10⁻⁴ months, 10⁻³ age); scored by closest-point residual and intrinsic R² (A.9), and for the world model by mean distance to M_h (C.3: chord 2.22, geometric 0.20, pullback 0.29) | one path per carrier; additive edit in PCA-64; Adam, zero init, 8 free waypoints; 1 − cos loss on the forecast angle; hard cap 1.2× natural change; equal-t distances | rerun with their recipe (8 pairs, 32 evaluations per pair, unconverged) with all geometry from the edited context-only activations: from an on-ring start the path moves to 0.87 from both spline and chord (tie), about five times the chord's 0.16 from the spline, with the carrier mean 0.14 off the ring and individual carriers 0.45–0.54; neither protocol recovers the ring (§4.5) |
 
 **What the parity audit changed.** A paper-first audit of our own methods moved six verdicts:
 
@@ -979,14 +979,15 @@ the full-clip chord initialisation averages 0.57 from it along its length, and t
 from the spline and 0.81 ± 0.08 from the chord along theirs (end points 0.76 from the spline; paired −0.006 [−0.023,
 0.012]; intrinsic R² 0 against both). So the run began about 0.57 off the ring it edits,
 because its PCA basis, replaced components, centroids and chord start all came from full-clip activations, and the
-optimiser added +0.23 on 8 of 8 pairs; the rescoring changes the ruler, not that anchoring, Rerun with
+optimiser added +0.23 on 8 of 8 pairs; the rescoring changes the ruler, not that anchoring. Rerun with
 context-only geometry throughout (PCA basis, replaced components, centroids and chord start all from the context-only
-knot activations; same 8 pairs, 16 carriers, 32 evaluations, no pair converged)[^ctx2], the initial chord averages 0.18
+knot activations; same 8 pairs, 16 carriers, 32 evaluations, no pair converged)[^ctx2], the initial path (the carriers' own coordinates outside the top 32, a chord start inside them) averages 0.18
 from the spline (0.04 at its first waypoint) and the optimised paths average 0.87 ± 0.07 from the spline and 0.87 ± 0.08
 from the chord (start 0.90, end 0.75; optimised minus initial +0.68 [0.51, 0.85], 8 of 8 away; spline − chord +0.000
-[−0.019, 0.019]; R² 0), while the forecast lands 6° from the ideal. The optimiser moves off the ring under Goodfire's
+[−0.019, 0.019]; R² 0 / 0.01; full-clip natural units, and the loss still falling 0.1–0.25 per step at the
+evaluation cap), while the forecast lands 6° from the ideal. The optimiser moves off the ring under Goodfire's
 recipe as it did under ours; the unedited carriers of the old angle-only test already sit 0.61 from the ring and its
-paths end 0.59 further out (20 of 20). Data separation in these pullback runs is not clean: 3–5 of each pair's 16
+paths average 0.59 further out (20 of 20). Data separation in these pullback runs is not clean: 3–5 of each pair's 16
 carriers are knot clips, 5 are test clips, the readout's softmax sharpness was fitted on test clips, and the behaviour
 centroids use all clips (`data_separation` in both files); a leak here would favour recovery, and the result is negative. Our earlier angle-only paths score 1.20 / 1.27 on the same ring
 (closer to the spline by 0.07, 19 of 20, from a zero-edit start of 0.61). So neither our angle-only test nor an unconverged run of Goodfire's
