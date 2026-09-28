@@ -17,6 +17,12 @@ Validation (results/session2_stimuli_validation.json): the renderer's 20-clip ag
 centroid recovered from the decoded video vs the metadata trajectory. Example frames: figures/stimuli_{set}_examples.png.
 
   python scripts/render_hard_stimuli.py [--out artifacts/stimuli] [--no-validate-renderer]
+
+Render-seed replicates of the hard set (--hard-seed N, N >= 1): only the hard set, written as hard_seed{N}, with the start
+positions drawn from default_rng(N) and the floor texture from texture_seed 1 + N (seed 0 = the original hard set);
+design, disk, shading, resolution and codec unchanged. Validation -> results/session2_stimuli_validation_hard_seed{N}.json.
+
+  python scripts/render_hard_stimuli.py --hard-seed 1
 """
 import argparse
 import json
@@ -50,6 +56,11 @@ def layout(seed=0):
                               "start_position_xy_m": [float(p[0]), float(p[1])], "fps": 24, "frames": 16})
                 i += 1
     return metas, starts
+
+
+def hard_seed_config(seed):
+    """(set name, layout seed, renderer config) of hard-set render seed `seed`; seed 0 reproduces the original set."""
+    return ("hard" if seed == 0 else f"hard_seed{seed}"), seed, {**HARD, "texture_seed": HARD["texture_seed"] + seed}
 
 
 def value_noise(seed, size=SIZE, octaves=(8, 16, 32, 64)):
@@ -170,13 +181,46 @@ def example_png(root, path, ids=(0, 100, 250, 391), steps=(0, 5, 10, 15), zoom=T
     plt.close(fig)
 
 
+def main_hard_seed(a):
+    """One render-seed replicate of the hard set (fresh starts and floor texture, everything else identical)."""
+    from wm.probes import write_json
+    params = RenderParams()
+    name, lseed, cfg = hard_seed_config(a.hard_seed)
+    metas, starts = layout(lseed)
+    floor = hard_floor(cfg)
+    floor_dec = codec_roundtrip(np.repeat(np.round(floor).astype(np.uint8)[None], 16, 0)).astype(np.int16)
+    hd_pre = lambda m: render_hard(m, floor, params.fg, cfg)                                 # noqa: E731
+    root = write_set(a.out, name, metas, hd_pre, params)
+    print("written:", root)
+    hard_disk = lambda fr, k: np.abs(fr.astype(np.int16) - floor_dec[k]).sum(-1) > 60     # noqa: E731
+    report = {"render_seed": a.hard_seed,
+              "layout": {"directions_deg": DIRECTIONS, "speeds_mps": SPEEDS, "starts_m": starts.round(4).tolist(),
+                         "start_rule": f"7 starts uniform in [-2, 2]^2, numpy default_rng({lseed}), shared by every "
+                                       "direction x speed cell; constant speed; 16 frames at 24 fps",
+                         "n_clips": len(metas)},
+              name: {"renderer": {**cfg, "fg": list(params.fg), "codec": "same MPEG-4 Part 2 path"},
+                     **check_set(root, name, hd_pre, hard_disk, params, False)}}
+    png = Path(a.figures) / f"stimuli_{name}_examples.png"
+    example_png(root, png)
+    report[name]["examples_png"] = str(png.relative_to(PROJECT_ROOT)) if png.is_relative_to(PROJECT_ROOT) else str(png)
+    out = Path(a.results).with_name(f"session2_stimuli_validation_{name}.json")
+    write_json(out, report)
+    print(json.dumps({q: report[name][q] for q in ("codec_mae_vs_precodec_mean", "centroid_err_px_median",
+                                                  "centroid_err_px_p95", "frac_frames_fully_in_view",
+                                                  "n_frames_inside_disk_not_found")}, indent=1), "->", out)
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--out", default=str(PROJECT_ROOT / "artifacts" / "stimuli"))
     ap.add_argument("--no-validate-renderer", action="store_true", help="skip the 20-clip renderer re-validation")
     ap.add_argument("--results", default=str(PROJECT_ROOT / "results" / "session2_stimuli_validation.json"))
     ap.add_argument("--figures", default=str(PROJECT_ROOT / "figures"))
+    ap.add_argument("--hard-seed", type=int, default=None, help="render only hard-set replicate N (>= 1) as hard_seedN")
     a = ap.parse_args(argv)
+    if a.hard_seed is not None:
+        assert a.hard_seed >= 1, "seed 0 is the original hard set"
+        return main_hard_seed(a)
     from wm.probes import write_json
     params = RenderParams()
     metas, starts = layout()

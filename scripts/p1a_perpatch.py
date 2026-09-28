@@ -21,6 +21,7 @@ transfers to the other half only from there on. Part 1 used mean-pooled probes o
   python scripts/p1a_perpatch.py extract --set direction --model vjepa2 --out /workspace/wm/artifacts/perpatch/direction_vjepa2.f16
   python scripts/p1a_perpatch.py probe   --set direction --model vjepa2 --memmap ... --commit <sha>
   python scripts/p1a_perpatch.py figures
+  python scripts/p1a_perpatch.py seeds     # combine the hard set's render seeds -> p1a_perpatch_hard_seeds.json + fig1j
 """
 import argparse
 import json
@@ -40,7 +41,9 @@ HEATMAP_POINTS = [4, 7, 8, 9, 12, 22]
 GRID, NPOS, WIDTH, NSTEP = 16, 256, 1024, 8
 SETS = {"direction": (None, "splits/split_v1.json"),
         "paper_layout": ("artifacts/stimuli/paper_layout", "splits/split_paper_layout.json"),
-        "hard": ("artifacts/stimuli/hard", "splits/split_hard.json")}
+        "hard": ("artifacts/stimuli/hard", "splits/split_hard.json"),
+        **{f"hard_seed{k}": (f"artifacts/stimuli/hard_seed{k}", f"splits/split_hard_seed{k}.json") for k in (1, 2)}}
+HARD_SEEDS = {0: "hard", 1: "hard_seed1", 2: "hard_seed2"}   # render seeds of the hard set (scripts/render_hard_stimuli.py)
 RESULTS = PROJECT_ROOT / "results"
 FIGURES = PROJECT_ROOT / "figures"
 N_BOOT = 200
@@ -110,7 +113,7 @@ def extract(a):
     info = json.loads(side.read_text()) if side.exists() else {"frame_hash": {}}
     info["frame_hash"].update({str(k): v for k, v in hashes.items()})
     # parity: position mean of the stored time-pool vs Part 1's stored meanpool (fp32), where available
-    ref_dir = {"direction": "direction", "paper_layout": "stimuli_paper_layout", "hard": "stimuli_hard"}[a.set]
+    ref_dir = "direction" if a.set == "direction" else f"stimuli_{a.set}"
     ref = PROJECT_ROOT / "artifacts" / "activations" / ref_dir / a.model / "meanpool.npy"
     parity = None
     if ref.exists():
@@ -297,6 +300,26 @@ def jump(points, curve):
             "note": "difference between consecutive SAMPLED points (points 10+ are 2-3 blocks apart)"}
 
 
+def onset_table(points, curves, boots, keep=None):
+    """Onsets (90%-of-max rule), bootstrap CIs and largest jumps per curve, on the sampled points indexed by `keep`
+    (default all), so a set extracted at extra points can be read on another set's point grid."""
+    keep = list(range(len(points))) if keep is None else list(keep)
+    pts = [points[i] for i in keep]
+    onsets = {}
+    for name, c in curves.items():
+        c = [c[i] for i in keep]
+        o = onset_of(c)
+        bo = [onset_of([b[name][i] for i in keep]) for b in boots]
+        bo_pts = np.array([pts[x] for x in bo if x is not None])
+        onsets[name] = {"onset": None if o is None else pts[o],
+                        "onset_frac": None if o is None else min(pts[o], 24) / 24,
+                        "ci95": None if len(bo_pts) == 0 else [int(np.percentile(bo_pts, 2.5)), int(np.percentile(bo_pts, 97.5))],
+                        "boot_draws_without_onset": int(sum(x is None for x in bo)),
+                        "max": float(max(c)), "argmax_point": pts[int(np.argmax(c))],
+                        **jump(pts, c)}
+    return onsets
+
+
 def probe(a):
     import multiprocessing as mp
     from threadpoolctl import threadpool_limits
@@ -416,17 +439,10 @@ def probe(a):
 
     curves = metric_curves(np.arange(len(te)))
     boots = [metric_curves(idx) for idx in boot]
-    onsets = {}
-    for name, c in curves.items():
-        o = onset_of(c)
-        bo = [onset_of(b[name]) for b in boots]
-        bo_pts = np.array([points[x] for x in bo if x is not None])
-        onsets[name] = {"onset": None if o is None else points[o],
-                        "onset_frac": None if o is None else min(points[o], 24) / 24,
-                        "ci95": None if len(bo_pts) == 0 else [int(np.percentile(bo_pts, 2.5)), int(np.percentile(bo_pts, 97.5))],
-                        "boot_draws_without_onset": int(sum(x is None for x in bo)),
-                        "max": float(max(c)), "argmax_point": points[int(np.argmax(c))],
-                        **jump(points, c)}
+    onsets = onset_table(points, curves, boots)
+    onsets_stim_grid = None      # a stimulus set extracted at extra points: onsets also on the POINTS_STIM grid
+    if a.set != "direction" and points != POINTS_STIM and set(POINTS_STIM) <= set(points):
+        onsets_stim_grid = onset_table(points, curves, boots, [points.index(p) for p in POINTS_STIM])
     part1 = None
     if a.set == "direction":
         p1f = RESULTS / f"p1a_direction_direction_meanpool{'' if a.model == 'vjepa2' else '_' + a.model}.json"
@@ -438,6 +454,7 @@ def probe(a):
     wall = time.time() - t_all
     out = {"set": a.set, "subset": a.subset, "model": a.model, "variable": "direction", "target": "(sin theta, cos theta)",
            "n_train": len(tr), "n_test": len(te), "points": points, "curves": curves, "onsets": onsets,
+           **({"onsets_stim_grid": onsets_stim_grid, "onsets_stim_grid_points": POINTS_STIM} if onsets_stim_grid else {}),
            ("part1_meanpool_all_clips" if a.subset else "part1_meanpool"): part1,   # Part 1 = all 1,500 clips
            "layers": rows,
            "left_positions": "columns 0-7 of the 16x16 grid (128 positions); right = columns 8-15",
@@ -613,6 +630,99 @@ def probe_folds(a):
                                                                      zip(points, v["mean"], v["sd"])))
 
 
+# ================================================================ seeds (Mac): hard-set render seeds combined
+
+SEED_METRICS = ("perpos_mean_r2", "pooled_mean_r2", "within_half_r2", "cross_half_r2")
+
+
+def combine_seeds(res):
+    """res {seed: probe-stage result JSON}. Per common point: each seed's value of every SEED_METRICS curve and of
+    the pooled probe's all-sample R2, their mean and SD (ddof 1); per-seed onsets on the common grid (the probe stage's
+    onsets_stim_grid when a seed has extra points); per-seed jumps 8 -> 9."""
+    seeds = sorted(res)
+    common = [p for p in res[seeds[0]]["points"] if all(p in res[s]["points"] for s in seeds)]
+    val = {s: {m: dict(zip(res[s]["points"], res[s]["curves"][m])) for m in SEED_METRICS} for s in seeds}
+    for s in seeds:
+        val[s]["pooled_r2_all_samples"] = {L["point"]: L["pooled"]["pooled_r2_all_samples"] for L in res[s]["layers"]}
+    metrics = SEED_METRICS + ("pooled_r2_all_samples",)
+    by_point = []
+    for p in common:
+        row = {"point": p}
+        for m in metrics:
+            v = np.array([val[s][m][p] for s in seeds])
+            row[m] = {"per_seed": {str(s): float(x) for s, x in zip(seeds, v)}, "mean": float(v.mean()),
+                      "sd": float(v.std(ddof=1)) if len(v) > 1 else None}
+        by_point.append(row)
+    onsets, jumps = {}, {}
+    for s in seeds:
+        r = res[s]
+        on = r["onsets"] if r["points"] == common else r.get("onsets_stim_grid") or r["onsets"]
+        onsets[str(s)] = {m: {"onset": on[m]["onset"], "ci95": on[m]["ci95"]} for m in SEED_METRICS}
+        if r["points"] != common:
+            onsets[str(s)]["all_sampled_points"] = {m: {"onset": r["onsets"][m]["onset"], "ci95": r["onsets"][m]["ci95"]}
+                                                    for m in SEED_METRICS}
+        jumps[str(s)] = {m: (val[s][m][9] - val[s][m][8]) if {8, 9} <= set(val[s][m]) else None
+                         for m in ("perpos_mean_r2", "cross_half_r2")}
+    jm = {m: np.array([jumps[str(s)][m] for s in seeds], float) for m in ("perpos_mean_r2", "cross_half_r2")}
+    return {"seeds": seeds, "common_points": common, "by_point": by_point, "onsets": onsets,
+            "jump_8_to_9": {**jumps, "mean": {m: float(v.mean()) for m, v in jm.items()},
+                            "sd": {m: float(v.std(ddof=1)) if len(v) > 1 else None for m, v in jm.items()}},
+            "extra_points": {str(s): [p for p in res[s]["points"] if p not in common] for s in seeds},
+            "extra_point_curves": {str(s): {m: {str(p): val[s][m][p] for p in res[s]["points"] if p not in common}
+                                            for m in SEED_METRICS} for s in seeds if len(res[s]["points"]) > len(common)}}
+
+
+def seeds_stage(a):
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    from wm.provenance import sha256_file
+    res, files = {}, {}
+    for s, name in HARD_SEEDS.items():
+        f = result_path(name, "vjepa2")
+        if f.exists():
+            res[s], files[str(s)] = json.loads(f.read_text()), f.name
+    out = combine_seeds(res)
+    rnd = result_path("hard_seed1", "random")
+    out.update({"files": files, "file_sha256": {k: sha256_file(RESULTS / v) for k, v in files.items()},
+                "random_init_seed1": None if not rnd.exists() else {
+                    "file": rnd.name, "points": json.loads(rnd.read_text())["points"],
+                    **{m: json.loads(rnd.read_text())["curves"][m] for m in SEED_METRICS},
+                    "onsets": {m: json.loads(rnd.read_text())["onsets"][m]["onset"] for m in SEED_METRICS}},
+                "provenance": {s: res[int(s)]["provenance"] for s in files},
+                "notes": ("seed 0 = the original hard set (render seed 0: starts default_rng(0), floor texture_seed 1); "
+                          "seeds 1, 2 = scripts/render_hard_stimuli.py --hard-seed N (starts default_rng(N), texture_seed "
+                          "1 + N; everything else identical), own 313/79 splits made as split_hard.json. Onsets on the "
+                          "common point grid; SD across seeds ddof 1; jump_8_to_9 = value at point 9 minus point 8")})
+    path = RESULTS / "p1a_perpatch_hard_seeds.json"
+    path.write_text(json.dumps(out, indent=1))
+    print(f"wrote {path}")
+    fig, axes = plt.subplots(1, 2, figsize=(11, 4.2), sharey=False)
+    colors = {0: "#2563eb", 1: "#16a34a", 2: "#dc2626"}
+    for ax, m, title in ((axes[0], "perpos_mean_r2", "per-position probes: mean test R²"),
+                         (axes[1], "cross_half_r2", "half-frame probe: cross-half test R²")):
+        for s, r in res.items():
+            x = [min(p, 24) / 24 for p in r["points"]]
+            ax.plot(x, r["curves"][m], marker="o", ms=3.5, lw=1.6, color=colors[s], label=f"render seed {s}")
+        if out["random_init_seed1"]:
+            ri = out["random_init_seed1"]
+            ax.plot([min(p, 24) / 24 for p in ri["points"]], ri[m], ls=":", color="#6b7280", lw=1.4,
+                    label="random-init ViT-L, seed 1")
+        ax.axvspan(8 / 24, 9 / 24, color="#fde68a", alpha=0.5, lw=0, label="paper's transition (points 8→9)")
+        ax.axhline(0, color="k", lw=0.5)
+        ax.set_title(title, fontsize=10)
+        ax.set_xlabel("layer fraction (block / 24)")
+        ax.grid(alpha=0.25)
+    axes[0].set_ylabel("test R²")
+    axes[0].legend(fontsize=7, loc="lower right")
+    fig.suptitle("Hard render set, three render seeds (392 clips each, own 313/79 split): per-patch direction probes",
+                 fontsize=10)
+    fig.tight_layout()
+    fig.savefig(FIGURES / "fig1j_perpatch_hard_seeds.png", dpi=160)
+    plt.close(fig)
+    print("wrote", FIGURES / "fig1j_perpatch_hard_seeds.png")
+
+
 # ================================================================ figures (Mac)
 
 def figures(a):
@@ -686,7 +796,7 @@ def figures(a):
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("stage", choices=("extract", "probe", "folds", "figures"))
+    ap.add_argument("stage", choices=("extract", "probe", "folds", "figures", "seeds"))
     ap.add_argument("--sets", nargs="+", default=["hard"], choices=tuple(SETS))
     ap.add_argument("--memmap-dir", default="/workspace/wm/artifacts/perpatch")
     ap.add_argument("--set", default="direction", choices=tuple(SETS))
@@ -701,4 +811,4 @@ if __name__ == "__main__":
     ap.add_argument("--subset", default=None, choices=(None, "constvel"))
     ap.add_argument("--results-dir", default=str(RESULTS))
     a = ap.parse_args()
-    {"extract": extract, "probe": probe, "folds": probe_folds, "figures": figures}[a.stage](a)
+    {"extract": extract, "probe": probe, "folds": probe_folds, "figures": figures, "seeds": seeds_stage}[a.stage](a)
