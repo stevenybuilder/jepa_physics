@@ -57,7 +57,7 @@ def run(args):
     L = args.layer
     angle = "labels" if args.labels_angle else "unsupervised"
     d = load_inputs("direction", L)
-    m = rp.build(d, 64, angle, "contiguous", args.seed, 0, "smooth")
+    m = rp.build(d, 64, angle, "contiguous", args.seed, 0, "smooth", aim=args.aim)
     pca, raw, periodic = m["pca"], m["raw_curve"], True
     probe_rows = d["role"] == "probe"
     test = np.flatnonzero(d["role"] == "test")
@@ -264,6 +264,9 @@ def run(args):
                         "pinv_AND_invalid_frac_steered_pairs": float(np.mean(pinv_bad)),
                         "and_mode_used": mode},
            "reproduction_check": repro, "arms": arms_out,
+           "held_out_aim": args.aim,
+           "per_clip": {arm: {"id": c["id"].tolist(), "tgt": c["tgt"].tolist(),
+                              "probe_err_to_target": c["probe_err_to_target"].tolist()} for arm, c in cat.items()},
            "off_target_readouts": {
                **off_quality,
                "speed": "ridge (StandardScaler + RidgeCV) on probe folds 3-4, constant-speed clips only; |change| read "
@@ -384,6 +387,8 @@ def parse(argv=None):
     p.add_argument("--n-draws", type=int, default=20)
     p.add_argument("--n-control-clips", type=int, default=16)
     p.add_argument("--alpha-stride", type=int, default=1, help="every n-th kept value as a source for the overlap")
+    p.add_argument("--aim", default="coord", choices=("coord", "arc"),
+                   help="periodic held-out aim of the chord (and so of the conceptor conditions): arc = issue #213/#266 fix")
     p.add_argument("--and-mode", default="jaeger", choices=("jaeger", "pinv"))
     p.add_argument("--out", default=None)
     p.add_argument("--stored", default=None, help="run_part2 JSON whose spline / raw-chord numbers are checked")

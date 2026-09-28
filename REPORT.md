@@ -1052,6 +1052,22 @@ point-12 arcs, and the position sheet.
   lead depending on the interval method. The point-22 reversal is undecidable
   without labels.
 
+**Which probe directions does the predictor listen to (Makelov ranking)**[^mak]. Makelov et al. rank candidate feature
+directions by their downstream causal effect rather than by probe accuracy. Applied to Part 1's INLP basis at point
+22: each of the first 32 INLP directions was added to the context of the 16 headline-arc carriers at the norm of that
+carrier's raw-chord edit, with both signs, and the predictor's forecast was read with the repair-analysis probe
+(CV error 9.5°). Directions INLP found earlier move the decoded forecast angle more: Spearman ρ = −0.60 between INLP
+order and mean absolute forecast move (carrier bootstrap [−0.64, −0.54], direction-permutation p = 0.0003), −0.77
+over the 16 INLP rounds, and −0.38 over 64 directions. The first eight directions move the forecast by 31° on average
+and directions 17–64 plateau at 12–14°, the level of random directions of the same norm (13.4°); only 28% of the 32
+directions beat the random 95th percentile and none moves the forecast as far as the raw chord (34.7°). The overall
+change in the forecast embedding is flat, about 0.08 relative for INLP, random and chord edits alike (ρ = 0.02), so
+INLP order predicts where an edit lands in the forecast's direction code, not how much the forecast changes. The
+per-direction effect is sign- and carrier-dependent (signed means under 25°, absolute means up to 54°), which is why
+the ranking uses the absolute move. Point 12 was not run: no INLP basis exists there. This says the paper's probe
+count is not a count of directions the predictor uses; a few early directions carry most of the downstream effect,
+consistent with the anisotropy reading of §3.2.
+
 **Energy geodesic (Goodfire Eq. 4–6), lite run**[^geo]. The paper defines the geodesic as the shortest path under
 G_E(h) = (α e^{−E(h)} + β)^{−1} I (l.1396–1411) but never computes one, and causalab has no implementation, so
 this is ours: 50 free nodes between pinned endpoints, Simpson quadrature, torch L-BFGS, two energies fit on knot clips
@@ -1656,3 +1672,4 @@ set. The held-out-arc numbers in this file use a clip bootstrap whose intervals 
 [^str]: `results/p5_straightening.json` (`latent_curvature_by_point.{constvel,accel_direction_set,random_init_constvel,null_isotropic_constvel,null_covmatched_constvel}.mean`, `pixel_curvature`, `straightening_index_by_point.constvel`, `zone_test.constvel.{argmin_point,boot_argmin_counts,zone_min_minus_point25_deg}`, `reversed_minus_forward.constvel`, `geometry_links_by_point[].constvel_spearman_curv_speed`, `pixel_links.constvel_spearman_pixelcurv_speed`); `scripts/run_straightening.py` (2,000 clip bootstraps). The file records no commit; script uncommitted.
 [^ovs]: `results/p5_object_vs_scene_direction.json` (`direction.probe.{object,background,scene,random_scene}[point].{r2,mae,ci}`, `direction.transfer[point]` (row = fit pool, column = test pool; the point-8 matrix is also spelled out in `summary`), `direction.chart_plane_angles[point].object_vs_background`, `direction.geometry`, `direction.timerev[point].*.frac_decoded_closer_to_theta_plus_180`, `direction.heldout`, `binding.curves.*.zones`, `not_computable`, `provenance` (commit cbd0b38, `git_dirty_src_or_scripts: true`; activation hashes match box 1's `sha256_box.txt` for all 10 hashed files); `scripts/run_object_vs_scene.py` (`--binding`), `tests/test_object_vs_scene.py`; `figures/fig_object_vs_scene.png`. CPU only, Mac, 16:27–16:45 ET.
 [^geo]: `results/p2_geodesic_direction_L{12,22}.json` and `results/GEODESIC_NOTES.md` (path metrics per arm: min readout radius, A.7 E_BC, excess nearest-real distance, L_G under each energy, in-plane share and cosine of the bend, closest-point distances; `targets_run` is empty in the lite files and the shards live outside the repo; no git commit recorded); `scripts/run_geodesic.py` (`length`, `g_sqrt`), `tests/test_geodesic.py`. CPU on box 53235298, 16:05–16:33 ET.
+[^mak]: `results/p5_makelov_ranking_L22.json` (`spearman_inlp_order_vs_move.{angle_move,by_round_angle_move,rel_l2_move}.{rho,ci95}`, `extension_all_planned_directions`, `controls.{inlp_mean_move_deg,random_mean_move_deg,rawchord_move_deg,frac_inlp_dirs_above_random_p95,inlp_mean_rel_l2,random_mean_rel_l2,rawchord_rel_l2}`, `top5_by_move`, `bottom5_by_move`); `scripts/run_makelov_ranking.py`, `src/wm/makelov.py`, `tests/test_makelov.py`; plan built at 4bbd141, scored at fb3c9cb, dirty tree both times; 185 GPU-s on box 53235298 at 17:02 ET; frames 1–8, edit added to every token at point 22; bootstrap CIs resample the 16 carriers only.
