@@ -1,0 +1,20 @@
+<section id="p1-layers" data-transition="fade" style="background:#FBFBF8; color:#14213D; font-family:'IBM Plex Sans', Arial, sans-serif; padding:128px 128px 160px; display:flex; flex-direction:column; gap:40px">
+<h2 style="font-family:'Source Serif 4', Georgia, serif; font-size:64px; font-weight:400; line-height:1.1">1.1 Layer-wise probing: all three variables are decodable from block 1</h2>
+<div style="display:flex; gap:48px; align-items:start">
+<img src="/_blob/b9b87805f795452d5713d1056421a0ae" alt="Cross-validated R-squared versus layer fraction for direction, speed and acceleration, with random-init and control curves" style="width:1000px; height:560px; object-fit:contain; background:#FBFBF8">
+<div style="flex:1; display:flex; flex-direction:column; gap:20px">
+<table style="font-size:26px; color:#14213D; font-variant-numeric:tabular-nums">
+<tr style="background:#F1F0EA"><th style="width:40%; text-align:left">CV R²</th><th style="width:30%">block 1</th><th style="width:30%">peak</th></tr>
+<tr><td>direction</td><td>0.875</td><td>0.991 (pt 22)</td></tr>
+<tr><td>speed</td><td>0.983</td><td>0.994 (pt 19)</td></tr>
+<tr><td>acceleration</td><td>0.977</td><td>0.992 (pt 21)</td></tr>
+<tr style="background:#F1F0EA"><td>random-init ViT-L, direction</td><td>0.848</td><td>0.868</td></tr>
+<tr style="background:#F1F0EA"><td>random ReLU features of the trajectory</td><td>0.875</td><td>—</td></tr>
+</table>
+<p style="font-size:26px; line-height:1.4; color:#4A5568">Paper: speed and acceleration early, direction only at one-third depth, decline toward the output. Here: speed before direction holds, by one block; no emergence zone; no late decline (under 0.003 R²).</p>
+</div>
+</div>
+<p style="font-size:28px; line-height:1.4; color:#C8553D"><b>Not reproduced for onset.</b> On this stimulus availability comes from the architecture plus a clean input; training buys precision, not availability.</p>
+<p style="position:absolute; left:128px; bottom:64px; font-size:24px; color:#6a7179">Part 1 · results/p1a_*.json · 3 / 16</p>
+<aside>Onset rule is first point at 90 percent of max with a 200-draw clip bootstrap; direction onset 2 with CI [2, 2]. Shuffled labels and a pixel baseline are also in the files. The next slide is the diagnosis.</aside>
+</section>

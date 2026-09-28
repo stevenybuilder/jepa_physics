@@ -1,0 +1,26 @@
+<section id="beyond" data-transition="fade" style="background:#14213D; color:#FBFBF8; font-family:'IBM Plex Sans', Arial, sans-serif; padding:128px 128px 160px; display:flex; flex-direction:column; gap:40px">
+<h2 style="font-family:'Source Serif 4', Georgia, serif; font-size:64px; font-weight:400; line-height:1.1">Does the model use the edit? Late edits reach the predictor's forecast; early ones wash out</h2>
+<div style="display:flex; gap:48px; align-items:start">
+<div style="flex:1; display:flex; flex-direction:column; gap:20px">
+<h3 style="font-size:30px; font-weight:600; color:#E8A88A">Propagation through the encoder</h3>
+<p style="font-size:26px; line-height:1.4; color:#BFD8D5">Edits at points 2, 8 and 12 are undone within four blocks: the readout returns to the clip's true direction. Only point-22 edits reach the output.</p>
+<h3 style="font-size:30px; font-weight:600; color:#E8A88A">The predictor test, done twice</h3>
+<p style="font-size:26px; line-height:1.4; color:#BFD8D5">First attempt was blind: probes fit on real encoder tokens read the predictor's own unedited forecast 63° off. Fitting the readout on the predictor's outputs (disjoint probe clips) reads it at 8.9° and 12 px, and a real counterfactual context recovers 96% of the direction change. Then the cached edited forecasts were re-read.</p>
+</div>
+<div style="flex:1; display:flex; flex-direction:column; gap:20px">
+<table style="font-size:26px; color:#FBFBF8; font-variant-numeric:tabular-nums">
+<tr style="background:#1F3058"><th style="width:34%; text-align:left">forecast direction error</th><th style="width:22%">to target</th><th style="width:22%">180° null</th><th style="width:22%">point 12</th></tr>
+<tr><td>unedited</td><td>92.1°</td><td>87.9°</td><td>92.1°</td></tr>
+<tr><td>spline, point 22</td><td>11.3°</td><td>168.7°</td><td>77.9°</td></tr>
+<tr><td>radius-matched, point 22</td><td>16.3°</td><td>163.7°</td><td>84.4°</td></tr>
+<tr><td>probe-QR, point 22</td><td>17.1°</td><td>162.9°</td><td>84.1°</td></tr>
+<tr><td>chord, point 22</td><td>27.2°</td><td>152.8°</td><td>84.8°</td></tr>
+<tr><td>random, point 22</td><td>85.7°</td><td>94.3°</td><td>92.3°</td></tr>
+</table>
+<p style="font-size:24px; line-height:1.4; color:#BFD8D5">200 carrier clips × 4 held-out targets. Position moves the right way but overshoots (39–55 px from the twin against a 13 px ceiling). Time-reversed clips flip the direction readout in 100% of cases from point 2 on, with speed unchanged.</p>
+</div>
+</div>
+<p style="font-size:28px; line-height:1.4; color:#E8A88A"><b>At point 22 the edit changes where the predictor says the disk will go, to within 11–17° of a held-out target.</b> At point 12 and earlier it does not. The steered layer's geometry and the model's use of it are different questions, and this data answers both.</p>
+<p style="position:absolute; left:128px; bottom:64px; font-size:24px; color:#BFD8D5">GPU session 2 · session2_propagation.json, session2_predictor_native_readout.json · 13 / 16</p>
+<aside>Her essay names this test: steer the velocity representation and observe counterfactual changes in future predictions. Caveats stated on the next slides: one stimulus, four targets in one arc, a linear readout of the pooled forecast rather than a rendered future. Object permanence: direction is decodable 6 to 10 degrees after the disk leaves the frame, but a random-init encoder does the same, so that is attention mixing, not learned carrying.</aside>
+</section>

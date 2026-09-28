@@ -1,0 +1,21 @@
+<section id="p2-heldout" data-transition="fade" style="background:#FBFBF8; color:#14213D; font-family:'IBM Plex Sans', Arial, sans-serif; padding:128px 128px 160px; display:flex; flex-direction:column; gap:40px">
+<h2 style="font-family:'Source Serif 4', Georgia, serif; font-size:64px; font-weight:400; line-height:1.1">What a meaningful held-out steering evaluation is: three leaks, three separations</h2>
+<div style="display:flex; gap:32px">
+<div style="flex:1; display:flex; flex-direction:column; gap:16px; background:#F1F0EA; padding:32px; border-radius:16px">
+<h3 style="font-size:30px; font-weight:600; color:#C8553D">The spline memorises its knots</h3>
+<p style="font-size:26px; line-height:1.4; color:#4A5568">Steering targets are values the spline never had as knots. Main design: a contiguous 45° arc of 8 directions held out, repeated over 15 distinct arcs. Scattered hold-out is run and labelled as unable to separate chord from arc. Extrapolation is run and labelled as extrapolation.</p>
+</div>
+<div style="flex:1; display:flex; flex-direction:column; gap:16px; background:#F1F0EA; padding:32px; border-radius:16px">
+<h3 style="font-size:30px; font-weight:600; color:#C8553D">The readout is the intervention</h3>
+<p style="font-size:26px; line-height:1.4; color:#4A5568">Three disjoint clip sets: 632 knot clips build the spline, 480 probe clips fit the evaluation probe and the MLP, 300 test clips are steered. Two further readouts never built the edit: agreement with real clips at the target value, and the predictor.</p>
+</div>
+<div style="flex:1; display:flex; flex-direction:column; gap:16px; background:#F1F0EA; padding:32px; border-radius:16px">
+<h3 style="font-size:30px; font-weight:600; color:#C8553D">The edit looks right only at layer L</h3>
+<p style="font-size:26px; line-height:1.4; color:#4A5568">Goodfire's energy at the steered layer restates the geometry steered along, and every figure says so. The answer lives downstream: propagation to later layers and the predictor's own forecast.</p>
+</div>
+</div>
+<p style="font-size:28px; line-height:1.4; color:#4A5568">Why held-out values are the crux: at a value the spline saw, the chord endpoint and the curve endpoint coincide, so linear and spline steering cannot be told apart at the endpoint. At a held-out value they differ by the sagitta of the arc, and the path between them differs everywhere.</p>
+<p style="font-size:26px; line-height:1.4; color:#6a7179">Both arms edit the same PCA-64 subspace and keep each clip's off-subspace residual (matched support). Controls: dose-matched line, projected and reflected arms, 20 endpoint-matched random curves, 20 shuffled-centroid curves, a BF16 repeat. The verdict rule was frozen before the arc sweep and applied unchanged to all 32 runs.</p>
+<p style="position:absolute; left:128px; bottom:64px; font-size:24px; color:#6a7179">Part 2 · REPORT §4.2 · 9 / 16</p>
+<aside>Goodfire's own linear baseline replaces the whole activation with a chord point, which erases the residual; that arm is run separately and labelled, because it confounds curved-versus-straight with residual-erased.</aside>
+</section>

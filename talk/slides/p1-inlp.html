@@ -1,0 +1,19 @@
+<section id="p1-inlp" data-transition="fade" style="background:#FBFBF8; color:#14213D; font-family:'IBM Plex Sans', Arial, sans-serif; padding:128px 128px 160px; display:flex; flex-direction:column; gap:40px">
+<h2 style="font-family:'Source Serif 4', Georgia, serif; font-size:64px; font-weight:400; line-height:1.1">1.2 Iterative nullspace probing: tens of probes, no sawtooth, speed no smaller</h2>
+<div style="display:flex; gap:48px; align-items:start">
+<img src="/_blob/1e948e84e58314895ee849fd475b4802" alt="Probe R-squared across successive nullspace rounds at the paper's layer, with the random-removal band" style="width:960px; height:540px; object-fit:contain; background:#FBFBF8">
+<div style="flex:1; display:flex; flex-direction:column; gap:20px">
+<table style="font-size:26px; color:#14213D; font-variant-numeric:tabular-nums">
+<tr style="background:#F1F0EA"><th style="width:40%; text-align:left">point 9 (paper layer 8)</th><th style="width:30%">nested K</th><th style="width:30%">paper-protocol K</th></tr>
+<tr><td>direction</td><td>37</td><td>46</td></tr>
+<tr><td>speed</td><td>39</td><td>45</td></tr>
+<tr><td>acceleration</td><td>41</td><td>47</td></tr>
+</table>
+<p style="font-size:26px; line-height:1.4; color:#4A5568">Random removal of the same number of dimensions leaves R² at 0.980, so the count is a real claim. The paper's leak (removal fit on all train, scored on the same clips) underestimates K about fourfold; the nested count fits the whole sequence inside each fold.</p>
+<p style="font-size:26px; line-height:1.4; color:#4A5568">No sawtooth under ridge for either variable. Under the paper's literal Adam recipe both curves are jagged and K roughly doubles, again for both variables.</p>
+</div>
+</div>
+<p style="font-size:28px; line-height:1.4; color:#C8553D"><b>Reproduced in part.</b> "Tens of dimensions" holds; the direction-specific sawtooth and "speed needs fewer" do not.</p>
+<p style="position:absolute; left:128px; bottom:64px; font-size:24px; color:#6a7179">Part 1 · results/p1b_*.json · 5 / 16</p>
+<aside>Both stopping thresholds from the paper are reported because its method text says 0.1 and the figure caption says 0.3. The random band is the control that turns a curve into a claim.</aside>
+</section>
