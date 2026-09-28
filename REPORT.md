@@ -89,7 +89,7 @@ test does not recover the ring. This is a probe of the forecast on one stimulus 
 
 | Item | Paper | Here | Effect / check |
 |---|---|---|---|
-| Probe fit | Adam + weight decay | ridge, α by CV | parity check below: ridge ≥ Adam on all three variables |
+| Probe fit | Adam + weight decay, 20-config lr × wd sweep, 5-fold (App. B) | ridge, α by CV | parity check below: ridge ≥ Adam on all three variables at the peak; App. B's sweep run at points 0–10 gives direction onset 2 [2, 3] and speed onset 1 [1, 1], the same as ridge, with the sweep 0.005–0.07 below ridge at every point[^appb] |
 | Input | 224², 1,568 tokens | 256², no crop, 2,048 tokens | layer fractions comparable, patch counts not |
 | Hidden states | 24 points | 26 (embedding, blocks 1–24, final LN) | paper layer L = our point L+1 |
 | Data | 8 directions, separate sets | 64 directions, mixed motion types | direction also reported per motion type |
@@ -171,7 +171,8 @@ the CI. Source: `p1a_{var}_meanpool.json`.
 App. B says "5-fold grouped" without the key): direction onset is 2 [2, 2] with stratified, direction-grouped, start-grouped and
 8-sector-grouped folds (block 1 fold-mean R² 0.875 / 0.847 / 0.869; the sector figure, 0.828, is pooled out-of-fold R²,
 since a one-sector fold makes per-fold R² meaningless), and speed onset 1 [1, 1] with stratified and
-speed-grouped folds[^gcv]. Per the paper's own C.5,
+speed-grouped folds[^gcv]. Nor does it depend on the probe recipe: App. B's 20-config Adam sweep at points 0–10 puts
+the direction onset at 2 [2, 3] (point 2 clears the 90% threshold by 0.005) and speed at 1 [1, 1][^appb]. Per the paper's own C.5,
 though, the pooled curve is expected to rise early and gradually, so it is the wrong readout to test the emergence zone
 against. The per-patch test is below.
 
@@ -1050,6 +1051,7 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
 [^pp]: `results/p1a_perpatch_direction_{vjepa2,vjepa2_constvel,random,vjepa2_hard,vjepa2_paper_layout}.json` (`curves.{perpos_mean_r2,pooled_mean_r2,pooled_frac_ge_0.5,cross_half_r2,meanpool_r2}`, `onsets.*`, `layers[].halves` for the cross-half MAE, `methods`, `provenance.time_averaging`); `figures/fig1g_perpatch_direction.png`, `fig1h_perpatch_heatmaps.png`; rendered-set layout (7 shared starts) in `results/session2_stimuli_validation.json` (`layout.start_rule`) and `scripts/render_hard_stimuli.py`.
 [^hfolds]: `results/p1a_perpatch_hard_folds.json` (`stratified` and `start_grouped`: per point `perpos_mean_r2` mean ± SD over folds, `cross_half_r2` per fold, `onset_per_fold`; paper-layout set alongside), cc41a6c.
 [^seeds]: `results/p1a_perpatch_hard_seeds.json` (per seed `layers[].perpos.mean_r2`, `halves.cross_r2`, `onsets`, `largest_jump`), `results/p1a_perpatch_direction_vjepa2_hard_seed{1,2}.json`, `results/p1a_perpatch_direction_random_hard{,_seed1}.json`, `figures/fig1j_perpatch_hard_seeds.png`; render seeds at 2abb3e9, extraction on the box from a frozen worktree (GPU forward 611 s), 3a8d7c7.
+[^appb]: `results/p1a_appB_sweep.json` (`points[].{direction,speed}.{sweep_r2_mean,sweep_r2_sd,best_lr,best_wd,ridge_r2}`, `onsets`); 100 / 50 epochs and batch 64 from C.11, since App. B gives neither; fbdc60a, 212 tests.
 [^gcv]: `results/p1a_grouped_cv.json` (`sets.{direction,speed}_{vjepa2,random}.{stratified,direction_grouped,start_grouped,speed_grouped}.{onset,onset_ci}`; `sector_grouped` with its pooled-prediction `score`); `figures/fig1i_grouped_cv.png`.
 [^psv]: `results/p1a_paperscale_velocity_only.json` (`summary`, `models.vjepa2.n392_velocity.onset_per_seed`).
 [^raw]: `results/p1b_raw_coordinates.json` (`cells.{direction,speed}_L{8,9}.{raw,stored_zscored}.{nested_K,paper_K}`).
