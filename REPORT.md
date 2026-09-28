@@ -91,7 +91,7 @@ test does not recover the ring. This is a probe of the forecast on one stimulus 
 
 | Item | Paper | Here | Effect / check |
 |---|---|---|---|
-| Probe fit | Adam + weight decay, 20-config lr × wd sweep, 5-fold (App. B) | ridge, α by CV | parity check below: ridge ≥ Adam on all three variables at the peak; App. B's sweep run at points 0–10 gives direction onset 2 [2, 3] and speed onset 1 [1, 1], the same as ridge, with the sweep 0.0015–0.074 below ridge at every point (coupled L2 weight decay, at the grid's low edge for 10 of 12 direction points and 5 of 12 speed points)[^appb] |
+| Probe fit | linear probe, 20-config lr × wd sweep, 5-fold grouped CV, mean ± SD across folds (App. B; the optimiser is named only in C.11: Adam) | ridge, α by CV | parity check below: ridge ≥ Adam on all three variables at the peak; App. B's sweep run at points 0–10 gives direction onset 2 [2, 3] and speed onset 1 [1, 1], the same as ridge, with the sweep 0.0015–0.074 below ridge at every point (coupled L2 weight decay, at the grid's low edge for 10 of 12 direction points and 5 of 12 speed points)[^appb] |
 | Input | 224², 1,568 tokens | 256², no crop, 2,048 tokens | layer fractions comparable, patch counts not |
 | Hidden states | 24 points | 26 (embedding, blocks 1–24, final LN) | paper layer L = our point L+1 |
 | Data | 8 directions, separate sets | 64 directions, mixed motion types | direction also reported per motion type |
@@ -176,8 +176,8 @@ the CI. Source: `p1a_{var}_meanpool.json`.
 
 **Mean-pooled curve.** Direction is at 0.875 after one block, and no variable declines late. The paper's §5.2 also says Cartesian velocity
 and acceleration "exhibit a transition at the Physics Emergence Zone"; the same passage adds that acceleration is "also decodable with
-high R² from early layers"; on pooled probes here (vx, vy) reads 0.985 / 0.986 / 0.984 and (ax, ay) 0.975 / 0.976 / 0.980
-at block 1 / point 8 / point 9 (table above), so no transition shows in the pooled readout. Disk-pooling changes little
+high R² from early layers"; on pooled probes here (vx, vy) reads 0.985 / 0.977 / 0.984 and (ax, ay) 0.975 / 0.966 / 0.980
+at block 1 / point 8 / point 9, so no transition shows in the pooled readout. Disk-pooling changes little
 (direction peak 0.994, onset still 2[^disk]). The onset does not depend on how the CV folds are grouped (the paper's
 App. B says "5-fold grouped" without the key): direction onset is 2 [2, 2] with stratified, direction-grouped, start-grouped and
 8-sector-grouped folds (block 1 fold-mean R² 0.875 / 0.847 / 0.869; the sector figure, 0.828, is pooled out-of-fold R²,
@@ -255,7 +255,7 @@ All scores are test R² on the stored split (rendered sets: 313 / 79).
 |---|---|---|---|---|---|
 | supplied, V-JEPA 2 | 0.56 / 0.957 / 0.958 / 0.975 / 0.95 | 5 [5, 5] | 0.83, 2 [2, 4] | 0.82 / 0.95 / 0.96 / 0.81 | 2 [1, 2] |
 | supplied, constant-velocity clips | 0.54 / 0.959 / 0.961 / 0.980 / 0.94 | 6 [5, 6] | 0.88, 2 [1, 2] | 0.87 / 0.96 / 0.97 / 0.84 | 1 [1, 2] |
-| supplied, random-init ViT-L | −0.01 / 0.22 / 0.27 / 0.29 / 0.38 | 16 [10, 19] | 0.66, 4 [3, 5] | 0.61 / 0.70 / 0.71 / 0.74 | 1 [1, 1] |
+| supplied, random-init ViT-L | −0.01 / 0.22 / 0.27 / 0.29 / 0.38 | 16 [10, 19] | 0.65, 4 [3, 5] | 0.61 / 0.70 / 0.71 / 0.74 | 1 [1, 1] |
 | hard rendered set, seed 0 | 0.49 / 0.806 / 0.851 / 0.944 / 0.96 | 9 [9, 9] | 0.78, 9 [8, 9] | 0.69 / −1.42 / 0.08 / 0.75 | 6 [4, 6] |
 | hard, render seed 1 · seed 2 | 0.54 / 0.83 / 0.88 / 0.95 / 0.96 · 0.55 / 0.81 / 0.88 / 0.95 / 0.97 | 8 [8, 9] · 8 [8, 9] | — | 0.73 / −1.03 / 0.39 / 0.74 · 0.71 / −1.84 / 0.08 / 0.79 | — |
 | hard, seed 0, random-init ViT-L | 0.41 / 0.57 / 0.60 / 0.61 / 0.62 | — | — | −0.72 / 0.27 / 0.27 / 0.51 | — |
@@ -287,7 +287,8 @@ cross-half transfer is already 0.81 at block 1, so the hard set's dip comes from
 together, so seed-to-seed swings cannot be assigned to either). Caveats: per-position
 features are averaged over the 8 time steps; the half-frame test is one pooled probe per half; the rendered sets sample
 points 1, 4, 6, 7, 8, 9, 10, 12, 16 and 22 only (seeds 1–2 add 2, 3 and 5), so their onsets of 4 and 6 are upper
-bounds; they reuse 7 start positions across all (θ, v) pairs; each hard set is 392 clips.
+bounds; they reuse 7 start positions across all (θ, v) pairs; each hard set is 392 clips. C.5's "marked increase in
+redundancy" was not measured; only spatial spread (share of positions above R² 0.5) was.
 
 **Verdict.** On a harder stimulus, across three render seeds, one part of the paper's signature replicates: the half-frame
 jump. Transfer dips to −1.0 to −1.8 at point 8 and jumps back to about chance at point 9 on every seed (paper layers
@@ -935,10 +936,10 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
 
 | Question | Result | Source |
 |---|---|---|
-| Object permanence | Direction decoded from time steps whose frames contain no disk (89 clips; test 15 clips / 22 tokens): MAE 7.5° [5.6, 9.4] at point 8 (visible 5.4°), 6.1° at point 22 (visible 3.8°); shuffled-label null 84.5°, p = 0.001. The random-init encoder, same clips and protocol, does as well: test-clip absent-step MAE 5.9–7.3° across points vs 6.1–13.4° for V-JEPA 2 (null ≈ 90° for both). V-JEPA 2 is ahead only late, by ≤ 1.0° on test clips (points 16–25) and 2.4° / 2.0° pooled at points 22 / 25; it is behind at points 1–12. On visible steps V-JEPA 2 is 5–7° better from point 8 on. So above-null decoding after the disk leaves is attention mixing within the clip (no causal mask), not learned carrying. | `p1a_object_permanence.json` (`random_init.side_by_side`), `fig6_object_permanence.png` (random-init overlaid) |
+| Object permanence | Direction decoded from time steps whose frames contain no disk (89 clips; test 15 clips / 22 tokens): MAE 7.5° [5.6, 9.4] at point 8 (visible 5.4°), 6.1° at point 22 (visible 3.8°); shuffled-label null 84.5°, p = 0.001. The random-init encoder, same clips and protocol, does as well: test-clip absent-step MAE 5.9–7.2° across points vs 6.1–13.4° for V-JEPA 2 (null ≈ 90° for both). V-JEPA 2 is ahead only late, by ≤ 1.0° on test clips (points 16–25) and 2.4° / 2.0° pooled at points 22 / 25; it is behind at points 1–12. On visible steps V-JEPA 2 is 5–7° better from point 8 on. So above-null decoding after the disk leaves is attention mixing within the clip (no causal mask), not learned carrying. | `p1a_object_permanence.json` (`random_init.side_by_side`), `fig6_object_permanence.png` (random-init overlaid) |
 | Cartesian vs polar | On constant-velocity clips (596), (vx, vy) reaches onset at point 1 and (sin θ, cos θ) at point 2 (difference −1, CI [−1, −1]); block 1 R² 0.929 vs 0.863. Speed set: 0.985 vs 0.855. The one-block "emergence" of direction is the normalisation v/‖v‖. Direct test at block 1: the angle of the (vx, vy) probe's output has MAE 12.1° against 12.3° for the direct (sin, cos) probe, and R² 0.900 against 0.911 once the direct output is scaled to unit length, so the direct probe's lower R² there is its radius, not its angle; the two angles disagree clip by clip by 13.1°. From point 2 the direct probe is better (8.3° vs 11.2°). | `p1a_support_onset_*_meanpool.json`, `fig1d`, `p1a_support_cartesian_angle.json` |
 | Direction transfer (held-out context) | Direction probe fit on the direction set, read on the speed set at point 9: MAE 4.4° (source CV 4.0°); 8.7° below 1 m/s, 3.3° at 1–4 m/s. On the acceleration set: 5.8°. At point 1: 10.8° (23.9° below 1 m/s). | `p1a_support_transfer_meanpool.json`, `fig1c` |
-| Spatial generalisation | Train on start x < 0, test on x > 0, point 9: R² 0.971 (MAE 4.9°), vs 0.972 within-side. At point 22, mean-pool 0.957 / 0.975 vs disk-pool 0.988 / 0.987 (negative-to-positive / positive-to-negative side). | `p1a_support_spatial_{meanpool,diskpool}.json`, `fig1e` |
+| Spatial generalisation | Train on start x < 0, test on x > 0: at block 1 already R² 0.828 / 0.815 across sides against 0.810 / 0.806 within (a second refutation of C.5's "generalize to unseen regions only after the emergence zone"); point 9: 0.971 (MAE 4.9°) vs 0.972 within-side. At point 22, mean-pool 0.957 / 0.975 vs disk-pool 0.988 / 0.987 (negative-to-positive / positive-to-negative side). | `p1a_support_spatial_{meanpool,diskpool}.json`, `fig1e` |
 | Direction vs speed subspace (paper C.4 method) | Overlap direction←speed 0.0740 at point 8 (random expectation 0.0781, 5–95% band 0.0756–0.0808); 0.0733 at point 9 (0.0723, band 0.0694–0.0740). Direction vs acceleration 0.0762 and 0.0739, inside or at the edge of the band. The INLP bases are as orthogonal as random ones, yet steering direction still moves the speed readout (§3.3 off-target). | `step2_subspace_angles.json` |
 | Objective axis | V-JEPA vs random-init at the direction peak: probes needed to reach ≤ 10° MAE 4 vs 10; nested K 88 vs 26. VideoMAE matches V-JEPA 2 on all three variables with the same onsets (§3.1): 4 probes to the bar, nested K 67, peak 0.992. | `objective_axis.json`, `fig5_objective_axis.png` |
 | Position sheet | Start (x, y) is decodable; 36-cell centroid PR 7.46 (point 12) / 3.76 (point 19), Procrustes to (x, y) 0.38 / 0.66; spline steering gives no path advantage (§4.3). | `p2_sheet_speed_L{12,19}.json` |
