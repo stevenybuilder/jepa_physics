@@ -1471,8 +1471,7 @@ reads direction at R² 0.987 from the object pool, 0.978 from the background and
 and 4.5°), and at point 22 0.995, 0.991 and 0.992; the untrained copy's scene pool stays at 0.87–0.88 at every point.
 What separates them is the axes. A probe fit on the object pool and read on the background pool transfers with R² 0.27
 at point 8 and 0.17 at point 12 but 0.77 at point 22 (background→object 0.72, 0.44 and 0.88), and the angle between
-the object and background ring planes is 78–89° at points 8 and 12 and 53–56° at point 22. So through the emergence
-zone the disk tokens and the rest of the frame both decode direction but on nearly orthogonal directions of the
+the object and background ring planes is 78–89° at points 8 and 12 and 53–56° at point 22. So through point 12 (after the paper's zone at blocks 8–9) the disk tokens and the rest of the frame both decode direction but on nearly orthogonal directions of the
 residual stream, and by the late blocks they converge on one shared code, which is the token-patching result read at
 the encoder rather than at the predictor. The object pool's ring at point 8 is also rounder than the scene's (b/a
 0.97 against 0.74, saddle share 0.17 against 0.28). Every pool decodes θ + 180° on 99–100% of time-reversed clips from
