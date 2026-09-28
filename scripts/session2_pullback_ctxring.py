@@ -180,6 +180,9 @@ def score():
         sc = pbg.score_triplet(v, sp, ch, unit)
         sc32 = pbg.score_triplet(v[:, :K_OPT], sp[:, :K_OPT], ch[:, :K_OPT], unit)
         pc = [pbg.score_triplet(Ze[:, n], sp, ch, unit) for n in range(Ze.shape[1])]
+        Xi = c[None] + (z["init32"][i][:, None, :] - zc64_here[None, :, :K_OPT]) @ C32f  # the full-clip chord init
+        si = pbg.score_triplet(pca_c.project(Xi.reshape(-1, Xi.shape[-1])).reshape(Xi.shape[0], Xi.shape[1], -1)
+                               .mean(1), sp, ch, unit)
         zcar = pca_c.project(c)
         zcar_f = pca_f.project(c)                                                       # ctx carriers, full-clip PCA
         zfull_f = pca_f.project(G["X"][rows_i])                                         # full-clip carriers
@@ -200,6 +203,8 @@ def score():
                "carrier_ctx_vs_fullclip_pca32_offset_over_unit (recomputed)": float(np.linalg.norm(
                    zcar_f[:, :K_OPT] - zfull_f[:, :K_OPT], axis=-1).mean() / unit),
                "ctx_over_full_knot_centroid_distance_src_to_tg": cdist(Xc, s, tg) / cdist(G["X"], s, tg),
+               "init_fullclip_chord_path": {k: si[k] for k in ("resid_to_spline", "resid_to_chord", "r2_spline",
+                                                               "r2_chord")},
                "per_carrier_mean": {k: float(np.mean([p[k] for p in pc])) for k in
                                     ("resid_to_spline", "resid_to_chord", "r2_spline", "r2_chord")}}
         per.append(rec)
@@ -249,6 +254,8 @@ def score():
                                                           "r2_chord")}
                         | {"paired_resid_spline_minus_chord": pbg.paired([p["resid_to_spline"] for p in perc],
                                                                          [p["resid_to_chord"] for p in perc])},
+                        "init_fullclip_chord_path": {k: pbg.se([p["init_fullclip_chord_path"][k] for p in per])
+                                                     for k in ("resid_to_spline", "resid_to_chord")},
                         "carrier_offset_from_ctx_ring_over_unit": {
                             "mean_carrier_to_ring_closest": off("carrier_offset_from_ctx_ring_over_unit"),
                             "mean_carrier_to_source_centroid": pbg.se(
