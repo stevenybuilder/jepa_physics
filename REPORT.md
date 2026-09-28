@@ -19,10 +19,10 @@ ring, and at held-out direction values the spline path stays on the ring while t
 in the ring plane (in the 64-D subspace it is as close to real clips at point 12 and closer at point 22):
 the minimum readout radius is higher for the spline on every arc (point 22 on the labels angle[^src]).
 
-**Two disagreements with the paper.** (1) On the harder set transfer does not appear only after the zone: it is 0.7 at
+**Two disagreements with the paper.** (1) On the harder set transfer does not appear only after the Physics Emergence Zone (blocks 8–9): it is 0.7 at
 point 1, and the per-position curve rises most between points 4 and 6 on every seed, though under the 90%-of-max rule
 its onset is 9 / 8 / 8, her depth, and the sigmoid inflection 5.7–5.9 (§3.1): partial agreement on a harder stimulus,
-not on the supplied one. (2) Whether speed needs
+not on the supplied one. Our reading of the zone: it is where the heading code is re-encoded from position-specific local codes into one shared code (the transfer dip and recovery) and where object-bound reading starts to give way to frame-wide reading (the predictor reads direction from the disk's tokens 0.98 of the way at point 8, 0.88 at 12, 0.22 at 22; §4.6), not where physics first becomes readable. (2) Whether speed needs
 fewer probes than direction depends on the stop rule and the probe recipe more than on the network. Under ridge on the
 same clips speed needs fewer under C.11's thresholds (7 of 8 cells in probes, 8 of 8 in the paper's unit, dimensions),
 and the paper's plotted Fig. 22 sits with that rule for speed (≈ 28 at layer 8, where Fig. 23's speed curve ends near
@@ -38,19 +38,21 @@ fails (78° with the ridge probe, 84° with the Adam probe; §7.2 says > 80°); 
 probe's plane, reaches 3.2°, and so does the same construction on a random 2-D subspace (median 4.2°, p = 0.24), so what
 the learned probe buys is specificity, not target error.
 
+**One structural finding.** Direction is linear in four dimensions in the model's own polar-Fourier frame (cos θ, sin θ, cos 2θ, sin 2θ): a straight edit there matches a cross-validated spline at held-out endpoints, and a registered coordinate search picks that frame at 6 of 7 points, so the ring is curved only in the coordinates we started from; the untrained copy is best described in Cartesian (vx, vy) (§4.4)[^mg].
+
 **One new thing.** Edits at points ≤ 12 wash out within a few blocks and barely reach the predictor's forecast; point-22
 edits survive to the output, and along the point-22 path the forecast follows the intermediate directions along the
 spline and jumps along the chord (−13.4° paired, −31.3° at large shifts). This is a probe of the forecast on one
 stimulus and one 45° arc, not a rendered future. The wash-out holds at the edits' own norms, and speed shows it too. Scaled to the
 natural twin change, though, a point-12 speed edit moves the forecast's speed readout 0.57 of the way to the target,
-so for speed it is partly a matter of dose. Direction at point 12 was not rerun at that norm (§4.5).
+so for speed it is partly a matter of dose. Direction is not: at the natural norm a point-12 direction edit leaves the forecast 79.7° [72.5, 86.6] from the target with the chord and 87.9° with the spline (label-free knot order), against 92.1° unedited and 12.3° for the point-22 spline[^natdir]. Mid-depth, the predictor reads direction from the object's tokens; a frame-wide edit is repaired in proportion to its size (a random edit of the same norm decays faster still), and the same edit placed on the disk's tokens alone at the twin's per-token dose gets partway through (40.8° from target, R 0.62; §4.5, §4.6).
 
 **One negative.** At held-out endpoints the paper's comparison baseline, the chord between the raw centroids (A.9), run
 with our matched-support edit, lands closer than the smoothing spline: 4.7° against 9.7° at point 12 and 3.6° against
 10.7° at point 22 on the headline arc (clip-bootstrap gap +5.0° [3.9, 6.1] and +7.0° [6.0, 8.1]). The headline arc is the
 extreme case at point 12 and second-largest at point 22 (one arc, seed 16, reaches +8.3°): over the 16 held-out arcs the raw chord's lead is +1.3° ± 1.8 SD at point 12, with the spline ahead on 3,
 and +2.3° ± 2.0 at point 22, with the spline ahead on none. The spline ties only the chord between its own smoothed knots, which was our line arm until
-the parity audit[^rawchord]. A diagnosis run after the fact (§4.3) traces most of that endpoint loss to our own FITPACK smoothing spline: with the paper's interpolating spline the two methods are within about 1° at the endpoint over 16 arcs, and a cross-validated smoother wins by under 1°. Speed and acceleration are straight, and there the spline
+the parity audit[^rawchord]. A diagnosis run after the fact (§4.3) traces most of the point-22 endpoint loss to our own FITPACK smoothing spline: with the paper's interpolating spline the chord's lead over 16 arcs falls from +2.33° to +0.84° (spline ahead on 4/16). That story holds at point 22 only: at point 12 on value-ordered knots the interpolating spline is worse than our smoother (+0.81° → +1.56°, ahead on 2/16), and it loses nearest-real R to the chord on every arc at both points. A cross-validated Reinsch smoother, a rule written after seeing the headline arc and scored on the test read (post hoc, exploratory), wins by under 1°, a margin the true held-out centroid itself does not reach on the same probe (it trails the chord by 0.3°), so that win is reader alignment, not a better aim point. Speed and acceleration are straight, and there the spline
 adds nothing; in extrapolation our smoothing spline, continued along its end tangent as the authors' code does, trails
 the chord by 0.02–0.06, while the authors' own interpolating arm beats the chord on speed and trails it on
 acceleration[^ext].
@@ -119,7 +121,7 @@ verdict; §2 lists every deviation from the paper and what the parity audit chan
 
 **What the parity audit changed.** A paper-first audit of our own methods moved eight verdicts:
 
-- Part 1, emergence zone: read per patch on the hard render across three seeds, the 90%-of-max onset is 9 / 8 / 8 (her depth) while the largest rise is at points 4 → 6 on every seed, and the half-frame dip-and-jump at points 8 → 9 (paper layers 7 → 8) is training-specific (§3.1).
+- Part 1, the Physics Emergence Zone: read per patch on the hard render across three seeds, the 90%-of-max onset is 9 / 8 / 8 (her depth) while the largest rise is at points 4 → 6 on every seed, and the half-frame dip-and-jump at points 8 → 9 (paper layers 7 → 8) is training-specific (§3.1).
 - Part 1, Step 3: with our refit of the paper's C.11 Adam probe sequence as the steering basis the probe count reproduces, 18 probes to 10° and 16 to the paper's 12° at about 20 (§3.3).
 - Part 1: a covariance-weighted edit built from one probe steers to 3–5°, outside the probe's plane, as does the same construction on a random 2-D subspace (median 4.2°), so the learned probe adds specificity, not reach (§3.3, §6).
 - Part 2: the isometry verdict is set by the knot coordinate; under every label-free ordering point 22 is a tie (spline only under the basic interval in the fully faithful run), and Goodfire's own angle loses to the chord at point 12 (§4.4).
@@ -232,7 +234,7 @@ is 0.125 R²[^obj].
 | 392 constant-velocity clips, 64 directions | 392 | 0.823 → 0.972 | 2 [2, 2] | 0.847 → 0.863 | 1 |
 
 At 150 clips or fewer V-JEPA's direction onset moves later, to point 4–9, and the rise over the early blocks becomes
-selective (the random network stays flat). This does not explain the missing emergence zone:
+selective (the random network stays flat). This does not explain the missing zone:
 at the paper's own clip count the onset comes back to point 2, both for 392 constant-velocity
 clips drawn from the supplied set (2 [2, 2] in every seed[^psv]) and for the rendered paper-layout set of 392 clips
 (2 [2, 3], below). The late onsets in the small rows come from having few clips per fit, 76–150 against the paper's
@@ -251,7 +253,7 @@ set adds a textured floor, shading and a disk of half the radius.
 The two sets have the same size and the same 8 directions, so the shift from onset 2 to onset 5 on the hard set comes
 from the rendering, not from sample size. On the hard set V-JEPA's block 1 is below the random network's, and V-JEPA
 first beats it beyond the paired CI at point 5 (post-hoc selectivity onset). The random network stays flat or declines
-(0.881 → 0.861). On the pooled curve this is a partial recovery of the emergence zone (point 5 is about a fifth of the
+(0.881 → 0.861). On the pooled curve this is a partial recovery of the zone (point 5 is about a fifth of the
 depth); per patch, the hard set shows the paper's half-frame transition at the paper's depth but not its sharp rise
 (below). Caveats: 392 clips per seed, 8 directions, direction only, three render seeds, and the 7 start positions are shared by every (θ, v) cell, where the paper samples
 starts per pair.
@@ -331,7 +333,18 @@ on every variable. Direction: block 1 0.886 vs 0.875, peak 0.992 (point 21) vs 0
 peak 0.996 vs 0.994, onset 1. Acceleration: peak 0.996 vs 0.992, onset 1. Nested K at each model's peak is 67 / 109 /
 87 for VideoMAE vs 88 / 89 / 67 for V-JEPA 2. Steering reaches the bar with 4 / 8 / 9 probes vs 4 / 7 / 6
 (`figures/fig5_objective_axis.png`). Nothing in the pooled Part 1 measures on this stimulus is specific to latent
-prediction; VideoMAE was not run per patch. Per patch, run after the fact[^vmpp]: VideoMAE's per-position direction code matches V-JEPA 2's from point 8 on (mean per-position R² 0.961 / 0.972 / 0.981 at points 8 / 12 / 22 against 0.958 / 0.975 / 0.946 for V-JEPA 2 and 0.27–0.38 for the untrained copy) but arrives later (0.817 at point 6 against 0.957; per-position onset 8 [8, 8] against 5 [5, 5]), and its half-frame transfer turns positive at point 8 (0.59) with the same collapse before it. So the per-patch code is what training adds beyond an untrained copy, and it is not specific to V-JEPA 2's objective: pixel-reconstruction training builds the same per-position code, two to three blocks later. Caveat: VideoMAE adds an absolute sinusoidal position embedding and V-JEPA 2 uses RoPE, so the half-frame and pooled-patch comparisons mix training with position encoding; the per-position probes are unaffected.
+prediction. Per patch, run after the fact[^vmpp]: VideoMAE's per-position direction code matches V-JEPA 2's from point 8 on (mean per-position R² 0.961 / 0.972 / 0.981 at points 8 / 12 / 22 against 0.958 / 0.975 / 0.946 for V-JEPA 2 and 0.27–0.38 for the untrained copy) but arrives later (0.817 at point 6 against 0.957; per-position onset 8 [8, 8] against 5 [5, 5]), and its half-frame transfer turns positive at point 8 (0.59) with the same collapse before it. So the per-patch code is what training adds beyond an untrained copy, and it is not specific to V-JEPA 2's objective: pixel-reconstruction training builds the same per-position code, two to three blocks later. Caveat: VideoMAE adds an absolute sinusoidal position embedding and V-JEPA 2 uses RoPE, so the half-frame and pooled-patch comparisons mix training with position encoding; the per-position probes are unaffected.
+
+**Attentive probe (extension; the paper reports attentive-MLP results on IntPhys only)**[^att]. Four learned queries
+with a softmax over the 256 spatial tokens (each averaged over the 8 time steps, so temporal structure is not available
+to it), a small MLP head, AdamW over App. B's learning-rate grid and weight decay 0.01 / 0.1, chosen by 5-fold CV on the
+ridge's train folds. At the paper's layer (point 9) and at the peak the attentive probe is at or slightly above the
+mean-pool ridge (CV R²): direction 0.987 vs 0.980 and 0.995 vs 0.991, speed 0.993 vs 0.988 and 0.995 vs 0.994,
+acceleration 0.990 vs 0.982 and 0.994 vs 0.992; direction CV error falls from 4.0° to 3.7° and from 3.0° to 2.3°. At
+block 1 it is below the ridge for speed (0.976 vs 0.983) and acceleration (0.926 vs 0.977), and above it for direction
+at point 2 (0.946 vs 0.931). So the patch-preserving readout adds at most 0.015 R² to a linear read of the pooled
+vector and does not create or move a Physics Emergence Zone. The best weight decay was the largest swept (0.1) at every
+point, so these numbers may sit slightly below what the probe can reach.
 
 ### 3.2 Iterative nullspace probing
 
@@ -677,8 +690,10 @@ label-free recovery here is my extension, the centroid-plane fallback, and it wo
   axes do tilt more than same-size random bins (|cos| to global 0.69 vs 0.91; 0.56 vs 0.90), so there is a shared axis
   plus a smaller direction-dependent part. A planted rotating code is flagged by the same detector (local R² 0.859 vs
   global −0.066)[^rot] (`figures/fig4f_rotating_speed_axis_L12_L22.png`).
-- **Speed and acceleration are straight.** Knot spacing along the speed curve is linear (R² 0.999, vs 0.909 for
-  log). Centroid PR is 1.65 / 1.67 for speed (points 12 / 19) and 1.61 / 1.66 for acceleration (12 / 21). The line
+- **Speed and acceleration are straight.** The earlier "knot spacing is linear (R² 0.999 vs 0.909 for log)" used the
+  cumulative chord length between consecutive knots, which scores 0.999 with shuffled labels too, so it says nothing
+  about spacing; a label-free coordinate (the centroids' first PC) slightly prefers log speed (log − linear R² +0.061
+  [0.033, 0.084] at point 12, +0.090 [0.071, 0.109] at point 22; acceleration shows no clear preference)[^sacc]. Centroid PR is 1.65 / 1.67 for speed (points 12 / 19) and 1.61 / 1.66 for acceleration (12 / 21). The line
   beats the cubic at every stride ≤ 8. This negative was pre-registered.
 
 ### 4.2 What a meaningful held-out evaluation is
@@ -889,31 +904,41 @@ the data and the spline's lies among it, at points 12 and 22; in unwhitened spac
 difference, consistent with the null 5-NN results above (those are held-out arcs, so the match is not exact). This is a density statement about all-value paths; the
 held-out endpoint verdict does not move.
 
-**Why the spline lost the held-out endpoint (diagnosis after the fact)**[^epd]. Most of the loss was our spline, not
-the method. We smoothed each PCA coordinate separately with FITPACK (`splrep`, s = m, its own knot subset), which
+**Why the spline lost the held-out endpoint (diagnosis after the fact)**[^epd]. At point 22 most of the loss was our
+spline, not the method; at point 12 it was not. We smoothed each PCA coordinate separately with FITPACK (`splrep`, s = m, its own knot subset), which
 neither the paper (an interpolating periodic cubic, A.3) nor its code (causalab's Reinsch smoother, one λ for all
 coordinates) does. That spline reads 3.4° off at its own knots against 1.9° for the raw centroids at point 22, its
 aim point reads 4.3° off against 1.5° for the chord's, and our additive edit counts that error twice, once at the
 target and once at the source anchor (the source term alone costs 1.0–1.7° over the 16 arcs). Run on the same knots,
 the authors' own code (identical to our interpolating spline to 1e-13; cosine 1.0 with our edit vector) turns the
 point-22 headline arc from +7.05° to −0.48° (spline minus raw chord), but over the 16 arcs the interpolating spline
-still trails the chord (+0.84° at point 22, +1.56° at point 12 on value-ordered knots; +27° on the label-free knot
-order) and loses nearest-real R on every arc, because across a 45° gap the interpolant overshoots to 12 PCA units
-from the true held-out centroids against 5 for the chord. Norm is not the mechanism: the spline's edit is shorter,
-and the chord rescaled to the spline's norm still wins by 2.4°. The `aim="arc"` option of 42b30fe makes the spline
+still trails the chord (+0.84°, spline ahead on 4/16 at point 22, down from +2.33° for our smoother; +1.56°, ahead on
+2/16 at point 12 on value-ordered knots, which is worse than our smoother's +0.81°; +27.2° ± 43.2 on the label-free
+knot order used for the stored point-12 results) and loses nearest-real R on every arc, because across a 45° gap the interpolant overshoots to 12 PCA units
+from the true held-out centroids against 5 for the chord. Norm is the second cause, and it cannot be separated from the
+source anchor: rescaled per clip to the stored spline's norm, the raw chord reads 6.64° against the spline's 6.57° over
+the 16 arcs at point 22 (spline minus rescaled chord −0.07°, spline ahead on 11/16; −0.16°, 10/16 at point 12 on
+value-ordered knots), so at the spline's norm the two arms are within 0.2°, though that per-clip rescaling was not a
+comparison fixed in advance either; on the headline arc norm accounts for 4.34° of the
+7.05°. The reverse match, the spline at the chord's per-clip norm, reads 7.75° against the chord's 4.24°, so per-clip
+rescaling costs each arm 1.2–2.4°[^epdnorm]. The `aim="arc"` option of 42b30fe makes the spline
 worse (+3.2°); the real fix for the point-12 knot problem is value-ordered knots (+1.32° → +0.81°). With Reinsch
 smoothing and λ chosen by leave-block-out cross-validation on the kept knots alone, the spline beats the chord on all
-16 arcs at both points, by 0.45° ± 0.21 (point 22) and 0.85° ± 0.34 (point 12, value-ordered), and on the MLP and
-nearest-real readers too; that rule is not in the paper, it was written after seeing the λ sweep on the headline arc
+16 arcs at both points (scored on the test read after the rule was written; post hoc, exploratory), by 0.45° ± 0.21 (point 22) and 0.85° ± 0.34 (point 12, value-ordered), and on the MLP and
+nearest-real readers too, a margin the true held-out centroid itself does not reach (steered to it, the probe trails the
+chord by 0.32°, better on 4/16 arcs at point 22; 0.61°, 4/16 at point 12), so the smoother's win is reader alignment of
+denoised knots, not a better aim point, and it is exploratory; that rule is not in the paper, it was written after seeing the λ sweep on the headline arc
 (before scoring the 16 arcs), and about half of the gain is denoised knots rather than curvature (a chord through the
 smoothed knots gets −0.21° and −0.52°). The ring's bend across the gap is real (the true held-out centroids sit 0.78 /
 0.90 of the way from the chord to the smoothed curve) but smaller than the held-out centroids' own noise (2.0 / 1.4
 against 3.9 / 2.6 PCA units), and the ridge probe reads chord points almost exactly by construction (the chord's aim
-point reads 1.5° off, the true held-out centroid 2.9°); steering to the true held-out centroid does not beat the chord
-either (+0.3°). So at this gap width the endpoint cannot separate the two methods by more than about 1°, the earlier
+point reads 1.5° off, the true held-out centroid 2.9°), which is why the oracle aim above does not beat the chord. So at this gap width the endpoint cannot separate the two methods by more than about 1°, the earlier
 "chord beats spline" numbers in this section overstate the method's loss by 5–7° on the headline arc and 1–2° over 16
 arcs, and the spline's advantage is on the path (readout radius, ordering, and the forecast following it in §4.5),
-not at the endpoint. The predictor-level results of §4.5 used the interpolating spline and are unaffected.
+not at the endpoint. That path-radius result (0.86 against 0.63 at point 12) was measured on our FITPACK smoother; the
+interpolating spline's path radius over the 16 arcs is still being computed (`results/p2_endpoint_diagnosis_path.json`),
+so the path advantage is not yet attributed to it. The predictor-level results of §4.5 used the interpolating spline
+and are unaffected.
 
 ### 4.4 Controls and the comparison with Part 1
 
@@ -1089,8 +1114,28 @@ target and the spline 10.5° [10.1, 10.9] and 6.6° [6.4, 6.7] (the point-12 spl
 present in the stored fixed-aim run as well; under the legacy aim the 16-arc means were 8.0° and 6.7°), and no
 conceptor arm beats the chord on any arc. COAST's aperture band is never met (α = 0.1 or 0.5), and only 2–33% of
 each conceptor edit lies in the ring plane against 56–64% for the spline and chord. This uses the conceptor recipe
-of the paragraph above; a COAST-faithful rerun (contrastive sets, App. A.10 aperture, subspace variants,
-multiplicative rule) is in progress and will be reported beside it.
+of the paragraph above; the COAST-faithful rerun follows.
+
+**COAST as written, over 16 arcs**[^coastf]. I re-ran COAST as the paper specifies (Eq. 1–5, 7–11, App. A.9–A.10):
+conceptors on the full 1024-d activation rather than the PCA-64 subspace of the run above, the paper's pseudoinverse
+AND and Jaeger's singular-case AND, the Stage-2 overlap rule for α, COAST's gate h′ = h[(1 − β)I + βC_steer] with β in
+COAST's grid, and COAST's own positive-only, linear (CAA) and random-eigenvector ablations, plus PCA-16/64 and
+time-token variants. On the headline arc the faithful gate (Jaeger AND, β = 0.3) reads 88.1° / 90.3° at the raw
+chord's norm at points 12 / 22 (unsteered 88.9° / 88.7°, chord 4.7° / 3.6°, COAST's linear baseline 5.0° / 3.7°), and
+over the 16 arcs every conceptor arm in the full and PCA-16 spaces reads 91.0–102.0° at the chord's norm, worse
+than the chord (6.7° / 4.2°) with a CI above zero on 16/16 arcs. The gate equals its random-eigenvector control (88.0°
+against 88.1° at point 12, 89.4° against 90.3° at point 22), because C_target AND NOT C_source keeps a trace of 0.72 /
+5.09 of 1024 and the gate reduces to a near-uniform shrink h → (1 − β)h. The mechanism is the one stated above: a
+conceptor is a soft projector onto a condition's centred covariance, so it sees the shape of each value's cloud but not
+where the cloud sits, and on the ring neighbouring values are shifted copies of nearly the same cloud (source–target
+overlap 0.27–0.61 in the full space, never in COAST's [0.85, 0.95] band); a PSD gate with β ≤ 0.3 also cannot rotate a
+centred state by more than about 10°, while 46% of the steers need more than 90°. The only conceptor arm that reaches
+the target is not COAST: Jaeger's uncentred conceptor of the target clips alone at β = 1 (outside COAST's grid), which
+projects onto the span of the target clips, mean included. At its own norm, about 1.8× the chord's, it beats the chord
+over 16 arcs at point 12 (2.5° against 6.7°, CI below zero on 16/16) and ties it at point 22 (4.3° against 4.2°); at
+the chord's norm it reads 15.1° / 14.1°, worse on 16/16. COAST's linear baseline is a difference of means and ties the
+chord (5.5° / 4.1° over 16 arcs). So conceptor steering of a ring code fails here as a method, not through a recipe
+error; the predictor-side version (gate the encoder, score the forecast) was not run.
 
 **Which probe directions does the predictor listen to (Makelov ranking)**[^mak]. Makelov et al. rank candidate feature
 directions by their downstream causal effect rather than by probe accuracy. Applied to Part 1's INLP basis at point
@@ -1109,23 +1154,106 @@ not test the paper's coordinated, targeted N-probe steering at layer 8 on the Ad
 depends on that basis. What it says is narrower: early INLP directions individually move the predictor's forecast
 more, and directions past about 16 are no better than random single edits of the same norm.
 
-**Energy geodesic (Goodfire Eq. 4–6), lite run**[^geo]. The paper defines the geodesic as the shortest path under
+**Energy geodesic (Goodfire Eq. 4–6)**[^geo]. The paper defines the geodesic as the shortest path under
 G_E(h) = (α e^{−E(h)} + β)^{−1} I (l.1396–1411) but never computes one, and causalab has no implementation, so
 this is ours: 50 free nodes between pinned endpoints, Simpson quadrature, torch L-BFGS, two energies fit on knot clips
 only (a kNN energy with the Levina–Bickel dimension, 13.1 at point 12 and 7.3 at point 22, and a whitened top-10-PC
 KDE with cross-validated bandwidth), α, β calibrated as in Béthune et al. 2505.18230 §3.3 since the paper gives no
-values. Lite scope: 3 of 8 held-out targets, 16 carriers, ≤ 100 L-BFGS steps, and none of the 96 solves reached the
-tolerance, so all path lengths are upper bounds; endpoints are pinned to the raw chord's end state, so endpoint error
-and nearest-real R equal the chord's by construction. Result: the geodesic does not follow the ring. Its bend has an
-in-plane share of 0.08–0.13 (spline 0.13–0.35, random direction 0.03) and a cosine with the spline's bend of −0.00 to
-0.08 from the chord initialisation; it sits 1.8–2.7 from the chord and 3.1–4.1 from the spline. On the readouts it
-matches the chord (minimum readout radius 0.77 / 0.69 for the kNN / KDE geodesic at point 12 against 0.70 chord and
-0.90 spline; A.7 E_BC 1.35 / 1.18 against 1.42 and 0.86; the spline is better on both in all 3 targets, CIs excluding
-0), while it wins on what it minimises (its own length 8.2 vs 14.3 chord vs 133.6 spline under the kNN energy; excess
-distance to the nearest real clips −0.66 vs +0.25 vs +1.09). At point 22 the same holds (radius 0.70 / 0.68 vs 0.71
-and 0.88). So under a density metric fit on the knot clips the shortest path is close to the straight one, and the
-spline's ring-following is not what the energy geodesic selects; the full run (8 targets, 3 restarts, tol 1e-5) is in
-progress and will replace these numbers. Point 12 uses the label-free angle and point 22 the labels, as elsewhere.
+values. The full run covers all 8 held-out targets with 48 carriers each and a random-restart null (3 restarts on 8
+clips per target). None of the 112 batched solves converged within 100 L-BFGS steps (a lite run on 3 targets had 1 of
+42), so every path length is an upper bound and "geodesic" means a 100-step descent of Eq. 4; endpoints are pinned to
+the raw chord's end state, so endpoint error and nearest-real R equal the chord's by construction. Started from the
+chord, the descent stays near it: its bend has an in-plane share of 0.08–0.11 (spline 0.15 at point 12 and 0.41 at
+point 22, a random direction 0.03) and a cosine with the spline's bend of 0.03–0.08. On the readouts it matches the
+chord: minimum readout radius chord / spline / kNN geodesic / KDE geodesic 0.63 / 0.88 / 0.71 / 0.62 at point 12 and
+0.63 / 0.85 / 0.65 / 0.63 at point 22; the kNN geodesic is 0.08 above the chord at point 12 (per-target CI above 0 in
+8/8 targets) and ties it at point 22, and both geodesics sit 0.17–0.25 below the spline, CIs below 0 in every target.
+A.7 E_BC is 1.52 / 0.88 / 1.28 / 1.31 at point 12 and 3.80 / 3.84 / 4.01 / 3.91 at point 22. The descent wins only on
+what it minimises: excess distance to the nearest real clips +0.33 / +1.23 / −0.62 / +0.07 at point 12 and +0.64 /
++0.75 / −0.20 / +0.38 at point 22. Random restarts land 0.6–2.1 from the chord-started geodesic and 27–67% of them
+reach an L_G more than 1% lower, so the chord-started path is not the global minimum; unconverged, this does not
+separate a multimodal landscape from an unfinished descent, and the path shape depends on where the descent starts.
+What does not depend on convergence is the fixed-path length: under G_E the spline is 1.8–2.0× longer than the chord at
+point 22 (kNN and KDE energy) and 4.4–8.7× at point 12, so the density metric does not select the ring route. One
+caveat: the point-12 spline arm in this run does not reproduce the stored raw-chord file (endpoint 14.9° against
+9.7°; suspected scipy 1.15.3 on the box against 1.17.1 on the Mac in periodic `splrep`, unproven), so point-12
+comparisons with the spline here are provisional; the chord arm reproduces the stored file at both points. Point 12
+uses the label-free angle and point 22 the labels, as elsewhere.
+
+**Subspaces, superposition and the model-native coordinate**[^mg]. I fit one linear encoding model per point from
+per-step activations to [cos θ, sin θ, cos 2θ, sin 2θ, speed or acceleration, start x, start y] plus the within-clip
+step curve, and take each variable's coefficients as its subspace. In the noise-whitened metric (length is
+signal-to-noise) the direction plane, its second harmonic, the speed axis, the start-position plane and the time
+subspace are mutually orthogonal to within a random-subspace null at points 8–22 (every overlap ≤ 0.034 against a null
+p95 of 0.034–0.038). The one shared direction is speed with acceleration (overlap 0.94 / 0.89 / 0.79 at points 1 / 12 /
+22, and 0.89–0.94 in the untrained copy, so this part is stimulus), and the ten coded dimensions have a participation
+ratio of 8.4 at point 12. Steering agrees: with in-subspace edits matched in norm, every off-diagonal leak is at most
+0.67 of the readout's natural spread except speed and acceleration reading each other (1.36–1.78×), and across the 80
+cells leakage follows overlap with the readout probe's weights (Spearman 0.72, p 6e-14) more than subspace overlap
+(0.42). The direction edits' speed leak is a property of how centroid edits are built: a ring edit inside the fitted
+subspace leaks 0.09 / 0.04 spreads (points 12 / 22) against 1.46 / 1.76 for the raw chord, and 97% / 96% of the raw
+chord's leak is explained by mean-speed and motion-mix imbalance between the clips behind its two centroids (Pearson
+0.88 with speed imbalance). Projecting the ring edit orthogonally off the speed subspace raises its leak to 1.50×; an
+oblique projector along the speed encoding direction removes it (on the independent MLP reader the raw chord's leak
+falls from 1.07 to 0.83 spreads, −0.24 [−0.31, −0.17], direction cost −0.10°, point 12; −0.07 [−0.14, 0.01] at point
+22). Direction is linear once the second harmonic is included: at the held-out arc a straight edit in (cos θ, sin θ,
+cos 2θ, sin 2θ) matches causalab's Reinsch spline with CV-chosen λ at point 12 (probe +0.13° [−0.03, 0.29],
+nearest-real R −0.001 [−0.004, 0.002]; at point 22 −0.03° [−0.11, 0.05] and R −0.009 [−0.013, −0.005]), beats the raw
+chord (−0.37° [−0.61, −0.14], R +0.035 at point 12) and the interpolating PCA-64 spline, which overshoots (norm 14.0
+against 8.5, speed leak 2.0 m/s; −2.36°, R +0.35), while the ring plane alone loses 0.05 R. The probe endpoint is
+partly circular for this edit, since the probe reads cos θ and sin θ linearly, so nearest-real R is the independent
+test, and the MLP reader's own error on unedited clips is 24–35°, so MLP numbers are quoted only as differences. On the
+speed set an edit in S_dir ⊕ S_speed hits direction and speed together (4.2–5.1° and 0.08–0.11 m/s at points 12 / 19 /
+22) where the full-space cell chord gets 13.9–14.8° and 0.20–0.21 m/s, and adding the second-harmonic plane changes
+nothing. A coordinate search registered before any number was computed picks (cos θ, sin θ, cos 2θ, sin 2θ, v) at 6 of
+7 points (transfer R² 0.88 / 0.66 / 0.76 / 0.72 / 0.78 / 0.72 at points 1 / 8 / 12 / 16 / 19 / 22, against 0.09–0.46 for
+Cartesian (vx, vy); log-polar Fourier at point 4, 0.69). The winner has 5 features against 2–3 for the others, with no
+matched-parameter control; the Holm-adjusted empirical bootstrap p is floored at 0.116 by 300 draws; and the file's
+bootstrap intervals for transfer R² exclude their own point estimates (ledger), so I quote point estimates only.
+Cartesian decodes direction best at point 1 (6.95° against 12.3°) while explaining the least there, so where decoding
+is easiest is not where the coordinate is explicit. The untrained copy is Cartesian at every point (0.34–0.53); pixels
+plus frame differences decode Cartesian direction at 15.3° but do not transfer (48.7–49.2°); start position alone is at
+chance; and projecting out position leaves the winner unchanged at every point. So training turns a pixel-like
+Cartesian velocity code into a factorised polar-harmonic one, in which the ring is curved only in the coordinates we
+started from.
+
+**Velocity sheet v2: steering to held-out (direction, speed) cells**[^vs2]. The v1 sheet (§5) was scored at each arm's
+own norm against a ring fit on one speed band. The rerun uses three hold-out designs: block2 (v1's block of 2 direction
+× 2 interior speed bins), block3 (3 × 3), and cross, which hides two direction bins at every speed and two speed bins at
+every direction, so the target direction and the target speed are both absent from every fitting step. Four block
+positions are pooled, readers are fit on probe folds that never see a held clip, and every arm is scored at its own norm
+and rescaled per clip to the sheet's norm (matched). The sheet is a thin-plate spline over (cos θ, sin θ, scaled speed)
+fit to knot cell centroids, with light smoothing chosen on other blocks; the interpolating version is within 0.3–0.4°
+at own norm. The fair 1-D comparator is the sequential edit (a ring pooled over speeds plus a speed line pooled over
+directions; the two orders are the same additive edit) built from the paper's interpolating splines, since our
+FITPACK smoother is known to lose (§4.3). Steering both variables at point 22, own norm, the sheet lands at 4.3–5.0°
+across the three designs, level with the reader's own error on real target-cell clips (4.7–5.8°), and the interpolating
+sequential edit at 7.0–10.5°: gaps −2.64° [−3.18, −2.14] (block2), −5.48° [−5.99, −4.98] (block3) and −6.19° [−6.73,
+−5.62] (cross). The MLP reader agrees (−3.3° to −6.2°), and so does the acceleration × direction sheet at point 21
+(−3.4° to −6.3° and −0.18 to −0.40 m/s²). At point 12 the block2 gap is −2.21° [−2.83, −1.63] matched. The
+difference-of-means arms lose even with the true held-out centroid (8.53° against 4.33°, matched), but they start at
+the source cell's centroid while the sheet starts at the clip's own (θ, v), so that gap is partly a source-point
+artefact (ledger #302); probe-axis min-norm edits leave the data (nearest-real R 0.05 against 0.36–0.40 for the sheet).
+The direction-only advantage of v1 (2.9° against 6.9° at point 22) was mostly our smoother's and the one-band fit's
+loss: against the interpolating or Reinsch-CV one-band ring it shrinks to −1.24° [−1.63, −0.87] and −0.57° [−0.91,
+−0.23], and at point 12 the Reinsch-CV ring beats the sheet (+0.33° [0.03, 0.62]). Ablations say about two thirds of the
+joint advantage is statistical: a speed-independent cylinder built from the sheet already reaches 5.54° against 7.94°
+for the sequential FITPACK edit and 4.33° for the sheet (point 22 block2, matched), because one smooth fit to both labels
+is denoised and not confounded by each bin's speed mix. The remaining third comes from the ring's radius growing with
+speed (freezing it costs 0.75° [0.47, 1.02] and 0.07 m/s); freezing the ring's shape costs nothing (4.38°). The sheet's
+low speed leakage for direction edits holds at every dose from 0.5× to 2× (0.017–0.068 m/s against 0.040–0.161 for the
+one-band ring), but the speed-averaged sheet matches it exactly, so that too is statistical; the dose curves were run
+only against the FITPACK rings. Beyond the training maximum of 4.0 m/s the linear speed line extrapolates better at
+point 22 (0.15–0.20 against 0.24–0.40 m/s) and the sheet at point 12 (0.24–0.38 against 0.32–0.63), with readers fit
+only up to that maximum. Through the predictor (point 22, v1's block, 48 carriers, 193 GPU-s) the joint edit's
+direction advantage survives: forecast direction error 27.6° [23.3, 32.3] against 33.4° for the sequential FITPACK
+edit, 31.5° with interpolating curves and 32.5° for the raw chord (paired −5.8° [−8.1, −3.6], −3.9° [−6.3, −1.7] and
+−4.9° [−7.4, −2.7]; −3.3° [−5.9, −0.9] against the interpolating edit at the sheet's norm), with the twin forecast at
+7.4° and the unedited at 107.2°. The forecast's pooled speed readout follows every arm that carries a speed edit alike
+(R 0.90–0.99), and the per-step disk positions do not show the disk moving at the edited speed (pure speed edit, R
+0.02 [−0.08, 0.14]). So the sheet is a better encoder-level target for a joint edit than composed 1-D curves, mostly
+for statistical reasons, the gain holds when both target values are unseen, and it does not yet produce a faster
+predicted disk.
 
 ### 4.5 Beyond the steered layer (GPU session 2)
 
@@ -1152,6 +1280,11 @@ only 1–6° at point 25 (7–14° at the steered point). The projection on the 
 is 0.16 / 0.23 / 0.22 (probe-QR / smoothed spline / chord) vs 0.15 / 0.21 / 0.21 for the shuffled twin (`readout_b`).
 The interpolating spline on the label-free knot order overshoots (‖Δ‖ 7.2× the natural twin change at point 12, vs
 0.5–0.6×) and is excluded; on the labels order its edit is 0.97× the twin change[^il12].
+Where the point-12 edit goes (headline arc, 16 carriers)[^rep]: over blocks 13–16 the attention sublayers remove 0.45 and
+the MLPs 0.40 of the spline edit along its own direction, so 15% survives block 16 and 9% block 24, against 68% of a
+point-22 edit surviving blocks 23–24. A random edit of the same norm decays faster (6% after block 16, 2% at block 24),
+so the repair is not specific to the direction code: what the network removes is a frame-wide pooled perturbation, while
+the point-12 code itself is read by the predictor from the object's tokens (§4.6, disk-token share 0.88).
 
 **Predictor** (context frames 1–8 edited at every token; the predictor forecasts tubelets 4–7). *First attempt
 (blind).* Probes fit on the encoder's real future tokens (3.4°, 6.7–8.4 px) read the unedited forecast 61° / 67.9 px
@@ -1236,6 +1369,16 @@ interpolating spline, probe-QR and the chord at both norms (the smoothing spline
 this run). My reading, which I did not test directly: at a fixed norm the forecast's direction readout responds to the
 direction content that the curve edits isolate, not to the whole activation change a re-render causes. A negative for this baseline, on one fit set (seed 0, 2 clips per value) at point 22 only
 (`figures/fig_twin_difference.png`).
+
+At point 12 the same fit set and carriers give a negative of a different kind: no edit moves the forecast far from the
+unedited 92.1°, the norm-matched chord reaches only 84.8° [77.7, 91.5], and the twin-difference edits land at
+84.5–87.5° at the chord's norm and 79.5–84.1° at the natural norm. Paired against the chord at the same norm, ranks 1–2
+tie it (+0.1° [−1.0, 1.3], −0.3° [−1.4, 0.6]) and higher ranks are worse (full +2.7° [1.8, 3.5]), so here error rises
+with rank, the reverse of point 22. The spline and probe-QR could not be compared at matched norm, because that forward
+ran without comparison-arm forecasts and the norm-matched cache covers point 22 only; the session-2 interpolating spline
+at its own norm, 12.2× the chord's, gives 77.9° [73.8, 82.3] (label-free knot order; 81.8° on the labels order). At the encoder output the twin edit ties probe-QR at the
+chord's norm (+0.2° [−0.3, 0.7]) and is 1.8° worse at the natural norm, and all arms stay above 80°. The point-12 twin
+comparison is therefore twin versus chord only, on one fit set[^twd].
 
 **At the encoder output**[^enc]. Point 25 is the final LayerNorm, whose tokens are the predictor's input and the site
 Goodfire §5 steers in its world-model experiment. The same 200 carriers × 4 targets and six arms, with the edit added
@@ -1364,13 +1507,38 @@ the twin's true disk, against 20.7 px unedited and 7.2 px for the twin's own for
 18–26° at the natural norm. At point 12 the edits' own norms reach the forecast with R 0.13 (1.08 m/s off vs 1.25),
 the direction session's wash-out. At the natural norm R rises to 0.57 [0.48, 0.66] for the spline (chord 0.70 [0.57, 0.85],
 raw chord 0.39; displacement readout 0.42 [0.28, 0.59]), so for speed the point-12 wash-out is partly a matter of
-dose. Direction at point 12 was not rerun at the natural norm. Its one high-dose point-12 edit, the label-free interpolating
-spline at 7.2× the twin change, read 77.9°, but that edit was misaimed. Through the encoder (full clip, own norm, a speed probe refit at every later point) point-12
+dose; for direction it is not (next paragraph). Through the encoder (full clip, own norm, a speed probe refit at every later point) point-12
 edits keep R 0.90 at point 12, 0.44 two blocks later and 0.13 at point 25. Point-22 edits keep 0.57 at point 25 (0.42 m/s
 from target, against 1.27 unedited and 0.10 for the twin). So speed behaves as direction does in where edits survive
 at their own norms, and the spline adds nothing over the chord, as the straight geometry predicts (§4.1). The forecast's
 speed code moves, but the forecast disk does not move faster, so this is a probe-level change in the forecast and not a
 faster predicted disk (`figures/fig_session3_speed.png`).
+
+*Direction at point 12 at the natural dose*[^natdir]. The session-2 point-12 direction edits, rerun with each edit
+rescaled to the natural twin change (median norm 14.2) on the same 200 carriers × 4 targets and the same predictor-side
+probe (the own-norm rerun reproduces session 2 exactly), leave the forecast near the unedited 92.1°: the chord reaches
+79.7° [72.5, 86.6] (R 0.29), the label-free interpolating spline 87.9° [80.9, 94.5] (R 0.05) and the null, the same edit
+aimed at the far end (143.4°), 102.3°, against 9.1° (R 0.96) for the rendered twin and 12–26° for the same edits at
+point 22. The natural dose moves the point-12 forecast by only −5.1° (chord) and +10.0° (spline) relative to own norm,
+unlike speed (R 0.57). The encoder removes the edit in proportion: 17.5% of the chord edit survives to block 16 and 11%
+to block 24 at both doses, against 69% at block 24 for a point-22 edit. The one point-12 edit that does reach the
+forecast puts the chord direction on the disk tokens alone (9% of context tokens), each at the twin's own per-token
+change: 40.8° [35.6, 46.3] (R 0.62), with the null at 116.4° and the spline, whose direction differs, at 100.2°. It
+still falls well short of the twin, and a background-token control at matched energy is running ([BGCTRL]).
+
+*Acceleration through the predictor (GPU session 3b)*[^s3a]. The session-3 design on the acceleration set: 128 test
+carriers, each steered to 4 targets in the held-out 7.52–8.61 m/s² block with the smoothing spline, the chord between
+smoothed knots, the raw-centroid chord and a null aimed at 0.25 m/s², at points 21 and 12, at own, chord and natural
+norms, read by probes fit only on unedited forecasts of probe clips outside the block. A direct acceleration probe reads
+the forecasts well (test R² 0.92); a per-step position readout does not (−0.18, against 0.91 from the true centroids),
+so only the direct probe is reported. At point 21 the own-norm spline edit cuts the error to target from 3.46 to 1.82
+m/s² (R 0.39); at the twin's norm it reaches 1.32 m/s² but overshoots (R 1.82), against 0.83 m/s² for the twin's own
+forecast. Spline and chord are indistinguishable (paired −0.010 [−0.012, −0.007] m/s² at own norm, +0.012 [0.010,
+0.013] at the chord's), as the straight geometry predicts; the null moves the forecast away (6.97 m/s²). Point-12 edits
+mostly wash out at own norm (R 0.14) but reach R 0.88 at the natural norm (2.38 m/s²), so for acceleration, as for
+speed, the point-12 loss is partly dose. The point-21 edit raises the forecast's mean speed by 0.25 m/s where the physics
+of the target predicts 1.41 m/s (the twin's forecast: 1.46), so the predictor reads the edit as a partly decoupled
+acceleration label rather than a physical change of trajectory.
 
 **Time-reversed clips** (the forward-trained probe read on reversed clips)[^trev]. From point 1 on, the direction probe
 reads θ + 180° on the reversed clip: the error to θ + 180° is 20.5° at point 1 and 5.7–10.3° from point 2 on, with
@@ -1483,11 +1651,21 @@ disk's direction from the disk's own tokens: swapping 9–13% of the tokens move
 swapping the other 87–91% moves it 1–12%. Between points 12 and 22 that reverses. At point 22 the disk tokens carry
 0.18–0.22 and the background 0.77–0.84, about twice the disk's token share (0.09–0.13) and near the background's (0.87–0.91), so by the
 last blocks the direction code is spread across the whole frame rather than held by the object. The position-matched
-pairs rule out the disk's location as the carrier. Read against the paper's C.1.4 hypothesis (velocity "most bound" to the object in the middle layers), the disk-token share falls monotonically from the input, 0.99 / 0.98 / 0.88 / 0.76 / 0.22 at points 0 / 8 / 12 / 16 / 22: there is no mid-network binding peak; the code is object-bound from the start and delocalises late, which agrees with the two-disk cross-disk index in §5 (lowest over points 6–17) rather than with the hypothesis as stated. No untrained control was run for the patching itself. It also says why edits at point 22
+pairs rule out the disk's location as the carrier. Read against the paper's C.1.4 hypothesis (velocity "most bound" to the object in the middle layers), the disk-token share falls monotonically from the input, 0.99 / 0.98 / 0.88 / 0.76 / 0.22 at points 0 / 8 / 12 / 16 / 22: there is no mid-network binding peak; the code is object-bound from the start and delocalises late, which agrees with the two-disk cross-disk index in §5 (lowest over points 6–17) rather than with the hypothesis as stated. An untrained control follows. The patching result also says why edits at point 22
 reach the forecast when a per-token object code would not: a pooled edit at 22 lands on the tokens the predictor
 actually reads. Provenance: forward on box 1 at commit 8a54162, clean tree; scored locally; 480 probe clips per reader,
 5-fold ridge, CV R² 0.91 (forecast) and 0.94 (encoder output). Limits: one object, one render, five points, pair
 bootstrap CIs over 64 pairs; a swapped disk also swaps the disk's appearance, which is identical across clips here.
+
+*Untrained control*[^tokr]. The same plan (pairs and token sets) on the untrained V-JEPA 2 copy, with both readers
+refit on its own outputs, gives no object binding: on the forecast reader the disk tokens carry 0.33 [0.18, 0.49] /
+0.40 [0.28, 0.51] / 0.27 [0.01, 0.46] of the move at points 8 / 12 / 22 and the background 0.57 / 0.60 / 0.61, and on
+the encoder-output reader the disk tokens carry 0.58 / 0.54 / 0.43 and the background 0.44 / 0.47 / 0.58 (trained:
+disk 0.98 / 0.88 / 0.22, background 0.04 / 0.12 / 0.77 on the forecast reader); position-matched pairs look the same.
+The untrained readers are weak (CV R² 0.35 for the forecast and 0.59 for the encoder output, against 0.91 and 0.94),
+so these fractions are noisier. So the object binding through point 12, and most of the late handover to the
+background, are made by training; the architecture alone gives at most a small drift toward the background (disk
+0.58 → 0.43 on the encoder-output reader).
 
 **The same question from the encoder side (pooled object, background and scene tokens)**[^ovs]. Before the
 predictor, does the encoder itself keep direction on the disk? Three pools per clip, built exactly from the stored
@@ -1520,8 +1698,10 @@ set. The held-out-arc numbers in this file use a clip bootstrap whose intervals 
 | Direction vs speed subspace (paper C.4 method) | Overlap direction←speed 0.0740 at point 8 (random expectation 0.0781, 5–95% band 0.0756–0.0808); 0.0733 at point 9 (0.0723, band 0.0694–0.0740). Direction vs acceleration 0.0762 and 0.0739, inside or at the edge of the band. Direction←speed at point 8 is below the band (more orthogonal than any of the 20 random draws); the other three are inside or at its edge, so the INLP bases are at least as orthogonal as random ones, yet steering direction still moves the speed readout (§3.3 off-target). | `step2_subspace_angles.json` |
 | Objective axis | V-JEPA vs random-init at the direction peak: probes needed to reach ≤ 10° MAE 4 vs 10; nested K 88 vs 26. VideoMAE matches V-JEPA 2 on all three variables with the same onsets (§3.1): 4 probes to the bar, nested K 67, peak 0.992. | `objective_axis.json`, `fig5_objective_axis.png` |
 | Position sheet | Start (x, y) is decodable; 36-cell centroid PR 7.46 (point 12) / 3.76 (point 19), Procrustes to (x, y) 0.38 / 0.66; spline steering gives no path advantage (§4.3). | `p2_sheet_speed_L{12,19}.json` |
-| Velocity sheet (direction × speed, steering) | The sheet is neither cone nor cylinder: ring radius grows with speed to ~1.4–2.4 m/s then flattens (point 12 noise-corrected radius 3.17 at 0.46 m/s, 7.70 at 3.79 m/s; fast ÷ slow 2.43 [2.06, 2.57] against a speed ratio of 8.29; linear-fit intercept 4.38, a cone needs 0); held-out-cell model fit: cylinder 0.804, radius-scaled ring 0.834, sheet 0.843, noise ceiling 0.910. Steering to held-out cells, matched norm, clip-bootstrap CIs: direction at fixed speed, sheet − one ring per speed band −2.47° / −2.58° / −4.02° at points 12 / 19 / 22, sheet − raw chord −0.42° / −1.02° / −1.50°; both variables, sheet − two sequential 1-D edits −1.66° / −2.16° / −4.35° and −0.060 / −0.049 / −0.031 m/s; off-target direction change of a speed edit, sheet − 1-D speed line −1.3° to −1.8°. The untrained copy has no ring (radius ≈ 0.03). A deeper block hold-out, ablations (radius frozen, global speed axis) and a predictor-forecast readout are running (§8). | `p5_velocity_sheet.json` (`shape`, `model_fit`, `steer.*.sheet_minus_*`), `fig_velocity_sheet.png` |
-| Within-clip time (step index) | Each of the 8 time steps has its own pooled feature; the clip-mean-subtracted residuals trace a shared curve that explains 0.82 of held-out within-clip variance at point 22 (a straight line in t 0.15; `geometry["speed/vjepa2/timepool"]["22"].heldout_var_explained` centroids 0.823, line_in_t 0.151). The coordinate advances 1.00 per step in slow, mid and fast bands alike (fast ÷ slow 1.005 [1.002, 1.009] at point 22, where a distance counter predicts 6.02), so it is a speed-invariant frame count, not an odometer. Steering to a held-out step: time-probe error 0.106 (spline) / 0.082 (raw chord) steps at point 22 against 2.43 unedited, spline − chord +0.024 [0.023, 0.025]; side effects ≤ 0.007 m/s and ≤ 0.29°. Control: the untrained copy also decodes t (test R² 0.9735 at point 22, `controls.speed.random.timepool.decode.22.test.t_r2`), so the step index itself is available to any encoder, plausibly as a RoPE- or content-derived time index (V-JEPA 2 adds no position vector to the residual stream); what is specific to training is the shared low-dimensional curve (untrained: 0.007 of within-clip variance) and the 0.99–1.00 slope (untrained 0.71–0.77 at point 22). At a fixed frame rate the design cannot separate frame count from elapsed seconds, and the time-rescaled "clock" stimuli are speed changes in disguise (`CLOCK_NOTES.md`, #251/#277). Static-disk control not run. Predictor-level test (does a time edit advance the forecast?) running (§8). | `p5_time_manifold.json` (`geometry`, `clock`, `decode`, `steer`, `controls`), `p5_time_manifold_controls.json`, `p5_clock_test_linearity.json`, `results/CLOCK_NOTES.md` |
+| Velocity sheet (direction × speed, steering) | The sheet is neither cone nor cylinder: ring radius grows with speed to ~1.4–2.4 m/s then flattens (point 12 noise-corrected radius 3.17 at 0.46 m/s, 7.70 at 3.79 m/s; fast ÷ slow 2.43 [2.06, 2.57] against a speed ratio of 8.29; linear-fit intercept 4.38, a cone needs 0); held-out-cell model fit: cylinder 0.804, radius-scaled ring 0.834, sheet 0.843, noise ceiling 0.910. Steering to held-out cells, each arm at its own norm (v1 had no norm matching: edit norms 10.21 / 9.60 / 9.78 for sheet, ring and chord at point 12), clip-bootstrap CIs: direction at fixed speed, sheet − one ring per speed band (fit on one band's knots, about 1/8 of the data) −2.47° / −2.58° / −4.02° at points 12 / 19 / 22, sheet − raw chord −0.42° / −1.02° / −1.50°; both variables, sheet − two sequential 1-D edits (the two orders are the same additive edit) −1.66° / −2.16° / −4.35° and −0.060 / −0.049 / −0.031 m/s; off-target direction change of a speed edit, sheet − 1-D speed line −1.3° to −1.8°. The untrained copy has no ring (radius ≈ 0.03). v2 (§4.4), matched to the sheet's norm, with pooled baselines and a cross design where target direction and speed are both unseen: direction to the held-out cell, sheet − sequential global ring + speed line −3.60° [−4.12, −3.07] (point 22 block2), −4.05° (cross), −1.50° (point 12); direction only, sheet − global ring pooled over speeds −2.72° [−3.34, −2.09] with our FITPACK smoother but −1.55° [−2.00, −1.14] with a Reinsch-CV ring (point 22), so most of v1's 4.0° ring gap was a data-starved baseline; cylinder costs 1.2°; the forecast keeps 3–6° of the joint advantage and shows no speed advantage. | `p5_velocity_sheet.json` (`shape`, `model_fit`, `steer.*.sheet_minus_*`), `p5_velocity_sheet_v2.json`, `p5_velocity_sheet_predictor.json`[^vs2], `fig_velocity_sheet.png`, `fig_velocity_sheet_v2.png` |
+| Speed and acceleration beyond straight lines | The acceleration line is mostly the mean-speed line: at point 12 the two lines have cosine 0.92 (0.90–0.95 at points 8–25, 0.99 at point 4; split-half reliability 0.99), and a speed probe reads accelerating clips at 0.295 s × a, close to their physical mean speed of 0.3125 s × a; the untrained copy transfers the same way (slope 0.28, line cosine 0.57–0.65), so this part comes from the stimulus. Training adds an acceleration code that separates accelerating from constant-velocity clips at matched mean speed (AUROC 0.996 at point 12, ≥ 0.999 from point 16; untrained 0.53). In the per-step tokens speed is mostly a rate code: 79–93% of the per-step speed vector is the same at every step, the part growing with elapsed time is 1–7%, and the speed line is orthogonal to the within-clip time direction from point 12 on (abs cos 0.009–0.036 against a random p95 of 0.06); a step-specific edit moves decoded distance 0.90–0.95 of Δv·τ, while a pooled edit, as in all our steering, shifts it by a constant 0.31 m, which may be why the Session 3 edit moved the forecast's speed probe but not the disk. Speed edits along the global line transfer across directions on the probe (gain 0.98–0.99, 0.75–0.96° of direction change) but lose nearest-real agreement away from their own bin (own minus 90°: 0.057 [0.052, 0.061] at point 12), so the axis is shared for readout more than for steering. Spacing along the line slightly prefers log speed (§4.1 corrected), and a real doubling of speed inside the range puts only 0.17–0.20 of its activation change on the line though the probe reads 0.97–0.98 of it. Encoder-side, pooled results; the twins come from a different stimulus family (paper layout). | `p5_speed_accel_angles.json`[^sacc] |
+| Within-clip time (step index) | Each of the 8 time steps has its own pooled feature; the clip-mean-subtracted residuals trace a shared curve that explains 0.82 of held-out within-clip variance at point 22 (a straight line in t 0.15; `geometry["speed/vjepa2/timepool"]["22"].heldout_var_explained` centroids 0.823, line_in_t 0.151). The coordinate advances 1.00 per step in slow, mid and fast bands alike (fast ÷ slow 1.005 [1.002, 1.009] at point 22, where a distance counter predicts 6.02), so it is a speed-invariant frame count, not an odometer. Steering to a held-out step: time-probe error 0.106 (spline) / 0.082 (raw chord) steps at point 22 against 2.43 unedited, spline − chord +0.024 [0.023, 0.025]; side effects ≤ 0.007 m/s and ≤ 0.29°. Control: the untrained copy also decodes t (test R² 0.9735 at point 22, `controls.speed.random.timepool.decode.22.test.t_r2`), so the step index itself is available to any encoder, plausibly as a RoPE- or content-derived time index (V-JEPA 2 adds no position vector to the residual stream); what is specific to training is the shared low-dimensional curve (untrained: 0.007 of within-clip variance) and the 0.99–1.00 per-step advance (on the full 1,536-clip control set the untrained copy advances 0.85–0.87 per step and is also speed-invariant, fast ÷ slow 0.99 [0.93, 1.06]; the earlier 768-clip subset gave 0.71–0.77)[^timef]. At a fixed frame rate the design cannot separate frame count from elapsed seconds, and the time-rescaled "clock" stimuli are speed changes in disguise (`CLOCK_NOTES.md`, #251/#277). Static-disk control not run (no zero-speed clips exist). | `p5_time_manifold.json` (`geometry`, `clock`, `decode`, `steer`, `controls`), `p5_time_manifold_controls.json`, `p5_clock_test_linearity.json`, `results/CLOCK_NOTES.md` |
+| Time through the predictor | 128 held-out speed-set clips, edits on every context token. The real reference works: the same clip's context window two tubelets later advances the forecast disk 1.15 [1.05, 1.24] of the true two-step displacement (15.5 px) while leaving the context time readout unchanged (+0.01 steps), because the re-encoded window gets token positions 0–3 again. A +2-step spline edit does not: at point 22 it moves the forecast −0.21 [−0.42, −0.01] of two steps, no differently from the same path aimed backwards (+0.02 px [−1.97, 1.84]), while pushing the disk 14.1 px sideways and adding 1.97 m/s of forecast speed; at point 12 it advances 0.19 [0.08, 0.29], more than the backward path (+6.55 px [4.87, 8.16]) and a norm-matched random edit (+2.54 px [1.16, 3.84]), but its sideways drift (6.1 px) is as large as the advance. The chord gives the same numbers as the spline (within 0.01 px). Reversing the time path flips the forecast heading on 0% / 7% of clips (points 12 / 22) against 99% for really reversed frames. So the time-step code is decodable and steerable in the encoder (held-out step within 0.098 / 0.106 steps, untrained 0.60 / 0.55) but the predictor does not use it as elapsed time; forecast timing comes from where the disk is in the frames, and the code behaves like a frame-index code amplified by training. | `p5_time_predictor.json`[^timep] |
 | Relational motion (two disks) | 637 two-disk clips balanced over common velocity c and relative velocity v_rel. A linear v_rel probe is by construction the difference of the two single-disk probes and gives no evidence of a relational code: V-JEPA 2 0.95 (point 2) vs untrained 0.98, and the V-JEPA readout fails the Galilean transfer across c halves (R² ≤ 0 vs 0.80 untrained). What training adds is identity-blind: relative speed |v1 − v2| reaches OOF R² 0.969 [0.964, 0.973] at point 17 (untrained best 0.204, pixels 0.00; `headline.best_by_target.abs_v_rel`), v_top − v_bottom 0.84, while v1, v2 and signed v_rel fall to 0.58–0.59 / 0.16 at the output; an MLP on activations beats the same MLP on the decoded single-disk velocities for |v1 − v2| from point 4 (+0.63 to +1.12 held-out R²). Per-disk pools contradict the paper's C.1.4 binding hypothesis in this setting: velocity is least bound to its own disk over points 6–17 (a plateau at 0.11–0.16, argmin point 9, vs 0.4–0.7 at point 1 and 0.21 at 20–24); measured against the other disk's tokens the untrained copy's index is ≈ 1, so training spreads one disk's velocity into the other disk's tokens; measured against the background instead (the object-vs-scene convention in §4.6) the untrained index is ≈ 0 at every depth while V-JEPA 2's rises with depth (0.12 at point 8, 0.39 at 22); that background pool decodes disk-1 velocity at R² ≥ 0.87 through point 9 in both models (mask leakage), so it measures how much disk signal the background keeps rather than binding, and the verdict on "bound" depends on the comparison set. Caveats: CIs resample clips not cells; the diskmask covers one disk; late-layer v1/v2 readouts are weak, which is what makes the composition null fail. | `p5_relational_motion.json` (`headline`, `sources`, `beyond_composition`, `binding`), `p5_relational_stimuli_validation.json`, `fig_relational_motion.png`, `fig_relational_binding.png` |
 | Temporal locality (which frames carry the code) | Direction and speed are readable almost equally from every frame pair: per-tubelet ridge CV R² spans 0.817–0.845 at point 1, 0.964–0.974 at 8, 0.979–0.987 at 12 and 0.986–0.990 at 22 (speed 0.949–0.952 at 1, 0.988–0.990 at 22). Because attention is bidirectional this says where the code can be read, not where it comes from, so frame groups were mean-ablated at point 12 (mean over 480 probe-role clips, 200 held-out clips): the predictor's forecast direction degrades more when the last context frames are removed (frames 7–8: 12.2°, +3.4° over the unablated 8.8°) than the middle (frames 3–6: +1.9°) or the first (frames 1–2: +0.3°), and fails only when all context is removed (87.6°, chance); at the encoder output any single frame pair costs ≤ 0.3° and the middle 8 frames 2.2°. By block 12 the direction code is spread over all frames with a mild recency weighting in what the predictor uses. Readers: forecast probe CV R² 0.907, encoder-output 0.985; bf16 vs fp32 forecast parity 3.2°. | `p5_temporal_locality.json` (`per_tubelet_probe.direction.<pt>.per_tubelet_cv_r2`, `ablation_point12.forecast.<cond>.{err_deg,err_increase_vs_none_deg}.mean`, `ablation_point12.encoder_output.*`, `readers.*.cv_r2`), `fig_temporal_locality.png` |
 | Contact dynamics (a wall bounce) | The supplied clips have no contact, so 96 wall-bounce clips (elastic reflection at frame 3–12, speeds 2–4 m/s, a 6 px wall bar) and 96 straight twins were rendered with the validated twin renderer (features within 3e-4 of stored ones). Direction probes fit only on constant-velocity clips track the bounce frame by frame: the turn fraction (0 = incoming, 1 = reflected) goes from 0.22 before contact to 0.80 after at point 22 (0.17 → 0.63 at point 12; 0.24 → 0.80 at 25), crossing at the contact pair (0.53 at offset 0, 0.76 at +1), with 86% of post-contact frame pairs closer to the reflected direction; pre-contact pairs are already pulled ~0.2 toward the reflection (bidirectional attention mixing in future frames; the wall is a new object). The predictor does not anticipate the bounce: given frames 1–8 with the disk heading at a visible wall, the forecast keeps the incoming direction at every future step (turn fraction 0.17 / 0.09 / 0.07 / 0.00 at steps 0–3, ~22° from incoming, ~90° from reflected) while the encoder reads the reflection in the real future frames (0.86 / 0.75 / 0.53 / 0.67). At this model size and stimulus, V-JEPA 2 perceives contact but does not predict it. Rendered stimuli (cross-render caveat); point 1 fails on wall clips. | `p5_contact_dynamics.json` (`results.per_point.<pt>.bounce.{pre_contact,straddle,post_contact}.turn_fraction.mean`, `results.per_point.<pt>.turn_fraction_by_offset`, `results.predictor_forecast.steps.step{s}_tubelet{t}.forecast_turn_fraction_post`, `results.real_future_encoder_turn_fraction_post_point25`, `results.parity_fp32_timepool_rel_maxabs_vs_stored`; provenance commit b8856e8 dirty, 645 GPU-s on box 53235298), `fig_contact_dynamics.png` |
@@ -1542,9 +1722,8 @@ set. The held-out-arc numbers in this file use a clip bootstrap whose intervals 
   not a training effect. The per-patch probes show what training does add: the random network never gets past a mean
   per-position R² of 0.39, the regime of fragmented local signal that pooling adds up, while V-JEPA 2 reaches 0.96 by
   block 6 on the supplied clips and, on a harder stimulus, forms that code with its largest rise at points 4 → 6 on every render seed and, across the paper's depth, loses
-  half-frame transfer and jumps back to chance, which the random network never does (§3.1). So the emergence zone is a claim about the per-patch readout, which the paper's C.5 says, and a mean-pooled
-  curve can neither confirm nor refute it. VideoMAE matches V-JEPA 2 on every pooled Part 1 measure (I did not run it
-  per patch), so none of this is specific to latent prediction or shows that the variables are used to predict. The authors' OpenReview response states that "all 13 models encode motion direction
+  half-frame transfer and jumps back to chance, which the random network never does (§3.1). So the zone is a claim about the per-patch readout, which the paper's C.5 says, and a mean-pooled
+  curve can neither confirm nor refute it. VideoMAE matches V-JEPA 2 on every pooled Part 1 measure and, from point 8, per patch (§3.1), so none of this is specific to latent prediction or shows that the variables are used to predict. The authors' OpenReview response states that "all 13 models encode motion direction
   (R²≥.43), regardless of objective", classification CNNs included, so availability is their own finding; training buys
   precision, fewer probes to steer (4 vs 10 to reach 10°[^obj]) and a label-free ring.
 - **The linear representation hypothesis: right about the subspace, wrong about the moves.** Direction lives in a 2-D
@@ -1567,7 +1746,7 @@ set. The held-out-arc numbers in this file use a clip bootstrap whose intervals 
   any seed. So it is a partial reproduction on one small stimulus family, not on the supplied data.
 - **Per-patch probes.** Features are averaged over the 8 time steps at each position, so time structure within a
   position is not probed; the half-frame test is one pooled probe per half; the rendered sets were read at 10 points
-  only (13 on hard seeds 1–2), so their onsets of 4 and 6 are upper bounds. VideoMAE and speed were not run per patch.
+  only (13 on hard seeds 1–2), so their onsets of 4 and 6 are upper bounds. Speed was not run per patch.
 - **Training dynamics.** With intermediate V-JEPA 2 checkpoints, the random-init vs final contrast becomes a curve.
   That is the natural test of when precision and the ring appear.
 - **Predictor readout is a probe; the edit overshoots.** A probe of the pooled forecast, not a rendered future;
@@ -1576,7 +1755,7 @@ set. The held-out-arc numbers in this file use a clip bootstrap whose intervals 
 - **The late causal follow-ups are small.** The saddle and radial tests use 16 carriers on one held-out arc, one
   draw of 20 random axes or planes, and points 12 / 22 (radial: 22 only). Session 3 steers speed on one held-out block
   (128 carriers × 4 targets), and its speed edits change the forecast's speed code but not the forecast disk's motion.
-  The twin-difference arm is one fit set (seed 0, 2 clips per value) at point 22. All four files were scored from a
+  The twin-difference arm is one fit set (seed 0, 2 clips per value) at points 22 and 12 (point 12: chord comparison only). All four files were scored from a
   dirty worktree at 3c13095 (§4.5).
 - **The hollow is in the ring plane and the whitened direction subspaces.** In the unwhitened 64-D edit subspace and
   full space the chord is no farther from real clips than the spline (§4.3); once the variance a direction reader
@@ -1592,9 +1771,9 @@ set. The held-out-arc numbers in this file use a clip bootstrap whose intervals 
   (chord 12.5°, interpolating spline 15.7°) but the spline's matched-norm lead over the chord from point 22 does not
   carry over (+10.8° worse at the chord's norm, 2.1° better at the natural norm; §4.5). The route effect in the forecast
   is a point-22 result.
-- **Conceptor comparison is one arc, outside COAST's regime.** COAST's aperture rule found no aperture in its overlap
+- **Conceptor comparison is outside COAST's regime.** COAST's aperture rule found no aperture in its overlap
   band at either point, its pseudoinverse AND is invalid for 87–90% of the steered pairs (Jaeger's AND used instead),
-  the target-aimed arm is my variant, and the 16-arc aggregate was not run (§4.4). The negative is for conceptor
+  the target-aimed arm is my variant; the COAST-faithful rerun over 16 arcs (§4.4) is also a null, and its one working arm (uncentred, target-only, β = 1) is not COAST. The negative is for conceptor
   steering of a ring code, not for COAST on its success/failure task.
 - **Off-target readouts are transferred probes.** The speed probe is fit on the speed set and is 0.56 / 0.44 m/s off on
   unedited direction clips; off-target changes are read as ratios to natural spread, and spline and chord are compared
@@ -1628,6 +1807,11 @@ Planned in the spec and not run: the last-frame-only control of the layer curves
   the encoder-output and point-12 labels-order files at 3f4c8de (forward at b7d09fc), clean. The per-patch files record
   commit 4413937; the grouped-CV, raw-coordinate, sawtooth and evaluation-probe files 46a33da, the velocity-only and
   Cartesian-angle files 6fc2529, the labels isometry and all-centroid angle files 7de664a, all clean.
+  Exceptions: `results/p5_velocity_sheet.json` (v1) records `commit: null` and `git_commit: "unknown"` (run on a box
+  at 18:45 UTC from `/workspace/wm_p5`); no log names its commit, so it is unknown (the file was first committed in
+  42b30fe). The v2 sheet, acceleration sheet, sheet-through-predictor, motion-geometry, untrained token-patching,
+  natural-norm direction and time-predictor files record d97502d with dirty scripts, and the repair attribution 3c13095
+  dirty.
 - **Numerics.** CPU–GPU parity on 8 clips: worst per-layer max|Δ|/max|x| 8.2e-5 (rule < 1e-3); GPU batch-8 vs
   batch-16 gap 1.31× the CPU–CPU gap (rule ≤ 2×). Frame hashes and disk masks match, and 27/27 sha256 checks of the
   downloaded activations pass[^gpu].
@@ -1699,7 +1883,7 @@ Planned in the spec and not run: the last-frame-only control of the layer curves
 [^evp]: `results/p1c_direction_evalprobe_recipe.json` (`stored`, `recipe_results.{ridge_alpha_1e-3,adam_c11}.{eval_probe,n_to_10deg,random_basis_p,rank_matched_p}`); the stored floor N from `random_nulls.rows[].random_basis.empirical_p_to_target` in `results/p1c_direction_L{9,22}.json`.
 [^enc]: `results/session2_encoder_output.json` (`per_arm.*.{unmatched,chord_norm,natural_twin_norm}`, `spline_minus_chord`, `spline_minus_chord.point22_stored`, `unedited`); `scripts/session2_encoder_output.py`.
 [^il12]: `results/session2_interp_labels_L12.json` (`spline_labels`, `stored_point12.spline`, `stored_spline_edit_norm_recomputed`).
-[^twd]: `results/session2_twin_difference_L22.json` (`fit_set.{n_fit_clips,n_fit_pairs,k_nn,svd_energy_top_r}`, `per_condition.{chord_norm,natural_twin_norm}.{twin_r1,twin_r2,twin_r4,twin_r8,twin_full,spline,chord,probe_qr}.{dir_err_to_target,R_dir_real_change,px_err_to_twin_true,enc_out_err_to_target,nearest_real_R_pt25,R_act_twin_pt25}`, `twin_minus_best_comparison.*` (best comparison = `spline`, the interpolating spline of the norm-matched rerun; best twin = `twin_full`), `unedited.dir_err_to_target`, `parity`); predictor readouts of the comparison arms from the norm-matched cache (`definitions."comparison arms"`); `scripts/session2_twin_difference.py`; 987 GPU-s (`forward.total_seconds`); scored at 3c13095 with `git_dirty_src_or_scripts: true`.
+[^twd]: `results/session2_twin_difference_L22.json` (`fit_set.{n_fit_clips,n_fit_pairs,k_nn,svd_energy_top_r}`, `per_condition.{chord_norm,natural_twin_norm}.{twin_r1,twin_r2,twin_r4,twin_r8,twin_full,spline,chord,probe_qr}.{dir_err_to_target,R_dir_real_change,px_err_to_twin_true,enc_out_err_to_target,nearest_real_R_pt25,R_act_twin_pt25}`, `twin_minus_best_comparison.*` (best comparison = `spline`, the interpolating spline of the norm-matched rerun; best twin = `twin_full`), `unedited.dir_err_to_target`, `parity`); predictor readouts of the comparison arms from the norm-matched cache (`definitions."comparison arms"`); `scripts/session2_twin_difference.py`; 987 GPU-s (`forward.total_seconds`); scored at 3c13095 with `git_dirty_src_or_scripts: true`. Point 12: `results/session2_twin_difference_L12.json` (`per_condition.{chord_norm,natural_twin_norm}.twin_{r1,r2,r4,r8,full}.dir_err_to_target`, `twin_minus_raw_chord_chord_norm.<arm>.dir_err_to_target`, `predictor_comparison_own_norm_session2_cache.raw_chord_forwarded_here.dir_err_to_target`, `.arms.{spline,probe_qr}.dir_err_to_target`, `.norm_over_chord_median`, `twin_minus_best_comparison.{chord_norm,natural_twin_norm}.enc_out_err_to_target` (best comparison `probe_qr`, best twin `twin_r1`), `per_condition.*.*.enc_out_err_to_target`, `unedited.dir_err_to_target`; `forward.pred_compare` false); forward on box 2 (RTX 4060 Ti, 2,382 s, `forward.total_seconds`) with the pre-fix script, identical to the L22 code; scorer fixed for the missing point-12 comparison cache (`scripts/session2_twin_difference.py`, uncommitted); scored at ea65b26 with `git_dirty_src_or_scripts: true`.
 [^s3]: `results/session3_speed_predictor.json` (`design.{holdout,renderer_validation_speed}`, `n_carriers`, `readouts.{direct,displacement}.{test_mae_mps,test_r2}`, `twin_reference.{direct,displacement}.*`, `twin_reference.{twin_dir_change_deg,twin_px_to_twin_true,unedited_px_to_twin_true}`, `predictor.{12,22}.{own,chord_norm,natural_norm}.{spline,chord,linear_raw,null}.{direct_err_to_target,direct_R_speed,direct_err_to_far_end,displacement_R_speed,px_to_twin_true,dir_change_deg,applied_norm_over_natural_median,scale_median}`, `paired.{12,22}.*`, `propagation.{12,22}.{spline.R_speed,spline.err_to_target,unedited_err_to_target,twin_err_to_target}`; definitions in `keys`); `scripts/session3_speed_predictor.py`; 1,796 GPU-s on box 53030966 (`compute.gpu_seconds_total`), cost not recorded (`compute.cost_usd` null); scored at 3c13095 with `git_dirty_src_or_scripts: true`.
 [^sad]: `results/p5_saddle_axis_L{12,22}.json` (`config.plan.points.{12,22}.{full_clip_axis.{share_u,u_harmonic_share_k2},path_bend_fraction_abs_delta_dot_u_over_norm_by_t}`, `config.forward.geometry.*.cos_u_ctx_vs_full`, `readers.cos2theta_sin2theta_stepmean_train_clips.cv_r2`, `result.unedited`, `result.{saddle,saddlectx}.{x0,x2,xm1}.{d_dir_err,d_c2_aligned,d_speed,pos_shift_px,forecast_change_rel}`, `result.random_axes.*.*.{per_carrier_mean_over_draws,frac_draws_abs_ge_saddle,paired_saddle_minus_random}`, `result.path_bent_vs_flat.{flat_minus_bent,edit_point_probe}`, `result.byproduct_diagnostics`, `result.parity`); `scripts/run_saddle_axis.py` (`score`); 16 carriers = the headline-arc carriers of the repair-attribution run, target 320.625°; one forward of 712 GPU-s on box 53030966 shared with [^rad]; scored at 3c13095 with `git_dirty_src_or_scripts: true`. The third-PC shares 0.20 / 0.24 are `p2_ellipse_direction.json`'s.
 [^rad]: `results/p5_radial_steering_L22.json` (`ring_radius_by_speed_ctx_train`, `unedited`, `radial.{r025,r05,r15,r2}.{d_speed,d_forecast_radius,d_dir_err,pos_shift_px,implied_speed_change_from_radius}`, `random_planes.*.{d_speed,d_forecast_radius}.frac_draws_abs_ge_radial`, `radial_minus_random.*`); `scripts/run_saddle_axis.py` (`radial`); direction-set speed labels: 0 for the 750 accelerating clips, 1–7 m/s for the 750 constant-velocity clips (`speed_mps` in the direction set's metadata, `vjepa-physics-takehome-4E00/data/direction`).
@@ -1715,8 +1899,20 @@ Planned in the spec and not run: the last-frame-only control of the layer curves
 [^offt]: `results/p2_offtarget_direction_L{12,22}.json` (`arms.{spline,chord_smoothed,chord_raw,probe_qr,probe_qr_norm_matched,random_curve}.{speed,start}.{mean,ci95,ratio_to_natural_spread,ratio_ci95,signed_mean_mps}`, `natural_spread`, `readout_quality.speed_probe_on_direction_test_velocity_clips_{mae_mps,r}`, `regeneration_checks.max_rel_diff`; at point 22 `identical_within_1e-6` is false, max relative difference 1.7e-6); `scripts/run_offtarget.py` (start position = metres × 32 px/m). The file records no provenance block of its own; script uncommitted.
 [^str]: `results/p5_straightening.json` (`latent_curvature_by_point.{constvel,accel_direction_set,random_init_constvel,null_isotropic_constvel,null_covmatched_constvel}.mean`, `pixel_curvature`, `straightening_index_by_point.constvel`, `zone_test.constvel.{argmin_point,boot_argmin_counts,zone_min_minus_point25_deg}`, `reversed_minus_forward.constvel`, `geometry_links_by_point[].constvel_spearman_curv_speed`, `pixel_links.constvel_spearman_pixelcurv_speed`); `scripts/run_straightening.py` (2,000 clip bootstraps). The file records no commit; script uncommitted.
 [^ovs]: `results/p5_object_vs_scene_direction.json` (`direction.probe.{object,background,scene,random_scene}[point].{r2,mae,ci}`, `direction.transfer[point]` (row = fit pool, column = test pool; the point-8 matrix is also spelled out in `summary`), `direction.chart_plane_angles[point].object_vs_background`, `direction.geometry`, `direction.timerev[point].*.frac_decoded_closer_to_theta_plus_180`, `direction.heldout`, `binding.curves.*.zones`, `not_computable`, `provenance` (commit cbd0b38, `git_dirty_src_or_scripts: true`; activation hashes match box 1's `sha256_box.txt` for all 10 hashed files); `scripts/run_object_vs_scene.py` (`--binding`), `tests/test_object_vs_scene.py`; `figures/fig_object_vs_scene.png`. CPU only, Mac, 16:27–16:45 ET.
-[^geo]: `results/p2_geodesic_direction_L{12,22}.json` and `results/GEODESIC_NOTES.md` (path metrics per arm: min readout radius, A.7 E_BC, excess nearest-real distance, L_G under each energy, in-plane share and cosine of the bend, closest-point distances; `targets_run` is empty in the lite files and the shards live outside the repo; no git commit recorded); `scripts/run_geodesic.py` (`length`, `g_sqrt`), `tests/test_geodesic.py`. CPU on box 53235298, 16:05–16:33 ET.
+[^geo]: Full run: `results/p2_geodesic_direction_L{12,22}_full.json` (`convergence.{batched_solves,converged}` 56 + 56, 0; `headline.pooled_arms_mean.{chord,spline,geo_knn_from_chord,geo_kde_from_chord}.{probe_radius_min,behaviour_energy,excess_to_nearest_real,LG_knn,LG_kde,ring_plane_frac_of_bend,bend_cos_with_spline,probe_err_to_target}`; `headline.pooled_paired_gaps.geo_{knn,kde}_from_chord_minus_{chord,spline}.probe_radius_min.{mean,per_target_ci95,all_targets_ci_excludes_0_same_sign}`; `headline.per_target[*].restart_null.{knn,kde}.{dist_to_geo_from_chord_mean,frac_restarts_LG_below_geo_from_chord_by_1pct}`, averaged over the 8 targets; `provenance.run_config` 48 clips per target, 8 targets, 3 restarts on 8 clips; `headline.pooled_note` still says 16 carriers and `run_config.lite` is true, both stale labels); the spline length ratio is `LG_knn`, `LG_kde` of `spline` over `chord`; the stored point-12 spline endpoint 9.73° is `results/p2_steer_direction_direction_L12_contiguous_rawchord.json` `summary.manifold.overall.probe_err_to_target`; scipy versions from `results/GEODESIC_NOTES.md` only. Lite run: `results/p2_geodesic_direction_L{12,22}.json` (`convergence` 1 of 21 and 0 of 21). `figures/fig_geodesic_direction_L{12,22}_full.png`; `scripts/run_geodesic.py` (`length`, `g_sqrt`), `tests/test_geodesic.py`. No git commit recorded; full files written 17:33 ET.
 [^mak]: `results/p5_makelov_ranking_L22.json` (`spearman_inlp_order_vs_move.{angle_move,by_round_angle_move,rel_l2_move}.{rho,ci95}`, `extension_all_planned_directions`, `controls.{inlp_mean_move_deg,random_mean_move_deg,rawchord_move_deg,frac_inlp_dirs_above_random_p95,inlp_mean_rel_l2,random_mean_rel_l2,rawchord_rel_l2}`, `top5_by_move`, `bottom5_by_move`); `scripts/run_makelov_ranking.py`, `src/wm/makelov.py`, `tests/test_makelov.py`; plan built at 4bbd141, scored at fb3c9cb, dirty tree both times; 185 GPU-s on box 53235298 at 17:02 ET; frames 1–8, edit added to every token at point 22; bootstrap CIs resample the 16 carriers only.
 [^c16]: `results/p2_conceptor_direction_16arc_L{12,22}.json` (`arms.<arm>.endpoint_err_deg.{mean,ci95}`, `arms.<arm>.gap_vs_raw_chord_deg`, `arms.<arm>.n_arcs_better_than_raw_chord`, `stored_16arc.{legacy_coord_aim,aim_fixed_on_8_misaimed_arcs}`, `reproduction_check`, `provenance.arc_files`); per-arc files `results/arcs_conceptor16/L{12,22}_s{1..16}/`; `scripts/aggregate_conceptor_16arc.py`, `scripts/run_conceptor.py --aim arc --lite` (4 random-projector draws per arc, not aggregated); point 12 default angle rule, point 22 `--labels-angle`; CPU on box 53030966, 17:13–17:18 ET; aggregate computed at c00e48e on a dirty tree, per-arc files record no commit.
 [^epd]: `results/p2_endpoint_diagnosis.json` (`decomposition.<config>.{headline_seed0,arcs16}` for configs L22_labels, L12_unsup, L12_labels; `paper_vs_ours_steps` with causalab file:line; `foreign_knot_split`; `verdict`; `exploratory_note`); per-arc outputs `results/endpoint_diagnosis_raw/`; `figures/fig_p2_endpoint_diagnosis.png`; `scripts/run_endpoint_diagnosis.py`, `scripts/summarize_endpoint_diagnosis.py`; CPU on the Mac, 16:58–17:25 ET; reproduces the stored raw-chord arc files to 3e-13° on the endpoint gap.
 [^vmpp]: `results/p1a_perpatch_direction_videomae.json` (`points` [0,1,2,4,5,6,8,9,12,16,22,24], `curves.{perpos_mean_r2,pooled_mean_r2,cross_half_r2,meanpool_r2,perpos_frac_ge_0.5}`, `onsets.*.onset`, `layers[].halves.cross_mae_mean`); test split 1,200 / 300; `scripts/p1a_perpatch.py` (VideoMAE path, uncommitted at run time, base b8856e8); `figures/fig1k_perpatch_videomae.png`; GPU on box 53030966, 16:55–17:21 ET.
+[^epdnorm]: `results/p2_endpoint_diagnosis.json` `configs.{L22_labels,L12_labels}.arcs16.arms.{add:spline_smooth,add_norm:chord_raw@spline_smooth,add_norm:spline_smooth@chord_raw,add:chord_raw,add:oracle,add:causalab_lam_cv,add:spline_interp}.{probe.mean,probe_gap_vs_add_chord_raw.mean,probe_n_better_than_chord_raw}`; `decomposition.L22_labels.headline_seed0.c_norm.chord_raw_at_spline_smooth_norm.value` (4.34); per-arc head-to-head counts (11/16, 10/16) and the headline residual (+2.71°) from `results/endpoint_diagnosis_raw/{L22_labels,L12_labels}.json` `[seed].arms.<arm>.probe_err`, seeds 1–16 (seed 0 is the headline arc). Path radius 0.86 / 0.63: `results/p2_steer_direction_direction_L12_contiguous_rawchord.json` `summary.{manifold,linear_raw}.overall.probe_radius_min`.
+[^vs2]: `results/p5_velocity_sheet_v2.json` (mtime 17:36:53 ET; commit d97502d, dirty; CPU, 381 s) `results.{12,22}.{block2,block3,cross}.{joint,direction}.{own,matched}.{summary,gaps_sheet_minus}.<arm>.{err_dir,err_dir_mlp,err_spd,leak_spd,nearest_real_R}`, `results.<pt>.<design>.reader_floor.real.summary.real_target_clips.{err_dir,err_spd}`, `results.<pt>.block2.joint_path.own.summary.{sheet,chord_sheet}.{min_dir_radius,path_err_dir}`, `results.22.block2.dose_direction.x{0.5,…,2.0}.summary.<arm>.leak_spd`, `results.<pt>.extrapolate.extrapolate.v<speed>.summary.<arm>.err_spd` (targets 3.766 inside, 4.234 / 4.469 / 4.938 beyond the 4.0 m/s maximum, `scripts/run_velocity_sheet_v2.py:extrapolate`), arm definitions in `keys`; `results/p5_accel_sheet_v2.json` (mtime 17:36:29 ET) same paths for points 12 and 21; `results/p5_velocity_sheet_predictor.json` (box 4, commit d97502d dirty; `predictor.own.<arm>.{dir_err_deg,R_speed_probe,R_disp_speed}`, `paired.{own,sheet_norm}.sheet_minus_<arm>_dir_err`, `reference.{unedited,twin_forecast}.dir_err_deg`, `compute.gpu_seconds_forward`); v1 norms `results/p5_velocity_sheet.json` `layers.<pt>.steer.{direction,joint}.summary.<arm>.edit_norm`. `figures/fig_velocity_sheet_v2.png`.
+[^mg]: `results/p5_motion_geometry.json` (mtime 17:40 ET; parts in `results/p5_motion_geometry_parts/`): `exp1_whitened_metric.points.{vjepa2,random}.<pt>.{pairs.<a|b>.overlap,union.participation_ratio,null_isotropic_2x2_overlap.p95}`; `exp2_interference_leakage.sets.{speed,acceleration}.{12,22}.{matched,natural}.<edit>.<readout>.mean`, `.leakage_vs_overlap.{spearman_decoder_overlap,spearman_subspace_overlap}`, `.residualised.{12,22}.{fourier_ring_2d,raw_chord}.<projection>.{speed_leak_probe_over_spread,speed_leak_mlp_over_spread,minus_none}`; `exp2b_chord_leak_mechanism.points.<pt>.{r2_leak_on_imbalances,pearson_leak_vs_true_speed_imbalance}`; `exp3_within_vs_between_and_fourier.fourier_dirset.{12,22}.{arms,differences}` and `.joint_speedset.{12,19,22}.arms.<arm>.{dir_probe_err_deg,speed_probe_err_mps}`; `exp4_coordinate_search_and_exp5_shortcuts.{registration,points.<pt>.per_coordinate.<coord>.{encoding_r2_transfer_to_dirset,encoding_r2_transfer_ci95,decode_cv.theta_mae_deg},winner_by_point,random_init,exp5.{position_residualised,pixels,start_position_only_quadratic},holm_note}`; `mlp_readout_calibration.points.<pt>.dirset_mlp_dir_mae_test_kept_deg`; figures `fig_motion_subspace_angles.png`, `fig_motion_leakage.png`, `fig_motion_coordinate_grid.png`.
+[^coastf]: `results/p2_coast_faithful_L{12,22}.json` (mtime 17:43 ET; `unsteered_err.probe`, `frac_pairs_dtheta_gt_90`, `aperture.<space>.{mean_overlap,selected,in_band}`, `diagnostics.<space>.trace_C_steer`, headline `arms.{chord_raw,coast_linear_caa,full|contr|jaeger|a{0.1,0.5}|b0.3|unc,full|random_eigvec|jaeger|a{0.1,0.5}|b0.3|unc,full_jaegerR|pos|-|a0.1|b1|unc}.{probe_own,probe_chordnorm,norm_ratio_to_chord}`; 16 arcs `arcs.arms.<arm>.{probe_chordnorm.mean,gap_vs_chord_probe_chordnorm.n_arcs_ci_above_zero}` and `arcs_full.arms.full_jaegerR|pos|-|a0.1|b1|unc.{probe_own,probe_chordnorm,norm_ratio_to_chord,gap_vs_chord_probe_own}`, `arcs.mean_overlap_range`; `arm_key` defines the arm names); `scripts/run_coast_faithful.py`. The 10° rotation bound is arccos(2√(1−β)/(2−β)) at β = 0.3. Jaeger 2014 is not in `refs/`, so the singular-case AND formula is as checked by the rerun's author, not by me.
+[^sacc]: `results/p5_speed_accel_angles.json` (mtime 17:43:53 ET; section C stamped 21:38 UTC): `D_accel_vs_speed.{vjepa2,random}/<pt>.{cos_speed_accel_line,cos_disattenuated,reliability_speed,transfer.speed_probe_on_accel_clips.{slope_mps_per_mps2,kinematic_mean_speed_slope},matched_mean_speed.auroc_accel_vs_const_matched_mean_speed}`; `A_rate_vs_displacement.<pt>.speed.{rate_vs_displacement.{rate_frac,growth_frac},cos_u_time_dir,random_dir_abs_cos_p95,steer.{constant_u.ds_intercept_m,step_specific_U_t.ds_slope_on_tau}}`; `B_ring_transfer.{12,22}.{global.{speed_gain,dir_change_deg},paired_nearest_real_R_diff.own_minus_90}`; `C_metric_dose_extrapolation.spacing.{speed,acceleration}/{12,22}.{pc1_all_values.log_minus_linear{,_ci95},cumulative_chord_real,cumulative_chord_shuffled_labels}`, `.twins.velocity/{12,22}.target_in_range.{twin_frac_energy_on_line,twin_probe_gain}`.
+[^tokr]: `results/p5_token_patching_random.json` (mtime 17:36 ET; commit d97502d, dirty; `control`, `pair_types.{random,posmatch}.readers.{forecast,encoder_output}.points.{8,12,22}.{obj,bg}.binding_fraction.{mean,ci95}`, `verdict_inputs`, `readers.*.cv_r2`); trained values from `results/p5_token_patching.json` (same paths, `readers.*.cv_r2`); `scripts/run_token_patching.py`.
+[^rep]: `results/p5_repair_attribution_L12.json` (`attribution_summary.{spline12,rawchord12,random12,spline22}.{sum_attn_contribution,sum_mlp_contribution,survival_after_block,survival_final_block24}`, `config.{target_deg,n_carriers,arms}`); commit 3c13095, dirty.
+[^natdir]: `results/session2_direction_natural_norm.json` (mtime 17:44 ET; `table.{12,22}.{own,natural}.{spline,chord,null}.{err_to_target,R}`, `unedited.err_to_target`, `paired.12.natural.spline_minus_chord_err`, `reproduction_of_session2_own_norm`); 200 carriers × 4 targets, 639 GPU-s. Survival `survival.{12,22}.{own,natural}.<arm>.pt{16,24}`, dose `table.12.natural.*.applied_norm_median`, `paired.12.{spline,chord}_natural_minus_own_err`, `null_far_value_deg`; disk-token arm `results/session2_direction_natural_norm_disktokens.json` (`table.<arm>.{err_to_target,R}`, `obj_token_fraction`, `dose`, 358 GPU-s).
+[^timef]: `results/p5_time_manifold_controls.json` (mtime 17:38 ET; `subset.n_clips_with_random_features` 1,536; `{speed/random/timepool,speed/vjepa2/timepool_same_subset}.clock.22.spline.{slow,mid,fast}.slope`, `.fast_over_slow_slope`, `.geometry.22.heldout_var_explained.centroids`, `.steer.{12,22}.summary.spline.time_err`, `static_disk_control`); the 768-clip values are in `results/p5_time_manifold_controls_subset768.json`.
+[^timep]: `results/p5_time_predictor.json` (mtime 17:43 ET; box 5 GPU; `design`, `references.{win+2,rev_frames}.{advance_fraction,along_px,ctx_time_readout_change_steps,frac_heading_flipped_gt90}`, `arms.{12,22}.{sp+2,ch+2,rev_sp,rand+2}.{advance_fraction,along_px,across_abs_px,forecast_speed_change_mps,frac_heading_flipped_gt90}`, `gaps.{12,22}.sp+2_minus_{null-2,rand+2,ch+2}_along_px`); encoder-side steering errors from `results/p5_time_manifold_controls.json` `.steer.*.summary.spline.time_err`.
+[^att]: `results/p1a_attentive_{direction,speed,acceleration}.json` (mtimes 17:37 / 17:43 / 17:49 ET; `layers[].{point,attentive.{cv_r2_mean,cv_mae_mean,best_config,sweep},meanpool_ridge.{cv_mean,cv_mae_mean}}`, `caveat_time_averaged_tokens`, `status`).
+[^s3a]: `results/session3_acceleration_predictor.json` (commit 6b28042, dirty; groups on boxes 1/3/4, `compute.group_provenance`; 1,893 GPU-s): `predictor.{12,21}.{own,chord_norm,natural_norm}.{spline,chord,linear_raw,null}.{direct_err_to_target,direct_R_acceleration,mean_speed_change_mps}`, `paired.<pt>.<cond>.spline_minus_chord_direct_err`, `twin_reference.{unedited_err_to_target,twin_forecast_err_to_target,twin_mean_speed_change_mps,physical_mean_speed_change_mps}`, `readouts.{direct.test_r2,displacement.test_r2,displacement.true_centroid_test_r2}`, `design.holdout`.
