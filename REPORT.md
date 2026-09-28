@@ -44,7 +44,7 @@ stimulus and one 45° arc, not a rendered future.
 **One negative.** At held-out endpoints the paper's comparison baseline, the chord between the raw centroids (A.9), run
 with our matched-support edit, lands closer than the smoothing spline: 4.7° against 9.7° at point 12 and 3.6° against
 10.7° at point 22 on the headline arc (clip-bootstrap gap +5.0° [3.9, 6.1] and +7.0° [6.0, 8.1]). The headline arc is the
-extreme case: over the 16 held-out arcs the raw chord's lead is +1.3° ± 1.8 SD at point 12, with the spline ahead on 3,
+extreme case at point 12 and second-largest at point 22 (one arc, seed 16, reaches +8.3°): over the 16 held-out arcs the raw chord's lead is +1.3° ± 1.8 SD at point 12, with the spline ahead on 3,
 and +2.3° ± 2.0 at point 22, with the spline ahead on none. The spline ties only the chord between its own smoothed knots, which was our line arm until
 the parity audit[^rawchord]. Speed and acceleration are straight, and there the spline
 adds nothing; in extrapolation our smoothing spline, continued along its end tangent as the authors' code does, trails
@@ -749,14 +749,14 @@ of it. The MLP evaluator reads the in-subspace donor at 25.2° / 18.5° vs 30.7�
 **Raw-centroid chord over the same 16 arcs** (the `linear_raw` arm rerun on every arc; point 22 on the all-labels set;
 `results/arcs_rawchord/L{12,22}_s{1..16}/` and `L22_s{4,8,9,10}_labels/`, `gaps.manifold_minus_linear_raw.probe_err_to_target.mean`,
 the field the table above uses)[^rawchord]. The paired endpoint gap (spline − raw chord) is +1.32° ± 1.77 SD at point 12
-(range −1.65 to +3.97; the spline ahead on 3 of 16; 10 runs with a clip-bootstrap CI excluding zero; +1.14 ± 1.68 with
+(range −1.65 to +3.97; the spline ahead on 3 of 16; 11 runs with a clip-bootstrap CI excluding zero, 10 above and seed 1 below (−1.65 [−2.43, −0.94]); +1.14 ± 1.68 with
 the duplicate arc counted once) and +2.33° ± 2.01 at point 22 (range +0.38 to +8.28; the spline ahead on none; 15 CIs
 excluding zero; +2.45 ± 2.02 counted once), against +0.08 ± 1.47 and +0.17 ± 1.33 for the smoothed-knot chord on the
 same runs. So the endpoint tie in the table above is a property of our smoothed-knot line arm; against the paper's
-chord the spline loses the endpoint on average at both points, modestly, and the headline arc's +5.0° / +7.0° is the
-largest of the 17 runs at each point. Radius, ordering and Eq. 9 energy do not change with the choice of chord; the raw
+chord the spline loses the endpoint on average at both points, modestly, and the headline arc's +5.0° is the
+largest of the 17 runs at point 12, and its +7.0° is second at point 22 to seed 16 (+8.28°). Radius, ordering and A.7 energy do not change with the choice of chord; the raw
 chord sits further off the reference curve and further from real clips than the smoothed chord did, and its edit is
-about 10% larger. The rerun reproduces the stored arms to 5e-10 relative on every arc but one (L12 seed 9, 1.3e-5).
+about 10% larger. The rerun reproduces the stored arms' summary means to 5e-10 relative on every arc but one (L12 seed 9, 1.3e-5).
 
 **All designs, endpoint probe error, spline vs line** (source `p2_steer_{var}_{var}_L{pt}_{design}.json`; extrapolation
 column from `p2_extrapolation_linear_ext.json`[^ext]: the smoothing spline continued linearly along its end tangent, and
@@ -824,7 +824,7 @@ higher-rank edits. **Strengths of the spline**: it closes around the circle and
 keeps intermediate states on the ring in its plane (not closer to real clips in 64-D; §4.3). Its coordinate can be found
 without labels only at point 12, through my centroid-plane fallback; Goodfire's own label-free angle fails its
 periodicity test there, and point-22 steering and session 2 at points 2, 8 and 22 use the labels (§4.1). **Limitations**:
-at held-out endpoints the paper's raw-centroid chord lands 4.8° / 7.1° closer than it on the headline arc, and it ties
+at held-out endpoints the paper's raw-centroid chord lands 5.0° / 7.0° closer than it on the headline arc, and it ties
 only the chord between its own smoothed knots; the interpolating version rebuilds held-out centroids worse
 than the smoothing one and edits 1.4–1.6× more than the chord (hence smoothing); on scalars it adds nothing inside the
 knots and, as a smoothing spline, trails the chord by 0.02–0.06 in extrapolation even continued along its end tangent as
