@@ -21,9 +21,13 @@ the minimum readout radius is higher for the spline on every arc (point 22 on th
 
 **Two disagreements with the paper.** (1) On the harder set transfer does not appear only after the zone: it is 0.7 at
 point 1, and the per-position curve rises most between points 4 and 6 on every seed (§3.1). (2) Whether speed needs
-fewer probes than direction is set by the stop rule, not the network: on the same clips speed needs fewer under C.11's
-thresholds (7 of 8 cells) and more under the Fig. 22 caption's (8 of 8), and across the two supplied sets the counts
-are equal at point 9 and the peaks (speed fewer only at point 8 under the paper protocol, 45 vs 83); neither the ridge curves nor the paper's literal Adam recipe give a direction-specific sawtooth. **One addition to its steering result.** An edit along one probe's axis
+fewer probes than direction depends on the stop rule and the probe recipe more than on the network. Under ridge on the
+same clips speed needs fewer under C.11's thresholds (7 of 8 cells in probes, 8 of 8 in the paper's unit, dimensions),
+and the paper's plotted Fig. 22 (direction ≈ 44, speed ≈ 28 at layer 8; Fig. 23's speed curve ends near R² 0.05) sits
+with that rule; under the caption's thresholds (R² < 0.3 / 0.1) speed needs more in all 8 cells, across the two supplied
+sets the counts are equal at point 9 and the peaks (speed fewer only at point 8 under the paper protocol, 45 vs 83), and
+under the literal Adam recipe on the stored sets speed needs at least as many in 3 of 4 cells. The firm disagreement is
+the sawtooth: neither the ridge curves nor the paper's literal Adam recipe give a direction-specific one. **One addition to its steering result.** An edit along one probe's axis
 fails, as §7.2 says (78°); an edit built from that probe but weighted by the activation covariance, which leaves the
 probe's plane, reaches 3.2°, and so does the same construction on a random 2-D subspace (median 4.2°, p = 0.24), so what
 the learned probe buys is specificity, not target error.
@@ -105,7 +109,7 @@ verdict; §2 lists every deviation from the paper and what the parity audit chan
 - Part 1: a covariance-weighted edit built from one probe steers to 3–5°, outside the probe's plane, as does the same construction on a random 2-D subspace (median 4.2°), so the learned probe adds specificity, not reach (§3.3, §6).
 - Part 2: the isometry verdict is set by the knot coordinate; under every label-free ordering point 22 is a tie (spline only under the basic interval in the fully faithful run), and Goodfire's own angle loses to the chord at point 12 (§4.4).
 - Part 2: at the encoder output the verdict is mixed (the spline trails the chord by 10.8° at the chord's norm and leads by 2.1° at the natural norm), and in scalar extrapolation the spline trails the chord by 0.02–0.06 (§4.5, §4.3).
-- Part 1, Step 2: the paper reads direction and speed off one velocity set and our stored counts came from two supplied sets; rerun on the same 750 constant-velocity clips, "speed needs fewer probes" holds in 7 of 8 cells under C.11's thresholds and in none under the Fig. 22 caption's, so the verdict is a stop-rule call (§3.2).
+- Part 1, Step 2: the paper reads direction and speed off one velocity set and our stored counts came from two supplied sets; rerun on the same 750 constant-velocity clips under ridge, "speed needs fewer probes" holds in 7 of 8 cells under C.11's thresholds, which the paper's plotted Fig. 22 follows (direction ≈ 44, speed ≈ 28 at layer 8), and in none under the caption's, so the verdict is a stop-rule call (§3.2).
 - Part 2: Goodfire's cyclic 8B runs take the coordinate label-free, as atan2(PC2, PC1), and only its 70B cyclic configs and two 8B weekdays demo configs use the labels (§2).
 
 **Places where the paper contradicts itself**[^ptxt]. (a) The INLP stopping
@@ -334,7 +338,7 @@ and `p1b_*_random_L{pt}.json`.
 - **Direction vs speed.** The two counts come from different clip sets (the supplied direction set: 64 θ, half
   accelerating, starts in [−2, 2]², speeds to 7; the speed set: 64 θ, constant velocity, starts in [−1.2, 1.2]²,
   0.25–4 m/s), where the paper reads both variables off one velocity set; on the same clips (the direction set's 750 constant-velocity clips, 596 train) direction vs speed K is 28 vs 22, 17 vs 26 and 59 vs 46 at points 8 / 9 / 22 (nested) and 36 vs 34, 36 vs 28 and 75 vs 45 (paper protocol), 54 vs 43 and 63 vs 48 at speed's peak 19, so under the C.11 rule speed needs fewer dimensions (2K vs K) in all 8 cells and fewer probes in 7 of 8 (nested point 9 is the exception, 17 vs 26), while under Fig. 22's thresholds it needs more probes in all 8 cells (direction 11–35, speed 23–52; the four paper-protocol speed values are floors, since the MAE rule stops the sequence at R² 0.12–0.18, before 0.1) and, nested, fewer dimensions at points 8 and 19 but not at 9 (22 vs 29) or 22 (52 vs 52); under the paper protocol the dimension comparison is undetermined for the same reason. Under the paper protocol speed's C.11 count also stops on the MAE rule, at R² 0.12–0.18, so 4 of the 7 "fewer" cells are taken at a looser point than direction's[^sameclip]. Across the two supplied sets (the table above) the probe counts are equal (37 vs 39 at point 9, 88 vs 89 at the peaks) and speed needs fewer
-  *dimensions* only because its probes are 1-output. So the paper's second claim reproduces in probe count on the same clips under its method-text thresholds, reverses under its figure's, and across the supplied sets is a tie at point 9 and the peaks with speed fewer only at point 8 under the paper protocol: the count is set by the stop rule. The cross-set numbers that follow are kept for the coordinate and stop-rule comparisons.
+  *dimensions* only because its probes are 1-output. So under ridge the paper's second claim reproduces in probe count on the same clips under its method-text thresholds, reverses under its figure caption's, and across the supplied sets is a tie at point 9 and the peaks with speed fewer only at point 8 under the paper protocol: the count is set by the stop rule. The paper's plotted Fig. 22 reads about 44 direction probes and 28 speed probes at layer 8, and its Fig. 23 speed curve ends near R² 0.05, so the plotted data appear to follow C.11's thresholds rather than the caption's, and under those our same-clip result agrees with the figure. The literal Adam recipe on the stored sets flips the probe-count call as well (Adam bullet below). The cross-set numbers that follow are kept for the coordinate and stop-rule comparisons.
   Early layers hold each variable in hundreds of weak redundant directions (onset rows), which fits the
   random-feature picture from step 1. The counts depend on the coordinates: C.11 states no normalisation, and in raw
   centred coordinates (α re-chosen) nested K is 1.4–1.6× larger. Direction vs speed is then 51 vs 55 at point 9 and 65
@@ -398,11 +402,13 @@ al.'s sheared circle. "Tens of dimensions" is a conditioning count of an anisotr
 intrinsic rank; beyond that code lies a nonlinear residual that grows toward the output.
 
 **Verdict.** The "tens of dimensions" claim reproduces at the paper's layer against a random band. The claim that
-speed needs fewer probes is a stop-rule call under ridge: on the same clips speed needs fewer probes under C.11's
-thresholds in 7 of 8 cells and more under the Fig. 22 caption's in all 8; across the two supplied sets the probe
-counts are equal at point 9 and the peaks (speed fewer only at point 8 under the paper protocol), and in dimensions (2K for direction,
-K for speed, C.11's unit) speed needs fewer under C.11's thresholds in every cell but not under the Fig. 22 caption's
-(nested 42 vs 60 at point 8, 46 vs 47 at point 9, 74 vs 102 at the peaks; paper protocol 84 vs 57, 50 vs 50, 78 vs
+speed needs fewer probes is a stop-rule and recipe call: under ridge on the same clips speed needs fewer probes under C.11's
+thresholds in 7 of 8 cells and more under the Fig. 22 caption's in all 8, and the paper's plotted Fig. 22 (direction ≈ 44,
+speed ≈ 28 at layer 8) sits with C.11's rule; across the two supplied sets the probe
+counts are equal at point 9 and the peaks (speed fewer only at point 8 under the paper protocol), under the literal Adam
+recipe speed needs at least as many probes in 3 of 4 stored-set cells, and in dimensions (2K for direction,
+K for speed, C.11's unit) speed needs fewer under C.11's thresholds in every cell but under the Fig. 22 caption's only
+in the paper-protocol point-8 cell (nested 42 vs 60 at point 8, 46 vs 47 at point 9, 74 vs 102 at the peaks; paper protocol 84 vs 57, 50 vs 50, 78 vs
 118). Direction's sawtooth does not appear under ridge. Under Adam both curves are
 jagged, speed's as much as direction's on a metric both share, so the jaggedness tracks the recipe, not the variable.
 The absolute counts depend on the coordinates (nested K 1.4–1.6× larger raw; paper protocol 0.8–1.8×) and on which stop rule fires, which is looser for
@@ -1015,7 +1021,7 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
 | Cartesian vs polar | On constant-velocity clips (596), (vx, vy) reaches onset at point 1 and (sin θ, cos θ) at point 2 (difference −1, CI [−1, −1]); block 1 R² 0.929 vs 0.863. Speed set: 0.985 vs 0.855. The one-block "emergence" of direction is the normalisation v/‖v‖. Direct test at block 1: the angle of the (vx, vy) probe's output has MAE 12.1° against 12.3° for the direct (sin, cos) probe, and R² 0.900 against 0.911 once the direct output is scaled to unit length, so the direct probe's lower R² there is its radius, not its angle; the two angles disagree clip by clip by 13.1°. From point 2 the direct probe is better (8.3° vs 11.2°). | `p1a_support_onset_*_meanpool.json`, `fig1d`, `p1a_support_cartesian_angle.json` |
 | Direction transfer (held-out context) | Direction probe fit on the direction set, read on the speed set at point 9: MAE 4.4° (source CV 4.0°); 8.7° below 1 m/s, 3.3° at 1–4 m/s. On the acceleration set: 5.8°. At point 1: 10.8° (23.9° below 1 m/s). | `p1a_support_transfer_meanpool.json`, `fig1c` |
 | Spatial generalisation | Train on start x < 0, test on x > 0: at block 1 already R² 0.828 / 0.815 across sides against 0.810 / 0.806 within (consistent with the half-frame finding against C.5's "generalize to unseen regions only after the emergence zone", though this is a whole-frame probe split by start side, not a region-of-frame probe); point 9: 0.971 (MAE 4.9°) vs 0.972 within-side. At point 22, mean-pool 0.957 / 0.975 vs disk-pool 0.988 / 0.987 (negative-to-positive / positive-to-negative side). | `p1a_support_spatial_{meanpool,diskpool}.json`, `fig1e` |
-| Direction vs speed subspace (paper C.4 method) | Overlap direction←speed 0.0740 at point 8 (random expectation 0.0781, 5–95% band 0.0756–0.0808); 0.0733 at point 9 (0.0723, band 0.0694–0.0740). Direction vs acceleration 0.0762 and 0.0739, inside or at the edge of the band. The INLP bases are as orthogonal as random ones, yet steering direction still moves the speed readout (§3.3 off-target). | `step2_subspace_angles.json` |
+| Direction vs speed subspace (paper C.4 method) | Overlap direction←speed 0.0740 at point 8 (random expectation 0.0781, 5–95% band 0.0756–0.0808); 0.0733 at point 9 (0.0723, band 0.0694–0.0740). Direction vs acceleration 0.0762 and 0.0739, inside or at the edge of the band. Direction←speed at point 8 is below the band (more orthogonal than any of the 20 random draws); the other three are inside or at its edge, so the INLP bases are at least as orthogonal as random ones, yet steering direction still moves the speed readout (§3.3 off-target). | `step2_subspace_angles.json` |
 | Objective axis | V-JEPA vs random-init at the direction peak: probes needed to reach ≤ 10° MAE 4 vs 10; nested K 88 vs 26. VideoMAE matches V-JEPA 2 on all three variables with the same onsets (§3.1): 4 probes to the bar, nested K 67, peak 0.992. | `objective_axis.json`, `fig5_objective_axis.png` |
 | Position sheet | Start (x, y) is decodable; 36-cell centroid PR 7.46 (point 12) / 3.76 (point 19), Procrustes to (x, y) 0.38 / 0.66; spline steering gives no path advantage (§4.3). | `p2_sheet_speed_L{12,19}.json` |
 
