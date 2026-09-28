@@ -1,3 +1,5 @@
+> **Superseded in part (2026-09-28 07:10 ET).** Planning spec. Where it disagrees with REPORT.md §3 (Step 3 count: reproduces with the paper's Adam basis, 18 probes; null onsets from the 200-draw file), REPORT.md is current.
+
 # Spec: V-JEPA physics take-home, Part 1
 
 Sources: `vjepa-physics-takehome-4E00/{README,DATA}.md`; Joseph et al. 2026, `physics paper.pdf` (= arXiv 2602.07050v1),

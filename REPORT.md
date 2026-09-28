@@ -285,12 +285,15 @@ random network's per-position curve also plateaus by point 6. A 5-fold refit on 
 8, 8 on the stored stratified folds and 9 in all five folds when whole start positions are held out (per-position
 0.17 → 0.71 → 0.72 → 0.89 at points 4 / 6 / 8 / 9, so the largest rise is still 4 → 6); the cross-half sign change
 across 8 → 9 appears in 5 of 5 folds under both schemes[^hfolds]. Under the sigmoid criterion the paper's rebuttal
-proposed (fit R² > 0.9, inflection at ≤ 50% depth, peak ≥ 15 pp; our reading of it), fitted on points 1–24 with
-depth = (point − 1)/23, the hard-set per-position curves inflect at points 5.73 / 5.76 / 5.93 (depth 0.21–0.22; fold
-bootstrap 5.36 [4.78, 5.74], start-grouped 4.66 [3.79, 5.50]), the supplied set at 2.10 and the paper-layout set at 3.52;
-only the cross-half curves inflect at her depth (8.95–9.02, depth 0.35) and they fail the fit test (R² 0.24–0.48). The
-criterion also accepts the random-init per-position curves (inflection 3.26, peak 38.5 pp), so it does not separate a
-trained encoder from an untrained one[^sig].
+proposed, as summarised in our notes (fit R² > 0.9, inflection at ≤ 50% depth, peak ≥ 15 pp above chance; we read the
+R² as the fit's, depth as (point − 1)/23 and chance as R² 0, none of which is the only reading), fitted on the sampled
+points 1–22 (10 points for seed 0 and the folds), the hard-set per-position curves inflect at points 5.73 / 5.76 / 5.93
+(depth 0.21; fold bootstrap 5.36 [4.78, 5.74], start-grouped 4.66 [3.79, 5.50]), the supplied set at 2.10 and the
+paper-layout set at 3.52. The cross-half curves inflect at her depth (8.95–9.02, depth 0.35) but fail the fit test
+(R² 0.24–0.48); the mean-pooled speed and acceleration curves also pass with inflections at her depth (9.76, 10.17), on
+fitted rises of 1–2 points from R² 0.97, which is the criterion's weakness with chance set at zero: it also accepts
+the random-init per-position curves (supplied set: inflection 3.26, peak 38.5 pp) and the random-init hard-set
+cross-half curve on seed 0, so it does not separate a trained encoder from an untrained one[^sig].
 On the supplied clips neither part appears: the per-patch code forms by block 6 with no step at points 8 → 9, while the mean-pooled
 curve is early under every fold grouping and at the paper's clip count. What training changes on both stimulus sets is
 the per-position code from point 6 on (supplied: V-JEPA 2 0.94–0.98 against a mean of 0.39 for the random network;
@@ -462,7 +465,7 @@ p = 0.048 at every N (mean 87.4° at N = 1). Source: `p1c_direction_L{2,9,22}.js
   several N up to 23; with 200 draws[^n200] it beats that null at p < 0.05 from N = 14 (sustained from 16; p < 0.01
   from 22, sustained from 24) and the rank-2K (168-d) null only from N = 30 (p < 0.01 from 75), while the ridge basis
   beats them from N = 5 and N = 9 (p < 0.01 from 7 and 18, sustained from 24). At N = 18–20 the Adam basis is at
-  p = 0.02 against the same-rank null and 0.30–0.32 against the rank-2K one. The per-probe train R² of the Adam
+  p = 0.02 (0.0498 at N = 14) against the same-rank null and 0.29–0.32 against the rank-2K one. The per-probe train R² of the Adam
   sequence never falls below 0.1 through round 84 (lowest 0.126), so a train-R² reading of C.12's stop would give K > 84. Her basis has K = 25, so her 20 probes are 80% of it;
   our refit has K = 84 (batch 64, our choice), so 18 is 21%; 16 reach her 12° threshold; her full basis reaches < 0.5°
   (§7.2), ours 2.9°.
@@ -474,7 +477,9 @@ p = 0.048 at every N (mean 87.4° at N = 1). Source: `p1c_direction_L{2,9,22}.js
   outlier draw of norm 982, the medians are 4.2 / 4.5 / 5.7 / 6.4°), with edits larger (median 2.5×, mean 5.6×) and more
   off-target speed change (median 125×, mean 390×); the learned probe beats all 20 draws on both (p = 1/21). Built from the Adam
   sequence's first probe instead (cosine 0.8 to the ridge one), the edit reaches 4.3° / 4.7° / 4.4° / 6.3° under the four
-  evaluation probes against null medians of 5.0–7.0° (p = 0.10–0.24), the same picture. The paper's unit circle in §7.1
+  evaluation probes against null medians of 5.0–7.0° (p = 0.10–0.24), the same picture on target error; its off-target
+  speed change is 0.150 m/s against 0.033 for the ridge probe (null p = 0.095 rather than 1/21), so the specificity
+  edge is the ridge probe's. The paper's unit circle in §7.1
   is a population of MLP units at fc1/fc2; this test is at the block-output residual stream, and the paper's §7.2
   sentence that steering "along a single feature direction or probe axis produces little to no change" holds here for
   the along-axis edit. The oracle (W = the evaluation probe) gives 0° by construction.
@@ -482,7 +487,7 @@ p = 0.048 at every N (mean 87.4° at N = 1). Source: `p1c_direction_L{2,9,22}.js
 **Verdict.** Fig. 24's shape reproduces, and so does its count once the basis is the paper's: 18 Adam probes to 10°
 against its about 20, where a ridge basis needs 3–5 (3–4 under the near-unregularised and Adam evaluation probes, 5
 under my CV-chosen one; C.12 gives no recipe). The ridge probes beat a random subspace of their own rank from N = 2–7
-(N = 3 under the near-unregularised probes) and a rank-2K random basis from N = 5 under those probes but only from
+(N = 3 under the near-unregularised probes) and a rank-2K random basis from N = 4 under those probes (200 draws) but only from
 N = 9 under mine with 200 draws; the Adam basis beats a same-rank random basis from N = 14 (sustained from 16) and
 the rank-2K basis only from N = 30, so at its N = 18–20 it beats a random subspace of its own rank but not one of the
 full rank 2K. "One probe fails" is the Euclidean edit: covariance-weighted, an edit built from one probe
@@ -1000,8 +1005,8 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
 
 - **Detection vs use.** Detection is easy on this data. A random network, and random features of a 32-number
   trajectory, detect all three variables at R² ≥ 0.85. Use is where the evidence thins. The Part 1 edit moves a
-  held-out linear probe, but whether it beats a rank-2K random basis depends on the evaluation probe (from N = 5
-  under the near-unregularised probes, N = 14 under mine; a rank-matched one from N = 2–7), it works in an untrained network too, and it
+  held-out linear probe, but whether it beats a rank-2K random basis depends on the evaluation probe (from N = 4
+  under the near-unregularised probes, N = 9 under mine, 200 draws; a rank-matched one from N = 2–7), it works in an untrained network too, and it
   leaves an MLP on disjoint clips 17–23° off. On the ladder in `PART2_RATIONALE.md` §2, this project reaches rung 3 at
   the steered layer and rung 4 only by circular measures. Rung 5 was tested: at point 22 and at the encoder output the
   edit reaches the predictor's forecast; at points ≤ 12 it washes out and does not (§4.5). At point 22 the forecast
