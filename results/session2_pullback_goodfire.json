@@ -2404,6 +2404,13 @@
   "git_dirty_src_or_scripts": true,
   "timestamp_utc": "2026-09-28T08:24:15+00:00",
   "stage": "pullback_goodfire_score",
-  "cache": "/private/tmp/claude-501/-Users-stevenyang/ae13a11f-788a-4ea6-a4fa-c5d4c3df1c0e/scratchpad/wt_pullback/artifacts/session2/pullback_goodfire"
+  "cache": "/private/tmp/claude-501/-Users-stevenyang/ae13a11f-788a-4ea6-a4fa-c5d4c3df1c0e/scratchpad/wt_pullback/artifacts/session2/pullback_goodfire",
+  "data_separation": {
+   "carriers": "each pair's 16 carriers = every probe/test clip at the source value, filled to 16 with seeded knot clips: knot fill per pair [4, 3, 3, 3, 4, 4, 3, 5] (of 16); test clips per pair [5, 5, 5, 5, 5, 5, 5, 5]. The knot clips are also in the PCA / ring fit set (full-clip and context-only).",
+   "kappa": "the von Mises readout concentration kappa was fitted by max likelihood on the TEST clips' unedited forecasts, and test clips are also carriers",
+   "behaviour_centroids": "the behaviour centroids b_v (and so the target spline) used ALL clips at each value (knot + probe + test, carriers included), unedited forecasts",
+   "readout": "the native direction probe (W, b) was fit on probe clips; probe clips are also carriers",
+   "note": "added 2026-09-28 after QA; no number in this file changed. The spline / chord references here are fitted on FULL-CLIP knot activations while the edit is on the carriers' context-only activations; see results/session2_pullback_goodfire_ctxring.json for the rescoring against the context-only ring"
+  }
  }
 }
