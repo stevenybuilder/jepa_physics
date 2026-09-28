@@ -3,19 +3,20 @@
 <div style="display:flex; gap:32px">
 <div style="flex:1; display:flex; flex-direction:column; gap:16px; background:#F1F0EA; padding:32px; border-radius:16px">
 <h3 style="font-size:30px; font-weight:600; color:#C8553D">The spline memorises its knots</h3>
-<p style="font-size:26px; line-height:1.4; color:#4A5568">Steering targets are values the spline never had as knots. Main design: a contiguous 45° arc of 8 directions held out, repeated over 15 distinct arcs. Scattered hold-out is run and labelled as unable to separate chord from arc. Extrapolation is run and labelled as extrapolation.</p>
+<p style="font-size:26px; line-height:1.4; color:#4A5568">Targets are values the spline never had as knots: a contiguous 45° arc of 8 directions held out, over 15 distinct arcs.</p>
 </div>
 <div style="flex:1; display:flex; flex-direction:column; gap:16px; background:#F1F0EA; padding:32px; border-radius:16px">
 <h3 style="font-size:30px; font-weight:600; color:#C8553D">The readout is the intervention</h3>
-<p style="font-size:26px; line-height:1.4; color:#4A5568">Three disjoint clip sets: 632 knot clips build the spline, 480 probe clips fit the evaluation probe and the MLP, 300 test clips are steered. Two further readouts never built the edit: agreement with real clips at the target value, and an MLP on disjoint clips; the predictor's forecast is the downstream test.</p>
+<p style="font-size:26px; line-height:1.4; color:#4A5568">Three disjoint clip sets: 632 knot clips build the spline, 480 fit the evaluation probe and MLP, 300 are steered.</p>
 </div>
 <div style="flex:1; display:flex; flex-direction:column; gap:16px; background:#F1F0EA; padding:32px; border-radius:16px">
 <h3 style="font-size:30px; font-weight:600; color:#C8553D">The edit looks right only at layer L</h3>
-<p style="font-size:26px; line-height:1.4; color:#4A5568">At the steered layer, Goodfire's energy just restates the geometry the edit followed, and every figure carries that caveat. The real test is downstream, in later layers and in the predictor's own forecast.</p>
+<p style="font-size:26px; line-height:1.4; color:#4A5568">At the steered layer Goodfire's energy restates the geometry the edit followed. The real test is downstream.</p>
 </div>
 </div>
-<p style="font-size:28px; line-height:1.4; color:#4A5568">Held-out values matter because at a value the spline saw, the chord and the curve end at the same point, and an endpoint readout can't tell linear from spline steering. At a held-out value the endpoints are a sagitta apart, and the paths differ all the way along.</p>
-<p style="font-size:26px; line-height:1.4; color:#6a7179">Both arms edit the same PCA-64 subspace and keep each clip's off-subspace residual (matched support). Controls: dose-matched line, projected and reflected arms, 20 endpoint-matched random curves, 20 shuffled-centroid curves, a BF16 repeat. The verdict rule was frozen before the arc sweep and applied unchanged to all 32 runs.</p>
+<p style="font-size:28px; line-height:1.4; color:#4A5568">At a value the spline saw, chord and curve end at the same point. At a held-out value the endpoints are a sagitta apart, and the paths differ all the way along.</p>
 <p style="position:absolute; left:128px; bottom:64px; font-size:24px; color:#6a7179">Part 2 · REPORT §4.2 · 10 / 17</p>
-<aside>If she asks about Goodfire's own linear baseline: it replaces the whole activation with a chord point, which erases the residual. I ran it as a separate, labelled arm because it mixes up curved-versus-straight with residual-erased.</aside>
+<aside>If she asks about Goodfire's own linear baseline: it replaces the whole activation with a chord point, which erases the residual. I ran it as a separate, labelled arm because it mixes up curved-versus-straight with residual-erased.
+Cut from the slide: Scattered hold-out is run and labelled as unable to separate chord from arc. Extrapolation is run and labelled as extrapolation. Two further readouts never built the edit: agreement with real clips at the target value, and an MLP on disjoint clips; the predictor's forecast is the downstream test. Every figure carries the caveat that at the steered layer the energy restates the geometry; the real test is in later layers and in the predictor's own forecast. Held-out values matter because at a value the spline saw an endpoint readout can't tell linear from spline steering.
+Both arms edit the same PCA-64 subspace and keep each clip's off-subspace residual (matched support). Controls: dose-matched line, projected and reflected arms, 20 endpoint-matched random curves, 20 shuffled-centroid curves, a BF16 repeat. The verdict rule was frozen before the arc sweep and applied unchanged to all 32 runs.</aside>
 </section>

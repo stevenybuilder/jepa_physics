@@ -1,20 +1,22 @@
-<section id="p1-layers" data-transition="fade" style="background:#FBFBF8; color:#14213D; font-family:'IBM Plex Sans', Arial, sans-serif; padding:128px 128px 160px; display:flex; flex-direction:column; gap:40px">
+<section id="p1-layers" data-transition="fade" style="background:#FBFBF8; color:#14213D; font-family:'IBM Plex Sans', Arial, sans-serif; padding:128px 128px 160px; display:flex; flex-direction:column; gap:24px">
 <h2 style="font-family:'Source Serif 4', Georgia, serif; font-size:64px; font-weight:400; line-height:1.1">1.1 Pooled probes decode everything from block 1</h2>
-<div style="display:flex; gap:48px; align-items:start">
-<img src="/_blob/b9b87805f795452d5713d1056421a0ae" alt="Cross-validated R-squared versus layer fraction for direction, speed and acceleration, with random-init and control curves" style="width:1000px; height:560px; object-fit:contain; background:#FBFBF8">
-<div style="flex:1; display:flex; flex-direction:column; gap:20px">
-<table style="font-size:26px; color:#14213D; font-variant-numeric:tabular-nums">
-<tr style="background:#F1F0EA"><th style="width:40%; text-align:left">CV R²</th><th style="width:30%">block 1</th><th style="width:30%">peak</th></tr>
+<div style="display:flex; gap:40px; align-items:start">
+<div style="width:760px; flex:none; display:flex; flex-direction:column; gap:16px">
+<img src="/_blob/b9b87805f795452d5713d1056421a0ae" alt="Cross-validated R-squared versus layer fraction for direction, speed and acceleration, with random-init and control curves" style="width:760px; height:350px; object-fit:contain; background:#FBFBF8">
+<p style="font-size:26px; line-height:1.4; color:#C8553D"><b>Pooled early availability differs from the paper's §5.3 (0.875 at block 1 against about 0.2–0.6 before the zone).</b> The per-patch readout, where its C.5 puts the change, is the second test: next slide.</p>
+</div>
+<div style="flex:1; display:flex; flex-direction:column; gap:16px">
+<table style="font-size:24px; color:#14213D; font-variant-numeric:tabular-nums">
+<tr style="background:#F1F0EA"><th style="width:52%; text-align:left">CV R²</th><th style="width:16%">block 1</th><th style="width:32%">peak</th></tr>
 <tr><td>direction</td><td>0.875</td><td>0.991 (pt 22)</td></tr>
 <tr><td>speed</td><td>0.983</td><td>0.994 (pt 19)</td></tr>
 <tr><td>acceleration (= mean speed here: every clip starts at rest)</td><td>0.977</td><td>0.992 (pt 21)</td></tr>
 <tr style="background:#F1F0EA"><td>random-init ViT-L, direction</td><td>0.848</td><td>0.868</td></tr>
 <tr style="background:#F1F0EA"><td>random ReLU features of the trajectory</td><td>0.875</td><td>—</td></tr>
 </table>
-<p style="font-size:26px; line-height:1.4; color:#4A5568">Paper: speed and acceleration early, direction only at one-third depth, decline toward the output. Here, mean-pooled: speed before direction by one block, no late decline pooled (under 0.003 R²), but a mid-depth peak and late decline per patch (0.976 → 0.939). Direction onset is 2 under stratified, direction-grouped and start-grouped folds, and 2 again at the paper's 392 clips.</p>
+<p style="font-size:24px; line-height:1.4; color:#4A5568">Paper: speed and acceleration early, direction at one-third depth, decline late. Here, pooled: speed leads by one block, no late decline, and direction onset is 2 under every fold grouping and at the paper's 392 clips.</p>
 </div>
 </div>
-<p style="font-size:28px; line-height:1.4; color:#C8553D"><b>A disagreement pooled, a second test per patch.</b> Pooled early availability contradicts her §5.3 / Fig. 2c (0.875 at block 1 vs her ≈ 0.2–0.6 before the zone); her C.5 puts the step in per-patch probes. Per patch: early on these clips (0.56 at block 1, 0.96 by block 6, no step at 8→9), training-selective (random init mean never above 0.39), and on a harder render the 90%-of-max onset is 9 [9, 9] / 8 [8, 9] / 8 [8, 9], her depth, with the largest rise over 4→6 (two blocks) and the half-frame dip and jump at 8→9.</p>
 <p style="position:absolute; left:128px; bottom:64px; font-size:24px; color:#6a7179">Part 1 · results/p1a_*.json, p1a_grouped_cv.json, p1a_paperscale_velocity_only.json, results/stimuli · 4 / 17</p>
-<aside>If she asks for the onset rule: first point at 90 percent of max, 200-draw clip bootstrap; direction onset is 2, CI [2, 2]. Shuffled labels and a pixel baseline are in the files too. I used to blame sample size for the missing zone; that is withdrawn, because 392 velocity clips and the rendered 392-clip set both give onset 2. The per-patch picture is on the next slide.</aside>
+<aside>Per patch the picture differs: the per-position mean peaks at 0.976 mid-depth and falls to 0.939 at point 24, so the paper's late decline partly reproduces per patch, not pooled. If she asks for the onset rule: first point at 90 percent of max, 200-draw clip bootstrap; direction onset is 2, CI [2, 2]. Shuffled labels and a pixel baseline are in the files too. I used to blame sample size for the missing zone; that is withdrawn, because 392 velocity clips and the rendered 392-clip set both give onset 2. The per-patch picture is on the next slide.</aside>
 </section>
