@@ -480,3 +480,21 @@ def test_sheet_smoothing_choice_drops_evaluation_block_rows():
     seeds, _ = module.selection_blocks(G, 0)
     _, table = module.choose_smoothing(X, cell, centres, G, 3, seeds, exclude=ev)
     assert all(np.isfinite(v) for v in table["mean_error"].values())
+
+
+def test_summarize_p2_audit_row_and_aggregate():
+    spec = importlib.util.spec_from_file_location("sa", ROOT / "scripts" / "summarize_p2_audit.py")
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    ov = lambda e, dn: {"overall": {"probe_err_to_target": e, "delta_norm": dn}}
+    r = {"angle_source": "labels_angle", "spline": "smoothing", "holdout": {"block_first_value": 10.0,
+         "block_last_value": 50.0}, "held_out_values": [10.0, 50.0],
+         "gaps": {"manifold_minus_linear": {"probe_err_to_target": {"mean": 2.0, "ci95": [1, 3]},
+                                            "probe_radius_min": {"mean": 0.3, "ci95": [0.2, 0.4]}}},
+         "summary": {"manifold": ov(9.0, 4.0), "linear": ov(7.0, 3.0)},
+         "verdict": {"call": "negative_endpoint", "sagitta_over_noise_median": 0.4}}
+    row = m.run_row(r)
+    assert row["curve_extension"] == "cubic" and row["held_out"] == [10.0, 50.0]
+    assert (row["endpoint_gap"], row["min_radius_gap"], row["delta_norm_chord"]) == (2.0, 0.3, 3.0)
+    a = m.agg([row, {**row, "endpoint_gap": 4.0, "verdict": "positive"}])
+    assert a["endpoint_gap_mean"] == 3.0 and a["verdict_counts"] == {"negative_endpoint": 1, "positive": 1}

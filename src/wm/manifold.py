@@ -193,17 +193,37 @@ class SmoothSpline:
         return out.reshape(t.shape + (len(self.tck),))
 
 
-def natural_cubic(C, coord, values=None, smooth=None):
+class LinearExtension:
+    """A scalar-coordinate spline continued past its end knots along the end tangent: f(t) inside [lo, hi], and
+    f(end) + (t - end) f'(end) outside (explicit linear continuation; splev ext=3 would clamp to the end value, and
+    ext=0 / CubicSpline extrapolate=True extend the end cubic piece). nu=1 is the end tangent outside, nu>=2 zero."""
+
+    def __init__(self, spline, lo, hi):
+        self.spline, self.lo, self.hi = spline, float(lo), float(hi)
+
+    def __call__(self, t, nu=0):
+        t = np.asarray(t, dtype=float)
+        tc = np.clip(t, self.lo, self.hi)
+        if nu == 0:
+            return self.spline(tc) + (t - tc)[..., None] * self.spline(tc, 1)
+        if nu == 1:
+            return self.spline(tc, 1)
+        return np.where((t != tc)[..., None], 0.0, self.spline(t, nu))
+
+
+def natural_cubic(C, coord, values=None, smooth=None, extend="cubic"):
     """Natural cubic spline (zero second derivative at the ends) through centroids C [m, k] at coord [m].
-    smooth=dict(count [m], sd [k]): count-weighted smoothing spline instead (SmoothSpline)."""
+    smooth=dict(count [m], sd [k]): count-weighted smoothing spline instead (SmoothSpline).
+    extend: "cubic" (default: the end cubic piece is extended) or "linear" (LinearExtension along the end tangent)."""
     coord = np.asarray(coord, dtype=float)
     order = np.argsort(coord)
     values = coord if values is None else np.asarray(values)
+    wrap = (lambda sp: LinearExtension(sp, coord.min(), coord.max())) if extend == "linear" else (lambda sp: sp)
     if smooth is not None:
-        sp = SmoothSpline(coord[order], C[order], np.asarray(smooth["count"])[order], smooth["sd"], False)
+        sp = wrap(SmoothSpline(coord[order], C[order], np.asarray(smooth["count"])[order], smooth["sd"], False))
         return Curve(spline=sp, values=values[order], coords=coord[order], points=sp(coord[order]), periodic=False,
                      coord_source="value", kind="smoothing")
-    return Curve(spline=CubicSpline(coord[order], C[order], bc_type="natural"), values=values[order],
+    return Curve(spline=wrap(CubicSpline(coord[order], C[order], bc_type="natural")), values=values[order],
                  coords=coord[order], points=C[order], periodic=False, coord_source="value")
 
 
@@ -415,19 +435,20 @@ def sagitta(curve, values):
     return out
 
 
-def fit_curve(cent, periodic, keep=None, angle="unsupervised", plane="activation", spline="interp"):
+def fit_curve(cent, periodic, keep=None, angle="unsupervised", plane="activation", spline="interp", extend="cubic"):
     """Fit the right spline to a centroids() dict, optionally on a subset of values (keep mask).
 
     angle: "unsupervised" or "labels" (periodic only).
     spline: "interp" (Goodfire A.3: passes through every centroid) or "smooth" (Goodfire B.1: count-weighted
             smoothing spline; with ~10-20 clips per value an interpolating spline chases centroid noise and
             overshoots across a held-out block).
+    extend: scalars only, beyond the end knots: "cubic" (end piece extended) or "linear" (end tangent).
     """
     keep = np.ones(len(cent["values"]), bool) if keep is None else np.asarray(keep)
     C, v = cent["C"][keep], cent["values"][keep]
     smooth = {"count": cent["count"][keep], "sd": cent["sd_coord"]} if spline == "smooth" else None
     if not periodic:
-        return natural_cubic(C, v, smooth=smooth)
+        return natural_cubic(C, v, smooth=smooth, extend=extend)
     return periodic_cubic(C, v, angle=None if angle == "unsupervised" else labels_angle(v), plane=plane,
                           smooth=smooth)
 

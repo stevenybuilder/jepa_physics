@@ -73,9 +73,10 @@ def shift_of(source, target, periodic):
 
 
 def build(d, k, angle, design="scattered", seed=0, n_controls=20, spline="interp", behaviour_mode="spline",
-          subspace="pca", basis=None, angle_max_dev=None):
+          subspace="pca", basis=None, angle_max_dev=None, extend="cubic"):
     """PCA, centroids and all curves from the knot clips at kept values (the held-out design decides which).
-    angle: "unsupervised" (choose plane automatically, fall back to labels if the ring is not found) or "labels"."""
+    angle: "unsupervised" (choose plane automatically, fall back to labels if the ring is not found) or "labels".
+    extend: scalars beyond the end knots, "cubic" (end piece extended) or "linear" (end tangent)."""
     knot_all = d["role"] == "knot"
     values = np.unique(d["y"])
     mask, design_info = mf.heldout_design(values, design, d["periodic"], seed=seed)
@@ -88,7 +89,7 @@ def build(d, k, angle, design="scattered", seed=0, n_controls=20, spline="interp
     if d["periodic"] and angle == "unsupervised":
         choice = mf.choose_angle_source(cent["C"], cent["values"], max_dev_deg=angle_max_dev)
         angle, plane = choice["angle"], choice["plane"]
-    curve = mf.fit_curve(cent, d["periodic"], angle=angle, plane=plane, spline=spline)
+    curve = mf.fit_curve(cent, d["periodic"], angle=angle, plane=plane, spline=spline, extend=extend)
     # full-space centroids (in the curve's knot order): only Goodfire's whole-activation linear baseline uses them
     full_C = np.array([d["X"][knot & (d["y"] == v)].mean(0) for v in curve.values])
     full_curve = mf.Curve(spline=None, values=curve.values, coords=curve.coords, points=full_C,
@@ -229,7 +230,7 @@ def bf16_steering_energy(d, d_steer, args, angle, picks):
     db = {**d, "X": gc.bf16_round(d["X"])}
     Xs = gc.bf16_round(d_steer["X"])
     mb = build(db, args.k, angle, args.holdout, args.seed, n_controls=0, spline=args.spline, behaviour_mode=args.behaviour,
-               subspace=args.plane, basis=args.basis_matrix, angle_max_dev=args.angle_max_dev)
+               subspace=args.plane, basis=args.basis_matrix, angle_max_dev=args.angle_max_dev, extend=args.extend)
     acc = {a: {"excess_to_curve": [], "excess_to_nearest_real": []} for a in ("manifold", "linear")}
     for tgt, pick in picks.items():
         x, src = Xs[pick].astype(float), d_steer["y"][pick]
@@ -280,7 +281,7 @@ def run(args):
                               "probe folds and the held-out values; favours the inlp subspace)"}
     args.basis_matrix = basis
     m = build(d, args.k, angle, args.holdout, args.seed, args.n_controls, args.spline, args.behaviour, args.plane,
-              basis, args.angle_max_dev)
+              basis, args.angle_max_dev, args.extend)
     probe_rows = d["role"] == "probe"
     probe = mf.ProbeReadout(d["X"][probe_rows], d["y"][probe_rows], periodic)
     test = np.flatnonzero(d["role"] == "test")
@@ -369,7 +370,7 @@ def run(args):
                                     subspace=args.plane, K=args.K, nuisance_regressed=bool(nuisance)),
            "subspace": args.plane, "subspace_basis": basis_note, "nuisance_regressed": nuisance,
            "k": int(m["pca"].components.shape[0]), "K": args.K, "angle_source": m["curve"].coord_source,
-           "spline": m["curve"].kind,
+           "spline": m["curve"].kind, "curve_extension": args.extend,
            "holdout": m["design"], "held_out_values": m["held"].tolist(),
            "sagitta_per_target": m["sagitta"],
            "sagitta_note": ("at a held-out target the linear arm aims at the chord point between the neighbouring kept "
@@ -908,6 +909,9 @@ def parse(argv=None):
     p.add_argument("--spline", default="interp", choices=("interp", "smooth"),
                    help="interpolating (Goodfire A.3) or count-weighted smoothing spline (B.1); choose from the "
                         "geometry check's heldout_reconstruction")
+    p.add_argument("--extend", default="cubic", choices=("cubic", "linear"),
+                   help="scalar spline beyond the end knots: extend the end cubic piece (default) or continue "
+                        "linearly along the end tangent (mf.LinearExtension)")
     p.add_argument("--n-controls", type=int, default=20, help="draws per random-curve / shuffled-centroid control")
     p.add_argument("--behaviour", default="spline", choices=("spline", "centroid_sq"),
                    help="Eq. 9 behaviour: literal (unsquared, tau=0.5, 128 spline bins) or squared/spread-normalised")

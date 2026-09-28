@@ -209,3 +209,16 @@ def test_readouts_and_isometry(ring):
     assert mf.isometry(curve, pts) > 0.95
     lens = mf.path_lengths(mf.linear_path(x[0], x[0], x[0] + 1.0, 5), probe.raw)
     assert lens["activation"] == pytest.approx(np.sqrt(D), rel=1e-6)
+
+
+def test_linear_extension_continues_end_tangent():
+    X, v = line_data()
+    cent = mf.centroids(gc.fit_pca(X, 8).project(X), v)
+    for sp in ("interp", "smooth"):
+        cub = mf.fit_curve(cent, False, spline=sp)
+        lin = mf.fit_curve(cent, False, spline=sp, extend="linear")
+        inside = np.linspace(0.3, 3.9, 7)
+        np.testing.assert_allclose(lin(inside), cub(inside))
+        hi, slope = 4.0, cub.spline(4.0, 1)
+        np.testing.assert_allclose(lin(np.array([4.5, 5.0])), cub(hi) + np.array([[0.5], [1.0]]) * slope)
+        np.testing.assert_allclose(lin.spline(np.array([0.0, 5.0]), 1), cub.spline(np.array([0.25, 4.0]), 1))
