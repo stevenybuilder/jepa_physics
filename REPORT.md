@@ -39,7 +39,10 @@ edits survive to the output, and along the point-22 path the forecast follows th
 spline and jumps along the chord (−13.4° paired, −31.3° at large shifts). This is a probe of the forecast on one
 stimulus and one 45° arc, not a rendered future.
 
-**One negative.** The endpoint error ties at points 12 and 22. Speed and acceleration are straight, and there the spline
+**One negative.** At held-out endpoints the paper's baseline, the chord between the raw centroids (A.9), lands closer
+than the smoothing spline: 4.7° against 9.7° at point 12 and 3.6° against 10.7° at point 22 on the headline arc (paired
+gap +4.8° ± 0.4 and +7.1° ± 0.4). The spline ties only the chord between its own smoothed knots, which was our line arm
+until the parity audit[^rawchord]. Speed and acceleration are straight, and there the spline
 adds nothing; in extrapolation our smoothing spline, continued along its end tangent as the authors' code does, trails
 the chord by 0.02–0.06, while the authors' own interpolating arm beats the chord on speed and trails it on
 acceleration[^ext].
@@ -104,7 +107,7 @@ verdict; §2 lists every deviation from the paper and what the parity audit chan
 | Part 2: carriers | 16 fixed base prompts per task, one set for every pair (A.6) | 48 test clips per target, each steered from its own value | Goodfire starts every carrier at the centroid c_a whatever the carrier's own value (A.6); ours starts each carrier at its true value (an oracle source) and averages over sources |
 | Part 2: pullback (A.8–A.9, C.3) | one path per (source, target) pair, loss averaged over 16 carriers (A.8); replace the top-32 PCs, other PCs and residual held; L-BFGS; path = natural cubic through 10 free control vectors evaluated at K = 20, chord init (A.8), 20 free points with kNN-graph init in the causalab config, K = 30 all free with 30 pairs for the world model (C.3); squared-Hellinger target on M_y; norm regulariser off for weekdays only (5·10⁻⁴ months, 10⁻³ age); scored by closest-point residual and intrinsic R² (A.9), and for the world model by mean distance to M_h (C.3: chord 2.22, geometric 0.20, pullback 0.29) | one path per carrier; additive edit in PCA-64; Adam, zero init, 8 free waypoints; 1 − cos loss on the forecast angle; hard cap 1.2× natural change; equal-t distances | rerun with their recipe (8 pairs, 32 evaluations per pair, unconverged) with all geometry from the edited context-only activations: from an on-ring start the path moves to 0.87 from both spline and chord (tie), about five times the chord's 0.16 from the spline, with the carrier mean 0.14 off the ring and individual carriers 0.45–0.54; neither protocol recovers the ring (§4.5) |
 
-**What the parity audit changed.** A paper-first audit of our own methods moved seven verdicts:
+**What the parity audit changed.** A paper-first audit of our own methods moved eight verdicts:
 
 - Part 1, emergence zone: read per patch on the hard render across three seeds, the largest rise is at points 4 → 6 on every seed, and the half-frame dip-and-jump at points 8 → 9 (paper layers 7 → 8) is training-specific (§3.1).
 - Part 1, Step 3: with our refit of the paper's C.11 Adam probe sequence as the steering basis the probe count reproduces, 18 probes to 10° and 16 to the paper's 12° at about 20 (§3.3).
@@ -112,6 +115,7 @@ verdict; §2 lists every deviation from the paper and what the parity audit chan
 - Part 2: the isometry verdict is set by the knot coordinate; under every label-free ordering point 22 is a tie (spline only under the basic interval in the fully faithful run), and Goodfire's own angle loses to the chord at point 12 (§4.4).
 - Part 2: at the encoder output the verdict is mixed (the spline trails the chord by 10.8° at the chord's norm and leads by 2.1° at the natural norm), and in scalar extrapolation the spline trails the chord by 0.02–0.06 (§4.5, §4.3).
 - Part 1, Step 2: the paper reads direction and speed off one velocity set and our stored counts came from two supplied sets; rerun on the same 750 constant-velocity clips under ridge, "speed needs fewer probes" holds in 7 of 8 cells under C.11's thresholds, which the paper's plotted Fig. 22 follows (direction ≈ 44, speed ≈ 28 at layer 8), and in none under the caption's, so the verdict is a stop-rule call (§3.2).
+- Part 2: our line arm joined the spline's smoothed knots; the paper's baseline is the chord between raw centroids (A.6, A.9), which sits 1.9–3.7 PCA units from the smoothed chord at the held-out targets and beats the spline at the endpoint by 4.8° and 7.1° on the headline arc, so "endpoints tie" became "the paper's chord wins the endpoint" (§4.3, §4.4).
 - Part 2: Goodfire's cyclic 8B runs take the coordinate label-free, as atan2(PC2, PC1), and only its 70B cyclic configs and two 8B weekdays demo configs use the labels (§2).
 
 **Places where the paper contradicts itself**[^ptxt]. (a) The INLP stopping
@@ -656,7 +660,12 @@ labelled exploratory. Points 12 and 22 were chosen on train geometry; point 12 i
 because it is neither the onset, the paper's layer nor the peak.
 
 Design of the arms. Both arms edit the same PCA-64 subspace and add back each clip's identical off-subspace residual
-(matched support). Goodfire's own linear baseline erases the residual, so it is run separately and labelled. The
+(matched support). The line arm of record joins the spline's own knots, which under the smoothing spline are the
+smoothed knots, not the raw centroids; the paper's A.9 baseline, the chord between the raw centroids in the PCA-64
+subspace, is run as a third arm (`linear_raw`) and reported beside it, and at a held-out target it aims at the chord
+point between the neighbouring raw centroids. The dose-matched line, the ring-occupancy, 5-NN and donor-ceiling side
+analyses, and the BF16 and rescue counts below still use the smoothed-knot chord. Goodfire's own linear baseline
+erases the residual, so it is run separately and labelled. The
 controls are a dose-matched line (rescaled to the spline's ‖Δ‖ at each waypoint), a *projected* arm (the chord walked
 with the spline's spacing), a *reflected* arm (the bend flipped), 20 endpoint-matched random curves, 20 shuffled-centroid
 curves, and a BF16 repeat. Each path has K = 50 waypoints (the §4.3 ring-occupancy and 5-NN side analyses recompute
@@ -680,7 +689,8 @@ clip bootstrap):
 
 | | pt 12 spline | pt 12 line | gap [CI] | pt 22 spline | pt 22 line | gap [CI] |
 |---|---:|---:|---|---:|---:|---|
-| endpoint probe error | 9.73° | 9.62° | +0.11 [0.05, 0.18] | 10.69° | 6.89° | +3.80 [3.36, 4.23] |
+| endpoint probe error (line = smoothed-knot chord) | 9.73° | 9.62° | +0.11 [0.05, 0.18] | 10.69° | 6.89° | +3.80 [3.36, 4.23] |
+| endpoint probe error, line = raw-centroid chord (A.9)[^rawchord] | 9.73° | 4.71° | +4.84 ± 0.43 SE | 10.69° | 3.64° | +7.07 ± 0.41 SE |
 | nearest-real agreement R | 0.196 | 0.197 | −0.0004 [−0.0018, 0.0008] | 0.175 | 0.180 | −0.005 [−0.006, −0.003] |
 | min readout radius along path | 0.86 | 0.61 | +0.26 [0.22, 0.29] | 0.85 | 0.61 | +0.24 [0.21, 0.27] |
 | A.7 energy on the Eq. 10 behaviour ÷ real-clip floor | 0.84 | 1.42 | | 1.01 | 1.00 | |
@@ -688,7 +698,11 @@ clip bootstrap):
 | waypoint ordering (Spearman) | 0.90 | 0.79 | | 0.76 | 0.67 | |
 | reflected arm: radius / energy / ordering | 0.53 / 1.64 / 0.52 | | | 0.51 / 1.12 / 0.50 | | |
 
-Source: `p2_steer_direction_direction_L{12,22}_contiguous.json`. Figures:
+Source: `p2_steer_direction_direction_L{12,22}_contiguous.json`; the raw-chord row and the sagittas come from the
+rerun `p2_steer_direction_direction_L{12,22}_contiguous_rawchord.json`, whose old-arm values reproduce the stored
+file to 1e-9 relative. The smoothed-knot chord sits 0.3–1.1 (point 12) and 0.8–2.1 (point 22) PCA units from the
+spline at the eight held-out targets; the raw-centroid chord sits 1.9–2.4 and 3.2–3.7, so the paper's baseline is
+further from the spline than our line arm was, and lands closer to the target. Figures:
 `figures/fig4_waypoint_readout_direction_direction_L12_contiguous.png` (radius and Eq. 10 distance along the path) and
 `figures/fig4_path_energy_direction_direction_L12_contiguous.png`.
 
@@ -706,7 +720,8 @@ across the 16 runs of the paired gap (spline − line, `gaps.manifold_minus_line
 | endpoint gap, duplicate arc counted once | −0.09° ± 1.35 | +0.16° ± 1.38 |
 | verdict "negative_endpoint" | 0 / 16 | 1 / 16 |
 
-The path result holds on every arc at both points, and the endpoint ties at both. At point 22 the one
+The path result holds on every arc at both points, and against the smoothed-knot chord the endpoint ties at both
+(the raw-centroid chord over the arcs is reported in the paragraph after the donor ceiling). At point 22 the one
 "negative_endpoint" run is 191.25°–230.625° (+3.7°) and the other 15 are within ±3°, so the single-arc +3.80° above is
 not typical. On the label-free angle the four rerun arcs had the two largest endpoint losses (+9.2° and +9.9°, the
 duplicated arc) and the four smallest radius gaps (+0.11 to +0.19); on the labels they give +0.21°, +0.27°, −0.36° and
@@ -784,7 +799,8 @@ higher-rank edits. **Strengths of the spline**: it closes around the circle and
 keeps intermediate states on the ring in its plane (not closer to real clips in 64-D; §4.3). Its coordinate can be found
 without labels only at point 12, through my centroid-plane fallback; Goodfire's own label-free angle fails its
 periodicity test there, and point-22 steering and session 2 at points 2, 8 and 22 use the labels (§4.1). **Limitations**:
-at held-out endpoints it offers nothing a chord does not; the interpolating version rebuilds held-out centroids worse
+at held-out endpoints the paper's raw-centroid chord lands 4.8° / 7.1° closer than it on the headline arc, and it ties
+only the chord between its own smoothed knots; the interpolating version rebuilds held-out centroids worse
 than the smoothing one and edits 1.4–1.6× more than the chord (hence smoothing); on scalars it adds nothing inside the
 knots and, as a smoothing spline, trails the chord by 0.02–0.06 in extrapolation even continued along its end tangent as
 the authors' code does (their own interpolating arm is mixed: better on speed, worse on acceleration). **Failure cases**: the
@@ -1182,5 +1198,6 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
 [^il12]: `results/session2_interp_labels_L12.json` (`spline_labels`, `stored_point12.spline`, `stored_spline_edit_norm_recomputed`).
 [^stop]: `results/p1b_stop_rules.json` (`cells.*.{nested,paper}.{K,stored_stop_trigger,r2_at_stored_stop}`, `common_r2_stop_points_8_9`).
 [^onecol]: `results/p1b_one_column_removal.json` (`cells.direction.{two_column_stored,one_col_alternate,one_col_top_sv}.{ridge_nested,ridge_paper,adam_b64,adam_full}`).
+[^rawchord]: `results/p2_steer_direction_direction_L{12,22}_contiguous_rawchord.json` (`summary.{manifold,linear,linear_raw}.overall.probe_err_to_target`, `gaps.manifold_minus_linear_raw.probe_err_to_target.{mean_over_pairs,se_over_pairs}`, `sagitta_per_target[i].{sagitta_smoothed_chord,sagitta_raw_chord}`); `scripts/run_part2.py:subspace_arms` (`linear_raw` = piecewise-linear path through the raw kept centroids in knot order, same neighbours and weights as the line arm; `src/wm/manifold.py:raw_knot_curve`). Same carriers, split, K = 50 and edit rule as the stored run.
 [^adamsc]: `results/p1b_sameclip_adam_direction_vs_speed.json` (`cells.L{8,9,19,22}.comparison.{C11,fig22}`, `cells.*.{direction,speed}.b64.{K_first,c11_first_trigger,K_fig22_censored}`, `cells.*.*.full`, `cells.*.*.stored_cross_set`); `scripts/run_sameclip_adam.py`. Same 750 clips, 596 train / 154 test, per-feature z-score from the restricted train rows, C.11 Adam probe each round (lr 1e-3, weight decay 1e-4, 100 / 50 epochs), batch 64 (full batch at points 8 and 9), paper protocol, K = probes before the first at-chance round.
 [^sameclip]: `results/p1b_sameclip_direction_vs_speed.json` (`cells.L{8,9,19,22}.comparison.{nested,paper}_{C11,fig22}`, `cells.*.{direction,speed}.stored_cross_set`); `scripts/run_sameclip.py`.

@@ -1,5 +1,5 @@
 <section id="p2-arc" data-transition="fade" style="background:#FBFBF8; color:#14213D; font-family:'IBM Plex Sans', Arial, sans-serif; padding:128px 128px 160px; display:flex; flex-direction:column; gap:40px">
-<h2 style="font-family:'Source Serif 4', Georgia, serif; font-size:64px; font-weight:400; line-height:1.1">On held-out arcs the spline stays on the ring and the chord crosses its hollow middle. Endpoints tie.</h2>
+<h2 style="font-family:'Source Serif 4', Georgia, serif; font-size:64px; font-weight:400; line-height:1.1">On held-out arcs the spline stays on the ring and the chord crosses its hollow middle. The paper's chord wins the endpoint.</h2>
 <div style="display:flex; gap:48px; align-items:start">
 <img src="/_blob/9aae110ab07ef10d34a4cea04e17ca94" alt="Readout angle and readout radius at each of 50 waypoints along the spline path and the chord path to a held-out direction" style="width:940px; height:520px; object-fit:contain; background:#FBFBF8">
 <div style="flex:1; display:flex; flex-direction:column; gap:20px">
@@ -7,7 +7,8 @@
 <tr style="background:#F1F0EA"><th style="width:46%; text-align:left">spline minus chord, 16 runs / 15 arcs</th><th style="width:27%">point 12</th><th style="width:27%">point 22</th></tr>
 <tr><td>minimum readout radius on the path</td><td>+0.26 ± 0.05</td><td>+0.28 ± 0.03</td></tr>
 <tr><td>arcs where the spline radius is higher</td><td>16 of 16</td><td>16 of 16</td></tr>
-<tr><td>endpoint error, spline − chord (positive = spline worse)</td><td>+0.08° ± 1.47</td><td>+0.17° ± 1.33</td></tr>
+<tr><td>endpoint error, spline − smoothed-knot chord (positive = spline worse)</td><td>+0.08° ± 1.47</td><td>+0.17° ± 1.33</td></tr>
+<tr><td>endpoint error, spline − raw-centroid chord (paper's baseline; headline arc, ± SE over pairs)</td><td>+4.84° ± 0.43</td><td>+7.07° ± 0.41</td></tr>
 <tr><td>raw sign: line better / spline better</td><td>6 / 10</td><td>5 / 11</td></tr>
 <tr><td>runs where the line wins beyond the margin</td><td>0 of 16</td><td>1 of 16</td></tr>
 </table>
@@ -15,6 +16,6 @@
 </div>
 </div>
 <p style="font-size:28px; line-height:1.4; color:#4A5568"><span style="color:#C8553D"><b>Path geometry positive, independent readouts null at the steered layer.</b></span> Endpoint readouts that did not build the edit (agreement with real clips at the target, an MLP on disjoint clips) do not separate the two arms; the labels of the ten real clips nearest the path midpoint do, by 16–21° and by 38–45° at large shifts, on every arc. The gap grows with shift, from about zero below 30° to +0.62 at 150–180°. In the full 64-D subspace the chord is as close to real clips as the spline at point 12 and closer at point 22, so the hollow is a ring-plane fact. For speed and acceleration the spline adds nothing, which is what their straight geometry predicts.</p>
-<p style="position:absolute; left:128px; bottom:64px; font-size:24px; color:#6a7179">Part 2 · results/p2_steer_*_contiguous.json, results/arcs, p2_angle_source_audit.json · 11 / 17</p>
-<aside>If the extra cosine metric comes up: the Part 1 probe step and the spline's net displacement have cosine 0.66 at point 12 and 0.54 at point 22. Same target, different route. For direction the spline tangent bends away from the chord at both ends of the arc; for the scalars it stays close.</aside>
+<p style="position:absolute; left:128px; bottom:64px; font-size:24px; color:#6a7179">Part 2 · results/p2_steer_*_contiguous.json, p2_steer_*_contiguous_rawchord.json, results/arcs, p2_angle_source_audit.json · 11 / 17</p>
+<aside>If the extra cosine metric comes up: the Part 1 probe step and the spline's net displacement have cosine 0.66 at point 12 and 0.54 at point 22. Same target, different route. For direction the spline tangent bends away from the chord at both ends of the arc; for the scalars it stays close.If asked why the line arm changed: our line joined the spline's smoothed knots; the paper's baseline is the chord between raw centroids, which sits 2–4 PCA units away and lands at 4.7° and 3.6° on the headline arc against the spline's 9.7° and 10.7°. The path result (radius, ordering, energy) is unchanged.</aside>
 </section>
