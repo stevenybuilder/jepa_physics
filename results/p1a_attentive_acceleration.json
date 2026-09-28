@@ -1,0 +1,452 @@
+{
+ "status": "EXTENSION: the paper's attentive-MLP probe results are on IntPhys only (\u00a73.2); this applies an attentive probe to the supplied probing sets",
+ "caveat_time_averaged_tokens": "tokens are the 256 spatial positions each AVERAGED over the 8 token time steps, not the 2,048 space-time tokens; \u00a73.2's stated reason for attentive probes is that pooling 'can obscure spatial or temporal structure', so this probe sees spatial but not temporal structure",
+ "variable": "acceleration",
+ "kind": "scalar",
+ "target": "acceleration magnitude",
+ "units_mae": "m/s^2",
+ "model": "vjepa2",
+ "n_train": 1228,
+ "n_test": 308,
+ "points": {
+  "onset": 1,
+  "paper_layer": 9,
+  "peak": 21
+ },
+ "layers": [
+  {
+   "role": "onset",
+   "point": 1,
+   "frac": 0.041666666666666664,
+   "attentive": {
+    "best_config": {
+     "lr": 0.0003,
+     "weight_decay": 0.1
+    },
+    "sweep": [
+     {
+      "lr": 0.0001,
+      "weight_decay": 0.01,
+      "cv_r2_mean": 0.9139172786087689,
+      "cv_r2_sd": 0.004885185347561722,
+      "cv_mae_mean": 0.646170901948721
+     },
+     {
+      "lr": 0.0001,
+      "weight_decay": 0.1,
+      "cv_r2_mean": 0.9143962676004775,
+      "cv_r2_sd": 0.004641857086342528,
+      "cv_mae_mean": 0.6447072648801961
+     },
+     {
+      "lr": 0.0003,
+      "weight_decay": 0.01,
+      "cv_r2_mean": 0.9247956645686966,
+      "cv_r2_sd": 0.007433775754498778,
+      "cv_mae_mean": 0.6061782409684525
+     },
+     {
+      "lr": 0.0003,
+      "weight_decay": 0.1,
+      "cv_r2_mean": 0.9261430674416478,
+      "cv_r2_sd": 0.007256020987455948,
+      "cv_mae_mean": 0.6010600875259163
+     },
+     {
+      "lr": 0.001,
+      "weight_decay": 0.01,
+      "cv_r2_mean": 0.8948015985655562,
+      "cv_r2_sd": 0.016201685881713366,
+      "cv_mae_mean": 0.7022824485651297
+     },
+     {
+      "lr": 0.001,
+      "weight_decay": 0.1,
+      "cv_r2_mean": 0.9003752378764263,
+      "cv_r2_sd": 0.015419621251539246,
+      "cv_mae_mean": 0.686644564235297
+     },
+     {
+      "lr": 0.003,
+      "weight_decay": 0.01,
+      "cv_r2_mean": 0.8679367600760118,
+      "cv_r2_sd": 0.021829363029678316,
+      "cv_mae_mean": 0.7906120686115823
+     },
+     {
+      "lr": 0.003,
+      "weight_decay": 0.1,
+      "cv_r2_mean": 0.8635308291779042,
+      "cv_r2_sd": 0.018647610444047454,
+      "cv_mae_mean": 0.8001226418923405
+     },
+     {
+      "lr": 0.005,
+      "weight_decay": 0.01,
+      "cv_r2_mean": 0.8495584190377261,
+      "cv_r2_sd": 0.01900352721850361,
+      "cv_mae_mean": 0.8581215293843135
+     },
+     {
+      "lr": 0.005,
+      "weight_decay": 0.1,
+      "cv_r2_mean": 0.8555516525326416,
+      "cv_r2_sd": 0.034504086619632224,
+      "cv_mae_mean": 0.8397909622513126
+     }
+    ],
+    "cv_r2_mean": 0.9261430674416478,
+    "cv_r2_sd": 0.007256020987455948,
+    "cv_mae_mean": 0.6010600875259163,
+    "cv_mae_sd": 0.04517364636441762,
+    "folds": [
+     {
+      "fold": 0,
+      "r2": 0.9297096936008438,
+      "mae": 0.5667411990083534,
+      "n": 246
+     },
+     {
+      "fold": 1,
+      "r2": 0.9316734582407412,
+      "mae": 0.5712833821183364,
+      "n": 246
+     },
+     {
+      "fold": 2,
+      "r2": 0.9135020419889381,
+      "mae": 0.6785715423040097,
+      "n": 246
+     },
+     {
+      "fold": 3,
+      "r2": 0.9271347528017556,
+      "mae": 0.5940548976253716,
+      "n": 245
+     },
+     {
+      "fold": 4,
+      "r2": 0.9286953905759592,
+      "mae": 0.5946494165735106,
+      "n": 245
+     }
+    ],
+    "test_r2": 0.935880737682892,
+    "test_mae": 0.5409344636339093
+   },
+   "meanpool_ridge": {
+    "file": "results/p1a_acceleration_acceleration_meanpool.json",
+    "key": "layers[point=1]",
+    "cv_mean": 0.9768767228585847,
+    "cv_sd": 0.001988931239198416,
+    "cv_mae_mean": 0.339081656744402,
+    "test_r2": 0.9805042054362887,
+    "test_mae": 0.3130517824647258,
+    "alpha": 0.31622776601683794
+   },
+   "attentive_minus_meanpool_cv_r2": -0.050733655416936974,
+   "seconds": 92.45032835006714
+  },
+  {
+   "role": "paper_layer",
+   "point": 9,
+   "frac": 0.375,
+   "attentive": {
+    "best_config": {
+     "lr": 0.001,
+     "weight_decay": 0.1
+    },
+    "sweep": [
+     {
+      "lr": 0.0001,
+      "weight_decay": 0.01,
+      "cv_r2_mean": 0.9813853321840205,
+      "cv_r2_sd": 0.003156009903790367,
+      "cv_mae_mean": 0.29851863361829034
+     },
+     {
+      "lr": 0.0001,
+      "weight_decay": 0.1,
+      "cv_r2_mean": 0.9814794737164073,
+      "cv_r2_sd": 0.003102634264399876,
+      "cv_mae_mean": 0.29753424219671804
+     },
+     {
+      "lr": 0.0003,
+      "weight_decay": 0.01,
+      "cv_r2_mean": 0.9805743710688652,
+      "cv_r2_sd": 0.0027034324200078635,
+      "cv_mae_mean": 0.3065379937334315
+     },
+     {
+      "lr": 0.0003,
+      "weight_decay": 0.1,
+      "cv_r2_mean": 0.9806922753651701,
+      "cv_r2_sd": 0.0027632792938571907,
+      "cv_mae_mean": 0.30522067307438583
+     },
+     {
+      "lr": 0.001,
+      "weight_decay": 0.01,
+      "cv_r2_mean": 0.9902569179829908,
+      "cv_r2_sd": 0.0006673788985841343,
+      "cv_mae_mean": 0.21867786263707573
+     },
+     {
+      "lr": 0.001,
+      "weight_decay": 0.1,
+      "cv_r2_mean": 0.9903307807126127,
+      "cv_r2_sd": 0.0016903597786753592,
+      "cv_mae_mean": 0.21571011208941965
+     },
+     {
+      "lr": 0.003,
+      "weight_decay": 0.01,
+      "cv_r2_mean": 0.9872261732076909,
+      "cv_r2_sd": 0.001440279955174131,
+      "cv_mae_mean": 0.25359580960394956
+     },
+     {
+      "lr": 0.003,
+      "weight_decay": 0.1,
+      "cv_r2_mean": 0.987787092271391,
+      "cv_r2_sd": 0.001126914182851984,
+      "cv_mae_mean": 0.24825306118525176
+     },
+     {
+      "lr": 0.005,
+      "weight_decay": 0.01,
+      "cv_r2_mean": 0.9829967404389691,
+      "cv_r2_sd": 0.004473095451885219,
+      "cv_mae_mean": 0.2852295200727011
+     },
+     {
+      "lr": 0.005,
+      "weight_decay": 0.1,
+      "cv_r2_mean": 0.9839938818905031,
+      "cv_r2_sd": 0.004208148548280228,
+      "cv_mae_mean": 0.27942509244174935
+     }
+    ],
+    "cv_r2_mean": 0.9903307807126127,
+    "cv_r2_sd": 0.0016903597786753592,
+    "cv_mae_mean": 0.21571011208941965,
+    "cv_mae_sd": 0.020835996396989652,
+    "folds": [
+     {
+      "fold": 0,
+      "r2": 0.9910737147382902,
+      "mae": 0.2056082195017873,
+      "n": 246
+     },
+     {
+      "fold": 1,
+      "r2": 0.9920150224710127,
+      "mae": 0.19098535586309262,
+      "n": 246
+     },
+     {
+      "fold": 2,
+      "r2": 0.9903770227291748,
+      "mae": 0.2216049064773672,
+      "n": 246
+     },
+     {
+      "fold": 3,
+      "r2": 0.9875161606414963,
+      "mae": 0.24705677503843476,
+      "n": 245
+     },
+     {
+      "fold": 4,
+      "r2": 0.9906719829830899,
+      "mae": 0.21329530356641632,
+      "n": 245
+     }
+    ],
+    "test_r2": 0.9898724164556715,
+    "test_mae": 0.2279532379905149
+   },
+   "meanpool_ridge": {
+    "file": "results/p1a_acceleration_acceleration_meanpool.json",
+    "key": "layers[point=9]",
+    "cv_mean": 0.9823697527554867,
+    "cv_sd": 0.0019933549563731757,
+    "cv_mae_mean": 0.30447601283830117,
+    "test_r2": 0.9844844370665848,
+    "test_mae": 0.28132302306801044,
+    "alpha": 31.622776601683793
+   },
+   "attentive_minus_meanpool_cv_r2": 0.007961027957126054,
+   "seconds": 89.5953598022461
+  },
+  {
+   "role": "peak",
+   "point": 21,
+   "frac": 0.875,
+   "attentive": {
+    "best_config": {
+     "lr": 0.001,
+     "weight_decay": 0.1
+    },
+    "sweep": [
+     {
+      "lr": 0.0001,
+      "weight_decay": 0.01,
+      "cv_r2_mean": 0.992570637817407,
+      "cv_r2_sd": 0.0007771340369091179,
+      "cv_mae_mean": 0.19215687850802693
+     },
+     {
+      "lr": 0.0001,
+      "weight_decay": 0.1,
+      "cv_r2_mean": 0.992632670971946,
+      "cv_r2_sd": 0.0007939349155665443,
+      "cv_mae_mean": 0.19119170026676377
+     },
+     {
+      "lr": 0.0003,
+      "weight_decay": 0.01,
+      "cv_r2_mean": 0.9925878888509878,
+      "cv_r2_sd": 0.0008244766571811855,
+      "cv_mae_mean": 0.19016228056342438
+     },
+     {
+      "lr": 0.0003,
+      "weight_decay": 0.1,
+      "cv_r2_mean": 0.9926299552601252,
+      "cv_r2_sd": 0.0008269536339704293,
+      "cv_mae_mean": 0.18986379535064563
+     },
+     {
+      "lr": 0.001,
+      "weight_decay": 0.01,
+      "cv_r2_mean": 0.9932437428465655,
+      "cv_r2_sd": 0.0021185899343596224,
+      "cv_mae_mean": 0.1833766161156646
+     },
+     {
+      "lr": 0.001,
+      "weight_decay": 0.1,
+      "cv_r2_mean": 0.9940157116482018,
+      "cv_r2_sd": 0.00043919579725352245,
+      "cv_mae_mean": 0.17182577500226012
+     },
+     {
+      "lr": 0.003,
+      "weight_decay": 0.01,
+      "cv_r2_mean": 0.985578258582513,
+      "cv_r2_sd": 0.004020673006133152,
+      "cv_mae_mean": 0.2685316635174586
+     },
+     {
+      "lr": 0.003,
+      "weight_decay": 0.1,
+      "cv_r2_mean": 0.9874096905822392,
+      "cv_r2_sd": 0.004368356353920913,
+      "cv_mae_mean": 0.24980718152298023
+     },
+     {
+      "lr": 0.005,
+      "weight_decay": 0.01,
+      "cv_r2_mean": 0.9779779913747678,
+      "cv_r2_sd": 0.007988780274297384,
+      "cv_mae_mean": 0.32145484670636426
+     },
+     {
+      "lr": 0.005,
+      "weight_decay": 0.1,
+      "cv_r2_mean": 0.9774737666131014,
+      "cv_r2_sd": 0.014164218655381281,
+      "cv_mae_mean": 0.3072289761041716
+     }
+    ],
+    "cv_r2_mean": 0.9940157116482018,
+    "cv_r2_sd": 0.00043919579725352245,
+    "cv_mae_mean": 0.17182577500226012,
+    "cv_mae_sd": 0.0069609727863429475,
+    "folds": [
+     {
+      "fold": 0,
+      "r2": 0.9943857687527858,
+      "mae": 0.16595863569955535,
+      "n": 246
+     },
+     {
+      "fold": 1,
+      "r2": 0.9942551188001233,
+      "mae": 0.1699357828112851,
+      "n": 246
+     },
+     {
+      "fold": 2,
+      "r2": 0.9932993482363748,
+      "mae": 0.1835232506463747,
+      "n": 246
+     },
+     {
+      "fold": 3,
+      "r2": 0.9938982467797974,
+      "mae": 0.17222531620009413,
+      "n": 245
+     },
+     {
+      "fold": 4,
+      "r2": 0.9942400756719281,
+      "mae": 0.1674858896539913,
+      "n": 245
+     }
+    ],
+    "test_r2": 0.9928097965394772,
+    "test_mae": 0.18757125957744575
+   },
+   "meanpool_ridge": {
+    "file": "results/p1a_acceleration_acceleration_meanpool.json",
+    "key": "layers[point=21]",
+    "cv_mean": 0.9924617264921792,
+    "cv_sd": 0.00042804858441740373,
+    "cv_mae_mean": 0.19741857376448954,
+    "test_r2": 0.992789626917684,
+    "test_mae": 0.19349232694602883,
+    "alpha": 10.0
+   },
+   "attentive_minus_meanpool_cv_r2": 0.0015539851560225637,
+   "seconds": 88.4979362487793
+  }
+ ],
+ "methods": {
+  "tokens": "per spatial position (16x16 = 256 tokens per clip), each averaged over the 8 token time steps (p1a_perpatch.py extract; fp16 storage)",
+  "probe": "wm.attentive.AttentiveProbe: 4 learned queries (one per head) applied directly to train-standardised tokens, softmax over the 256 tokens, concatenated per-head weighted means -> LayerNorm -> Dropout 0.1 -> Linear(4096,128) -> GELU -> Linear(128, out); not identical to a linear-K/V attention block because of the LayerNorm (module docstring)",
+  "training": "AdamW, 60 epochs, batch 64, MSE on standardised targets, seed 0, no early stopping; lr x weight_decay swept over [0.0001, 0.0003, 0.001, 0.003, 0.005] x [0.01, 0.1] (App. B lr grid; first two App. B weight decays), chosen by 5-fold CV mean R2 on the train folds (the reported cv_r2_mean is the max over the sweep, as the ridge's cv_mean is the max over alphas); heads 4, hidden 128, dropout 0.1 fixed",
+  "cv": "5-fold over the split's stored train folds (splits/split_v1.json `fold`, stratified by value; the same folds as the mean-pool ridge cv_mean); standardisation re-fit inside each fold; test rows unused",
+  "test": "one refit on all train rows, test rows scored once",
+  "score": "wm.probes.score: R2 (mean over target columns), MAE (circular degrees for direction)",
+  "points": "REPORT \u00a73.1: mean-pool onset / paper emergence-zone layer (point 9 = paper layer 8) / mean-pool peak",
+  "comparison": "meanpool_ridge = results/p1a_{var}_{var}_meanpool.json layers[point]: closed-form ridge on the fp32 token mean, alpha by the same folds"
+ },
+ "provenance": {
+  "commit": "b8856e8+dirty",
+  "memmap": "/dev/shm/wm_vmae/acceleration_vjepa2.npy",
+  "memmap_points": [
+   1,
+   9,
+   21
+  ],
+  "memmap_parity": {
+   "reference": "artifacts/activations/acceleration/vjepa2/meanpool.npy",
+   "n_clips_checked": 52,
+   "max_rel_err_per_point": [
+    0.00014099999680183828,
+    2.700000004551839e-05,
+    2.5999999706982635e-05
+   ]
+  },
+  "split_file": "splits/split_v1.json",
+  "split_sha256": "98e6310c40bf29e81bd8b6bf4b1ac603b89e4104d40ac1047b15dd5dc2be2df2",
+  "device": "cuda",
+  "torch_threads": 4,
+  "host": "vast 53030966 (box 1)",
+  "wall_seconds": 270.57782530784607,
+  "timestamp_utc": "2026-09-28T21:49:28Z"
+ }
+}
