@@ -1,15 +1,15 @@
 <section id="p2-ring" data-transition="fade" style="background:#14213D; color:#FBFBF8; font-family:'IBM Plex Sans', Arial, sans-serif; padding:128px 128px 160px; display:flex; flex-direction:column; gap:40px">
-<h2 style="font-family:'Source Serif 4', Georgia, serif; font-size:64px; font-weight:400; line-height:1.1">Part 2. Direction lies on a ring the model finds without labels; speed and acceleration are lines</h2>
+<h2 style="font-family:'Source Serif 4', Georgia, serif; font-size:64px; font-weight:400; line-height:1.1">Part 2. Direction is a ring; speed and acceleration are lines</h2>
 <div style="display:flex; gap:48px; align-items:start">
 <img src="/_blob/b83d7041fe7e5f76a5dec16f5a672572" alt="Direction centroids in the top two principal components at point 12, coloured by angle, forming a closed ring" style="width:560px; height:480px; object-fit:contain; background:#FBFBF8; border-radius:12px">
 <img src="/_blob/b4fb9935667c92b77ed21299fb782f09" alt="Speed centroids in the top two principal components at point 19, forming a nearly straight curve" style="width:560px; height:480px; object-fit:contain; background:#FBFBF8; border-radius:12px">
 <div style="flex:1; display:flex; flex-direction:column; gap:20px">
-<p style="font-size:28px; line-height:1.4; color:#BFD8D5">Goodfire's recipe: PCA-64 on train, one centroid per value, a periodic spline for direction and a natural spline for scalars. The angle is read as atan2 of the top two components, with no labels, then checked against the truth.</p>
-<p style="font-size:28px; line-height:1.4; color:#BFD8D5">Point 12: circular correlation −0.98 with the true angle. Point 22: −0.96. Point 8: the ring is not recoverable, and the file says so.</p>
+<p style="font-size:28px; line-height:1.4; color:#BFD8D5">Goodfire's recipe: PCA-64 on train, one centroid per value, a periodic spline for direction and a natural spline for scalars. I read the angle as atan2 of the top two components without using labels, and only then compare it with the truth.</p>
+<p style="font-size:28px; line-height:1.4; color:#BFD8D5">Point 12: circular correlation −0.98 with the true angle. Point 22: −0.96. At point 8 the ring can't be recovered, and the file records that.</p>
 <p style="font-size:28px; line-height:1.4; color:#E8A88A">Speed and acceleration curves bend by 0.04 to 0.19 of the centroid noise. The speed axis is the same at every direction: a cylinder, not a cone.</p>
 </div>
 </div>
-<p style="font-size:28px; line-height:1.4; color:#BFD8D5">This is the geometry that decides what steering must look like: a straight step from 0° toward 180° passes through the centre of the ring, where no real clip lives.</p>
+<p style="font-size:28px; line-height:1.4; color:#BFD8D5">So a straight step from 0° toward 180° goes through the centre of the ring, where no real clip lives.</p>
 <p style="position:absolute; left:128px; bottom:64px; font-size:24px; color:#BFD8D5">Part 2 · results/p2_geometry_*.json, p2_rotating_speed_axis_* · 8 / 16</p>
-<aside>A planted-ring positive control is in the files so that a null elsewhere can be read as a null. Radius saturates in speed, so the ring is a ring, not a velocity plane.</aside>
+<aside>There's a planted-ring positive control in the files, which is why I can call the nulls elsewhere real nulls. If velocity plane comes up: the radius saturates in speed, so it's a ring.</aside>
 </section>

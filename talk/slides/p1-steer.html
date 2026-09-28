@@ -1,5 +1,5 @@
 <section id="p1-steer" data-transition="fade" style="background:#FBFBF8; color:#14213D; font-family:'IBM Plex Sans', Arial, sans-serif; padding:128px 128px 160px; display:flex; flex-direction:column; gap:40px">
-<h2 style="font-family:'Source Serif 4', Georgia, serif; font-size:64px; font-weight:400; line-height:1.1">1.3 Multi-probe steering: the shape reproduces, the null decides how much it means</h2>
+<h2 style="font-family:'Source Serif 4', Georgia, serif; font-size:64px; font-weight:400; line-height:1.1">1.3 The steering curve reproduces; how much it means depends on the null</h2>
 <div style="display:flex; gap:48px; align-items:start">
 <img src="/_blob/9631d75005b973e636ed17657e416a52" alt="Steering error to target versus number of probes for the learned basis, a rank-74 random basis and a rank-matched random basis" style="width:940px; height:520px; object-fit:contain; background:#FBFBF8">
 <div style="flex:1; display:flex; flex-direction:column; gap:20px">
@@ -10,10 +10,10 @@
 <tr><td>10</td><td>3.1°</td><td>9.0°</td><td>54.3° ± 28</td></tr>
 <tr><td>20</td><td>2.9°</td><td>14.2°</td><td>62.5° ± 33</td></tr>
 </table>
-<p style="font-size:26px; line-height:1.4; color:#4A5568">Direction at the paper's layer, held-out evaluation probe, subspace from train, steered clips from test. One probe fails, five reach the target, error-to-true rises as error-to-target falls. Fewer probes than the paper's ~20.</p>
+<p style="font-size:26px; line-height:1.4; color:#4A5568">Direction at the paper's layer, held-out evaluation probe, subspace from train, steered clips from test. One probe fails and five reach the target, while error-to-true climbs as error-to-target drops. That takes fewer probes than the paper's ~20.</p>
 </div>
 </div>
 <p style="font-size:28px; line-height:1.4; color:#4A5568"><span style="color:#C8553D"><b>Reproduced in shape.</b></span> Against a rank-74 random basis the learned one is indistinguishable until N ≈ 5; against a rank-matched random basis it wins from N = 6 (point 9) and N = 2 (point 22). Both nulls are in the report; the stricter split-half evaluation probe gives 12.4° at N = 5 instead of 8.7°.</p>
 <p style="position:absolute; left:128px; bottom:64px; font-size:24px; color:#6a7179">Part 1 · results/p1c_*.json, p1c_*_rankmatched.json · 7 / 16</p>
-<aside>Her C.12 fits the evaluation probe on the same test clips it steers; we report that protocol as the headline for fidelity and the split-half version beside it. Off-target readout: steering direction moves the speed readout by 0.16 to 0.21 metres per second even though the INLP bases are as orthogonal as random ones.</aside>
+<aside>If she pushes on protocol: her C.12 fits the evaluation probe on the same test clips it steers. I kept that as the headline to stay faithful and put split-half next to it. Off-target: steering direction moves the speed readout by 0.16 to 0.21 metres per second, even though the INLP bases are as orthogonal as random ones.</aside>
 </section>

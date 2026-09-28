@@ -21,7 +21,7 @@ Measured four ways, that count reflects anisotropy: a whitened erasure needs one
 rank-2 linear plus a second harmonic and a nonlinear residual (§3.2). Speed does not need fewer probes than direction,
 and the ridge curves have no sawtooth. Under the paper's literal Adam recipe both variables' curves are jagged and K
 roughly doubles, with no direction-specific sawtooth. **Step 3 reproduces in shape** (one probe fails, a few probes
-reach the target, MAE-to-true rises), with fewer probes than the paper needs. Against a random orthonormal basis of
+reach the target, MAE-to-true rises), and it takes fewer probes than the paper's. Against a random orthonormal basis of
 fixed rank 2K the learned basis is indistinguishable until N ≈ 5; against a rank-matched random basis it first beats
 all 20 draws at N = 2–7 (by variable and layer); at N = 1 it separates from neither. The same curve appears in an
 untrained network, and at the onset layer the learned basis never beats the rank-2K random basis for N ≤ 20. Rerunning
@@ -50,11 +50,11 @@ probe of the forecast on one stimulus and one 45° arc, not a rendered future.
 - **Representation.** `meanpool`, the mean over all 2,048 tokens, is used for every Part 1 result, as in the paper.
   `diskpool` (tokens the disk covers) and `timepool` (per time step) are used for controls.
 - **Data.** direction 1,500 clips (64 angles, a mix of constant-velocity and accelerating-from-rest clips); speed
-  1,536 (64 speeds × 64 directions); acceleration 1,536. The README says this directly: *"The supplied dataset is
+  1,536 (64 speeds × 64 directions); acceleration 1,536. The README is explicit: *"The supplied dataset is
   deliberately smaller and simpler than the datasets in the paper. The aim is to reproduce the methodology and
   qualitative findings, not the paper's exact numerical results."* The stimulus is one orange disk on a flat
   background with a fixed camera. Acceleration clips all start at rest, so acceleration, mean speed and displacement
-  are one variable here. The paper's acceleration set has the same confound.
+  are one variable here. The paper's acceleration set has the same confound, and I did not try to fix it.
 - **Split.** `splits/split_v1.json` is one random 80/20 split per dataset, stratified by value (direction 1,200/300,
   speed and acceleration 1,228/308[^s1][^steer]). Ridge α, layer choice and INLP stopping use 5 folds inside train.
   Test is read once per experiment. Every results JSON carries a provenance block (split sha256, git commit, dirty
@@ -76,12 +76,12 @@ probe of the forecast on one stimulus and one 45° arc, not a rendered future.
 | Steering basis length | until R² < 0.1 on train | all-train sequence cut at nested K | length never chosen on test |
 | INLP recipe | Adam lr 1e-3, wd 1e-4 | ridge; literal Adam sequence run once at points 8 and 9 | curves jagged and K ≈ 2× under Adam; no direction-specific sawtooth (§3.2) |
 
-**Four places where the paper's text disagrees with itself, and how each was handled**[^ptxt]. (a) The INLP stopping
+**Four places where the paper contradicts itself**[^ptxt]. (a) The INLP stopping
 threshold for direction is R² < 0.1 in C.11 and R² < 0.3 in the Fig. 22 caption: each `p1b` file has both (`K`,
-`K_loose`; §3.2). (b) The split is 80/20 in C.11 and 70/30 in C.12: we ran both (§3.4). (c) C.12 fits its evaluation
+`K_loose`; §3.2). (b) The split is 80/20 in C.11 and 70/30 in C.12: I ran both (§3.4). (c) C.12 fits its evaluation
 probe on the test clips it then steers and scores (independent of the steering probes but not of those clips): her
 protocol is our §3.3 headline, with a split-half version beside it (12.4° / 17.1° at N = 5 vs 8.7°). (d) The main text
-reports < 0.5° with all probe directions, the appendix 11.9° held-out with 20 probes: we report every N.
+reports < 0.5° with all probe directions, the appendix 11.9° held-out with 20 probes: I report every N.
 
 **Probe-recipe parity** (point = CV-peak layer; pooled out-of-fold R², targets standardised for Adam[^recipe]):
 ridge vs Adam (C.11 recipe) is 0.9905 vs 0.9858 for direction, 0.9940 vs 0.9882 for speed and 0.9925 vs 0.9871 for
@@ -130,7 +130,7 @@ Source: `p1a_baseline_comparison.json` (which cites the per-control files).
 Reading. The trajectory is exactly linear in the Cartesian targets, and one nonlinearity turns it into speed and
 direction. The random ViT-L's block 1 sits at that random-feature level, and V-JEPA's block 1 is no higher. The random
 network stays flat with depth (direction CV MAE 10.9° → 9.5° at its peak), while V-JEPA's improves (10.7° → 3.0°).
-Training buys precision, not availability. The selectivity of V-JEPA over the random network at the direction peak
+Availability is there before training; what training buys is precision. The selectivity of V-JEPA over the random network at the direction peak
 is 0.125 R²[^obj].
 
 **Paper-scale subsample** (train rows only, 10 seeds where random; `figures/fig1f_paperscale.png`[^ps]):
@@ -202,9 +202,9 @@ and `p1b_*_random_L{pt}.json`.
   or 102 at point 8. That is about 2× the ridge paper-protocol K at point 9 (46 direction, 45 speed); for direction at
   point 8 it is 1.1–1.2× (ridge 83). Both variables turn jagged. The drop autocorrelation is negative for direction on
   within-15° accuracy (−0.30, −0.32 at point 8; −0.37, −0.34 at point 9) and for speed on R² (−0.44, −0.49; −0.54,
-  −0.47). Direction has no isolated dips in any run; speed has 1, 2, 2 and 0. No round failed to train[^adam]. So the
-  literal Adam recipe gives a jagged curve and a larger K for both variables, with no direction-specific sawtooth.
-  Both are properties of the optimiser, not of the representation.
+  −0.47). Direction has no isolated dips in any run; speed has 1, 2, 2 and 0. No round failed to train[^adam]. The
+  literal Adam recipe makes both variables' curves jagged and their K larger, and neither curve has a
+  direction-specific sawtooth. Both effects come from the optimiser, not the representation.
 
 **How many dimensions, four ways** (train clips only; `figures/fig2c_dims_four_ways.png`)[^dim4], for her open
 question (is direction "organized around a harmonic basis rather than a set of independent feature axes"?) and for Jin
@@ -300,7 +300,7 @@ the test split is larger; the nested K barely moves. Part 2's contiguous design 
 (§4.3), where the loss appears on 3 of 16 arcs; at point 12 the endpoint gap is +0.11° and −0.40° (both far below the
 probe's out-of-sample error). For speed and acceleration the bend is 0.04–0.19× centroid noise at both
 splits, so the verdict flickers on sub-margin differences, and "scalars are straight, no independent-readout gain"
-holds at both. The split of record stays 80/20 so that Part 1 and Part 2 read the same clips.
+holds at both. I kept 80/20 as the split of record so that Part 1 and Part 2 read the same clips.
 
 ## 4. Part 2: spline steering
 
@@ -320,7 +320,7 @@ Source: `p2_geometry_direction_L{8,12,22}.json` (`angle.centroid`, `angle.activa
 is the circular correlation between θ and the label-free angle atan2(PC2, PC1) in the centroids' top-2 PC plane. The
 sign of −1 is an orientation flip, which is allowed.
 
-- **The ring is found** (`figures/fig4_centroid_plane_direction_L12.png`). The headline is the label-free angle above:
+- **The ring is found** (`figures/fig4_centroid_plane_direction_L12.png`). The number to look at is the label-free angle above:
   circular correlation −0.983 with θ at point 12 and −0.964 at point 22. Separately, at point 12 the supervised chart
   and the centroid PC plane agree: the two angle assignments over the 64 centroids have circular correlation 0.994
   (mean deviation 4.7°). That number is agreement between two planes, not a correlation with the labels. The chart's
@@ -328,7 +328,7 @@ sign of −1 is an orientation flip, which is allowed.
   is dominant among centroids, not among clips.
   The interpolating spline through all 64 centroids overshoots (visible loops in the figure; held-out reconstruction
   error on the contiguous arc 188 vs 2.8 for the smoothing spline), so all steering uses the count-weighted smoothing
-  spline, chosen on train folds.
+  spline, which I chose on train folds.
 - **Curvature vs noise.** Over any knot gap up to 45° the chord and the arc differ by less than a quarter of centroid
   noise. Held-out centroids on the contiguous 45° arc are rebuilt best by the chord at every direction layer (point
   12: chord 2.58, smoothing spline 2.82).
@@ -395,7 +395,7 @@ metric once it was seen to reward residual erasure (the replace arms are on-curv
 them). The final rule is symmetric: a gain or a loss counts only beyond the same practical margin, and an endpoint
 loss beyond that margin overrides path gains ("negative_endpoint"). It was frozen at commit 8d3cac8, before the
 multi-arc sweep and the 70/30 reruns. The frozen rule was applied unchanged to all 32 arc runs and to every steering
-file cited here. The calls should still be read as a summary of the gaps and CIs, which are reported directly.
+file cited here. Read the calls as shorthand for the gaps and CIs, which are reported directly.
 
 ### 4.3 Results
 
@@ -457,8 +457,8 @@ excess_to_nearest_real". Endpoint error is 0.178 m for both vs 0.197 for a Delau
 
 **Reading.** At the encoder layer, the spline stays on the ring (the readout radius stays near 0.86 and the Eq. 9
 distribution walks the arc in order) and the line cuts through it (the radius drops to 0.61). The reflected arm is
-worst on every path metric, so the bend helps in the right direction and not merely by being a bend. That is the
-Goodfire picture reproduced at held-out values. But readouts that did not build the edit do not separate the arms.
+worst on every path metric, so it matters which way the path bends. This much reproduces Goodfire at held-out
+values. But readouts that did not build the edit do not separate the arms.
 Nearest-real agreement ties at point 12 and slightly favours the line at point 22. The endpoint probe error ties at
 point 12. At point 22 the line is 3.8° better on this arc, but across 16 arcs the loss appears on 3 and averages
 +1.26°. The Eq. 9 energy advantage at point 12 is gone at point 22 (1.01 vs 1.00). For speed and acceleration, spline,
@@ -621,7 +621,7 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
   vs flat for the random network) and a ring that is recovered without labels at mid depth. Carrying direction into
   disk-free tokens is not a training effect: the random-init encoder does it as well. VideoMAE matches V-JEPA 2 on
   every Part 1 measure, so none of this is specific to latent prediction, and none of it shows that the variables are
-  used to predict. We have two points on the training axis (random init, final checkpoint), not a trajectory. The
+  used to predict. I have two points on the training axis (random init, final checkpoint), not a trajectory. The
   authors' OpenReview response states that "all 13 models encode motion direction (R²≥.43), regardless of objective",
   classification CNNs included, so availability is their own finding; training buys precision, fewer probes to steer
   (4 vs 10 to reach 10°[^obj]) and a label-free ring.

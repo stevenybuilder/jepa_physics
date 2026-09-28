@@ -1,5 +1,5 @@
 <section id="setup" data-transition="fade" style="background:#FBFBF8; color:#14213D; font-family:'IBM Plex Sans', Arial, sans-serif; padding:128px 128px 160px; display:flex; flex-direction:column; gap:48px">
-<h2 style="font-family:'Source Serif 4', Georgia, serif; font-size:64px; font-weight:400; line-height:1.1">Setup: the paper's pipeline, one committed split, three senses of held-out</h2>
+<h2 style="font-family:'Source Serif 4', Georgia, serif; font-size:64px; font-weight:400; line-height:1.1">Setup</h2>
 <div style="display:flex; gap:32px">
 <div style="flex:1; display:flex; flex-direction:column; gap:16px; background:#F1F0EA; padding:36px; border-radius:16px">
 <h3 style="font-size:30px; font-weight:600; color:#C8553D">Model and readout</h3>
@@ -10,11 +10,11 @@
 <p style="font-size:26px; line-height:1.4; color:#4A5568">One orange disk, fixed camera. 1,500 direction clips (64 angles), 1,536 speed, 1,536 acceleration. One 80/20 split per set, stratified by value, 5 folds inside train for every choice. Parts 1 and 2 rerun at the paper's 70/30: no verdict changes.</p>
 </div>
 <div style="flex:1; display:flex; flex-direction:column; gap:16px; background:#F1F0EA; padding:36px; border-radius:16px">
-<h3 style="font-size:30px; font-weight:600; color:#C8553D">Held-out, three ways</h3>
-<p style="font-size:26px; line-height:1.4; color:#4A5568">Held-out clips: the evaluation probe never saw the fit clips. Held-out values: steering targets the spline never had as knots. Held-out context: speed-set clips steered with a direction spline. Every result says which it meets.</p>
+<h3 style="font-size:30px; font-weight:600; color:#C8553D">What held-out means here</h3>
+<p style="font-size:26px; line-height:1.4; color:#4A5568">Held-out clips: the evaluation probe never saw the fit clips. Held-out values: steering targets the spline never had as knots. Held-out context: speed-set clips steered with a direction spline. Each result is labelled with the one it meets.</p>
 </div>
 </div>
-<p style="font-size:26px; line-height:1.4; color:#4A5568">Deviations from the paper are listed in one table (ridge vs Adam with a parity check, 256² input, 26 points, 64 directions, split). Where the paper's own text disagrees with itself (stopping threshold 0.1 vs 0.3, 80/20 vs 70/30, evaluation probe fit on the steered clips), both readings were run.</p>
+<p style="font-size:26px; line-height:1.4; color:#4A5568">The deviations from the paper sit in one table in the report (ridge vs Adam with a parity check, 256² input, 26 points, 64 directions, split). Where the paper contradicts itself (stopping threshold 0.1 vs 0.3, 80/20 vs 70/30, evaluation probe fit on the steered clips), I ran both readings.</p>
 <p style="position:absolute; left:128px; bottom:64px; font-size:24px; color:#6a7179">Setup · 2 / 16</p>
-<aside>Point out the layer convention: the paper's layer 8 is our point 9. The acceleration confound (all clips start at rest, so acceleration, mean speed and displacement are one variable) is the paper's too and is stated, not fixed.</aside>
+<aside>Say the layer convention out loud: the paper's layer 8 is my point 9. If the acceleration confound comes up (all clips start at rest, so acceleration, mean speed and displacement are one variable): the paper has it too, and I state it rather than fix it.</aside>
 </section>
