@@ -20,9 +20,10 @@ in the ring plane (in the 64-D subspace it is as close to real clips at point 12
 the minimum readout radius is higher for the spline on every arc (point 22 on the labels angle[^src]).
 
 **Two disagreements with the paper.** (1) On the harder set transfer does not appear only after the zone: it is 0.7 at
-point 1, and the per-position curve rises most between points 4 and 6 on every seed (§3.1). (2) Speed does not need
-fewer probes than direction (except the paper protocol at point 8), and neither the ridge curves nor the paper's literal
-Adam recipe give a direction-specific sawtooth. **One addition to its steering result.** An edit along one probe's axis
+point 1, and the per-position curve rises most between points 4 and 6 on every seed (§3.1). (2) Whether speed needs
+fewer probes than direction is set by the stop rule, not the network: on the same clips speed needs fewer under C.11's
+thresholds (7 of 8 cells) and more under the Fig. 22 caption's (8 of 8), and across the two supplied sets the counts
+are equal; neither the ridge curves nor the paper's literal Adam recipe give a direction-specific sawtooth. **One addition to its steering result.** An edit along one probe's axis
 fails, as §7.2 says (78°); an edit built from that probe but weighted by the activation covariance, which leaves the
 probe's plane, reaches 3.2°, and so does the same construction on a random 2-D subspace (median 4.2°, p = 0.24), so what
 the learned probe buys is specificity, not target error.
@@ -97,14 +98,15 @@ verdict; §2 lists every deviation from the paper and what the parity audit chan
 | Part 2: carriers | 16 fixed base prompts per task, one set for every pair (A.6) | 48 test clips per target, each steered from its own value | Goodfire starts every carrier at the centroid c_a whatever the carrier's own value (A.6); ours starts each carrier at its true value (an oracle source) and averages over sources |
 | Part 2: pullback (A.8–A.9, C.3) | one path per (source, target) pair, loss averaged over 16 carriers (A.8); replace the top-32 PCs, other PCs and residual held; L-BFGS; path = natural cubic through 10 free control vectors evaluated at K = 20, chord init (A.8), 20 free points with kNN-graph init in the causalab config, K = 30 all free with 30 pairs for the world model (C.3); squared-Hellinger target on M_y; norm regulariser off for weekdays only (5·10⁻⁴ months, 10⁻³ age); scored by closest-point residual and intrinsic R² (A.9), and for the world model by mean distance to M_h (C.3: chord 2.22, geometric 0.20, pullback 0.29) | one path per carrier; additive edit in PCA-64; Adam, zero init, 8 free waypoints; 1 − cos loss on the forecast angle; hard cap 1.2× natural change; equal-t distances | rerun with their recipe (8 pairs, 32 evaluations per pair, unconverged) with all geometry from the edited context-only activations: from an on-ring start the path moves to 0.87 from both spline and chord (tie), about five times the chord's 0.16 from the spline, with the carrier mean 0.14 off the ring and individual carriers 0.45–0.54; neither protocol recovers the ring (§4.5) |
 
-**What the parity audit changed.** A paper-first audit of our own methods moved six verdicts:
+**What the parity audit changed.** A paper-first audit of our own methods moved seven verdicts:
 
 - Part 1, emergence zone: read per patch on the hard render across three seeds, the largest rise is at points 4 → 6 on every seed, and the half-frame dip-and-jump at points 8 → 9 (paper layers 7 → 8) is training-specific (§3.1).
 - Part 1, Step 3: with our refit of the paper's C.11 Adam probe sequence as the steering basis the probe count reproduces, 18 probes to 10° and 16 to the paper's 12° at about 20 (§3.3).
 - Part 1: a covariance-weighted edit built from one probe steers to 3–5°, outside the probe's plane, as does the same construction on a random 2-D subspace (median 4.2°), so the learned probe adds specificity, not reach (§3.3, §6).
 - Part 2: the isometry verdict is set by the knot coordinate; under every label-free ordering point 22 is a tie (spline only under the basic interval in the fully faithful run), and Goodfire's own angle loses to the chord at point 12 (§4.4).
 - Part 2: at the encoder output the verdict is mixed (the spline trails the chord by 10.8° at the chord's norm and leads by 2.1° at the natural norm), and in scalar extrapolation the spline trails the chord by 0.02–0.06 (§4.5, §4.3).
-- Part 2: Goodfire's cyclic 8B runs take the coordinate label-free, as atan2(PC2, PC1), and only its 70B cyclic configs use the labels (§2).
+- Part 1, Step 2: the paper reads direction and speed off one velocity set and our stored counts came from two supplied sets; rerun on the same 750 constant-velocity clips, "speed needs fewer probes" holds in 7 of 8 cells under C.11's thresholds and in none under the Fig. 22 caption's, so the verdict is a stop-rule call (§3.2).
+- Part 2: Goodfire's cyclic 8B runs take the coordinate label-free, as atan2(PC2, PC1), and only its 70B cyclic configs and two 8B weekdays demo configs use the labels (§2).
 
 **Places where the paper contradicts itself**[^ptxt]. (a) The INLP stopping
 threshold for direction is R² < 0.1 in C.11 and R² < 0.3 in the Fig. 22 caption, and for speed 0.05 against 0.1: each
@@ -331,8 +333,8 @@ and `p1b_*_random_L{pt}.json`.
   point 22, removing 194 leaves it at 0.990. "Tens of probes" is therefore a real count, far outside the band.
 - **Direction vs speed.** The two counts come from different clip sets (the supplied direction set: 64 θ, half
   accelerating, starts in [−2, 2]², speeds to 7; the speed set: 64 θ, constant velocity, starts in [−1.2, 1.2]²,
-  0.25–4 m/s), where the paper reads both variables off one velocity set; on the same clips (the direction set's 750 constant-velocity clips, 596 train) direction vs speed K is 28 vs 22, 17 vs 26 and 59 vs 46 at points 8 / 9 / 22 (nested) and 36 vs 34, 36 vs 28 and 75 vs 45 (paper protocol), 54 vs 43 and 63 vs 48 at speed's peak 19, so speed needs fewer dimensions (2K vs K) everywhere and fewer probes in 7 of 8 cells under the C.11 rule, but more probes in every cell under Fig. 22's thresholds (direction 11–35, speed 23–52)[^sameclip]. Probe counts are equal (37 vs 39 at point 9, 88 vs 89 at the peaks). Speed needs fewer
-  *dimensions* only because its probes are 1-output. The paper's second claim does not reproduce in probe count.
+  0.25–4 m/s), where the paper reads both variables off one velocity set; on the same clips (the direction set's 750 constant-velocity clips, 596 train) direction vs speed K is 28 vs 22, 17 vs 26 and 59 vs 46 at points 8 / 9 / 22 (nested) and 36 vs 34, 36 vs 28 and 75 vs 45 (paper protocol), 54 vs 43 and 63 vs 48 at speed's peak 19, so under the C.11 rule speed needs fewer dimensions (2K vs K) in all 8 cells and fewer probes in 7 of 8 (nested point 9 is the exception, 17 vs 26), while under Fig. 22's thresholds it needs more probes in all 8 cells (direction 11–35, speed 23–52) and fewer dimensions in 6 of 8 (nested point 9: 22 vs 29; nested point 22: 52 vs 52)[^sameclip]. Across the two supplied sets (the table above) the probe counts are equal (37 vs 39 at point 9, 88 vs 89 at the peaks) and speed needs fewer
+  *dimensions* only because its probes are 1-output. So the paper's second claim reproduces in probe count on the same clips under its method-text thresholds, reverses under its figure's, and is a tie across the supplied sets: the count is set by the stop rule. The cross-set numbers that follow are kept for the coordinate and stop-rule comparisons.
   Early layers hold each variable in hundreds of weak redundant directions (onset rows), which fits the
   random-feature picture from step 1. The counts depend on the coordinates: C.11 states no normalisation, and in raw
   centred coordinates (α re-chosen) nested K is 1.4–1.6× larger. Direction vs speed is then 51 vs 55 at point 9 and 65
@@ -347,7 +349,7 @@ and `p1b_*_random_L{pt}.json`.
   depends on the rule and the protocol. Nested, the scalars need more: direction / speed / acceleration 37 / 47 / 48 at
   point 9 and 40 / 60 / 61 at point 8 at R² < 0.1, and 45 / 55 / 62 and 52 / 83 / 76 at R² < 0.05. Under the paper
   protocol direction and speed are about equal at point 9 (46 vs 50; 58 vs 59), and at point 8 direction needs more
-  (83 vs 57; 113 vs 74), the one cell where speed needs fewer. The paper's claim holds only in that cell.
+  (83 vs 57; 113 vs 74), the one cell where speed needs fewer. On the cross-set counts the paper's claim holds only in that cell; on the same clips (previous bullet) it holds in 7 of 8 C.11 cells and no Fig. 22 cell.
 - **One column per round.** C.11 says "project out the learned direction", while each direction probe has two output
   columns. Removing one column per round (alternating sin/cos, or the top singular vector) takes 72–73 rounds nested
   and 84–92 under the paper protocol at point 9, about twice the stored 37 / 46, so the removed dimension count is
@@ -396,7 +398,9 @@ al.'s sheared circle. "Tens of dimensions" is a conditioning count of an anisotr
 intrinsic rank; beyond that code lies a nonlinear residual that grows toward the output.
 
 **Verdict.** The "tens of dimensions" claim reproduces at the paper's layer against a random band. The claim that
-speed needs fewer probes does not reproduce under ridge: probe counts are equal, and in dimensions (2K for direction,
+speed needs fewer probes is a stop-rule call under ridge: on the same clips speed needs fewer probes under C.11's
+thresholds in 7 of 8 cells and more under the Fig. 22 caption's in all 8; across the two supplied sets the probe
+counts are equal, and in dimensions (2K for direction,
 K for speed, C.11's unit) speed needs fewer under C.11's thresholds in every cell but not under the Fig. 22 caption's
 (nested 42 vs 60 at point 8, 46 vs 47 at point 9, 74 vs 102 at the peaks; paper protocol 84 vs 57, 50 vs 50, 78 vs
 118). Direction's sawtooth does not appear under ridge. Under Adam both curves are
@@ -591,7 +595,7 @@ label-free recovery here is my extension, the centroid-plane fallback, and it wo
 - **Cone check / velocity plane.** On the speed set the ring's radius grows with speed and then saturates: at point
   12 it is 4.12 at 0.46 m/s and 7.99 at 3.79 m/s (ratio 1.94 for an 8.29× speed ratio; correlation 0.81), and 7.2–8.1
   from 1.4 m/s upward. Procrustes fits of the (direction × speed) cell centroids favour the ring over the velocity
-  plane at every layer, narrowly (point 12: 0.445 vs 0.428; point 22: 0.435 vs 0.421; point 8: 0.285 vs 0.285). The
+  plane at points 12 and 22, narrowly, and tie at point 8 (point 12: 0.445 vs 0.428; point 22: 0.435 vs 0.421; point 8: 0.285 vs 0.285). The
   sharp test is to take a chord between opposite directions: a velocity plane predicts the speed readout at the
   midpoint collapses (ratio cos 90° = 0), and a ring predicts it is unchanged. Measured MLP-speed ratios at Δθ = 180°
   are 0.989 / 0.993 / 1.071 at points 8 / 12 / 22, and Eq. 9 speed ratios (speed × direction cell centroids) 0.991 / 0.963 / 0.953. **Verdict: ring,
@@ -805,7 +809,7 @@ point-22 endpoint on 1 of 16 arcs (+3.7°) and on the headline arc (+3.80°), an
   figures. With the authors' recipe (behaviour manifold = an interpolating spline through the per-value forecast
   centroids in the full 1,024-d forecast space) on the label-free knot order, r is 0.84 / 0.93 / 0.67 along the
   interpolating activation spline against 0.73 / 0.87 / 0.75 for the chord, and 0.885 / 0.979 / 0.758 against 0.800 /
-  0.876 / 0.752 along the smoothing spline[^iso]. On the labels coordinate (Goodfire's 70B cyclic configs) the spline leads at every point: interpolating
+  0.876 / 0.752 along the smoothing spline[^iso]. On the labels coordinate (Goodfire's 70B cyclic configs and two 8B weekdays demo configs) the spline leads at every point: interpolating
   0.986 / 0.982 / 0.984 against chord 0.727 / 0.867 / 0.749 at points 8 / 12 / 22, smoothing 0.984 / 0.994 / 0.979
   against 0.858 / 0.890 / 0.831[^isol]. On Goodfire's own cyclic coordinate (the √variance-scaled atan2 its 8B weekdays
   and months runs use; its periodicity test fails at points 8 and 12 and passes at 22 by 0.005; circular correlation
