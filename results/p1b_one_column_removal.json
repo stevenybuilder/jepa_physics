@@ -1,0 +1,326 @@
+{
+ "item": "One-column-per-round removal (C.11 l.1197 'project out the learned direction' vs W_k in R^{2 x d} l.1225)",
+ "point": 9,
+ "variants": {
+  "two_column": "stored: span(W_k), 2 columns per direction round",
+  "one_col_alternate": "column (k - 1) mod 2 of W_k: sin readout on odd rounds, cos on even",
+  "one_col_top_sv": "top left-singular vector of W_k (largest-gain input direction)"
+ },
+ "speed_note": "speed probes have 1 output, so both one-column variants remove span(W_k), the stored sequence; rerun as a parity check",
+ "sequences": {
+  "ridge_nested": "wm.inlp.nested_curve, stored alpha (alpha_folds all equal it), fold-mean curve, stored stop (every fold and the mean at chance)",
+  "ridge_paper": "wm.inlp.paper_curve_and_basis, stored alpha, scored on test, stop at the first at-chance round",
+  "adam_b64": "wm.inlp.adam_sequence, C.11 Adam, batch 64, patience 3 (as stored)",
+  "adam_full": "wm.inlp.adam_sequence, C.11 Adam, full batch, patience 3 (as stored)"
+ },
+ "statistics": "wm.inlp.sawtooth by_metric: lag-1 autocorrelation of per-round drops (negative = sawtooth) and isolated dips (fall > 0.05 then recover > 0.05); acc15 exists for direction only",
+ "cells": {
+  "direction": {
+   "two_column_stored": {
+    "ridge_nested": {
+     "K": 37,
+     "r2": {
+      "drop_lag1_autocorr": 0.9100206435384322,
+      "n_isolated_dips": 0,
+      "isolated_dips": [],
+      "n_rounds": 43
+     },
+     "acc15": {
+      "drop_lag1_autocorr": 0.6990102424219665,
+      "n_isolated_dips": 0,
+      "isolated_dips": [],
+      "n_rounds": 43
+     }
+    },
+    "ridge_paper": {
+     "K": 46,
+     "r2": {
+      "drop_lag1_autocorr": 0.7189002581052628,
+      "n_isolated_dips": 0,
+      "isolated_dips": [],
+      "n_rounds": 47
+     },
+     "acc15": {
+      "drop_lag1_autocorr": 0.27209216040909556,
+      "n_isolated_dips": 0,
+      "isolated_dips": [],
+      "n_rounds": 47
+     }
+    },
+    "adam_b64": {
+     "K_first": 84,
+     "r2": {
+      "drop_lag1_autocorr": -0.2751585090778183,
+      "n_isolated_dips": 0,
+      "isolated_dips": [],
+      "n_rounds": 112
+     },
+     "acc15": {
+      "drop_lag1_autocorr": -0.37284119843072555,
+      "n_isolated_dips": 0,
+      "isolated_dips": [],
+      "n_rounds": 112
+     }
+    },
+    "adam_full": {
+     "K_first": 96,
+     "r2": {
+      "drop_lag1_autocorr": 0.22023869712475902,
+      "n_isolated_dips": 0,
+      "isolated_dips": [],
+      "n_rounds": 103
+     },
+     "acc15": {
+      "drop_lag1_autocorr": -0.3385582611392995,
+      "n_isolated_dips": 0,
+      "isolated_dips": [],
+      "n_rounds": 103
+     }
+    }
+   },
+   "one_col_alternate": {
+    "ridge_nested": {
+     "K_rounds": 73,
+     "r2": {
+      "drop_lag1_autocorr": 0.8239347958172579,
+      "n_isolated_dips": 0,
+      "isolated_dips": [],
+      "n_rounds": 85
+     },
+     "acc15": {
+      "drop_lag1_autocorr": 0.5340465179334003,
+      "n_isolated_dips": 0,
+      "isolated_dips": [],
+      "n_rounds": 85
+     }
+    },
+    "ridge_paper": {
+     "K_rounds": 92,
+     "r2": {
+      "drop_lag1_autocorr": 0.47884367487538604,
+      "n_isolated_dips": 0,
+      "isolated_dips": [],
+      "n_rounds": 93
+     },
+     "acc15": {
+      "drop_lag1_autocorr": 0.04768321488113929,
+      "n_isolated_dips": 0,
+      "isolated_dips": [],
+      "n_rounds": 93
+     }
+    },
+    "adam_b64": {
+     "K_first": 186,
+     "K_patience": 217,
+     "r2": {
+      "drop_lag1_autocorr": -0.48182855781730277,
+      "n_isolated_dips": 1,
+      "isolated_dips": [
+       203
+      ],
+      "n_rounds": 220
+     },
+     "acc15": {
+      "drop_lag1_autocorr": -0.4003263857439469,
+      "n_isolated_dips": 0,
+      "isolated_dips": [],
+      "n_rounds": 220
+     }
+    },
+    "adam_full": {
+     "K_first": 195,
+     "K_patience": 214,
+     "r2": {
+      "drop_lag1_autocorr": -0.23072032570216486,
+      "n_isolated_dips": 0,
+      "isolated_dips": [],
+      "n_rounds": 217
+     },
+     "acc15": {
+      "drop_lag1_autocorr": -0.5369598520050249,
+      "n_isolated_dips": 0,
+      "isolated_dips": [],
+      "n_rounds": 217
+     }
+    }
+   },
+   "one_col_top_sv": {
+    "ridge_nested": {
+     "K_rounds": 72,
+     "r2": {
+      "drop_lag1_autocorr": 0.8380961202444891,
+      "n_isolated_dips": 0,
+      "isolated_dips": [],
+      "n_rounds": 84
+     },
+     "acc15": {
+      "drop_lag1_autocorr": 0.7243703653194318,
+      "n_isolated_dips": 0,
+      "isolated_dips": [],
+      "n_rounds": 84
+     }
+    },
+    "ridge_paper": {
+     "K_rounds": 84,
+     "r2": {
+      "drop_lag1_autocorr": 0.6658894779581851,
+      "n_isolated_dips": 0,
+      "isolated_dips": [],
+      "n_rounds": 85
+     },
+     "acc15": {
+      "drop_lag1_autocorr": 0.3186373839879107,
+      "n_isolated_dips": 0,
+      "isolated_dips": [],
+      "n_rounds": 85
+     }
+    },
+    "adam_b64": {
+     "K_first": 186,
+     "K_patience": 186,
+     "r2": {
+      "drop_lag1_autocorr": -0.41082672464271264,
+      "n_isolated_dips": 0,
+      "isolated_dips": [],
+      "n_rounds": 189
+     },
+     "acc15": {
+      "drop_lag1_autocorr": -0.4352887051621968,
+      "n_isolated_dips": 2,
+      "isolated_dips": [
+       40,
+       118
+      ],
+      "n_rounds": 189
+     }
+    },
+    "adam_full": {
+     "K_first": 185,
+     "K_patience": 190,
+     "r2": {
+      "drop_lag1_autocorr": -0.1716183053725053,
+      "n_isolated_dips": 0,
+      "isolated_dips": [],
+      "n_rounds": 193
+     },
+     "acc15": {
+      "drop_lag1_autocorr": -0.328687878012559,
+      "n_isolated_dips": 0,
+      "isolated_dips": [],
+      "n_rounds": 193
+     }
+    }
+   }
+  },
+  "speed": {
+   "two_column_stored": {
+    "ridge_nested": {
+     "K": 39,
+     "r2": {
+      "drop_lag1_autocorr": 0.6229043143771282,
+      "n_isolated_dips": 0,
+      "isolated_dips": [],
+      "n_rounds": 46
+     },
+     "acc15": null
+    },
+    "ridge_paper": {
+     "K": 45,
+     "r2": {
+      "drop_lag1_autocorr": 0.2977703937282281,
+      "n_isolated_dips": 0,
+      "isolated_dips": [],
+      "n_rounds": 46
+     },
+     "acc15": null
+    },
+    "adam_b64": {
+     "K_first": 95,
+     "r2": {
+      "drop_lag1_autocorr": -0.5386044512284195,
+      "n_isolated_dips": 2,
+      "isolated_dips": [
+       68,
+       96
+      ],
+      "n_rounds": 105
+     },
+     "acc15": null
+    },
+    "adam_full": {
+     "K_first": 91,
+     "r2": {
+      "drop_lag1_autocorr": -0.47405149682649284,
+      "n_isolated_dips": 0,
+      "isolated_dips": [],
+      "n_rounds": 99
+     },
+     "acc15": null
+    }
+   },
+   "one_col_top_sv": {
+    "ridge_nested": {
+     "K_rounds": 39,
+     "r2": {
+      "drop_lag1_autocorr": 0.6229043143761043,
+      "n_isolated_dips": 0,
+      "isolated_dips": [],
+      "n_rounds": 46
+     },
+     "acc15": null
+    },
+    "ridge_paper": {
+     "K_rounds": 45,
+     "r2": {
+      "drop_lag1_autocorr": 0.2977703937288587,
+      "n_isolated_dips": 0,
+      "isolated_dips": [],
+      "n_rounds": 46
+     },
+     "acc15": null
+    },
+    "adam_b64": {
+     "K_first": 95,
+     "K_patience": 102,
+     "r2": {
+      "drop_lag1_autocorr": -0.53860445122842,
+      "n_isolated_dips": 2,
+      "isolated_dips": [
+       68,
+       96
+      ],
+      "n_rounds": 105
+     },
+     "acc15": null
+    },
+    "adam_full": {
+     "K_first": 91,
+     "K_patience": 96,
+     "r2": {
+      "drop_lag1_autocorr": -0.4740514968264927,
+      "n_isolated_dips": 0,
+      "isolated_dips": [],
+      "n_rounds": 99
+     },
+     "acc15": null
+    }
+   }
+  }
+ },
+ "provenance": {
+  "split_file": "splits/split_v1.json",
+  "split_sha256": "98e6310c40bf29e81bd8b6bf4b1ac603b89e4104d40ac1047b15dd5dc2be2df2",
+  "seeds": {
+   "split": 0,
+   "other": "all other RNG seeds are 0 (bootstrap, folds, null draws, shuffles); random-removal controls use seeds 0..n-1"
+  },
+  "commit": "66ff9fa039e7cc124c21fceb1bf2d8be4e9a0eab",
+  "dirty": true,
+  "git_commit": "66ff9fa039e7cc124c21fceb1bf2d8be4e9a0eab",
+  "git_dirty_src_or_scripts": false,
+  "timestamp_utc": "2026-09-28T05:09:16+00:00",
+  "pool": null,
+  "model": null,
+  "layer": 9
+ }
+}
