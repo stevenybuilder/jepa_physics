@@ -70,7 +70,7 @@ verdict; §2 lists every deviation from the paper and what the parity audit chan
 | Probe fit | linear probe, 20-config lr × wd sweep, 5-fold grouped CV, mean ± SD across folds (App. B; the optimiser is named only in C.11: Adam) | ridge, α by CV | parity check below: ridge ≥ Adam on all three variables at the peak; App. B's sweep run at points 0–10 gives direction onset 2 [2, 3] and speed onset 1 [1, 1], the same as ridge, with the sweep 0.0015–0.074 below ridge at every point (coupled L2 weight decay, at the grid's low edge for 10 of 12 direction points and 5 of 12 speed points)[^appb] |
 | Input | 224², 1,568 tokens | 256², no crop, 2,048 tokens | layer fractions comparable, patch counts not |
 | Hidden states | 24 points | 26 (embedding, blocks 1–24, final LN) | paper layer L = our point L+1 |
-| Data | 8 directions, separate sets | 64 directions, mixed motion types | direction also reported per motion type |
+| Data | 8 directions, one velocity set (8 θ × 7 v × 7 starts) read for both direction and speed | 64 directions, mixed motion types | direction also reported per motion type |
 | Split | 70/30, C.11 stopping on test | 80/20, stopping on fold-mean CV | "paper protocol" also run; Part 1 and Part 2's contiguous steering runs rerun at 70/30, no verdict changes (§3.4); session 2, isometry and pullback not rerun |
 | INLP K | probes until test at chance | nested K (held-out folds), paper-protocol K beside it | both below |
 | Steering basis length | until R² < 0.1 on train | ridge: all-train sequence cut at nested K; Adam refit (§3.3): K = 84 by C.11's stop rule read on the test clips | ridge length never chosen on test; the Adam length is, which touches N = K and the rank-2K null only |
@@ -329,7 +329,9 @@ and `p1b_*_random_L{pt}.json`.
 - **Random-removal band.** Projecting out a random subspace of matched rank (10 seeds) leaves the score unchanged.
   At point 9, removing 92 random dimensions leaves direction CV R² at 0.980, the same as with nothing removed. At
   point 22, removing 194 leaves it at 0.990. "Tens of probes" is therefore a real count, far outside the band.
-- **Direction vs speed.** Probe counts are equal (37 vs 39 at point 9, 88 vs 89 at the peaks). Speed needs fewer
+- **Direction vs speed.** The two counts come from different clip sets (the supplied direction set: 64 θ, half
+  accelerating, starts in [−2, 2]², speeds to 7; the speed set: 64 θ, constant velocity, starts in [−1.2, 1.2]²,
+  0.25–4 m/s), where the paper reads both variables off one velocity set; a same-clip rerun is in progress. Probe counts are equal (37 vs 39 at point 9, 88 vs 89 at the peaks). Speed needs fewer
   *dimensions* only because its probes are 1-output. The paper's second claim does not reproduce in probe count.
   Early layers hold each variable in hundreds of weak redundant directions (onset rows), which fits the
   random-feature picture from step 1. The counts depend on the coordinates: C.11 states no normalisation, and in raw
