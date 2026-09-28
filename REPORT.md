@@ -805,7 +805,7 @@ point-22 endpoint on 1 of 16 arcs (+3.7°) and on the headline arc (+3.80°), an
   smoothing 0.24 / 0.03 / 0.32 against 0.29 / 0.34 / 0.26[^isof]. With paired 200-draw bootstraps on geo − lin (the
   stored intervals in `p2_isometry_linear.json`, clips resampled within each value, are biased low for the chord: 20
   of 48 exclude their own point estimate; so three interval types are reported, percentile, recentred and basic), the
-  calls are: labels, spline at every point under every interval; our label-free knot order, tie at every point (spline
+  calls are: labels, spline at every point under every interval but one (point 8, smoothing, basic: tie); our label-free knot order, tie at every point (spline
   at 8 and 12 under the basic interval only); Goodfire's angle, chord at 12 under every interval, chord-or-tie at 8,
   tie at 22; the fully faithful run, chord at 12, tie at 8, and at 22 tie under two intervals and spline under the
   basic one. So the isometry verdict is set by the knot coordinate, not by the curve: only the labels ordering makes
