@@ -732,12 +732,15 @@ point-22 endpoint on 1 of 16 arcs (+3.7°) and on the headline arc (+3.80°), an
   figures. With the authors' recipe (behaviour manifold = an interpolating spline through the per-value forecast
   centroids in the full 1,024-d forecast space) on the label-free knot order, r is 0.84 / 0.93 / 0.67 along the
   interpolating activation spline against 0.73 / 0.87 / 0.75 for the chord, and 0.885 / 0.979 / 0.758 against 0.800 /
-  0.876 / 0.752 along the smoothing spline[^iso]. On the labels coordinate (Goodfire's 70B cyclic configs; its 8B cyclic runs use the √variance-scaled atan2, on
-  which a run is in progress), the spline
-  leads at every point: interpolating 0.986 / 0.982 / 0.984 against chord 0.727 / 0.867 / 0.749 at points 8 / 12 / 22,
-  smoothing 0.984 / 0.994 / 0.979 against 0.858 / 0.890 / 0.831[^isol]. The point-22 reversal came from the label-free
-  angle's scrambled knot order and is withdrawn on the labels coordinate; the check on Goodfire's own coordinate is
-  pending.
+  0.876 / 0.752 along the smoothing spline[^iso]. On the labels coordinate (Goodfire's 70B cyclic configs) the spline leads at every point: interpolating
+  0.986 / 0.982 / 0.984 against chord 0.727 / 0.867 / 0.749 at points 8 / 12 / 22, smoothing 0.984 / 0.994 / 0.979
+  against 0.858 / 0.890 / 0.831[^isol]. On Goodfire's own cyclic coordinate (the √variance-scaled atan2 its 8B weekdays
+  and months runs use; its periodicity test fails at points 8 and 12 and passes at 22 by 0.005; circular correlation
+  with θ −0.40 / 0.65 / 0.91) the chord leads at every point: interpolating 0.50 / 0.32 / 0.66 against 0.73 / 0.87 /
+  0.75, smoothing 0.50 / 0.50 / 0.74 against 0.69 / 0.87 / 0.76[^isog]. So the isometry verdict is set by the knot
+  coordinate, not by the curve: an ordering that follows θ makes the spline near-isometric to the forecast geodesics,
+  and every ordering a label-free method gives us (our knot order, Goodfire's own angle) puts the chord ahead, at
+  point 22 in particular. The point-22 reversal is therefore not withdrawn; it disappears only with the labels.
 
 ### 4.5 Beyond the steered layer (GPU session 2)
 
@@ -1013,6 +1016,7 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
 [^interp]: `results/p2_interp_labels_summary.json` (`heldout_reconstruction.labels_order.contiguous`, `seed0_interp_labels`, `arcs_interp_labels`, `delta_ratio_spline_over_chord`), `results/p2_interp_labels/`, `results/arcs_interp/`.
 [^ext]: `results/p2_extrapolation_linear_ext.json` (`runs.*.{smoothing_linear_ext,interp_linear_ext_goodfire_code,stored_smoothing_cubic_ext}`), `results/p2_linear_ext/`, `results/p2_linear_ext_interp/`.
 [^iso]: `results/p2_isometry_goodfire_method.json` (`layers.{8,12,22}.new.{interp,smooth}.{geo,lin}_pearson`).
+[^isog]: `results/p2_isometry_goodfire_coord.json` (`layers.{8,12,22}.goodfire_angle.{interp,smooth}.{geo,lin}_pearson`, `goodfire_periodicity_test`, `angle_vs_labels`, `geo_below_chord_goodfire_angle`; 213 tests at ee828a7).
 [^isol]: `results/p2_isometry_goodfire_labels.json` (`layers.{8,12,22}.labels_angle.{interp,smooth}.{geo,lin}_pearson`; `unsupervised_angle` rows reproduce the label-free figures; `geo_below_chord_labels_angle` false at every point).
 [^pp]: `results/p1a_perpatch_direction_{vjepa2,vjepa2_constvel,random,vjepa2_hard,vjepa2_paper_layout}.json` (`curves.{perpos_mean_r2,pooled_mean_r2,pooled_frac_ge_0.5,cross_half_r2,meanpool_r2}`, `onsets.*`, `layers[].halves` for the cross-half MAE, `methods`, `provenance.time_averaging`); `figures/fig1g_perpatch_direction.png`, `fig1h_perpatch_heatmaps.png`; rendered-set layout (7 shared starts) in `results/session2_stimuli_validation.json` (`layout.start_rule`) and `scripts/render_hard_stimuli.py`.
 [^gcv]: `results/p1a_grouped_cv.json` (`sets.{direction,speed}_{vjepa2,random}.{stratified,direction_grouped,start_grouped,speed_grouped}.{onset,onset_ci}`); `figures/fig1i_grouped_cv.png`.
