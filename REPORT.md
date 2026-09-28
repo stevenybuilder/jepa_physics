@@ -31,12 +31,17 @@ band. Measured four ways, that count reflects anisotropy: a whitened erasure nee
 is rank-2 linear plus a second harmonic and a nonlinear residual (§3.2). Speed does not need fewer probes than
 direction (in raw coordinates and under one common R² stop too, except the paper protocol at point 8), and the ridge curves have no sawtooth. Under the paper's literal Adam
 recipe both variables' curves are jagged and K roughly doubles, with no direction-specific sawtooth. **Step 3
-reproduces in shape** (one probe fails, a few probes reach the target, MAE-to-true rises), with 3–5 probes to 10°
-where the paper reports ≈ 12° at about 20 (C.12). How it compares with a random orthonormal basis of fixed rank 2K depends on the
-evaluation probe: with a near-unregularised probe (α = 1e-3, or the C.11 Adam recipe; C.12 gives no recipe) the learned basis
-beats all 20 draws from N = 5, with my CV-chosen one only from N = 14. Against a rank-matched random basis it first beats all 20 draws at N = 2–7 (by variable
-and layer; N = 3 under the near-unregularised probes); at N = 1 it separates from neither. The same curve appears in an untrained
-network, and at the onset layer the learned basis never beats the rank-2K random basis for N ≤ 20. Rerunning Parts 1
+reproduces in shape and, with the paper's own steering basis, in count** (one probe fails, a few probes reach the
+target, MAE-to-true rises): with a ridge basis 3–5 probes reach 10°; with C.11's Adam probe sequence, the basis C.12
+steers along, it takes 18, where the paper reports ≈ 12° at about 20. Against a random orthonormal basis of fixed rank
+2K the ridge basis wins from N = 5 under a near-unregularised evaluation probe (α = 1e-3, or the C.11 Adam recipe; C.12
+gives no recipe) and from N = 14 under my CV-chosen one; the Adam basis beats neither null below N = K. Against a
+rank-matched random basis the ridge basis first beats all 20 draws at N = 2–7 (by variable and layer); at N = 1 it
+separates from neither. "One probe fails" is the edit, not the subspace: one probe's 2-D subspace steers to 3.2° once
+the edit is weighted by the activation covariance (3.6–5.2° under the other evaluation probes), though a random 2-D
+subspace weighted the same way reaches 9.6–12.0° (p = 0.14–0.33), so what the learned subspace buys is specificity
+(off-target speed change 0.03 against 13 m/s, edit norm 20 against 111), not target error. The same curve appears in
+an untrained network, and at the onset layer the learned basis never beats the rank-2K random basis for N ≤ 20. Rerunning Parts 1
 and 2 at the paper's literal 70/30 split changes no qualitative verdict. **Part 2.** Direction lies on a ring.
 My centroid-plane angle recovers it without labels at point 12 but not at point 22; Goodfire's own label-free angle
 fails its periodicity test at points 8 and 12 and passes at 22, where it sits up to 50° from θ on all 64 centroids
@@ -460,12 +465,29 @@ p = 0.048 at every N (mean 87.4° at N = 1). Source: `p1c_direction_L{2,9,22}.js
   target (stored: 5), the rank-2K null is beaten at the 1/21 floor from N = 5 for both (stored: p = 0.143 at N = 5,
   floor from N = 14), and the rank-matched null from N = 3 (stored: N = 6). The
   null reading therefore depends on how the evaluation probe is regularised, which C.12 does not fix.
+- **The paper's steering basis** (point 9, direction)[^adamb]. C.12 steers along C.11's Adam probe sequence, not a
+  ridge one. Refitting that sequence (lr 1e-3, wd 1e-4, batch 64; it reproduces the stored Adam run and stops at K = 84)
+  and steering with it: N = 1 / 2 / 3 / 5 / 10 / 20 / 84 give 84.1° / 81.1° / 77.7° / 69.2° / 27.9° / 7.3° / 2.9° to
+  target (ridge basis: 78.4° / 61.1° / 25.4° / 8.7° / 3.1° / 2.9° / 2.7° at N = 37). Eighteen Adam probes reach 10°,
+  against five ridge probes and the paper's about 20; N = 1–5 give 84–69°, the paper's "modest improvement (MAE > 50)".
+  The Adam basis beats the rank-matched null at the 1/21 floor from N = 12 but falls back to p = 0.095 at several N up
+  to 24, and beats the rank-2K (168-d) null only from N = 30.
+- **One probe's subspace, weighted by the covariance**[^r2cov]. The N = 1 edit above is Euclidean. The
+  covariance-weighted edit x + ΣW(WᵀΣW)⁻¹(y* − ŷ) in the same 2-D subspace (sample train covariance, no shrinkage;
+  Ledoit-Wolf gives the same) reaches 3.20° to target (85.96° to true) under the stored evaluation probe, and 4.05° /
+  3.61° / 5.19° under the α = 1e-3, Adam and split-half probes, against 78.4° / 58.0° / 68.6° / 82.3° for the Euclidean
+  edit. A random 2-D subspace weighted the same way reaches 9.6–12.0° (p = 0.14–0.33), with edits 5.6× larger (111 vs
+  19.8) and 390× more off-target speed change (13.0 vs 0.034 m/s); the learned subspace beats all 20 draws on both
+  (p = 1/21). The oracle (W = the evaluation probe) gives 0° by construction.
 
-**Verdict.** Fig. 24's shape reproduces with 3–4 probes under the near-unregularised and Adam evaluation probes and
-5 under my CV-chosen one (C.12 gives no recipe; mine is the closest to its R² = 0.99), rather than 20. The probes beat
-a random subspace of their own rank from N = 2–7 (N = 3 under the near-unregularised probes). Against a rank-2K
-random basis they win from N = 5 under those probes but only from N = 14 under mine, and an untrained
-network shows the same curve.
+**Verdict.** Fig. 24's shape reproduces, and so does its count once the basis is the paper's: 18 Adam probes to 10°
+against its about 20, where a ridge basis needs 3–5 (3–4 under the near-unregularised and Adam evaluation probes, 5
+under my CV-chosen one; C.12 gives no recipe). The ridge probes beat a random subspace of their own rank from N = 2–7
+(N = 3 under the near-unregularised probes) and a rank-2K random basis from N = 5 under those probes but only from
+N = 14 under mine; the Adam basis beats neither null below N = K, so at its N = 18–20 it steers no better than a random
+subspace of the same rank. "One probe fails" is the Euclidean edit: covariance-weighted, one probe's 2-D subspace
+steers to 3–5°, though no better on target error than a random covariance-weighted 2-D subspace. An untrained network
+shows the same curve.
 
 ### 3.4 The paper's 70/30 split
 
@@ -966,9 +988,10 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
   (R²≥.43), regardless of objective", classification CNNs included, so availability is their own finding; training buys
   precision, fewer probes to steer (4 vs 10 to reach 10°[^obj]) and a label-free ring.
 - **The linear representation hypothesis: right about the subspace, wrong about the moves.** Direction lives in a 2-D
-  linear subspace (sin, cos) with a ring on it, but the paper's §7.1 says "manipulating only the unit-circle subspace does not effectively steer direction", and our
-  only rank-2 edit (N = 1, §3.3) barely moves the readout; a covariance-weighted rank-2 edit is being run to tell whether
-  that is the edit or the subspace. The
+  linear subspace (sin, cos) with a ring on it, and the paper's §7.1 says "manipulating only the unit-circle subspace does not effectively steer direction". Here it
+  does, once the edit is covariance-weighted (3.2° from one probe's 2-D subspace, §3.3), but so does a random
+  covariance-weighted 2-D subspace on target error, so the subspace is right and its privilege is specificity, not
+  reach. The
   steering corollary is what fails geometrically: in the ring plane the straight path between distant directions
   crosses the empty interior (readout radius 0.61) where the curved path does not (0.86), though in the 64-D edit
   subspace it is no farther from real clips (§4.3). Independent readouts at the steered layer do not care; the
@@ -1076,6 +1099,8 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
 [^isol]: `results/p2_isometry_goodfire_labels.json` (`layers.{8,12,22}.labels_angle.{interp,smooth}.{geo,lin}_pearson`; `unsupervised_angle` rows reproduce the label-free figures; `geo_below_chord_labels_angle` false at every point).
 [^pp]: `results/p1a_perpatch_direction_{vjepa2,vjepa2_constvel,random,vjepa2_hard,vjepa2_paper_layout}.json` (`curves.{perpos_mean_r2,pooled_mean_r2,pooled_frac_ge_0.5,cross_half_r2,meanpool_r2}`, `onsets.*`, `layers[].halves` for the cross-half MAE, `methods`, `provenance.time_averaging`); `figures/fig1g_perpatch_direction.png`, `fig1h_perpatch_heatmaps.png`; rendered-set layout (7 shared starts) in `results/session2_stimuli_validation.json` (`layout.start_rule`) and `scripts/render_hard_stimuli.py`.
 [^hfolds]: `results/p1a_perpatch_hard_folds.json` (`sets.hard` for the stratified folds and `folds_start_grouped.hard` for start-grouped, each with per-point fold means ± SD and `summary.*.onset_per_fold`; `sets.paper_layout` alongside), cc41a6c.
+[^adamb]: `results/p1c_direction_L9_adam_basis.json` (per-N error to target / to true, both nulls with p, `n_to_10deg`, `K`, `comparison_vs_ridge_basis` incl. `null_dimension_note`); basis weights `artifacts/inlp/direction_direction_L9_adam_b64.npz` (sha256 in the JSON); `scripts/run_step3_adam_basis.py`; 36c4cdc, 94c96c7, baa8eac, 7dd1eb5; 216 tests.
+[^r2cov]: `results/p1c_direction_L9_rank2_covweighted.json` (Euclidean N = 1, covariance-weighted and oracle edits with error to target / to true, off-target speed and edit norm; the 20-draw Σ-weighted null with p; `evalprobe_variants` for α = 1e-3, Adam and split-half; Ledoit-Wolf check); `scripts/run_step3_rank2_covweighted.py`, `src/wm/steer.py:cov_weighted_delta`.
 [^seeds]: `results/p1a_perpatch_hard_seeds.json` (`by_point[].{perpos_mean_r2,cross_half_r2}.per_seed`, `onsets.{0,1,2}`, `jump_8_to_9`, `extra_point_curves`), `results/p1a_perpatch_direction_vjepa2_hard_seed{1,2}.json` (`layers[].halves.cross_r2_mean`), `results/p1a_perpatch_direction_random_hard{,_seed1}.json`, `figures/fig1j_perpatch_hard_seeds.png`; render seeds at 2abb3e9, extraction on the box from a frozen worktree (GPU forward 611 s), 3a8d7c7. The random-init control is one weight draw (seed 0) on two render seeds.
 [^appb]: `results/p1a_appB_sweep.json` (`variables.{direction,speed}.{per_point[].{sweep_cv_mean,sweep_cv_sd,lr,wd,grid},sweep_onset,sweep_onset_ci,ridge_onset_stored}`); 100 / 50 epochs from C.11 and batch 64 (our choice; neither appendix gives one); coupled L2 weight decay, App. B not saying Adam or AdamW; the best of the 20 configurations is selected on the same folds it is reported on, as our ridge α is over 13 values; fbdc60a, 212 tests.
 [^gcv]: `results/p1a_grouped_cv.json` (`sets.{direction,speed}_{vjepa2,random}.{stratified,direction_grouped,start_grouped,speed_grouped}.{onset,onset_ci}`; `sector_grouped` with its pooled-prediction `score`); `figures/fig1i_grouped_cv.png`.
