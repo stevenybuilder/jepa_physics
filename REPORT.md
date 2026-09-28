@@ -41,11 +41,16 @@ the learned probe buys is specificity, not target error.
 **One structural finding.** After the Physics Emergence Zone the direction code is better described in polar than in Cartesian coordinates at matched rank, as one harmonic (cos θ, sin θ) plus speed; the untrained copy is Cartesian from point 1 on (§4.4)[^coord]. This is an encoding result: in steering on constant-velocity carriers at the chord's norm Cartesian edits beat polar 2-D edits. That the ring is band-limited to k ≤ 2 comes from the centroid DFT (§3.2), not from this competition, which does not show the second harmonic is needed. In a rank-matched competition scored on held-out clips, the rank-2 head-to-head polar (cos θ, sin θ) minus Cartesian (v cos θ, v sin θ) is +0.015 [0.009, 0.022] held-out R² at point 12 and +0.009 [−0.001, 0.018] at point 22, ties at points 1–8 and excludes zero from point 9 on (except points 11 and 22); the untrained copy prefers Cartesian from point 1 on (−0.009 to −0.020; a tie at point 0). No candidate reaches the matched-rank knot-PC ceiling (margins −0.07 to −0.38), so this is a comparison between hand-built frames, not "the model's own coordinates". An earlier search that picked a 5-feature polar-Fourier frame at 6 of 7 points was a rank effect. A straight edit in (cos θ, sin θ, cos 2θ, sin 2θ) still crosses the ring's hollow like the chord (minimum path radius 0.61 / 0.63); through the predictor it steers about as well as the chord (28.6° against 25.7° frame-wide at block 22, the paper's spline 12.3°) and best on block-12 disk tokens (33.0° against 40.8°). On a rendered grid where acceleration is decorrelated from mean speed, acceleration is readable beyond mean speed after training (R² 0.44 at point 12, untrained ≈ 0) Whether it is a direct code or the per-step speed sequence is not decided: acceleration is an exact linear function of the per-step speeds, so removing in-set decoded speeds zeroes it by construction, while a speed decoder fit on other clips leaves 0.32 / 0.46 (points 12 / 22), room for a direct code; the paper's single-MLP claim cannot be tested as designed (§5).
 
 **One new thing.** Edits at points ≤ 12 wash out within a few blocks and barely reach the predictor's forecast; point-22
-edits survive to the output, and along the point-22 path the forecast follows the intermediate directions along the
-spline and jumps along the chord (−13.4° paired, −31.3° at large shifts). This is a probe of the forecast on one
+edits survive to the output, and along the point-22 path the forecast's heading code follows the intermediate
+directions along the spline and jumps along the chord (−13.4° paired, −31.3° at large shifts). This causal headline is
+about the heading readout of the forecast, not the whole forecast: without the heading probe every block-22 edit leaves
+the forecast nearer the source's forecast than the twin's (forced choice ≤ 0.12), moving it a fifth to a quarter of the
+way (whole-forecast recovery 0.15–0.26; twin identification 0.31–0.33 against chance 0.25 and 0.92 for the real twin),
+and at the natural norm the spline's probe advantage over the chord (12.3° against 25.7°) does not appear probe-free
+(recovery 0.186 against 0.234, twin identification 0.331 against 0.312; §4.5). This is a probe of the forecast on one
 stimulus and one 45° arc, not a rendered future. The wash-out holds at the edits' own norms, and speed shows it too. Scaled to the
 natural twin change, though, a point-12 speed edit moves the forecast's speed readout 0.57 of the way to the target,
-so for speed it is partly a matter of dose. Direction is not: at the natural norm a point-12 direction edit leaves the forecast 79.7° [72.5, 86.6] from the target with the chord and 87.9° with the spline (label-free knot order), against 92.1° unedited and 12.3° for the point-22 spline[^natdir]. Through point 12 the direction the forecast ends up carrying originates in the disk's tokens (swapping them moves it 0.88–0.99 of the way, §4.6; this is routing through the remaining encoder blocks, not a predictor-specific read). A frame-wide edit is repaired in proportion to its size (a random edit of the same norm decays faster still), and the same edit placed on the disk's tokens alone at the twin's per-token dose gets partway through (40.8° from target, R 0.62), where the same edit on as many background tokens, or at matched energy on all of them, does not (88.9°, 80.1°; §4.5); on the source disk's tokens alone, without the target twin's disk location, it still reaches 44.7° (the union set's extra tokens do nothing on their own), and the (cos θ, sin θ, cos 2θ, sin 2θ) edit there reaches 37.0°, while block 12 beats blocks 8, 16 and 19 (86.0°, 69.1°, 76.5°). A wall bounce written into the encoder follows the same pattern: the forecast turns 0.45 of the way to the reflected heading when the edit sits on the disk's tokens at block 12 and 0.48 when it spans all tokens at block 22, and about 0 the other way round (§4.5).
+so for speed it is partly a matter of dose. Direction is not: at the natural norm a point-12 direction edit leaves the forecast 79.7° [72.5, 86.6] from the target with the chord and 87.9° with the spline (label-free knot order), against 92.1° unedited and 12.3° for the point-22 spline[^natdir]. Through point 12 the direction the forecast ends up carrying originates in the disk's tokens (swapping them moves it 0.88–0.99 of the way, §4.6; this is routing through the remaining encoder blocks, not a predictor-specific read). A frame-wide edit is repaired in proportion to its size (a random edit of the same norm decays faster still), and the same edit placed on the disk's tokens alone at the twin's per-token dose gets partway through (40.8° from target, R 0.62), where the same edit on as many background tokens, or at matched energy on all of them, does not (88.9°, 80.1°; §4.5); on the source disk's tokens alone, without the target twin's disk location but still with the twin's per-token dose, it reaches 44.7° (65.8° with one uniform dose) (the union set's extra tokens do nothing on their own), and the (cos θ, sin θ, cos 2θ, sin 2θ) edit there reaches 37.0°, while block 12 beats blocks 8, 16 and 19 (86.0°, 69.1°, 76.5°). A wall bounce written into the encoder follows the same pattern: the forecast turns 0.45 of the way to the reflected heading when the edit sits on the disk's tokens at block 12 and 0.48 when it spans all tokens at block 22, and about 0 the other way round (§4.5).
 
 **One negative.** At held-out endpoints the paper's comparison baseline, the chord between the raw centroids (A.9), run
 with our matched-support edit, lands closer than our smoothing spline: over 16 held-out arcs on one arc set, 6.65° against
@@ -53,7 +58,7 @@ with our matched-support edit, lands closer than our smoothing spline: over 16 h
 within arc; §4.3 unified bake-off)[^bake16]. On the headline arc alone the gap was +5.0° [3.9, 6.1] and +7.0° [6.0, 8.1]
 (4.7° against 9.7°, 3.6° against 10.7°), the extreme case at point 12 and second-largest at point 22 (one arc, seed 16, reaches +8.3°); in the earlier per-arc runs the raw chord's lead across the 16 arcs is +1.3° ± 1.8 SD at point 12, with the spline ahead on 3,
 and +2.3° ± 2.0 at point 22, with the spline ahead on none. The spline ties only the chord between its own smoothed knots, which was our line arm until
-the parity audit[^rawchord]. A diagnosis run after the fact (§4.3) traces most of the point-22 endpoint loss to our own FITPACK smoothing spline: with the paper's interpolating spline the chord's lead over 16 arcs falls from +2.33° to +0.84° (spline ahead on 4/16). That story holds at point 22 only: at point 12 on value-ordered knots the interpolating spline is worse than our smoother (+0.81° → +1.56°, ahead on 2/16), and it loses nearest-real R to the chord on every arc at both points. A cross-validated Reinsch smoother, a rule written after seeing the headline arc and scored on the test read (post hoc, exploratory), wins by under 1°, a margin the true held-out centroid itself does not reach on the same probe (it trails the chord by 0.3°), so that win is reader alignment, not a better aim point. On one arc set, every curved arm keeps the higher path radius (minimum radius +0.21 to +0.33 over the chord at both points), while the paper's interpolating spline on our stored label-free point-12 angle overshoots off the ring (endpoint 34.5°, mean radius 1.52) and at point 22 owes part of its radius to a 1.43× larger edit; a straight edit in polar-harmonic coordinates (cos θ, sin θ, cos 2θ, sin 2θ) lands 4.75° and 3.68° off at own norm, behind the probe-subspace steer at point 12 (4.12°) and behind the chord at the chord's norm at point 22 (+2.13° [1.94, 2.32]), with the chord's path radius (§4.3). Two statements hold side by side and should not be merged into "curves buy the path, not the endpoint": at the encoder's held-out endpoint the spline does not beat the chord, while through the predictor at point 22 the spline's forecast is much closer to the target than the chord's (11.3° [10.4, 12.3] against 27.2° [24.4, 30.5] at own norm and 12.3° [11.2, 13.6] against 25.7° [23.2, 28.3] at the natural norm, 200 carriers × 4 targets; §4.5), with the caveat that the own-norm spline edit is larger (§4.5). Speed and acceleration are straight, and there the spline
+the parity audit[^rawchord]. A diagnosis run after the fact (§4.3) traces most of the point-22 endpoint loss to our own FITPACK smoothing spline: with the paper's interpolating spline the chord's lead over 16 arcs falls from +2.33° to +0.84° (spline ahead on 4/16). That story holds at point 22 only: at point 12 on value-ordered knots the interpolating spline is worse than our smoother (+0.81° → +1.56°, ahead on 2/16), and it loses nearest-real R to the chord on every arc at both points. A cross-validated Reinsch smoother, a rule written after seeing the headline arc and scored on the test read (post hoc, exploratory), wins by under 1°, a margin the true held-out centroid itself does not reach on the same probe (it trails the chord by 0.3°), so that win is reader alignment, not a better aim point. On one arc set, every curved arm keeps the higher path radius (minimum radius +0.21 to +0.33 over the chord at both points), while the paper's interpolating spline on our stored label-free point-12 angle overshoots off the ring (endpoint 34.5°, mean radius 1.52) and at point 22 owes part of its radius to a 1.43× larger edit; a straight edit in polar-harmonic coordinates (cos θ, sin θ, cos 2θ, sin 2θ) lands 4.75° and 3.68° off at own norm, behind the probe-subspace steer at point 12 (4.12°) and behind the chord at the chord's norm at point 22 (+2.13° [1.94, 2.32]), with the chord's path radius (§4.3). Two statements hold side by side and should not be merged into "curves buy the path, not the endpoint": at the encoder's held-out endpoint the spline does not beat the chord, while through the predictor at point 22 the heading code of the spline's forecast is much closer to the target than the chord's (11.3° [10.4, 12.3] against 27.2° [24.4, 30.5] at own norm and 12.3° [11.2, 13.6] against 25.7° [23.2, 28.3] at the natural norm, 200 carriers × 4 targets; §4.5), with the caveat that the own-norm spline edit is larger (§4.5). Speed and acceleration are straight, and there the spline
 adds nothing; in extrapolation our smoothing spline, continued along its end tangent as the authors' code does, trails
 the chord by 0.02–0.06, while the authors' own interpolating arm beats the chord on speed and trails it on
 acceleration[^ext].
@@ -953,7 +958,7 @@ smoothed knots gets −0.21° and −0.52°). The ring's bend across the gap is 
 against 3.9 / 2.6 PCA units), and the ridge probe reads chord points almost exactly by construction (the chord's aim
 point reads 1.5° off, the true held-out centroid 2.9°), which is why the oracle aim above does not beat the chord. So at this gap width the endpoint cannot separate the two methods by more than about 1°, the earlier
 "chord beats spline" numbers in this section overstate the method's loss by 5–7° on the headline arc and 1–2° over 16
-arcs, and the spline's advantage is on the path (readout radius, ordering, and the forecast following it in §4.5),
+arcs, and the spline's advantage is on the path (readout radius, ordering, and the forecast's heading code following it in §4.5, a probe readout),
 not at the endpoint. The predictor-level results of §4.5 used the interpolating spline and are unaffected.
 
 **All six arms on one arc set (unified bake-off)**[^bake16]. The comparisons above were run piecemeal (different arms on
@@ -993,9 +998,10 @@ fidelity. The 34.5° mean is carried by three arcs (131.9°, 129.1° and 94.7°)
 to the chord is about ±21° (SD 42.9 over 16 arcs), so the clip-bootstrap interval printed in the table is far too
 narrow for this arm. The QA audit's recomputation of the knots (not stored in a results file) finds a minimum knot
 spacing of 0.168° (arc 0) and 0.015° (arc 5) on the label-free angle against 5.625° on the labels, and 7 of 56
-consecutive knot steps out of value order; given the label value as its coordinate, as the authors' code is, the same
-spline is +1.56° from the chord. The same knot-order failure explains the spline's failure as a disk-token edit through the predictor
-(100.4° on label-free knots against 68.1° on label-ordered knots; §4.5). (ii) At point 22 its radius advantage is partly dose: its edit is 1.43× the chord's norm, and at the chord's
+consecutive knot steps out of value order; given the label value as its coordinate, which is our departure (the paper's cyclic coordinate is a label-free atan2 of
+the top two PCs, A.3, and causalab's cyclic configs use `intrinsic_mode: pca`), the same spline is +1.56° from the chord.
+Knot order also accounts for 32.2° of the 55.7° gap between the spline and the chord as a disk-token edit through the
+predictor (100.4° on label-free knots against 68.1° on label-ordered knots, chord 44.7°; §4.5); 23.5° remain. (ii) At point 22 its radius advantage is partly dose: its edit is 1.43× the chord's norm, and at the chord's
 norm its minimum radius falls from 0.92 to 0.74 and its endpoint error rises from 5.0° to 17.0° [16.7, 17.5]; the
 Reinsch and FITPACK arms keep 0.86 and 0.84 at the chord's norm (endpoint 5.0° and 7.6°), so the dose-clean path radius of a curved arm at point 22 is 0.84–0.86 against the chord's 0.61, not the interpolating spline's 0.92. (iii) The probe-subspace steer at
 point 22 uses a 1.5× larger edit than the chord (37–56 probes per arc); at the chord's norm it reads 22.8° [22.0, 23.7]
@@ -1324,7 +1330,10 @@ fitted end): through the predictor at block 22 (natural norm) the Fourier edit r
 continued along its end tangent and 27.2° for the chord to the nearest knot (Fourier − spline +10.0° [7.0, 13.0]); at
 block 12 on disk tokens 62.3° against 92.1° and 57.9°. At the encoder level, with no predictor, the half-ring Fourier edit
 wins at both blocks (block 22, own norm: 5.3° against 7.6° for the spline and 25.4° for the chord; block 12: 10.7°
-against 15.0° and 25.9°). So the four-number frame steers about as well as the chord, is the best arm on block-12 disk
+against 15.0° and 25.9°). Which rule wins depends on readout and site: through the predictor at block 22 the spline
+continued along its tangent wins by the probe (12.2° at own norm) with an edit 1.9–3.3× the others' own norms (median
+36.1–36.7 against 18.1–19.2 for the Fourier edit and 11.0–14.1 for the chord), and is worst without the probe (recovery
+0.09 at own norm and 0.07 at the natural norm, against 0.17–0.18 for the Fourier edit). So the four-number frame steers about as well as the chord, is the best arm on block-12 disk
 tokens, trails the paper's spline by about 16° frame-wide at block 22, and extrapolates in the encoder but not through
 the predictor. No FITPACK arm was run.
 
@@ -1642,7 +1651,7 @@ unlike speed (R 0.57). The encoder removes the edit in proportion: 17.5% of the 
 to block 24 at both doses, against 69% at block 24 for a point-22 edit. The one point-12 edit that does reach the
 forecast puts the chord direction on the disk tokens alone (9% of context tokens), each at the twin's own per-token
 change: 40.8° [35.6, 46.3] (R 0.62), with the null at 116.4° and the spline, whose direction differs, at 100.2°. It
-still falls well short of the twin. The location, not the dose, is what matters[^bgctrl]: the same edit on as many
+still falls well short of the twin. Location matters as well as dose[^bgctrl]: the same edit on as many
 background tokens (median 87) with the disk tokens' own per-token magnitudes, permuted, leaves the forecast at 88.9°
 [81.7, 95.6] (R 0.09; 48.0° [41.9, 54.6] worse than the disk tokens, paired), and the same total energy spread over all
 background tokens (median 937) reaches 80.1° [73.2, 87.1] (R 0.25; 39.3° [32.9, 46.0] worse), no better than the pooled
@@ -1651,13 +1660,19 @@ reaches 67.0° [61.6, 72.6] (R 0.31) and at point 19 70.6° [63.6, 77.6] (R 0.59
 36.9] worse than at point 12 despite a larger edit energy (median 4.3 × 10⁵ and 6.3 × 10⁵ against 3.2 × 10⁵). So at
 point 12 a direction edit reaches the forecast when it is put on the disk's tokens and not when the same energy is put
 anywhere else; that is a location effect on 200 carriers, and it still recovers under two-thirds of the twin's move
-(40.8° against 92.1° unedited and 9.1° for the twin). It is not a location oracle[^dsweep]. The disk-token set was the union of the source clip's disk and the target
+(40.8° against 92.1° unedited and 9.1° for the twin). The token set is not an oracle, but the per-token dose still
+carries the twin's geometry[^dsweep]. The disk-token set was the union of the source clip's disk and the target
 twin's disk (plus a one-patch ring), so it carried where the disk will be under the target motion. On the source disk
 alone (median 76 tokens against 87) the same edit reaches 44.7° [38.8, 50.4] (R 0.60), 3.8° [2.3, 5.3] worse than the
-union, and the tokens the twin's location adds do nothing on their own (91.5°, R 0.02). What the twin still supplies is
-the per-token dose pattern: one uniform dose on the same source tokens reaches 65.8° (21.1° [17.1, 25.6] worse). Dose
+union, and the tokens the twin's location adds do nothing on their own (91.5°, R 0.02), though they are few (median 12
+tokens, 17% of pairs with none, 0.115× the source set's edit energy) and add 3.8° jointly. What the twin still supplies is
+the per-token dose pattern, since every source token gets the target twin's own per-token change: one uniform dose on
+the same source tokens (0.83× the energy) reaches 65.8° (21.1° [17.1, 25.6] worse). A dose that uses no twin
+information was running at submission time and is the test of whether the source-disk result survives without the
+twin's geometry. Dose
 matters in both directions: R rises 0.30 / 0.60 / 0.82 at 0.5× / 1× / 2× the twin's per-token change, but the error is
-76.2° / 44.7° / 49.5° (2× overshoots, +4.8° [0.2, 9.4]). On the source tokens the straight edit in (cos θ, sin θ, cos 2θ,
+76.2° / 44.7° / 49.5° (at 2× the error rises by 4.8° [0.2, 9.4] while R is still 0.82 [0.73, 0.90] < 1, so the extra dose
+goes off-axis rather than past the target). On the source tokens the straight edit in (cos θ, sin θ, cos 2θ,
 sin 2θ) is the best arm, 37.0° [32.1, 42.3] (R 0.71; 7.7° [5.1, 10.6] better than the chord). The paper's interpolating
 spline fails there on the label-free knot order (100.4°, worse than unedited; own norm 88.5 against 9.2 for the chord)
 and recovers on label-ordered knots (68.1°, −32.2° [−37.0, −27.5]; own norm 14.1), still 23.5° [19.4, 27.7] behind the
@@ -1765,6 +1780,16 @@ correlation, and at point 22 on these carriers it is not a speed channel the for
 16 carriers, no target (the angle is kept), and a direction-set speed label that puts the 750 accelerating clips at 0,
 so the curve that converts radius to speed mixes motion types.
 
+*Without the heading probe*[^f4p]. The Fourier-4 run scores the block-22 forecasts three probe-free ways against the
+rendered twin's forecast (positive control: the twin's own cached forecast reaches forced choice 0.995, recovery 0.989,
+twin identification 0.924). Every arm stays nearer the source's forecast: at the natural norm forced choice is 0.059 /
+0.094 / 0.116 / 0.016 (spline / chord / Fourier / null), whole-forecast recovery 0.186 / 0.234 / 0.261 / 0.112 and 4-way
+twin identification 0.331 / 0.312 / 0.315 / 0.249 (own norm: recovery 0.172 / 0.154 / 0.161 / 0.084, twin identification
+0.331 / 0.310 / 0.315 / 0.250). So the edits move the whole forecast a fifth to a quarter of the way to the twin's and
+point it at the right twin only slightly above chance, and the probe's ranking (spline 12.3° against chord 25.7°) is not
+reproduced probe-free, where the chord recovers more. Every forecast-level claim in this section is about the forecast's
+heading code as read by the predictor-native probe.
+
 *Writing a contact into the encoder*[^csteer]. The 96 straight twins of the in-context contact set (§5) are edited on
 their post-contact context slots with a bounce direction: the mean bounce-minus-straight difference of the other clips
 with the same wall and approach side (leave one pair out), read by a transfer reader that never saw an in-context clip.
@@ -1777,7 +1802,9 @@ difference gives the same 0.48 at both places as the borrowed one; pasting in th
 reaches 0.82 / 0.90 (blocks 22 / 12). Early contact turns the forecast more than late (0.53 against 0.39, block 22), and
 the encoder's own context reading moves with it (0.62 for the block-22 all-token edit against 0.67 for real bounces). So
 contact, an event, can be written into the encoder and the predictor carries it into the forecast, with the same
-depth-and-token pattern as direction: through the object's tokens at block 12 and frame-wide at block 22 (§4.6).
+depth-and-token pattern as direction: through the object's tokens at block 12 and frame-wide at block 22 (§4.6). Every control so far is equally consistent with a narrower reading, that the edit writes the post-contact heading
+into slots where the bounce clip already moves along the reflected direction; the deciding control, a heading change
+on the same slots with no wall (straight-out minus straight-in), was still running at submission time.
 
 ### 4.6 Which tokens carry direction, by depth (token-source patching at the predictor)
 
@@ -1975,6 +2002,7 @@ power calculation.
 | Contact steer (§4.5) | clip | 96 straight-twin carriers | leave-one-pair-out bounce direction; transfer reader never saw an in-context clip | clip bootstrap | turn 0.48 [0.40, 0.55] (all tokens, block 22), 0.45 [0.40, 0.50] (disk tokens, block 12) | ≈ 0.05–0.08 |
 | Four-number edit through the predictor (§4.4) | carrier | 200 × 4 (extrapolation: 179 carriers) | 45° arc; half-ring folds for extrapolation | carrier bootstrap | Fourier − chord +2.9° [1.0, 4.5] (block 22, natural), −7.8° [−10.8, −5.1] (block 12 disk tokens) | ≈ 1.8–2.8° |
 | Relative-speed shape (§5) | clip | 306 knot / 203 probe / 128 test | knot fit, probe CV, test scored only | clip bootstrap | activations − decoded-v1,v2 quadratic, held-out R² +0.70 [0.57, 0.85] (block 12), +0.94 [0.88, 1.02] (block 22) | ≈ 0.07–0.14 |
+| Block-22 forecast without the heading probe (§4.5) | carrier | 200 × 4 | 45° arc | carrier bootstrap | recovery 0.186 (spline) / 0.234 (chord) / 0.112 (null); twin identification 0.331 / 0.312 / 0.249 (chance 0.25; real twin 0.92) | ≈ 0.02 |
 | Static-disk control (§5) | clip, paired | 96 static + their 96 moving twins | held-out speed clips re-rendered | 1000-draw clip bootstrap, ratio of means | static ÷ moving 1.07 [1.05, 1.08] (mean direction, point 12) | ≈ 0.02–0.04 |
 | Acceleration through the predictor (§4.5) | carrier | 128 × 4 targets | held-out 7.52–8.61 m/s² block | 1000-draw clip bootstrap (SE stored) | spline error 1.82 [1.65, 2.00] m/s² (point 21, own norm); spline − chord −0.010 [−0.012, −0.007] | ≈ 0.18 m/s²; 0.003 paired |
 | COAST as written (§4.4) | clip within arc, per arc | 16 arcs × 384 steers | 45° arc | per-arc clip bootstrap; summary mean ± SD over arcs | every conceptor arm 91.0–102.0° against the chord's 6.7° / 4.2°, CI above zero on 16/16 arcs | effect ≫ interval |
