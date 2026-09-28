@@ -51,8 +51,8 @@ every arc. The endpoint error ties at point 12 (+0.08° ± 1.47) and at point 22
 "negative_endpoint"). Endpoint readouts that did not build the edit (nearest-real-clip agreement, an MLP on disjoint
 clips) do not separate the two; the labels of the real clips nearest the path midpoint do. The spline's advantage over
 the chord is in the ring plane and in the forecast, not in distance to real clips in the full subspace, where the chord
-is as close at point 12 and closer at point 22. Speed and acceleration are straight, and there the spline adds nothing; in extrapolation it ties the chord once it is
-continued along its end tangent, as the authors' code does[^ext].
+is as close at point 12 and closer at point 22. Speed and acceleration are straight, and there the spline adds nothing; in extrapolation, continued along its end
+tangent as the authors' code does, it trails the chord by 0.02–0.07 with the CI clear of zero on all four runs[^ext].
 **Beyond the steered layer (GPU session 2).** Edits at points ≤ 12 wash out within a few blocks and barely reach the
 predictor's forecast. Point-22 edits survive to the output with little target specificity. Probes fit on the
 predictor's own forecasts show point-22 edits moving the forecast to 11.3–44.2° of the held-out target (the smoothing spline is the 44.2°;
@@ -134,12 +134,14 @@ speed needs more probes there, and fewer from layer 3 on. Goodfire's paper
 has a smaller one of its own: A.3 derives the cyclic coordinate as atan2(PC2, PC1) "in an unsupervised manner", and
 the weekdays and months 8B configs, the paper's cyclic runs, do inherit that mode (`intrinsic_mode: pca` in
 `configs/analysis/activation_manifold.yaml`); the sequential tasks use the ordinal index as A.3 says (alphabet and
-age configs `parameter`). The only text-vs-config gap is the 70B weekdays and months configs, which set `parameter`,
+age configs `parameter`). The coordinate's only text-vs-config gap is the 70B weekdays and months configs, which set `parameter`,
 the labels, for a model the paper's one-dimensional experiments do not report (A.2: 8B layer 28 "for all tasks").
 A.6 says K = 50 waypoints, which the weekdays/months 8B and alphabet_8b_n3 configs use, where alphabet/age 8B use
 150/250, the 70B configs 100–150 and the grid/cylinder configs 20. A.8 parameterises the pullback path as a natural
 cubic through 10 free control vectors, while C.3 says that "following the language-model setup, all K + 1 waypoints
-(including endpoints) are free parameters", with K = 30.
+(including endpoints) are free parameters", with K = 30; the released configs run weekdays, months and age with
+free points, a kNN-graph start and no norm term (`configs/analysis/pullback.yaml` defaults), and only alphabet 8B with
+A.8's spline, linear start and 5·10⁻⁴ norm weight.
 
 **Probe-recipe parity** (point = CV-peak layer; pooled out-of-fold R², targets standardised for Adam[^recipe]):
 ridge vs Adam (C.11 recipe) is 0.9905 vs 0.9858 for direction, 0.9940 vs 0.9882 for speed and 0.9925 vs 0.9871 for
@@ -529,7 +531,7 @@ label-free recovery here is my extension, the centroid-plane fallback, and it wo
   one rebuilds held-out centroids worse and makes a larger edit.
 - **Circle, ellipse or bent line?** (`p2_ellipse_direction.json`, `figures/fig4g_ellipse_direction.png`). An ellipse.
   In the plane of the ring's own cos θ / sin θ component the axis ratio b/a is 0.74 / 0.87 / 0.74 at points 8 / 12 / 22
-  by a direct conic fit, 0.74 / 0.82 / 0.72 from the full-space rank-2 chart, and 0.76 / 0.76 / 0.66 from the 2θ
+  by a direct conic fit, 0.74 / 0.82 / 0.73 from the full-space rank-2 chart, and 0.76 / 0.76 / 0.66 from the 2θ
   distortion of the label-free atan2 angle. Points 2–4 are much flatter (0.38–0.43) and point 10 is nearly round
   (0.89). Geometric residual in centroid-noise units at points 8 / 12 / 22: ellipse 0.92 / 1.15 / 1.11, circle 1.22 /
   1.55 / 1.36, smoothing spline 0.92–0.97 (about 1 by construction). So the ellipse sits at the noise floor and the
@@ -703,8 +705,8 @@ at point 12, CIs split 4 above / 9 below) and at point 22 it is farther (+0.030,
 5-NN excess is +0.22 / +0.17 for the spline at points 22 / 12 (CI above zero in 17 / 7 of 17 runs; point-22 figures in this paragraph use the all-labels arc set,
 `results/p2_shift_dependence_labels22.json`, `results/p2_ring_occupancy_L22_labels22.json`). So "the chord cuts
 through the ring" holds in the ring plane only, and so does Goodfire's low-density-region premise here. For speed and
-acceleration all arms coincide with the chord, extrapolation included: continued along its end tangent the smoothing
-spline trails the chord by 0.02–0.07 on all four (all "path_geometry_positive"), and the authors'-code arm beats its
+acceleration all arms coincide with the chord inside the knots; in extrapolation, continued along its end tangent, the
+smoothing spline trails the chord by 0.02–0.07 with the CI clear of zero on all four (all "path_geometry_positive"), and the authors'-code arm beats its
 chord on speed and trails it on acceleration. The large extrapolation losses I reported earlier came from extending the
 end cubic piece past the last knot, my choice, not the method's.
 
@@ -737,8 +739,8 @@ keeps intermediate states on the ring in its plane (not closer to real clips in 
 without labels only at point 12, through my centroid-plane fallback; Goodfire's own label-free angle fails its
 periodicity test there, and point-22 steering and session 2 at points 2, 8 and 22 use the labels (§4.1). **Limitations**:
 at held-out endpoints it offers nothing a chord does not; the interpolating version rebuilds held-out centroids worse
-than the smoothing one and edits 1.4–1.6× more than the chord (hence smoothing); on scalars it adds nothing, and in
-extrapolation it ties the chord once continued along its end tangent, as the authors' code does. **Failure cases**: the
+than the smoothing one and edits 1.4–1.6× more than the chord (hence smoothing); on scalars it adds nothing inside the
+knots and trails the chord by 0.02–0.07 in extrapolation, even continued along its end tangent as the authors' code does. **Failure cases**: the
 point-22 endpoint on 1 of 16 arcs (+3.7°) and on the headline arc (+3.80°), and the position sheet.
 
 - **Cosine between the Part 1 step and the spline** (additional metric; contiguous design, same rows; the Part 1
@@ -877,10 +879,13 @@ conditions; ≈ 165° for the best arms), again
 picture holds: edits at points ≤ 12 are repaired, edits at point 22 or later reach the forecast. The route effect does not carry over.
 Paired spline − chord is +3.1° [2.1, 4.2] at own norms, +10.8° [9.4, 12.6] at the chord's norm (point 22: −7.7° [−10.6,
 −5.0]) and −2.1° [−3.8, −0.4] at the natural norm (point 22: −13.4°). "The spline beats the chord at matched norm" is a
-point-22 result; at the encoder output the chord is as good or better. For comparison with Goodfire: its §5 world-model
-evidence is qualitative, decoded frames along one linear and one manifold path between two car positions
-(`refs/steering_paper.txt` l.1850–1874). A probe readout over 800 carrier-target pairs is a stronger test of the same
-claim, not an analogue of theirs.
+point-22 result; at the encoder output the verdict is mixed: the chord is better at its own norm and at the chord's
+norm, the spline is better at the natural-change norm (2.1° and 13.3 px), and the matched-norm effect shrinks from
+13.4° to 2.1°. For comparison with Goodfire: its §5 world-model evidence is about the intermediate waypoints,
+decoded frames that teleport along the linear path and move smoothly along the manifold path, with the pullback of
+C.3 behind it (`refs/steering_paper.txt` l.1850–1880, C.3). The point-25 run here reads the endpoint only; the
+along-path readout (§4.5 above) was run at point 22, not at point 25, so at Goodfire's own site the intermediate-state
+claim is untested here.
 
 **The forecast read along the path**[^ap]. Nine waypoints (t = 0, 0.125, …, 1) per point-22 path, scaled so the
 endpoint equals the natural twin change (t = 1 reproduces the cells above); random: a line with the spline's norms.
@@ -916,7 +921,7 @@ objective the predictor can be steered along an off-ring route, so the reverse d
 objective is weaker than Goodfire's full pullback objective, which also penalises leaving real behaviour, and the
 protocol differs from A.8 in four ways: one path per clip instead of one path shared by 16 carriers at the same source
 value, an additive edit instead of a replacement of the top PCs, 64 PCs instead of 32, and a hard norm cap where
-Goodfire uses no norm term for weekdays (a small one for months and age). The first two plausibly favour an off-ring
+Goodfire's released configs use no norm term for weekdays, months or age (A.8's text gives months and age a small one; only the alphabet config carries it). The first two plausibly favour an off-ring
 route; the cap and the on-ring zero start work against one, so the departures do not all point the same way. The full-space comparison is at equal t,
 not A.9's closest-point residual. A rerun with Goodfire's recipe is in progress. A negative, as run.
 
