@@ -167,8 +167,9 @@ the CI. Source: `p1a_{var}_meanpool.json`.
 
 **Mean-pooled curve.** Direction is at 0.875 after one block, and no variable declines late. Disk-pooling changes little
 (direction peak 0.994, onset still 2[^disk]). The onset does not depend on how the CV folds are grouped (the paper's
-App. B says "5-fold grouped" without the key): direction onset is 2 [2, 2] with stratified, direction-grouped and
-start-grouped folds, and speed onset 1 [1, 1] with stratified and speed-grouped folds[^gcv]. Per the paper's own C.5,
+App. B says "5-fold grouped" without the key): direction onset is 2 [2, 2] with stratified, direction-grouped, start-grouped and
+8-sector-grouped folds (block 1 R² 0.875 / 0.847 / 0.869 / 0.828), and speed onset 1 [1, 1] with stratified and
+speed-grouped folds[^gcv]. Per the paper's own C.5,
 though, the pooled curve is expected to rise early and gradually, so it is the wrong readout to test the emergence zone
 against. The per-patch test is below.
 
@@ -273,10 +274,13 @@ bounds; they reuse 7 start positions across all (θ, v) pairs; each hard set is 
 **Verdict.** On a harder stimulus, across three render seeds, one part of the paper's signature replicates: half-frame
 transfer is negative at points 7–8 and positive from point 9 on every seed (paper layers 6–7 → 8). The sharp per-patch
 rise does not: the largest rise is at points 4 → 6 on every seed, the 90% onset is 8 on two seeds and 9 on one, and the
-random network's per-position curve also plateaus by point 6 (stratified folds; a start-grouped refit is in progress).
+random network's per-position curve also plateaus by point 6. A 5-fold refit on seed 0 gives per-fold onsets 8, 9, 9,
+8, 8 on the stored stratified folds and 9 in all five folds when whole start positions are held out (per-position
+0.17 → 0.71 → 0.72 → 0.89 at points 4 / 6 / 8 / 9, so the largest rise is still 4 → 6); the cross-half sign change
+across 8 → 9 appears in 5 of 5 folds under both schemes[^hfolds].
 On the supplied clips neither part appears: the per-patch code forms by block 6 with no step at points 8 → 9, while the mean-pooled
 curve is early under every fold grouping and at the paper's clip count. What training changes on both stimulus sets is
-the per-position code from point 6 on (supplied: V-JEPA 2 0.96–0.98 against a mean of 0.39 for the random network;
+the per-position code from point 6 on (supplied: V-JEPA 2 0.94–0.98 against a mean of 0.39 for the random network;
 hard: 0.81–0.97 against 0.57–0.62), not pooled availability; the half-frame dip is not separable from random, whose
 transfer varies by render seed.
 
@@ -327,7 +331,7 @@ and `p1b_*_random_L{pt}.json`.
   columns. Removing one column per round (alternating sin/cos, or the top singular vector) takes 72–73 rounds nested
   and 84–92 under the paper protocol at point 9, about twice the stored 37 / 46, so the removed dimension count is
   about the same. Under ridge it creates no sawtooth (R² drop autocorrelation 0.82–0.84 nested, no isolated dips);
-  under Adam the drops stay negatively autocorrelated, as with two columns, and one-column removal gives direction 1–2
+  under Adam the drops are negatively autocorrelated on acc15 (two-column full-batch R²: +0.22), and one-column removal gives direction 1–2
   isolated dips (alternating: 1 on R²; top singular vector: 2 on acc15; two-column: 0) against speed's 2, so still no
   direction-specific sawtooth[^onecol].
 - **Sawtooth.** Under ridge there is none. There are no isolated dips at any direction layer under either protocol.
@@ -336,12 +340,12 @@ and `p1b_*_random_L{pt}.json`.
   protocol (−0.24 at point 2, −0.06 at point 8, 0.27 at point 9, 0.19 at point 22). The paper's Fig. 23 teeth are about
   65 points deep by eye; here successive probes' readouts are 9–15° apart under ridge (mean consecutive readout angle,
   points 2–22), where a sin/cos pairing would put them near 90°[^saw].
-- **Sawtooth on metrics both variables share** (8-bin accuracy and R², points 8 and 9)[^saw]. On 8-bin accuracy the
-  drop autocorrelation under nested ridge is positive for both variables (direction 0.60 / 0.45, speed 0.68 / 0.74 at
-  points 8 / 9); under the Adam recipe it is negative for both (direction −0.25 to −0.46, speed −0.38 to −0.50), and
-  Adam's isolated dips number 1–3 per run for speed against 0–2 for direction. The "no isolated dips" statements for
-  direction, here and in the Adam bullet, hold on within-15° accuracy only (on 8-bin accuracy the ridge paper-protocol
-  run at point 8 has one). On a common metric speed is at least as jagged as direction.
+- **Sawtooth on metrics both variables share** (8-bin accuracy and R², points 8 and 9)[^saw]. On 8-bin accuracy (bin edges at label midpoints, so no label sits on an edge; an earlier edge-on-label binning is
+  kept beside it) the drop autocorrelation under nested ridge is positive for both variables (direction 0.54 / 0.55,
+  speed 0.66 / 0.73 at points 8 / 9); under the Adam recipe it is negative for both (direction −0.30 to −0.39, speed
+  −0.38 to −0.47), and Adam's isolated dips number 0–3 per run for speed against 0–1 for direction (one, at point 9,
+  batch 64). Under ridge no direction run has an 8-bin dip. On a common metric speed is at least as jagged as
+  direction.
 - **Adam sequence (the C.11 recipe, run literally, targets standardised).** Direction reaches chance after K = 84
   probes (batch 64) or 96 (full batch) at point 9, and 88 or 100 at point 8. Speed takes 95 or 91 at point 9 and 104
   or 102 at point 8. That is about 2× the ridge paper-protocol K at point 9 (46 direction, 45 speed); for direction at
@@ -371,8 +375,10 @@ al.'s sheared circle. "Tens of dimensions" is a conditioning count of an anisotr
 intrinsic rank; beyond that code lies a nonlinear residual that grows toward the output.
 
 **Verdict.** The "tens of dimensions" claim reproduces at the paper's layer against a random band. The claim that
-speed needs fewer probes does not reproduce under ridge (counts are equal; in the paper's own unit, dimensions, 2K for
-direction, speed does need fewer in every cell), and direction's sawtooth does not appear under ridge. Under Adam both curves are
+speed needs fewer probes does not reproduce under ridge: probe counts are equal, and in dimensions (2K for direction,
+K for speed, C.11's unit) speed needs fewer under C.11's thresholds in every cell but not under the Fig. 22 caption's
+(nested 42 vs 60 at point 8, 46 vs 47 at point 9, 74 vs 102 at the peaks; paper protocol 84 vs 57, 50 vs 50, 78 vs
+118). Direction's sawtooth does not appear under ridge. Under Adam both curves are
 jagged, speed's as much as direction's on a metric both share, so the jaggedness tracks the recipe, not the variable.
 The absolute counts depend on the coordinates (1.4–1.6× larger raw) and on which stop rule fires, which is looser for
 the scalars.
@@ -905,7 +911,7 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
 - **Detection vs use.** Detection is easy on this data. A random network, and random features of a 32-number
   trajectory, detect all three variables at R² ≥ 0.85. Use is where the evidence thins. The Part 1 edit moves a
   held-out linear probe, but whether it beats a rank-2K random basis depends on the evaluation probe (from N = 5
-  under the paper's, N = 14 under mine; a rank-matched one from N = 2–7), it works in an untrained network too, and it
+  under the near-unregularised probes, N = 14 under mine; a rank-matched one from N = 2–7), it works in an untrained network too, and it
   leaves an MLP on disjoint clips 19–31° off. On the ladder in `PART2_RATIONALE.md` §2, this project reaches rung 3 at
   the steered layer and rung 4 only by circular measures. Rung 5 was tested: at point 22 and at the encoder output the
   edit reaches the predictor's forecast; at points ≤ 12 it washes out and does not (§4.5). At point 22 the forecast
@@ -931,10 +937,10 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
 
 ## 7. Limitations and next steps
 
-- **Stimulus.** A single disk on a flat background is nearly pixel-decodable. The per-patch step at the paper's depth
-  appears only on the hard rendered set (§3.1), which has 392 clips and 8 directions, covers direction only, uses one
-  render seed and reuses 7 start positions across all (θ, v) cells, so it is a reproduction on one small set, not on
-  the supplied data.
+- **Stimulus.** A single disk on a flat background is nearly pixel-decodable. The half-frame dip-and-recovery at the paper's
+  depth appears only on the hard rendered set (§3.1), which has 392 clips per render seed and 8 directions, covers
+  direction only and reuses 7 start positions across all (θ, v) cells; the sharp per-position rise does not appear on
+  any seed. So it is a partial reproduction on one small stimulus family, not on the supplied data.
 - **Per-patch probes.** Features are averaged over the 8 time steps at each position, so time structure within a
   position is not probed; the half-frame test is one pooled probe per half; the rendered sets were read at 10 points
   only, so their onsets of 4 and 6 are upper bounds. VideoMAE and speed were not run per patch.
@@ -1029,6 +1035,7 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
 [^isog]: `results/p2_isometry_goodfire_coord.json` (`layers.{8,12,22}.goodfire_angle.{interp,smooth}.{geo,lin}_pearson`, `goodfire_periodicity_test`, `angle_vs_labels`, `geo_below_chord_goodfire_angle`; 213 tests at ee828a7).
 [^isol]: `results/p2_isometry_goodfire_labels.json` (`layers.{8,12,22}.labels_angle.{interp,smooth}.{geo,lin}_pearson`; `unsupervised_angle` rows reproduce the label-free figures; `geo_below_chord_labels_angle` false at every point).
 [^pp]: `results/p1a_perpatch_direction_{vjepa2,vjepa2_constvel,random,vjepa2_hard,vjepa2_paper_layout}.json` (`curves.{perpos_mean_r2,pooled_mean_r2,pooled_frac_ge_0.5,cross_half_r2,meanpool_r2}`, `onsets.*`, `layers[].halves` for the cross-half MAE, `methods`, `provenance.time_averaging`); `figures/fig1g_perpatch_direction.png`, `fig1h_perpatch_heatmaps.png`; rendered-set layout (7 shared starts) in `results/session2_stimuli_validation.json` (`layout.start_rule`) and `scripts/render_hard_stimuli.py`.
+[^hfolds]: `results/p1a_perpatch_hard_folds.json` (`stratified` and `start_grouped`: per point `perpos_mean_r2` mean ± SD over folds, `cross_half_r2` per fold, `onset_per_fold`; paper-layout set alongside), cc41a6c.
 [^seeds]: `results/p1a_perpatch_hard_seeds.json` (per seed `layers[].perpos.mean_r2`, `halves.cross_r2`, `onsets`, `largest_jump`), `results/p1a_perpatch_direction_vjepa2_hard_seed{1,2}.json`, `results/p1a_perpatch_direction_random_hard{,_seed1}.json`, `figures/fig1j_perpatch_hard_seeds.png`; render seeds at 2abb3e9, extraction on the box from a frozen worktree (GPU forward 611 s), 3a8d7c7.
 [^gcv]: `results/p1a_grouped_cv.json` (`sets.{direction,speed}_{vjepa2,random}.{stratified,direction_grouped,start_grouped,speed_grouped}.{onset,onset_ci}`); `figures/fig1i_grouped_cv.png`.
 [^psv]: `results/p1a_paperscale_velocity_only.json` (`summary`, `models.vjepa2.n392_velocity.onset_per_seed`).
