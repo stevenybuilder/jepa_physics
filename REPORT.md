@@ -17,23 +17,24 @@ harder rendered set (textured floor, shading, smaller disk; 392 clips, 8 directi
 point 2 to point 5 and V-JEPA's block 1 falls below the random-init network's: a partial recovery of the emergence
 zone. VideoMAE (pixel reconstruction) matches V-JEPA 2 on all three variables with the same onsets. **Step 2
 reproduces in part.** Every variable needs tens of probes at the paper's layer, far outside a random-removal band.
-Speed does not need fewer probes than direction, and the ridge curves have no sawtooth. Under the paper's literal Adam
-recipe both variables' curves are jagged and K roughly doubles, with no direction-specific sawtooth. **Step 3
-reproduces in shape** (one probe fails, a few probes reach the target, MAE-to-true rises), with fewer probes than the
-paper needs. However, a random orthonormal basis of rank 2K matches the learned one up to N≈5, the same curve appears
-in an untrained network, and at the onset layer the learned basis never beats the random one. Rerunning Parts 1 and 2
-at the paper's literal 70/30 split changes no qualitative verdict. **Part 2.** Direction lies on a ring that is
-recovered without labels at mid depth. At held-out direction values the spline path stays on the ring and the straight
-path cuts through it: the minimum readout radius is higher for the spline by +0.26 ± 0.05 at point 12 and +0.24 ± 0.07
-at point 22 (mean ± SD over 16 runs covering 15 distinct held-out 45° arcs), and it is higher on every arc. The
-endpoint error ties at point 12 (+0.08° ± 1.47) and slightly favours the line at point 22 (+1.26° ± 3.54; 3 of 16
-runs flagged "negative_endpoint"). Readouts that did not build the edit
-(nearest-real-clip agreement, an MLP on disjoint clips) do not separate the two. Speed and acceleration are straight
-lines, and there the spline adds nothing. **Beyond the steered layer (GPU session 2).** Edits at points ≤ 12 wash out
-within a few blocks. Point-22 edits survive to the output but are not target-specific. The predictor readout is
-ceiling-limited: even the real counterfactual context recovers only R = 0.0185 of the real future change, and no arm
-beats its shuffled-target control. So the Part 2 advantage is geometric at the steered layer, and nothing the model
-does downstream shows it.
+Measured four ways, that count reflects anisotropy: a whitened erasure needs one probe at every point; the code is
+rank-2 linear plus a second harmonic and a nonlinear residual (§3.2). Speed does not need fewer probes than direction,
+and the ridge curves have no sawtooth. Under the paper's literal Adam recipe both variables' curves are jagged and K
+roughly doubles, with no direction-specific sawtooth. **Step 3 reproduces in shape** (one probe fails, a few probes
+reach the target, MAE-to-true rises), with fewer probes than the paper needs. However, a random orthonormal basis of
+rank 2K matches the learned one up to N≈5, the same curve appears in an untrained network, and at the onset layer the
+learned basis never beats the random one. Rerunning Parts 1 and 2 at the paper's literal 70/30 split changes no
+qualitative verdict. **Part 2.** Direction lies on a ring that is recovered without labels at mid depth. At held-out
+direction values the spline path stays on the ring and the straight path cuts through it: the minimum readout radius
+is higher for the spline by +0.26 ± 0.05 at point 12 and +0.24 ± 0.07 at point 22 (mean ± SD over 16 runs covering 15
+distinct held-out 45° arcs), and it is higher on every arc. The endpoint error ties at point 12 (+0.08° ± 1.47) and
+slightly favours the line at point 22 (+1.26° ± 3.54; 3 of 16 runs flagged "negative_endpoint"). Readouts that did not
+build the edit (nearest-real-clip agreement, an MLP on disjoint clips) do not separate the two. Speed and acceleration
+are straight lines, and there the spline adds nothing. **Beyond the steered layer (GPU session 2).** Edits at points ≤
+12 wash out within a few blocks. Point-22 edits survive to the output with little target specificity (shuffled targets
+are at most 39° away). The predictor test is uninformative, not negative: the unedited forecast reads its own clip's
+direction 61° off and the real counterfactual context recovers only R = 0.0185 of the real future change, so it could
+not have seen an edit. The Part 2 advantage is geometric at the steered layer; downstream use is still open.
 
 ## 2. Setup
 
@@ -70,6 +71,13 @@ does downstream shows it.
 | INLP K | probes until test at chance | nested K (held-out folds), paper-protocol K beside it | both below |
 | Steering basis length | until R² < 0.1 on train | all-train sequence cut at nested K | length never chosen on test |
 | INLP recipe | Adam lr 1e-3, wd 1e-4 | ridge; literal Adam sequence run once at points 8 and 9 | curves jagged and K ≈ 2× under Adam; no direction-specific sawtooth (§3.2) |
+
+**Four places where the paper's text disagrees with itself, and how each was handled**[^ptxt]. (a) The INLP stopping
+threshold for direction is R² < 0.1 in C.11 and R² < 0.3 in the Fig. 22 caption: each `p1b` file has both (`K`,
+`K_loose`; §3.2). (b) The split is 80/20 in C.11 and 70/30 in C.12: we ran both (§3.4). (c) C.12 fits its evaluation
+probe on the test clips it then steers and scores (independent of the steering probes but not of those clips): her
+protocol is our §3.3 headline, with a split-half version beside it (12.4° / 17.1° at N = 5 vs 8.7°). (d) The main text
+reports < 0.5° with all probe directions, the appendix 11.9° held-out with 20 probes: we report every N.
 
 **Probe-recipe parity** (point = CV-peak layer; pooled out-of-fold R², targets standardised for Adam[^recipe]):
 ridge vs Adam (C.11 recipe) is 0.9905 vs 0.9858 for direction, 0.9940 vs 0.9882 for speed and 0.9925 vs 0.9871 for
@@ -193,6 +201,25 @@ and `p1b_*_random_L{pt}.json`.
   −0.47). Direction has no isolated dips in any run; speed has 1, 2, 2 and 0. No round failed to train[^adam]. So the
   literal Adam recipe gives a jagged curve and a larger K for both variables, with no direction-specific sawtooth.
   Both are properties of the optimiser, not of the representation.
+
+**How many dimensions, four ways** (train clips only; `figures/fig2c_dims_four_ways.png`)[^dim4], for her open
+question (is direction "organized around a harmonic basis rather than a set of independent feature axes"?) and for Jin
+et al.'s proof (arXiv 2608.10566) that the literal INLP count is not invariant to invertible reparameterisation.
+
+| | literal K | whitened K | LEACE-2 ridge R² | LEACE-2 MLP R² | centroid power k = 1 / 2 / 3 |
+|---|---:|---:|---|---|---|
+| direction, pt 9 / 12 / 22 | 37 / 64 / 88 | 1 | 0.980 / 0.984 / 0.991 → −0.001 | 0.70 → 0.37 / 0.72 → 0.41 / 0.87 → 0.82 | 0.72 / 0.25 / 0.005 (pt 9); 0.66 / 0.26 / 0.011 (pt 22) |
+| speed, pt 9 (LEACE-1) | 39 | 1 | 0.988 → −0.000 | 0.84 → 0.76 | |
+| planted: clean ring / ×30 sheared / + k = 3 harmonic / 3 copies | 1 / 8 / 1 / 1 | 1 | → −0.009 | → −0.24 to −0.31 | 0.995 / 0 / 0; 0.96 / 0 / 0; 0.66 / 0 / 0.32; 0.98 / 0.01 / 0 |
+
+Whitened K is 1 at every point 0–25 for both variables and every ε (0.001–0.1). After LEACE, ridge reads nothing, an
+MLP keeps 0.37–0.82, and every planted ring drops below −0.23. In the centroid DFT, k = 2 holds 0.21–0.37 of the
+non-constant power from point 8 on (0.08–0.16 at points 2–7) and k ≥ 3 together 0.03–0.11. The controls calibrate each
+column: shear inflates literal K (8) but not whitened K, a planted k = 3 harmonic shows up in the DFT (0.32) with
+literal K = 1, and copies do not inflate K. So (i) direction is organised on a harmonic basis (k = 1 plus a cos 2θ
+term shared by opposite directions), not on tens of independent axes, and (ii) the literal count behaves like Jin et
+al.'s sheared circle. "Tens of dimensions" is a conditioning count of an anisotropic rank-2 linear code, not an
+intrinsic rank; beyond that code lies a nonlinear residual that grows toward the output.
 
 **Verdict.** The "tens of dimensions" claim reproduces at the paper's layer against a random band. The claims that
 speed needs fewer and that direction's curve has a sawtooth do not reproduce under ridge. Under Adam both curves are
@@ -500,20 +527,22 @@ carrier has a pixel twin rendered at the target direction (renderer validated on
 | 22 | 3.6 / 10.7 / 3.6 / 89.8 | 17.4 / 25.2 / 21.8 / 100.1 | 23.6 / 26.6 / 23.1 / 99.8 |
 
 Edits at points 2–12 wash out: four blocks after the edit the error is already 82–88° for every edit arm except the
-overshooting spline (for example point 12 → 16), and at point 25 MAE-to-true is back to 4–7°. At the steered point the arms are read by a probe of the same family
-that built them, so those columns are not independent evidence. Point-22 edits survive the last three blocks (15–25°
-at point 25), but they are not target-specific. Scored against the neighbouring target instead of the true one, the
-error rises by only 1–6° at point 25, against 7–13° at the steered point. The activation readout says the same:
-the projection of the edit onto the twin's real activation change at point 25 is 0.16 / 0.23 / 0.22 (probe-QR /
-smoothed spline / chord) against 0.15 / 0.21 / 0.21 for the shuffled twin (`readout_b`). The interpolating spline
-overshoots (‖Δ‖ = 7.2× the natural twin change at point 12, vs 0.5–0.6× for the other arms) and is excluded from the
-reading.
+overshooting spline (for example point 12 → 16), and at point 25 MAE-to-true is back to 4–7°. At the steered point the
+arms are read by a probe of the same family that built them, so those columns are not independent evidence. Point-22
+edits survive the last three blocks (15–25° at point 25), with weak target specificity. Scored against the
+neighbouring target instead of the true one, the error rises by only 1–6° at point 25, against 7–13° at the steered
+point. All targets lie in the held-out 45° arc (neighbour at most 39° away, 16.5° on average[^s2]), so this control
+shows specificity shrinking, not gone. The activation readout says the same: the projection of the edit onto the
+twin's real activation change at point 25 is 0.16 / 0.23 / 0.22 (probe-QR / smoothed spline / chord) against 0.15 /
+0.21 / 0.21 for the shuffled twin (`readout_b`). The interpolating spline overshoots (‖Δ‖ = 7.2× the natural twin
+change at point 12, vs 0.5–0.6× for the other arms) and is excluded from the reading.
 
 **Predictor** (context frames 1–8 edited at every token, predictor forecasts tubelets 4–7; R = projection of the
-forecast change on the real twin-minus-source future change; source `session2_predictor.json`). The ceiling comes
-first: forecasting from the *real rendered twin's* context recovers only R = 0.0185 [0.0173, 0.0195] of the real future
-change (0.073 on disk tokens). The unsteered forecast is also far from the real future on the direction readout (61°
-vs 3.4° for the encoder's own future tokens). Against that ceiling:
+forecast change on the real twin-minus-source future change; source `session2_predictor.json`). **This test is
+uninformative, not negative.** Probes fit on the encoder's real future tokens (direction 3.4° on them) read the
+unedited forecast 61° from its source clip's direction and 68 px from its position[^fpos]. The *real rendered twin's*
+context recovers only R = 0.0185 [0.0173, 0.0195] of the real future change (0.073 on disk tokens), so even a perfect
+edit would register at R ≈ 0.02. The values:
 
 | Arm | R, point 12 (shuffled target) | R, point 22 (shuffled target) |
 |---|---|---|
@@ -524,8 +553,8 @@ vs 3.4° for the encoder's own future tokens). Against that ceiling:
 
 At points 2 and 8 every arm is ≤ 0.00011. No arm beats its own shuffled-target control: every pair of 95% CIs
 overlaps, and the point-12 interpolating spline, the largest value (0.0057), equals its control (0.0057). The learned
-arms do beat the matched random edit at point 22. So the predictor readout cannot tell the arms apart on this
-stimulus, and that is a statement about the test's ceiling, not evidence that the arms are equivalent.
+arms do beat the matched random edit at point 22. None of this says the arms are equivalent downstream. The test
+becomes informative with a readout fit on predictor outputs and a shuffled null 180° away.
 
 **Time-reversed clips** (the forward-trained probe read on reversed clips)[^trev]. From point 1 on, the direction probe
 reads θ + 180° on the reversed clip: the error to θ + 180° is 20.5° at point 1 and 5.7–10.3° from point 2 on, with
@@ -558,14 +587,17 @@ twin's position equals the error to the shuffled twin's within 0.4 px for every 
   held-out linear probe, but it beats a random basis only past N ≈ 5, works in an untrained network too, and leaves an
   MLP on disjoint clips 19–31° off. On the ladder in `PART2_RATIONALE.md` §2, this project reaches rung 3 at the
   steered layer and rung 4 only by circular measures. Rung 5 was tested: edits at points ≤ 12 wash out, point-22 edits
-  survive without target specificity, and the predictor readout is too ceiling-limited to separate arms (§4.5).
+  survive with weak target specificity, and the predictor readout had no power to see an edit (§4.5).
 - **Internal world model vs stimulus-response.** For this stimulus class the random-init control gives a direct
   answer to her question. Linear availability of direction, speed and acceleration is architectural (one attention
   block over rotary positions plus a nonlinearity). What V-JEPA's training adds is precision (direction 10.7° → 3.0°
   vs flat for the random network) and a ring that is recovered without labels at mid depth. Carrying direction into
   disk-free tokens is not a training effect: the random-init encoder does it as well. VideoMAE matches V-JEPA 2 on
   every Part 1 measure, so none of this is specific to latent prediction, and none of it shows that the variables are
-  used to predict. We have two points on the training axis (random init, final checkpoint), not a trajectory.
+  used to predict. We have two points on the training axis (random init, final checkpoint), not a trajectory. The
+  authors' OpenReview response states that "all 13 models encode motion direction (R²≥.43), regardless of objective",
+  classification CNNs included, so availability is their own finding; training buys precision, fewer probes to steer
+  (4 vs 10 to reach 10°[^obj]) and a label-free ring.
 - **The linear representation hypothesis: right about the subspace, wrong about the moves.** Direction is linearly
   decodable through (sin, cos), which is a 2-D linear subspace with a ring on it, and nothing in Part 1 contradicts
   the subspace form of the hypothesis. The steering corollary is what fails geometrically: the straight path between
@@ -582,17 +614,14 @@ twin's position equals the error to the shuffled twin's within 0.4 px for every 
   directions, covers direction only and uses one render seed, so it is a pointer, not a reproduction.
 - **Training dynamics.** With intermediate V-JEPA 2 checkpoints, the random-init vs final contrast becomes a curve.
   That is the natural test of when precision and the ring appear.
-- **Predictor ceiling.** The only behavioural readout for an encoder is the predictor's forecast against a rendered
-  counterfactual twin. Here even the real twin's context recovers R = 0.0185 of the real future change, and the
-  unsteered forecast reads direction at 61°. No arm beats its shuffled-target control, so the test cannot
-  discriminate arms. A stimulus where the predictor tracks the future (or a readout trained on predictor outputs) is
-  needed before that null means anything.
+- **Predictor test uninformative.** Probes fit on real tokens read the unedited predictor forecast 61° off in
+  direction and 68 px off in position, and the real twin's context recovers only R = 0.0185, so the test had no power
+  to see an edit; its shuffled targets are at most 39° apart. Next: a readout fit on predictor outputs and a 180°
+  shuffled null.
 - **Post-hoc verdict rule.** The spline-vs-line call was iterated after seeing results and frozen at 8d3cac8 before
   the arc sweep and the 70/30 reruns (§4.2). The gaps and CIs are the evidence; the calls summarise them.
 - **Sample size vs d.** Around 1,200 train clips against d = 1,024 makes K a ridge count at a CV-chosen α. The K
   values should be compared across layers only at a fixed α (see the caveat in `p1b_*_dims.json`).
-- **Evaluation probe.** The paper protocol fits the evaluation probe on the steered clips. The strict split-half
-  version is reported, but the headline table uses the paper's protocol for comparability.
 
 ## 8. Reproducibility
 
@@ -622,6 +651,7 @@ twin's position equals the error to the shuffled twin's within 0.4 px for every 
 - **Tests.** `pytest --collect-only` collects 173 tests at the commit of this report.
 
 [^gpu]: `artifacts/gpu_session1.json`.
+[^ptxt]: Line numbers in `refs/physics_paper.txt` (text of arXiv 2602.07050): (a) 1211 vs 1172; (b) 1207 vs 1243 and 1266; (c) 1245–1246; (d) 430–431 vs 1256 and 1269. Our numbers: `p1b_*` (`K`, `K_loose`), `results/split70/COMPARISON.md`, `p1c_direction_L9_strict.json` (`strict_eval`), `p1c_direction_L9.json`.
 [^s1]: `results/p1a_direction_direction_meanpool.json` (n_train 1200, n_test 300); `results/p1a_paperscale_speed_speed.json` (speed train 1228).
 [^steer]: `results/p2_steer_*` (n_test_clips 308 for speed/acceleration; `sagitta_per_target`; `n_knot_clips` 632, `n_probe_clips` 480).
 [^recipe]: `results/p1a_probe_recipe_check.json`.
@@ -631,12 +661,13 @@ twin's position equals the error to the shuffled twin's within 0.4 px for every 
 [^pss]: `results/p1a_paperscale_speed_speed.json`.
 [^adam]: `results/p1b_{direction_direction,speed_speed}_meanpool_L{8,9}_adam_{b64,full}.json` (`K_first`, `sawtooth.by_metric`, `rounds[].failed_to_train`).
 [^p1cr]: `results/p1c_direction_L9_random.json`.
+[^dim4]: `results/p1b_dims_four_ways.json` (`variables.{direction,speed}.layers[].{literal,whitened,leace,dft}`, `control.{clean_ring,sheared_ring_x30,ring_with_k3_harmonic,three_copies}`; DFT column = `dft.frac_k_ge_1`, share of non-constant power); per-layer K and α in `p1b_*_meanpool_dims.json`.
 [^strict]: `results/p1c_direction_L9_strict.json` (`strict_eval`).
 [^planted]: `results/p2_planted_ring_direction_L12.json`.
 [^vp]: `results/p2_velocity_plane.json`.
 [^sheet]: `results/p2_sheet_speed_L{12,19}.json` (`verdict`, `summary`).
 [^bake]: `results/p2_bakeoff_direction_direction_L{12,22}_contiguous.json`.
-[^s2]: `results/session2_plan.json`, `results/session2_renderer_validation.json`, `results/session2_stimuli_validation.json`.
+[^s2]: `results/session2_plan.json` (`targets`: 4 per carrier, all in 303.75°–343.125°), `results/session2_renderer_validation.json`, `results/session2_stimuli_validation.json`.
 [^fig22]: `loose_threshold` in each `p1b_*` file: R² < 0.3 for direction and R² < 0.1 for speed and acceleration, the thresholds of the paper's Fig. 22. For speed and acceleration the K at that threshold equals the nested K at every V-JEPA point except acceleration at onset (493 vs 466). `K_loose_censored` is true only for VideoMAE acceleration at point 22, where K_loose = 87 is a floor (the sequence stopped while R² was still above 0.1); the V-JEPA files predate the flag.
 [^stim]: `results/stimuli/{paper_layout,hard}/p1a_direction_direction_meanpool{,_random}.json`; `results/session2_stimuli_validation.json`.
 [^s70]: `results/split70/comparison.json`, `results/split70/COMPARISON.md`, `results/split70_p2/COMPARISON.md` and `results/split70_p2/p2_steer_*_contiguous.json`; 80/20 null p from `results/p1c_{direction,speed,acceleration}_L9.json`.
