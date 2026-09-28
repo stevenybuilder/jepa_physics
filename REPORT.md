@@ -19,12 +19,13 @@ ring, and at held-out direction values the spline path stays on the ring while t
 in the ring plane (in the 64-D subspace it is as close to real clips at point 12 and closer at point 22):
 the minimum readout radius is higher for the spline on every arc (point 22 on the labels angle[^src]).
 
-**Three disagreements with the paper.** (1) On the harder set transfer does not appear only after the zone: it is 0.7 at
+**Two disagreements with the paper.** (1) On the harder set transfer does not appear only after the zone: it is 0.7 at
 point 1, and the per-position curve rises most between points 4 and 6 on every seed (§3.1). (2) Speed does not need
 fewer probes than direction (except the paper protocol at point 8), and neither the ridge curves nor the paper's literal
-Adam recipe give a direction-specific sawtooth. (3) "One probe fails" is the Euclidean edit: an edit built from one probe steers to
-3.2° once it is weighted by the activation covariance (it then leaves the probe's plane), though the same construction
-on a random 2-D subspace reaches a median 4.2°, so what the learned probe buys is specificity, not target error.
+Adam recipe give a direction-specific sawtooth. **One addition to its steering result.** An edit along one probe's axis
+fails, as §7.2 says (78°); an edit built from that probe but weighted by the activation covariance, which leaves the
+probe's plane, reaches 3.2°, and so does the same construction on a random 2-D subspace (median 4.2°, p = 0.24), so what
+the learned probe buys is specificity, not target error.
 
 **One new thing.** Edits at points ≤ 12 wash out within a few blocks and barely reach the predictor's forecast; point-22
 edits survive to the output, and along the point-22 path the forecast follows the intermediate directions along the
@@ -98,15 +99,15 @@ verdict; §2 lists every deviation from the paper and what the parity audit chan
 **What the parity audit changed.** A paper-first audit of our own methods moved six verdicts:
 
 - Part 1, emergence zone: read per patch on the hard render across three seeds, the largest rise is at points 4 → 6 on every seed, and the half-frame dip-and-jump at points 8 → 9 (paper layers 7 → 8) is training-specific (§3.1).
-- Part 1, Step 3: with the paper's own Adam steering basis the probe count reproduces, 18 probes to 10° against the paper's about 20 (§3.3).
-- Part 1: a covariance-weighted edit built from one probe steers to 3–5°, outside the probe's plane (§3.3, §6).
+- Part 1, Step 3: with our refit of the paper's C.11 Adam probe sequence as the steering basis the probe count reproduces, 18 probes to 10° and 16 to the paper's 12° at about 20 (§3.3).
+- Part 1: a covariance-weighted edit built from one probe steers to 3–5°, outside the probe's plane, as does the same construction on a random 2-D subspace (median 4.2°), so the learned probe adds specificity, not reach (§3.3, §6).
 - Part 2: the isometry verdict is set by the knot coordinate; under every label-free ordering point 22 is a tie (spline only under the basic interval in the fully faithful run), and Goodfire's own angle loses to the chord at point 12 (§4.4).
 - Part 2: at the encoder output the verdict is mixed (the spline trails the chord by 10.8° at the chord's norm and leads by 2.1° at the natural norm), and in scalar extrapolation the spline trails the chord by 0.02–0.07 (§4.5, §4.3).
 - Part 2: Goodfire's cyclic 8B runs take the coordinate label-free, as atan2(PC2, PC1), and only its 70B cyclic configs use the labels (§2).
 
 **Places where the paper contradicts itself**[^ptxt]. (a) The INLP stopping
-threshold for direction is R² < 0.1 in C.11 and R² < 0.3 in the Fig. 22 caption: each `p1b` file has both (`K`,
-`K_loose`; §3.2). (b) The split is 80/20 in C.11 and 70/30 in C.12: I ran both (§3.4). (c) C.12 fits its evaluation
+threshold for direction is R² < 0.1 in C.11 and R² < 0.3 in the Fig. 22 caption, and for speed 0.05 against 0.1: each
+`p1b` file has both (`K`, `K_loose`; §3.2). (b) The split is 80/20 in C.11 and 70/30 in C.12: I ran both (§3.4). (c) C.12 fits its evaluation
 probe on the test clips it then steers and scores (independent of the steering probes but not of those clips): her
 protocol is our §3.3 headline, with a split-half version beside it (12.4° / 17.1° at N = 5 vs 8.7°). (d) The main text
 reports < 0.5° with all probe directions, the appendix 11.9° held-out with 20 probes: I report every N (all probes: 2.7° ridge, 2.9° Adam). (e) The velocity
@@ -442,16 +443,21 @@ p = 0.048 at every N (mean 87.4° at N = 1). Source: `p1c_direction_L{2,9,22}.js
   R² = 0.99 and does not give its regularisation. My stored probe is ridge with α = 100 chosen by CV inside test
   (in-sample R² 0.993, the closest of the three to the paper's 0.99). A near-unregularised ridge probe (α = 1e-3,
   in-sample R² 1.000) and the C.11 Adam recipe (0.998) read the same edits differently: 3 and 4 probes reach ≤ 10° to
-  target (stored: 5), the rank-2K null is beaten at the 1/21 floor from N = 5 for both (stored: p = 0.143 at N = 5,
-  floor from N = 14), and the rank-matched null from N = 3 (stored: N = 6). The
+  target (stored: 5); with 200 draws at every N[^n200] the rank-2K null is beaten at p < 0.05 from N = 4 for both
+  (stored probe: N = 9; split-half probe: N = 11, sustained from 15), and the rank-matched null from N = 3 (stored: 5;
+  split-half: 5). The
   null reading therefore depends on how the evaluation probe is regularised, which C.12 does not fix.
 - **The paper's steering basis** (point 9, direction)[^adamb]. C.12 steers along C.11's Adam probe sequence, not a
   ridge one. Refitting that sequence (lr 1e-3, wd 1e-4, batch 64; it reproduces the stored Adam run and stops at K = 84)
   and steering with it: N = 1 / 2 / 3 / 5 / 10 / 20 / 84 give 84.1° / 81.1° / 77.7° / 69.2° / 27.9° / 7.3° / 2.9° to
   target (ridge basis: 78.4° / 61.1° / 25.4° / 8.7° / 3.1° / 2.9° / 2.7° at N = 37). Eighteen Adam probes reach 10°,
   against five ridge probes and the paper's about 20; N = 1–5 give 84–69°, the paper's "modest improvement (MAE > 50)".
-  The Adam basis beats the rank-matched null at the 1/21 floor from N = 12 but falls back to p = 0.095 at several N up
-  to 23, and beats the rank-2K (168-d) null only from N = 30. Her basis has K = 25, so her 20 probes are 80% of it;
+  With 20 draws the Adam basis beats the rank-matched null at the 1/21 floor from N = 12 but falls back to p = 0.095 at
+  several N up to 23; with 200 draws[^n200] it beats that null at p < 0.05 from N = 14 (sustained from 16; p < 0.01
+  from 22, sustained from 24) and the rank-2K (168-d) null only from N = 30 (p < 0.01 from 75), while the ridge basis
+  beats them from N = 5 and N = 9 (p < 0.01 from 7 and 18, sustained from 24). At N = 18–20 the Adam basis is at
+  p = 0.02 against the same-rank null and 0.30–0.32 against the rank-2K one. The per-probe train R² of the Adam
+  sequence never falls below 0.1 through round 84 (lowest 0.126), so a train-R² reading of C.12's stop would give K > 84. Her basis has K = 25, so her 20 probes are 80% of it;
   our refit has K = 84 (batch 64, our choice), so 18 is 21%; 16 reach her 12° threshold; her full basis reaches < 0.5°
   (§7.2), ours 2.9°.
 - **An edit built from one probe, weighted by the covariance**[^r2cov]. The N = 1 edit above is Euclidean and stays in
@@ -460,16 +466,20 @@ p = 0.048 at every N (mean 87.4° at N = 1). Source: `p1c_direction_L{2,9,22}.js
   3.61° / 5.19° under the α = 1e-3, Adam and split-half probes, against 78.4° / 58.0° / 68.6° / 82.3° for the Euclidean
   edit. A random 2-D subspace weighted the same way reaches a mean 9.6–12.0° (p = 0.14–0.33; the means carry one
   outlier draw of norm 982, the medians are 4.2 / 4.5 / 5.7 / 6.4°), with edits larger (median 2.5×, mean 5.6×) and more
-  off-target speed change (median 125×, mean 390×); the learned probe beats all 20 draws on both (p = 1/21). The paper's
-  unit circle in §7.1 is a population of MLP units at fc1/fc2; this test is at the block-output residual stream. The oracle (W = the evaluation probe) gives 0° by construction.
+  off-target speed change (median 125×, mean 390×); the learned probe beats all 20 draws on both (p = 1/21). Built from the Adam
+  sequence's first probe instead (cosine 0.8 to the ridge one), the edit reaches 4.3° / 4.7° / 4.4° / 6.3° under the four
+  evaluation probes against null medians of 5.0–7.0° (p = 0.10–0.24), the same picture. The paper's unit circle in §7.1
+  is a population of MLP units at fc1/fc2; this test is at the block-output residual stream, and the paper's §7.2
+  sentence that steering "along a single feature direction or probe axis produces little to no change" holds here for
+  the along-axis edit. The oracle (W = the evaluation probe) gives 0° by construction.
 
 **Verdict.** Fig. 24's shape reproduces, and so does its count once the basis is the paper's: 18 Adam probes to 10°
 against its about 20, where a ridge basis needs 3–5 (3–4 under the near-unregularised and Adam evaluation probes, 5
 under my CV-chosen one; C.12 gives no recipe). The ridge probes beat a random subspace of their own rank from N = 2–7
 (N = 3 under the near-unregularised probes) and a rank-2K random basis from N = 5 under those probes but only from
-N = 14 under mine; the Adam basis reaches the rank-matched floor only intermittently between N = 12 and 25 (p = 0.048
-at nine N, 0.095 at the others) and the rank-2K floor only from N = 30, so at its N = 18–20 it steers little better
-than a random subspace of the same rank. "One probe fails" is the Euclidean edit: covariance-weighted, an edit built from one probe
+N = 9 under mine with 200 draws; the Adam basis beats a same-rank random basis from N = 14 (sustained from 16) and
+the rank-2K basis only from N = 30, so at its N = 18–20 it beats a random subspace of its own rank but not one of the
+full rank 2K. "One probe fails" is the Euclidean edit: covariance-weighted, an edit built from one probe
 steers to 3–5° outside the probe's plane, though no better on target error than the same construction on a random 2-D
 subspace. An untrained network
 shows the same curve.
@@ -986,7 +996,7 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
   trajectory, detect all three variables at R² ≥ 0.85. Use is where the evidence thins. The Part 1 edit moves a
   held-out linear probe, but whether it beats a rank-2K random basis depends on the evaluation probe (from N = 5
   under the near-unregularised probes, N = 14 under mine; a rank-matched one from N = 2–7), it works in an untrained network too, and it
-  leaves an MLP on disjoint clips 19–31° off. On the ladder in `PART2_RATIONALE.md` §2, this project reaches rung 3 at
+  leaves an MLP on disjoint clips 17–23° off. On the ladder in `PART2_RATIONALE.md` §2, this project reaches rung 3 at
   the steered layer and rung 4 only by circular measures. Rung 5 was tested: at point 22 and at the encoder output the
   edit reaches the predictor's forecast; at points ≤ 12 it washes out and does not (§4.5). At point 22 the forecast
   passes through the intermediate directions on the spline and jumps on the chord (−13.4°); at the encoder output the
@@ -1121,6 +1131,7 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
 [^hfolds]: `results/p1a_perpatch_hard_folds.json` (`sets.hard` for the stratified folds and `folds_start_grouped.hard` for start-grouped, each with per-point fold means ± SD and `summary.*.onset_per_fold`; `sets.paper_layout` alongside), cc41a6c.
 [^adamb]: `results/p1c_direction_L9_adam_basis.json` (per-N error to target / to true, both nulls with p, `n_to_10deg`, `K`, `comparison_vs_ridge_basis` incl. `null_dimension_note`); basis weights `artifacts/inlp/direction_direction_L9_adam_b64.npz` (sha256 in the JSON); `scripts/run_step3_adam_basis.py`; 36c4cdc, 94c96c7, baa8eac, 7dd1eb5; 216 tests.
 [^r2cov]: `results/p1c_direction_L9_rank2_covweighted.json` (Euclidean N = 1, covariance-weighted and oracle edits with error to target / to true, off-target speed and edit norm; the 20-draw Σ-weighted null with p; `evalprobe_variants` for α = 1e-3, Adam and split-half; Ledoit-Wolf check); `scripts/run_step3_rank2_covweighted.py`, `src/wm/steer.py:cov_weighted_delta`.
+[^n200]: `results/p1c_direction_L9_nulls200.json` (per basis and N: learned error, `rank_2n` and `rank_2k` null mean ± SD and exact p over 200 draws, seed 0, draws 1–20 reproducing the stored files; `first_n_below` at 0.05 and 0.01; `evalprobe_variants` at every N); `scripts/run_step3_nulls200.py`; 555b411, 221 tests.
 [^seeds]: `results/p1a_perpatch_hard_seeds.json` (`by_point[].{perpos_mean_r2,cross_half_r2}.per_seed`, `onsets.{0,1,2}`, `jump_8_to_9`, `extra_point_curves`), `results/p1a_perpatch_direction_vjepa2_hard_seed{1,2}.json` (`layers[].halves.cross_r2_mean`), `results/p1a_perpatch_direction_random_hard{,_seed1}.json`, `figures/fig1j_perpatch_hard_seeds.png`; render seeds at 2abb3e9, extraction on the box from a frozen worktree (GPU forward 611 s), 3a8d7c7. The random-init control is one weight draw (seed 0) on two render seeds.
 [^appb]: `results/p1a_appB_sweep.json` (`variables.{direction,speed}.{per_point[].{sweep_cv_mean,sweep_cv_sd,lr,wd,grid},sweep_onset,sweep_onset_ci,ridge_onset_stored}`); 100 / 50 epochs from C.11 and batch 64 (our choice; neither appendix gives one); coupled L2 weight decay, App. B not saying Adam or AdamW; the best of the 20 configurations is selected on the same folds it is reported on, as our ridge α is over 13 values; fbdc60a, 212 tests.
 [^gcv]: `results/p1a_grouped_cv.json` (`sets.{direction,speed}_{vjepa2,random}.{stratified,direction_grouped,start_grouped,speed_grouped}.{onset,onset_ci}`; `sector_grouped` with its pooled-prediction `score`); `figures/fig1i_grouped_cv.png`.
