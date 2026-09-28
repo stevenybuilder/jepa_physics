@@ -35,7 +35,8 @@ reproduces in shape and, with the paper's own steering basis, in count** (one pr
 target, MAE-to-true rises): with a ridge basis 3–5 probes reach 10°; with C.11's Adam probe sequence, the basis C.12
 steers along, it takes 18, where the paper reports ≈ 12° at about 20. Against a random orthonormal basis of fixed rank
 2K the ridge basis wins from N = 5 under a near-unregularised evaluation probe (α = 1e-3, or the C.11 Adam recipe; C.12
-gives no recipe) and from N = 14 under my CV-chosen one; the Adam basis beats neither null below N = K. Against a
+gives no recipe) and from N = 14 under my CV-chosen one; the Adam basis reaches the rank-matched floor only
+intermittently from N = 12 to 25 and the rank-2K floor only from N = 30. Against a
 rank-matched random basis the ridge basis first beats all 20 draws at N = 2–7 (by variable and layer); at N = 1 it
 separates from neither. "One probe fails" is the edit, not the subspace: one probe's 2-D subspace steers to 3.2° once
 the edit is weighted by the activation covariance (3.6–5.2° under the other evaluation probes), though a random 2-D
@@ -484,8 +485,9 @@ p = 0.048 at every N (mean 87.4° at N = 1). Source: `p1c_direction_L{2,9,22}.js
 against its about 20, where a ridge basis needs 3–5 (3–4 under the near-unregularised and Adam evaluation probes, 5
 under my CV-chosen one; C.12 gives no recipe). The ridge probes beat a random subspace of their own rank from N = 2–7
 (N = 3 under the near-unregularised probes) and a rank-2K random basis from N = 5 under those probes but only from
-N = 14 under mine; the Adam basis beats neither null below N = K, so at its N = 18–20 it steers no better than a random
-subspace of the same rank. "One probe fails" is the Euclidean edit: covariance-weighted, one probe's 2-D subspace
+N = 14 under mine; the Adam basis reaches the rank-matched floor only intermittently between N = 12 and 25 (p = 0.048
+at nine N, 0.095 at the others) and the rank-2K floor only from N = 30, so at its N = 18–20 it steers little better
+than a random subspace of the same rank. "One probe fails" is the Euclidean edit: covariance-weighted, one probe's 2-D subspace
 steers to 3–5°, though no better on target error than a random covariance-weighted 2-D subspace. An untrained network
 shows the same curve.
 
