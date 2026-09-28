@@ -4,10 +4,10 @@
 <div style="flex:1; display:flex; flex-direction:column; gap:16px">
 <h3 style="font-size:30px; font-weight:600; color:#C8553D">Limitations</h3>
 <ul style="font-size:26px; line-height:1.5; color:#4A5568">
-<li>One disk, one background, a fixed camera. The hard set has 392 clips and 8 directions.</li>
-<li>Mean-pooled probes throughout; her sharp per-patch onset was not tested.</li>
+<li>One disk, one background, a fixed camera. The per-patch step shows only on the hard set: 392 clips, 8 directions, one render seed, 7 shared start positions.</li>
+<li>Per-patch probes use features averaged over the 8 time steps and one pooled probe per half-frame; the rendered sets were read at 10 points, so their early onsets are upper bounds.</li>
 <li>Acceleration clips start at rest, so acceleration, mean speed and displacement are one variable.</li>
-<li>The predictor readout is a linear probe on the pooled forecast, not a rendered future; four targets sit in one 45° arc; position overshoots.</li>
+<li>The predictor readout is a linear probe on the pooled forecast, not a rendered future; four targets sit in one 45° arc; position overshoots. The spline's matched-norm lead is a block-22 result; at the encoder output the chord does as well.</li>
 <li>The Part 2 verdict rule was iterated during development, then frozen before the arc sweep. Point 12 is an exploratory layer choice.</li>
 <li>The random-basis null with rank 74 is conservative; the rank-matched one is reported beside it.</li>
 </ul>
@@ -15,7 +15,7 @@
 <div style="flex:1; display:flex; flex-direction:column; gap:16px">
 <h3 style="font-size:30px; font-weight:600; color:#C8553D">Next</h3>
 <ul style="font-size:26px; line-height:1.5; color:#4A5568">
-<li>Per-patch probes at every layer, to test whether the emergence step is a pooling artefact on this stimulus.</li>
+<li>More hard renders and seeds, per-token patch probes, and VideoMAE per patch, to see whether the step at point 9 is about the rendering or about latent prediction.</li>
 <li>Intermediate training checkpoints: the two points here (random init, final) are the whole training-dynamics axis available.</li>
 <li>A stimulus the predictor tracks over longer horizons, with targets spread around the ring, and a rendered-future readout.</li>
 <li>Steering at point 22 for speed and acceleration through the predictor, where the manifolds are straight and the two methods should coincide.</li>
@@ -24,5 +24,5 @@
 </div>
 </div>
 <p style="position:absolute; left:128px; bottom:64px; font-size:24px; color:#6a7179">Limitations · REPORT §7 · 16 / 17</p>
-<aside>Don't hedge on the per-patch gap. Her blog says the sharp jump shows up in per-patch probes and mean-pooled ones rise more gradually. It's the first thing I'd add with another day.</aside>
+<aside>The per-patch test is done: her appendix says the jump is per patch and pooled probes rise gradually, and that is what I see on the hard render, at her depth. On the supplied clips the per-patch code forms by block 6 with no step. The first thing I'd add with another day is more hard renders, to check the step is not one seed.</aside>
 </section>

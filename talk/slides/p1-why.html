@@ -1,23 +1,23 @@
 <section id="p1-why" data-transition="fade" style="background:#FBFBF8; color:#14213D; font-family:'IBM Plex Sans', Arial, sans-serif; padding:128px 128px 160px; display:flex; flex-direction:column; gap:40px">
-<h2 style="font-family:'Source Serif 4', Georgia, serif; font-size:64px; font-weight:400; line-height:1.1">Why there is no emergence zone here</h2>
+<h2 style="font-family:'Source Serif 4', Georgia, serif; font-size:64px; font-weight:400; line-height:1.1">Per patch, the emergence zone depends on the stimulus</h2>
 <div style="display:flex; gap:32px">
 <div style="flex:1; display:flex; flex-direction:column; gap:16px; background:#F1F0EA; padding:32px; border-radius:16px">
-<h3 style="font-size:30px; font-weight:600; color:#C8553D">Paper-scale n</h3>
-<p style="font-size:26px; line-height:1.4; color:#4A5568">Subsampling train to the paper's clip count (8 directions, ~150 clips) moves the direction onset from point 2 to point 5 [4, 5]. Part of the gap is sample size.</p>
+<h3 style="font-size:30px; font-weight:600; color:#C8553D">Supplied clips: early</h3>
+<p style="font-size:26px; line-height:1.4; color:#4A5568">Mean per-position R² 0.56 at block 1, 0.89 at block 5, 0.96 at block 6 (onset 5 [5, 5]); no step at points 8→9 (0.958 → 0.975). The pooled-patch probe works at every position from block 1 (0.83); half-frame transfer 0.82 at block 1, 0.96 at point 9, 0.81 at point 22.</p>
 </div>
 <div style="flex:1; display:flex; flex-direction:column; gap:16px; background:#F1F0EA; padding:32px; border-radius:16px">
-<h3 style="font-size:30px; font-weight:600; color:#C8553D">Make the stimulus harder</h3>
-<p style="font-size:26px; line-height:1.4; color:#4A5568">Re-rendered with a textured floor, shading and a smaller disk (392 clips, 8 directions): onset moves to point 5 [5, 7] and V-JEPA's block 1 drops below the random-init network. A partial recovery.</p>
+<h3 style="font-size:30px; font-weight:600; color:#C8553D">Training-selective</h3>
+<p style="font-size:26px; line-height:1.4; color:#4A5568">The random-init network pools to 0.86–0.88 at every point, but its per-position R² never exceeds 0.39 and half-frame transfer stays at 0.61–0.74: the paper's fragmented local signal that pooling adds up. V-JEPA 2 leaves that regime within six blocks.</p>
 </div>
 <div style="flex:1; display:flex; flex-direction:column; gap:16px; background:#F1F0EA; padding:32px; border-radius:16px">
-<h3 style="font-size:30px; font-weight:600; color:#C8553D">Not the objective</h3>
-<p style="font-size:26px; line-height:1.4; color:#4A5568">VideoMAE (pixel reconstruction) matches V-JEPA 2 (latent prediction) on all three variables: same onsets, peak 0.992 vs 0.991, 4 probes to steer direction under 10° for both. Latent prediction isn't what makes the variables available here.</p>
+<h3 style="font-size:30px; font-weight:600; color:#C8553D">Harder render: the step</h3>
+<p style="font-size:26px; line-height:1.4; color:#4A5568">Textured floor, shading, smaller disk (392 clips, one render seed): per-position onset 9 [9, 9], 0.851 → 0.944 across points 8→9; half-frame transfer −1.42 at 8, 0.08 at 9, 0.75 at 22 (a miscalibration between halves, not a mirror flip). The paper-layout render: onset 6, transfer 0.81 at block 1.</p>
 </div>
 </div>
 <div style="display:flex; gap:48px; align-items:center">
-<img src="/_blob/3e37e0caa4b983f48c8ab94fbfe60efa" alt="Example frames from the harder rendered stimulus set" style="width:720px; height:300px; object-fit:contain; background:#F1F0EA; border-radius:12px">
-<p style="flex:1; font-size:28px; line-height:1.4; color:#4A5568">Her rebuttal reports direction decodable in all 13 models she tested, so availability everywhere is her finding as well. What this data can speak to is what training adds: precision, fewer probes to steer, and a label-free ring (Part 2).</p>
+<img src="figures/fig1g_perpatch_direction.png" alt="Per-patch direction probes across layers for V-JEPA 2, the random-init network, the constant-velocity subset and the two rendered sets, with the mean-pooled probe dashed" style="width:720px; height:360px; object-fit:contain; background:#FBFBF8; border-radius:12px">
+<p style="flex:1; font-size:26px; line-height:1.4; color:#4A5568">Pooled availability is architectural here, as her rebuttal's 13 models suggest, and VideoMAE matches V-JEPA 2 on every pooled measure. What training adds is the per-patch code. Caveats: time-averaged per-position features, one pooled probe per half-frame, 10 sampled points on the rendered sets, 7 shared start positions.</p>
 </div>
-<p style="position:absolute; left:128px; bottom:64px; font-size:24px; color:#6a7179">Part 1 · p1a_paperscale_*, results/stimuli, objective_axis.json · 5 / 17</p>
-<aside>The README warns that the supplied dataset is deliberately simpler. I have three controls that say why the zone is missing, so I don't have to call it a failure or skip past it.</aside>
+<p style="position:absolute; left:128px; bottom:64px; font-size:24px; color:#6a7179">Part 1 · results/p1a_perpatch_direction_*.json, fig1g_perpatch_direction.png · 5 / 17</p>
+<aside>The paper's own C.5 says the jump is in per-patch probes and pooled probes rise gradually, so this is the test that matches her claim. The README warns that the supplied dataset is deliberately simpler, and that is where the difference is: gradual on the supplied clips, sharp at her depth on the harder render. The paper-scale subsample I showed before (onset 5 at 150 clips) does not explain it: at 392 clips the pooled onset is back at 2.</aside>
 </section>

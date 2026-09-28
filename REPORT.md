@@ -9,23 +9,30 @@ Paper claims are stated qualitatively and attributed to the paper.
 The README asks for a small-scale reproduction of Joseph et al. (arXiv 2602.07050): layer-wise probes, iterative
 nullspace probing, and multi-probe subspace steering for direction, speed and acceleration in the frozen V-JEPA 2
 ViT-L/16 encoder. It also asks for an open-ended Goodfire spline-steering extension (arXiv 2605.05115) that takes care
-over the circular structure of direction and over what counts as a held-out steering evaluation. **Step 1 does not
-reproduce on the supplied clips.** All three variables are linearly decodable from block 1, and there is no emergence
-zone and no late decline. A random-init ViT-L and random nonlinear features of the disk trajectory decode them nearly
-as well, so on this stimulus availability comes from architecture plus a clean input. Training adds precision. On a
-harder rendered set (textured floor, shading, smaller disk; 392 clips, 8 directions) the direction onset moves from
-point 2 to point 5 and V-JEPA's block 1 falls below the random-init network's: a partial recovery of the emergence
-zone. VideoMAE (pixel reconstruction) matches V-JEPA 2 on all three variables with the same onsets. **Step 2
-reproduces in part.** Every variable needs tens of probes at the paper's layer, far outside a random-removal band.
-Measured four ways, that count reflects anisotropy: a whitened erasure needs one probe at every point; the code is
-rank-2 linear plus a second harmonic and a nonlinear residual (§3.2). Speed does not need fewer probes than direction,
-and the ridge curves have no sawtooth. Under the paper's literal Adam recipe both variables' curves are jagged and K
-roughly doubles, with no direction-specific sawtooth. **Step 3 reproduces in shape** (one probe fails, a few probes
-reach the target, MAE-to-true rises), and it takes fewer probes than the paper's. Against a random orthonormal basis of
-fixed rank 2K the learned basis is indistinguishable until N ≈ 5; against a rank-matched random basis it first beats
-all 20 draws at N = 2–7 (by variable and layer); at N = 1 it separates from neither. The same curve appears in an
-untrained network, and at the onset layer the learned basis never beats the rank-2K random basis for N ≤ 20. Rerunning
-Parts 1 and 2 at the paper's literal 70/30 split changes no qualitative verdict. **Part 2.** Direction lies on a ring.
+over the circular structure of direction and over what counts as a held-out steering evaluation. **Step 1 reproduces
+in part, and which part depends on the readout.** Mean-pooled probes read all three variables from block 1 with no
+late decline, and a random-init ViT-L and random nonlinear features of the disk trajectory do nearly as well. That
+holds under every fold grouping and at the paper's clip count, so it is not a sample-size effect. But the paper's own
+App. C.5 puts the sharp step in per-patch probes and says mean-pooled probes rise gradually, so the pooled curve was
+the wrong comparison. Per patch, three things hold. On the supplied clips the per-patch code is early as well: mean
+per-position R² is 0.56 at block 1, 0.89 at block 5 and 0.96 at block 6, with no step at the paper's transition. That
+code is training-selective: the random-init network pools to 0.86–0.88 at every depth, but its per-position R² never
+exceeds 0.39, the paper's "fragmented local signal that pooling adds up" regime, which V-JEPA 2 leaves within six
+blocks. On a harder rendered set (textured floor, shading, smaller disk; 392 clips, 8 directions) the paper's sharp
+transition appears at its depth: per-position onset 9 [9, 9], and half-frame transfer goes from −1.42 to 0.08 across
+points 8→9 (§3.1). VideoMAE (pixel reconstruction) matches V-JEPA 2 on the pooled curves for all three variables.
+**Step 2 reproduces in part.** Every variable needs tens of probes at the paper's layer, far outside a random-removal
+band. Measured four ways, that count reflects anisotropy: a whitened erasure needs one probe at every point; the code
+is rank-2 linear plus a second harmonic and a nonlinear residual (§3.2). Speed does not need fewer probes than
+direction (in raw coordinates too, at point 9), and the ridge curves have no sawtooth. Under the paper's literal Adam
+recipe both variables' curves are jagged and K roughly doubles, with no direction-specific sawtooth. **Step 3
+reproduces in shape** (one probe fails, a few probes reach the target, MAE-to-true rises), with 3–5 probes to 10°
+where the paper needs about 20. How it compares with a random orthonormal basis of fixed rank 2K depends on the
+evaluation probe: with the paper's near-unregularised probe the learned basis beats all 20 draws from N = 5, with my
+CV-chosen one only from N = 14. Against a rank-matched random basis it first beats all 20 draws at N = 2–7 (by variable
+and layer; N = 3 under the paper's probe); at N = 1 it separates from neither. The same curve appears in an untrained
+network, and at the onset layer the learned basis never beats the rank-2K random basis for N ≤ 20. Rerunning Parts 1
+and 2 at the paper's literal 70/30 split changes no qualitative verdict. **Part 2.** Direction lies on a ring.
 My centroid-plane angle recovers it without labels at point 12 but not at point 22, and Goodfire's published runs take
 this coordinate from the labels[^src]. The ring is an ellipse, not a circle: axis ratio 0.74–0.87 in its own
 plane from point 8 on, bent out of that plane by a cos 2θ saddle that holds 20–34% of the centroid variance. Held-out
@@ -42,7 +49,10 @@ continued along its end tangent, as the authors' code does[^ext].
 predictor's forecast. Point-22 edits survive to the output with little target specificity. Probes fit on the
 predictor's own forecasts show point-22 edits moving the forecast to 11.3–44.2° of the held-out target (the smoothing spline is the 44.2°;
 unedited 92.1°[^nat]), position overshooting. At a common edit norm the interpolating spline still beats the chord (19.5° vs 27.2° at
-the chord's norm, 12.3° vs 25.7° at the natural one), in forecast angle only. Along the path the forecast follows the
+the chord's norm, 12.3° vs 25.7° at the natural one), in forecast angle only. That is a point-22 result. At the encoder
+output (the final LayerNorm, the predictor's input and the site Goodfire steers) edits reach the forecast too (chord
+12.5°, interpolating spline 15.7°), but at the chord's norm the spline trails the chord by 10.8° and at the natural norm
+it leads by only 2.1°[^enc]. Along the point-22 path the forecast follows the
 intermediate directions along the spline and jumps along the chord (−13.4° paired, −31.3° at large shifts). The reverse
 test does not recover the ring. This is a probe of the forecast on one stimulus and one 45° arc, not a rendered future.
 
@@ -81,6 +91,14 @@ test does not recover the ring. This is a probe of the forecast on one stimulus 
 | INLP K | probes until test at chance | nested K (held-out folds), paper-protocol K beside it | both below |
 | Steering basis length | until R² < 0.1 on train | all-train sequence cut at nested K | length never chosen on test |
 | INLP recipe | Adam lr 1e-3, wd 1e-4 | ridge; literal Adam sequence run once at points 8 and 9 | curves jagged and K ≈ 2× under Adam; no direction-specific sawtooth (§3.2) |
+| INLP coordinates | no normalisation stated (C.11), raw features implied | train-z-scored features | raw centred coordinates raise nested K 1.4–1.6×; direction vs speed equal at point 9, not at 8 (§3.2) |
+| INLP stop rule | R² or MAE rule, whichever fires (C.11) | the same rules | the MAE rule stops speed and acceleration at R² 0.15–0.20, direction runs to R² just under 0.1 (§3.2) |
+| Onset | "one-third depth", no numeric rule | first sampled point at ≥ 90% of the maximum, 200-draw clip bootstrap | per-patch curves reported beside the pooled ones (§3.1) |
+| CV folds | "5-fold grouped" (App. B), key not stated | stratified by value; direction-, start- and speed-grouped folds rerun | onsets unchanged (§3.1) |
+| Per-patch probes | per patch (C.5), method not stated | one probe per spatial position on features averaged over the 8 time steps; a pooled-patch probe; the half-frame test is one pooled probe per half | time structure within a position is not probed |
+| Rendered sets | start sampled per (θ, v) pair (App. A) | 7 starts drawn once and shared by every (θ, v) cell | 7 distinct start positions, not up to 392 |
+| Steering evaluation probe | fit on test, R² = 0.99 (C.12) | ridge on test, α = 100 by CV inside test (in-sample R² 0.993) | α = 1e-3 or Adam need fewer probes and beat the rank-2K null sooner (§3.3) |
+| Objective axis | VideoMAE-v2 family | VideoMAE v1 ViT-L (`MCG-NJU/videomae-large`), 224² | "not the objective" is shown for v1 only |
 | Part 2: steering site | Goodfire: last-token residual stream (A.2); encoder output for the world model (§5) | mean-pool over 2,048 tokens at point L | the edited vector is not one the model consumes; §4.1–§4.4 read it with probes, §4.5 adds the edit to every token |
 | Part 2: PCA-64 fit set | all prompts in the task (A.3) | knot clips (folds 0–2) at the kept values only | held-out values never shape the subspace; the plane can differ from an all-clip fit (point 22, §4.1) |
 | Part 2: spline | interpolating, no smoothing penalty (A.3) | count-weighted smoothing spline; interpolating run beside it | interpolating rebuilds held-out centroids worse and edits 1.4–1.6× more than the chord (§4.1) |
@@ -92,12 +110,18 @@ test does not recover the ring. This is a probe of the forecast on one stimulus 
 | Part 2: behaviour manifold | smoothing spline through 128 bin centroids (B.1) | interpolating spline through the 64 per-value centroids in the Hellinger tangent plane (A.4), F over 128 bins | circular at the steered layer either way (§4.2) |
 | Part 2: carriers | 16 fixed base prompts per task, one set for every pair (A.6) | 48 test clips per target, each steered from its own value | both use an oracle source coordinate; ours averages over sources |
 
-**Four places where the paper contradicts itself**[^ptxt]. (a) The INLP stopping
+**Places where the paper contradicts itself**[^ptxt]. (a) The INLP stopping
 threshold for direction is R² < 0.1 in C.11 and R² < 0.3 in the Fig. 22 caption: each `p1b` file has both (`K`,
 `K_loose`; §3.2). (b) The split is 80/20 in C.11 and 70/30 in C.12: I ran both (§3.4). (c) C.12 fits its evaluation
 probe on the test clips it then steers and scores (independent of the steering probes but not of those clips): her
 protocol is our §3.3 headline, with a split-half version beside it (12.4° / 17.1° at N = 5 vs 8.7°). (d) The main text
-reports < 0.5° with all probe directions, the appendix 11.9° held-out with 20 probes: I report every N. Goodfire's paper
+reports < 0.5° with all probe directions, the appendix 11.9° held-out with 20 probes: I report every N. (e) The velocity
+set has 392 videos in App. A, but C.12's split is 240 + 103 = 343. (f) The main text measures motion "in pixels per
+frame", App. A in m/s. (g) Probe counts disagree across C.10–C.12: C.12 trains "25 probes until R² < 0.1" at layer 8
+and reports 20; Table 3 gives a layer-8 direction dimension of 136 (68 probes); C.11 says 14–136 while Table 3 lists 400
+at layers 20–23; the main text says 40–50, up to 80. (h) "Speed needs fewer" depends on the layer in the paper's own
+Table 3: at layers 0–2 the direction dimension is 30 / 30 / 14 (15 / 15 / 7 probes) against speed's 25 / 24 / 25, so
+speed needs more probes there, and fewer from layer 3 on. Goodfire's paper
 has one of its own: A.3 derives the cyclic coordinate as atan2(PC2, PC1) "in an unsupervised manner", while its
 published weekdays and months runner configs, and the code default, set `intrinsic_mode: parameter`, the labels
 (`refs/causalab/causalab/configs/runners/{weekdays,months}/*.yaml`, `methods/spline/train.py`); A.6 also says K = 50
@@ -113,10 +137,14 @@ Every ridge value lies above the Adam CI, so ridge is slightly *better* on all t
 ### 3.1 Layer-wise probing
 
 **Paper's claim.** Speed and acceleration are decodable early. Direction appears only from about one third of the
-depth (the "Physics Emergence Zone"). Performance peaks mid-network and falls toward the output.
+depth (the "Physics Emergence Zone"). Performance peaks mid-network and falls toward the output. App. C.5 places the
+sharp step in per-patch probes: early direction signal is "fragmented across patches", mean-pooled probes reach
+"modest performance" by combining it, and "per-patch probe performance rises abruptly at the emergence zone, while
+mean-pooled performance improves more gradually" (`refs/physics_paper.txt` l.981–989).
 
-**Figure:** `figures/fig1_layer_curves.png` (the direction curve jumps at point 1; both motion types are shown in the
-right panel).
+**Figures:** `figures/fig1_layer_curves.png` (the direction curve jumps at point 1; both motion types are shown in the
+right panel); `figures/fig1g_perpatch_direction.png` and `fig1h_perpatch_heatmaps.png` (per-patch probes);
+`figures/fig1i_grouped_cv.png` (fold groupings).
 
 | Target | pt 0 | pt 1 | pt 2 | pt 9 | peak (pt) | onset [95% CI] | decline peak→final | CV MAE pt 1 → 9 → peak |
 |---|---:|---:|---:|---:|---:|---:|---:|---|
@@ -129,10 +157,14 @@ right panel).
 Cells are CV R² (5-fold mean). Onset is the first point at ≥ 90% of the maximum, with a 200-draw clip bootstrap for
 the CI. Source: `p1a_{var}_meanpool.json`.
 
-**Verdict: falsified for onset.** Direction is at 0.875 after one block, and no variable declines late. Disk-pooling
-changes little (direction peak 0.994, onset still 2[^disk]).
+**Mean-pooled curve.** Direction is at 0.875 after one block, and no variable declines late. Disk-pooling changes little
+(direction peak 0.994, onset still 2[^disk]). The onset does not depend on how the CV folds are grouped (the paper's
+App. B says "5-fold grouped" without the key): direction onset is 2 [2, 2] with stratified, direction-grouped and
+start-grouped folds, and speed onset 1 [1, 1] with stratified and speed-grouped folds[^gcv]. Per the paper's own C.5,
+though, the pooled curve is expected to rise early and gradually, so it is the wrong readout to test the emergence zone
+against. The per-patch test is below.
 
-**Controls. The non-reproduction is explained by the stimulus, not by a bug.**
+**Controls for the mean-pooled curve.**
 
 | CV R² | direction | speed | accel. | (vx, vy) | (ax, ay) |
 |---|---:|---:|---:|---:|---:|
@@ -162,12 +194,17 @@ is 0.125 R²[^obj].
 | 8 directions, direction-grouped folds | 150 | 0.396 → 0.899 | 5 [5, 8] | 0.647 → 0.695 | 1 [1, 2] |
 | 150 random clips, 64 directions | 150 | 0.638 → 0.933 | 5 [3, 6] | 0.715 → 0.737 | 1 |
 | 240 random clips | 240 | 0.686 → 0.943 | 4 [3, 5] | 0.734 → 0.750 | 1 |
+| 8 directions, constant-velocity clips only | 76 | 0.489 → 0.941 | 6 [5, 8] | 0.694 → 0.746 | 1 [1, 2] |
+| same, direction-grouped folds | 76 | 0.361 → 0.818 | 9 [6, 9] | 0.540 → 0.646 | 3 [2, 6] |
+| 392 constant-velocity clips, 64 directions | 392 | 0.823 → 0.972 | 2 [2, 2] | 0.847 → 0.863 | 1 |
 
-At the paper's sample size V-JEPA's direction onset moves later, to point 4–5, and the rise over blocks 1–5 becomes
-selective (the random network stays flat). The cause is sample size: 150 clips over 64 directions behave like 150
-clips over 8. The onset still does not reach the paper's one-third depth. Speed stays at onset 1 for V-JEPA in every
-condition. The random network's speed onset becomes unstable (direction-grouped folds: 0.294 → 0.468, onset 11 [3,
-20])[^pss].
+At 150 clips or fewer V-JEPA's direction onset moves later, to point 4–9, and the rise over the early blocks becomes
+selective (the random network stays flat). I first read this as the explanation for the missing emergence zone and
+withdraw that reading: at the paper's own clip count the onset comes back to point 2, both for 392 constant-velocity
+clips drawn from the supplied set (2 [2, 2] in every seed[^psv]) and for the rendered paper-layout set of 392 clips
+(2 [2, 3], below). The late onsets in the small rows come from having few clips per fit, 76–150 against the paper's
+392. Speed stays at onset 1 for V-JEPA in every condition. The random network's speed onset becomes unstable
+(direction-grouped folds: 0.294 → 0.468, onset 11 [3, 20])[^pss].
 
 **Rendered stimulus sets** (8 directions × 7 speeds × 7 starts = 392 clips, 313 train / 79 test, direction only;
 `figures/stimuli_{paper_layout,hard}_examples.png`)[^stim]. The *paper-layout* set keeps the supplied look. The *hard*
@@ -181,14 +218,52 @@ set adds a textured floor, shading and a disk of half the radius.
 The two sets have the same size and the same 8 directions, so the shift from onset 2 to onset 5 on the hard set comes
 from the rendering, not from sample size. On the hard set V-JEPA's block 1 is below the random network's, and V-JEPA
 first beats it beyond the paired CI at point 5 (post-hoc selectivity onset). The random network stays flat or declines
-(0.881 → 0.861). This is a partial recovery of the emergence zone: point 5 is about a fifth of the depth, not the
-paper's third. Caveats: 392 clips, 8 directions, direction only, one render seed.
+(0.881 → 0.861). On the pooled curve this is a partial recovery of the emergence zone (point 5 is about a fifth of the
+depth); per patch, the hard set shows the paper's step at the paper's depth (below). Caveats: 392 clips, 8 directions,
+direction only, one render seed, and the 7 start positions are shared by every (θ, v) cell, where the paper samples
+starts per pair.
 
-**Objective axis: VideoMAE** (ViT-L, pixel reconstruction; 224-px input, 1,568 tokens)[^obj]. VideoMAE matches V-JEPA 2
+**Per-patch probes (paper App. C.5 / Fig. 18)**[^pp]. One ridge probe per spatial position (16 × 16 = 256), on that
+position's tokens averaged over the 8 time steps; a pooled-patch probe fit on all (clip, position) samples and scored
+per position; and a half-frame test (one pooled probe fit on the left 8 columns and read on the right, and the reverse).
+All scores are test R² on the stored split (rendered sets: 313 / 79).
+
+| Set | per-position mean R², pt 1 / 6 / 8 / 9 / 22 | per-position onset | pooled-patch pt 1, onset | cross-half R², pt 1 / 8 / 9 / 22 | mean-pool onset (test) |
+|---|---|---|---|---|---|
+| supplied, V-JEPA 2 | 0.56 / 0.957 / 0.958 / 0.975 / 0.95 | 5 [5, 5] | 0.83, 2 [2, 4] | 0.82 / 0.95 / 0.96 / 0.81 | 2 [1, 2] |
+| supplied, constant-velocity clips | 0.54 / 0.959 / 0.961 / 0.980 / 0.94 | 6 [5, 6] | 0.88, 2 [1, 2] | 0.87 / 0.96 / 0.97 / 0.84 | 1 [1, 2] |
+| supplied, random-init ViT-L | −0.01 / 0.22 / 0.27 / 0.29 / 0.38 | 16 [10, 19] | 0.66, 4 [3, 5] | 0.61 / 0.70 / 0.71 / 0.74 | 1 [1, 1] |
+| hard rendered set | 0.49 / 0.806 / 0.851 / 0.944 / 0.96 | 9 [9, 9] | 0.78, 9 [8, 9] | 0.69 / −1.42 / 0.08 / 0.75 | 6 [4, 6] |
+| paper-layout rendered set | 0.47 / 0.958 / 0.955 / 0.978 / 0.93 | 6 [6, 6] | 0.86, 4 [1, 4] | 0.81 / 0.95 / 0.97 / 0.86 | 4 [4, 4] |
+
+Three findings. (1) On the supplied clips both readouts are early. Mean per-position R² is 0.56 at block 1, 0.89 at
+block 5 and 0.96 at block 6 (onset 5 [5, 5]; constant-velocity subset 0.54 → 0.87 → 0.96, onset 6 [5, 6]). The
+pooled-patch probe works at every position from block 1 (0.83, R² ≥ 0.5 at all 256 positions). Half-frame transfer
+is 0.82 at block 1, peaks at 0.96 at point 9 and falls to 0.81 at point 22, the opposite of the paper's late
+generalisation. There is no step at the paper's transition (points 8 → 9: 0.958 → 0.975). (2) The per-patch code is
+training-selective. The random-init network pools to 0.86–0.88 at every point, but its per-position R² never exceeds
+0.39 and its cross-half R² is 0.61–0.74. That is the paper's regime of fragmented local signal that pooling adds up;
+V-JEPA 2 leaves it within six blocks on these clips. (3) On the hard set the paper's sharp transition appears at its
+depth. Per-position onset is 9 [9, 9] (0.851 → 0.944 across points 8 → 9), pooled-patch onset 9 [8, 9], and
+cross-half transfer is −0.73 at point 4 and −1.42 at point 8, then 0.08 at 9, 0.42 at 12 and 0.75 at 22. The negative
+values are a between-half miscalibration, not a mirror flip: at point 8 the cross-half MAE is 56° against 11° within a
+half, where a left-right mirror of 8 directions would give 90°. On the paper-layout set the per-position onset is 6 and
+cross-half transfer is already 0.81 at block 1, so the step on the hard set comes from the rendering. Caveats: per-position
+features are averaged over the 8 time steps; the half-frame test is one pooled probe per half; the rendered sets sample
+points 1, 4, 6, 7, 8, 9, 10, 12, 16 and 22 only, so their onsets of 4 and 6 are upper bounds; they reuse 7 start
+positions across all (θ, v) pairs; the hard set is 392 clips and one render seed.
+
+**Verdict.** The emergence zone reproduces as a per-patch phenomenon on a harder stimulus, at the paper's depth. On the
+supplied clips it does not: the per-patch code forms by block 6 with no step at points 8 → 9, while the mean-pooled
+curve is early under every fold grouping and at the paper's clip count. What training changes on every stimulus is
+the per-patch code (V-JEPA 2 0.96–0.98 against 0.39 for the random network), not pooled availability.
+
+**Objective axis: VideoMAE** (v1 ViT-L, `MCG-NJU/videomae-large`, pixel reconstruction; 224-px input, 1,568 tokens; the paper used the VideoMAE-v2 family)[^obj]. VideoMAE matches V-JEPA 2
 on every variable. Direction: block 1 0.886 vs 0.875, peak 0.992 (point 21) vs 0.991 (22), onset 2 for both. Speed:
 peak 0.996 vs 0.994, onset 1. Acceleration: peak 0.996 vs 0.992, onset 1. Nested K at each model's peak is 67 / 109 /
 87 for VideoMAE vs 88 / 89 / 67 for V-JEPA 2. Steering reaches the bar with 4 / 8 / 9 probes vs 4 / 7 / 6
-(`figures/fig5_objective_axis.png`). Nothing in Part 1 on this stimulus is specific to latent prediction.
+(`figures/fig5_objective_axis.png`). Nothing in the pooled Part 1 measures on this stimulus is specific to latent
+prediction; VideoMAE was not run per patch.
 
 ### 3.2 Iterative nullspace probing
 
@@ -212,11 +287,36 @@ and `p1b_*_random_L{pt}.json`.
 - **Direction vs speed.** Probe counts are equal (37 vs 39 at point 9, 88 vs 89 at the peaks). Speed needs fewer
   *dimensions* only because its probes are 1-output. The paper's second claim does not reproduce in probe count.
   Early layers hold each variable in hundreds of weak redundant directions (onset rows), which fits the
-  random-feature picture from step 1.
+  random-feature picture from step 1. The counts depend on the coordinates: C.11 states no normalisation, and in raw
+  centred coordinates (α re-chosen) nested K is 1.4–1.6× larger. Direction vs speed is then 51 vs 55 at point 9 and 65
+  vs 73 at point 8, and under the paper-protocol rule 63 vs 61 and 68 vs 83[^raw]. So equal counts hold at point 9 and
+  weaken at point 8, where speed needs more probes, not fewer.
+- **The stop rule is not the same for both variables.** C.11 stops when either the R² rule or the MAE rule fires. For
+  speed and acceleration the MAE rule (MAE > 0.9× the mean predictor's) fires first, at round R² 0.15–0.20 at every
+  V-JEPA point under both protocols, while direction runs on to R² just under 0.1 (0.094 at the lowest). The scalar counts are therefore taken
+  at a looser point than direction's. The same asymmetry means the speed and acceleration counts at Fig. 22's R² < 0.1
+  (`K_loose`) are floors at every V-JEPA point except nested acceleration at onset, not only for VideoMAE as I
+  wrote earlier (footnote [^fig22]). Rerun with one R² rule for all variables[^stop], speed still does not need fewer
+  probes: at R² < 0.1, direction vs speed is 37 vs 47 (nested) and 46 vs 50 (paper protocol) at point 9, and 40 vs 60
+  and 83 vs 57 at point 8; at R² < 0.05, 45 vs 55 and 58 vs 59 at point 9. Acceleration also needs more than
+  direction at point 9 (48 nested, 57 paper at R² < 0.1).
+- **One column per round.** C.11 says "project out the learned direction", while each direction probe has two output
+  columns. Removing one column per round (alternating sin/cos, or the top singular vector) takes 72–73 rounds nested
+  and 84–92 under the paper protocol at point 9, about twice the stored 37 / 46, so the removed dimension count is
+  about the same. Under ridge it creates no sawtooth (R² drop autocorrelation 0.82–0.84 nested, no isolated dips);
+  under Adam the drops stay negatively autocorrelated, as with two columns[^onecol].
 - **Sawtooth.** Under ridge there is none. There are no isolated dips at any direction layer under either protocol.
   The lag-1 autocorrelation of per-round drops in R² is positive everywhere (0.42–0.95; a sawtooth gives negative
   values). On within-15° accuracy it is positive under the nested protocol (0.26–0.78) and mixed under the paper
-  protocol (−0.24 at point 2, −0.06 at point 8, 0.27 at point 9, 0.19 at point 22).
+  protocol (−0.24 at point 2, −0.06 at point 8, 0.27 at point 9, 0.19 at point 22). The paper's Fig. 23 teeth are about
+  65 points deep by eye; here successive probes' readouts are 9–15° apart under ridge (mean consecutive readout angle,
+  points 2–22), where a sin/cos pairing would put them near 90°[^saw].
+- **Sawtooth on metrics both variables share** (8-bin accuracy and R², points 8 and 9)[^saw]. On 8-bin accuracy the
+  drop autocorrelation under nested ridge is positive for both variables (direction 0.60 / 0.45, speed 0.68 / 0.74 at
+  points 8 / 9); under the Adam recipe it is negative for both (direction −0.25 to −0.46, speed −0.38 to −0.50), and
+  Adam's isolated dips number 1–3 per run for speed against 0–2 for direction. The "no isolated dips" statements for
+  direction, here and in the Adam bullet, hold on within-15° accuracy only (on 8-bin accuracy the ridge paper-protocol
+  run at point 8 has one). On a common metric speed is at least as jagged as direction.
 - **Adam sequence (the C.11 recipe, run literally, targets standardised).** Direction reaches chance after K = 84
   probes (batch 64) or 96 (full batch) at point 9, and 88 or 100 at point 8. Speed takes 95 or 91 at point 9 and 104
   or 102 at point 8. That is about 2× the ridge paper-protocol K at point 9 (46 direction, 45 speed); for direction at
@@ -247,7 +347,9 @@ intrinsic rank; beyond that code lies a nonlinear residual that grows toward the
 
 **Verdict.** The "tens of dimensions" claim reproduces at the paper's layer against a random band. The claims that
 speed needs fewer and that direction's curve has a sawtooth do not reproduce under ridge. Under Adam both curves are
-jagged, speed's as much as direction's, so the jaggedness tracks the recipe, not the variable.
+jagged, speed's as much as direction's on a metric both share, so the jaggedness tracks the recipe, not the variable.
+The absolute counts depend on the coordinates (1.4–1.6× larger raw) and on which stop rule fires, which is looser for
+the scalars.
 
 ### 3.3 Multi-probe subspace steering
 
@@ -263,7 +365,7 @@ point 22, 0.860 at point 2):
 | 0 | 87.4° | | | 2.3° | 87.3° | 86.5° |
 | 1 | 78.4° | 77.7 ± 2.1° (0.67) | 72.6 ± 26.4° (0.48) | 9.1° | 71.7° (0.52) | 85.7° (0.62) |
 | 3 | 25.4° | 30.0 ± 11.2° (0.33) | 66.5 ± 34.9° (0.095) | 62.0° | 12.9° (0.29) | 82.1° (0.57) |
-| 5 | 8.7° | 12.8 ± 4.6° (0.14) | 57.2 ± 37.4° (0.095) | 78.9° | 5.5° (0.29) | 77.3° (0.62) |
+| 5 | 8.7° | 12.8 ± 4.6° (0.14) | 57.2 ± 37.4° (0.095) | 78.8° | 5.5° (0.29) | 77.3° (0.62) |
 | 10 | 3.1° | 9.0 ± 5.2° (0.095) | 54.3 ± 27.8° (0.048) | 85.4° | 4.4° (0.14) | 65.0° (0.48) |
 | 20 | 2.9° | 14.2 ± 12.5° (0.048) | 62.5 ± 33.0° (0.048) | 87.3° | 2.8° (0.048) | 21.4° (0.57) |
 | K (37 / 88 / 289) | 2.7° | 81.2 ± 42.4° (0.048) | (= rank 2K) | 87.0° | 4.1° (0.048) | 6.9° (0.048) |
@@ -272,8 +374,8 @@ p is the empirical rank against 20 random orthonormal bases (rank 2K, or rank-ma
 least-squares solve (floor 1/21 = 0.048). The orientation-only null (learned coefficients through a random basis) gives
 p = 0.048 at every N (mean 87.4° at N = 1). Source: `p1c_direction_L{2,9,22}.json`, `p1c_direction_L9_rankmatched.json`.
 
-- **Null reading, two nulls.** Against the rank-2K (74-dim) basis the learned basis is no better until N ≈ 5 at point 9
-  (p ≥ 0.14); at the onset layer (rank 578) it never beats it for N ≤ 20, so "single probe fails, many succeed" is
+- **Null reading, two nulls.** Against the rank-2K (74-dim) basis the learned basis is no better up to N = 6 at point
+  9 (p ≥ 0.14), first touches the 1/21 floor at N = 8 and stays there from N = 14 (point 22: from N = 17); at the onset layer (rank 578) it never beats it for N ≤ 20, so "single probe fails, many succeed" is
   largely least squares in *any* subspace of that rank. Against the rank-matched null (rank 2N for direction, N for
   scalars; 20 nested draws; second band in `fig3c_steering_nulls_paper.png`) the learned basis first beats all 20 draws
   at N = 6 (direction, point 9), N = 2 (direction, point 22), N = 6 / 7 (speed, points 9 / 19) and N = 5 (acceleration,
@@ -281,8 +383,8 @@ p = 0.048 at every N (mean 87.4° at N = 1). Source: `p1c_direction_L{2,9,22}.js
   (direction SDs 23–42°; speed point 9, N = 7: 39.9 ± 165.2 m/s): a random low-rank subspace reaches the target only
   with a large edit (per-draw median norm ratio 10.6 on average, N = 1, direction point 9). At 70/30 the learned basis
   is at the 1/21 floor of the rank-2K null at N = 10 for all three variables (80/20: p = 0.095 / 0.14 / 0.095)[^s70][^rm].
-- **Untrained network.** The same curve appears in the random-init ViT at point 9 (K = 24): 82.9° → 30.7° (N = 5)
-  → 8.7° (N = 10) → 5.9° (N = 20)[^p1cr].
+- **Untrained network.** The same curve appears in the random-init ViT at point 9 (K = 24): 87.4° (N = 0) → 82.9°
+  (N = 1) → 30.7° (N = 5) → 8.7° (N = 10) → 5.9° (N = 20)[^p1cr].
 - **Norm and radius.** The median ‖x\*‖/‖x‖ is 1.003 at N = 20 and 1.118 at N = K (point 9), and 1.364 at N = K at
   point 22. The readout radius dips to 0.72 at N = 2 and returns to 0.99 by N = 10. The radius-matched target arm
   gives the same MAE curve (`fig3_steering_paper.png`, right).
@@ -297,9 +399,18 @@ p = 0.048 at every N (mean 87.4° at N = 1). Source: `p1c_direction_L{2,9,22}.js
   9, evaluation OOF R² 0.96): 12.4° / 17.1° at N = 5 and 4.1° / 4.2° at N = 10 (the two directions of the split),
   against 8.7° and 3.1° under the paper protocol. The in-sample evaluation probe flatters small N slightly and makes
   no difference from N = 10[^strict].
+- **The evaluation-probe recipe** (point 9, direction)[^evp]. C.12 fits its evaluation probe on the test clips with
+  R² = 0.99 and does not give its regularisation. My stored probe is ridge with α = 100 chosen by CV inside test
+  (in-sample R² 0.993, the closest of the three to the paper's 0.99). A near-unregularised ridge probe (α = 1e-3,
+  in-sample R² 1.000) and the C.11 Adam recipe (0.998) read the same edits differently: 3 and 4 probes reach ≤ 10° to
+  target (stored: 5), the rank-2K null is beaten at the 1/21 floor from N = 5 for both (stored: p = 0.143 at N = 5,
+  floor from N = 14), and the rank-matched null from N = 3 (stored: N = 6). The
+  null reading therefore depends on how the evaluation probe is regularised, which C.12 does not fix.
 
-**Verdict.** Fig. 24's shape reproduces with 5–10 probes rather than 20. The probes beat a random subspace of their own
-rank from N = 2–7, but a rank-2K random basis matches them until N ≈ 5 and an untrained network shows the same curve.
+**Verdict.** Fig. 24's shape reproduces with 3–5 probes under the paper's evaluation probe and 5 under mine, rather
+than 20. The probes beat a random subspace of their own rank from N = 2–7 (N = 3 under the paper's probe). Against a
+rank-2K random basis they win from N = 5 under the paper's probe but only from N = 14 under mine, and an untrained
+network shows the same curve.
 
 ### 3.4 The paper's 70/30 split
 
@@ -343,7 +454,10 @@ the knot clips alone, and there the check decides the coordinate[^src]. At point
 plane, 0.81 in the activation plane, order not preserved in either) and on 12 of the 16 arcs, which use the labels; the
 other four (seeds 4, 8, 9, 10) passed and ran on the label-free angle, and I reran them on the labels (§4.3). Goodfire's
 own label-free angle (each PC scaled by √variance, then their periodicity test) passes on 0 of 17 arcs at point 12 and
-on 9 of 17 at point 22, where even the passing angles are up to 38–97° off θ (`p2_angle_goodfire_method.json`). So
+on 9 of 17 at point 22, where even the passing angles are up to 38–97° off θ (`p2_angle_goodfire_method.json`); run as
+their code runs it, on all 64 centroids, it fails at points 8 and 12 and passes at 22 only, barely (relative
+eigenvalue difference 0.445 against a tolerance of 0.45; circular correlation 0.905, max deviation 49.6°;
+`p2_angle_goodfire_all64.json`). So
 label-free recovery here is my extension, the centroid-plane fallback, and it works at point 12 only.
 
 - **The ring is found** (`figures/fig4_centroid_plane_direction_L12.png`). The number to look at is the label-free angle
@@ -590,13 +704,16 @@ point-22 endpoint on 1 of 16 arcs (+3.7°) and on the headline arc (+3.80°), an
   correction.
 - **Isometry with the straight-line baseline** (Goodfire A.5, behaviour = the predictor's forecasts)[^p2b]. Pearson r is
   0.86 / 0.96 / 0.69 at points 8 / 12 / 22 with distances along the smoothing spline and 0.80 / 0.90 / 0.78 with chord
-  distances, reversed at point 22. The forecast and encoder-output spaces give the same r within 0.02 as the bare angle
+  distances, reversed at point 22 on the stored coordinate (see below). The forecast and encoder-output spaces give the same r within 0.02 as the bare angle
   difference, so on a ring this test measures whether arc length is proportional to angle change. Goodfire's world-model
   behaviour manifold is built from activations (its Eq. 10), so its 0.996 isometry has the same circularity as our Eq. 9
   figures. With the authors' recipe (behaviour manifold = an interpolating spline through the per-value forecast
-  centroids in the full 1,024-d forecast space) r is 0.84 / 0.93 / 0.67 along the interpolating activation spline
-  against 0.73 / 0.87 / 0.75 for the chord, and 0.885 / 0.979 / 0.758 against 0.800 / 0.876 / 0.752 along the smoothing
-  spline: the spline leads at points 8 and 12, and at point 22 it trails (interpolating) or ties (smoothing)[^iso].
+  centroids in the full 1,024-d forecast space) on the label-free knot order, r is 0.84 / 0.93 / 0.67 along the
+  interpolating activation spline against 0.73 / 0.87 / 0.75 for the chord, and 0.885 / 0.979 / 0.758 against 0.800 /
+  0.876 / 0.752 along the smoothing spline[^iso]. On the labels coordinate, which Goodfire's runners use, the spline
+  leads at every point: interpolating 0.986 / 0.982 / 0.984 against chord 0.727 / 0.867 / 0.749 at points 8 / 12 / 22,
+  smoothing 0.984 / 0.994 / 0.979 against 0.858 / 0.890 / 0.831[^isol]. The point-22 reversal came from the label-free
+  angle's scrambled knot order and is withdrawn.
 
 ### 4.5 Beyond the steered layer (GPU session 2)
 
@@ -621,7 +738,8 @@ edit, so they are not independent evidence. Point-22 edits survive the last thre
 weak target specificity: against the neighbouring target (at most 39° away, 16.5° on average[^s2]) the error rises by
 only 1–6° at point 25 (7–13° at the steered point). The projection on the twin's real activation change at point 25
 is 0.16 / 0.23 / 0.22 (probe-QR / smoothed spline / chord) vs 0.15 / 0.21 / 0.21 for the shuffled twin (`readout_b`).
-The interpolating spline overshoots (‖Δ‖ 7.2× the natural twin change at point 12, vs 0.5–0.6×) and is excluded.
+The interpolating spline on the label-free knot order overshoots (‖Δ‖ 7.2× the natural twin change at point 12, vs
+0.5–0.6×) and is excluded; on the labels order its edit is 0.97× the twin change[^il12].
 
 **Predictor** (context frames 1–8 edited at every token; the predictor forecasts tubelets 4–7). *First attempt
 (blind).* Probes fit on the encoder's real future tokens (3.4°, 6.7–8.4 px) read the unedited forecast 61° / 67.9 px
@@ -646,8 +764,12 @@ over the natural twin change (`session2_propagation.json`), not norm-matched (ma
 
 At point 22 every structured arm moves the forecast toward the held-out target, away from its 180° flip; the weak
 shuffled null (targets 16.5° apart) separates by 3–7°. Position overshoots: R 1.3–1.8, 39–55 px from the twin vs
-13.2 px for its own context. At point 12 edits barely reach the forecast (81.7–84.8°; interpolating spline 77.9° but
-104.9 px off, R dir 0.31 [0.13, 0.48]); at points 2 and 8, 90.8–92.8°. Unmatched, the spline's lead over the chord
+13.2 px for its own context. At point 12 edits barely reach the forecast (81.7–84.8°); at points 2 and 8, 90.8–92.8°.
+The point-12 interpolating-spline cell (77.9°) is the label-free knot order, whose edit is 10.7× the centroid change;
+rerun on the labels order the edit is 1.40× the centroid change and the forecast reads 81.8° from target and 58.9 px
+from the twin, like every other point-12 arm[^il12]. So the point-12 failure is wash-out, not knot order. The 180°-flip
+column equals 180° minus the target column by construction; only the position flip (distance to the twin reflected
+about its tubelet-0 centroid) is an independent check. Unmatched, the spline's lead over the chord
 (11.3° vs 27.2°) is confounded with a larger edit (0.91× vs 0.65×; the point-12 contrast and flip null are not).
 *Norm-matched rerun*[^nm]: point-22 edits rescaled per (carrier, target) to a common norm, same carriers, targets and
 probes (chord and unedited forecasts match the cache exactly). Cells: to target / paired target − flip / R dir / px:
@@ -666,6 +788,30 @@ the chord's norm (paired 95% CI 5.0–10.6) and 13.4° at the natural norm (11.1
 half of that lead was dose, and a route effect remains. The gain is angle-only: at the chord's norm its R equals the
 chord's (−0.003 [−0.04, 0.03]) and position is 3.6 px worse [2.5, 4.7]; at the natural norm R is 0.155 lower [0.06,
 0.26] and position ties (+0.4 px [−1.2, 2.1]). The smoothing spline trails the chord by 12° at both norms.
+
+**At the encoder output**[^enc]. Point 25 is the final LayerNorm, whose tokens are the predictor's input and the site
+Goodfire §5 steers in its world-model experiment. The same 200 carriers × 4 targets and six arms, with the edit added
+to every post-LN context token, the same predictor-native probes, and each arm at its own norm, at the chord's norm
+and at the natural twin change:
+
+| Arm | own norm: to target / R dir / px to twin | at the chord's norm | at the natural norm |
+|---|---|---|---|
+| chord | 12.5° / 0.81 / 42.5 | (same) | 18.0° / 1.78 / 65.9 |
+| interpolating spline | 15.7° / 0.87 / 44.4 | 23.4° / 0.62 / 41.2 | 15.8° / 1.23 / 52.6 |
+| radius-matched | 13.8° / 0.79 / 57.1 | 22.7° / 0.70 / 50.0 | 16.2° / 1.25 / 87.2 |
+| probe-QR | 22.0° / 0.82 / 105.4 | 49.8° / 0.41 / 53.2 | 27.0° / 0.73 / 90.3 |
+| smoothing spline | 27.3° / 0.74 / 38.5 | 23.8° / 0.75 / 39.5 | 31.1° / 1.65 / 64.6 |
+| random | 109.4° / −0.29 / 81.1 | 99.9° / −0.13 / 65.5 | 108.0° / −0.26 / 76.7 |
+
+Unedited: 92.1°, 60.2 px; the 180° flip null of the structured arms is 153–168° (≈ 165° for the best arms), again
+180° minus the target error. Edits at the predictor's input reach the forecast as point-22 edits do, so the wash-out
+picture holds: edits at points ≤ 12 are repaired, edits at point 22 or later reach the forecast. The route effect does not carry over.
+Paired spline − chord is +3.1° [2.1, 4.2] at own norms, +10.8° [9.4, 12.6] at the chord's norm (point 22: −7.7° [−10.6,
+−5.0]) and −2.1° [−3.8, −0.4] at the natural norm (point 22: −13.4°). "The spline beats the chord at matched norm" is a
+point-22 result; at the encoder output the chord is as good or better. For comparison with Goodfire: its §5 world-model
+evidence is qualitative, decoded frames along one linear and one manifold path between two car positions
+(`refs/steering_paper.txt` l.1850–1874). A probe readout over 800 carrier-target pairs is a stronger test of the same
+claim, not an analogue of theirs.
 
 **The forecast read along the path**[^ap]. Nine waypoints (t = 0, 0.125, …, 1) per point-22 path, scaled so the
 endpoint equals the natural twin change (t = 1 reproduces the cells above); random: a line with the spline's norms.
@@ -709,7 +855,7 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
 | Question | Result | Source |
 |---|---|---|
 | Object permanence | Direction decoded from time steps whose frames contain no disk (89 clips; test 15 clips / 22 tokens): MAE 7.5° [5.6, 9.4] at point 8 (visible 5.4°), 6.1° at point 22 (visible 3.8°); shuffled-label null 84.5°, p = 0.001. The random-init encoder, same clips and protocol, does as well: test-clip absent-step MAE 5.9–7.2° across points vs 6.1–13.4° for V-JEPA 2 (null ≈ 90° for both). V-JEPA 2 is ahead only late, by ≤ 1.0° on test clips (points 16–25) and 2.4° / 2.0° pooled at points 22 / 25; it is behind at points 1–12. On visible steps V-JEPA 2 is 5–7° better from point 8 on. So above-null decoding after the disk leaves is attention mixing within the clip (no causal mask), not learned carrying. | `p1a_object_permanence.json` (`random_init.side_by_side`), `fig6_object_permanence.png` (random-init overlaid) |
-| Cartesian vs polar | On constant-velocity clips (596), (vx, vy) reaches onset at point 1 and (sin θ, cos θ) at point 2 (difference −1, CI [−1, −1]); block 1 R² 0.929 vs 0.863. Speed set: 0.985 vs 0.855. The one-block "emergence" of direction is the normalisation v/‖v‖. | `p1a_support_onset_*_meanpool.json`, `fig1d` |
+| Cartesian vs polar | On constant-velocity clips (596), (vx, vy) reaches onset at point 1 and (sin θ, cos θ) at point 2 (difference −1, CI [−1, −1]); block 1 R² 0.929 vs 0.863. Speed set: 0.985 vs 0.855. The one-block "emergence" of direction is the normalisation v/‖v‖. Direct test at block 1: the angle of the (vx, vy) probe's output has MAE 12.1° against 12.3° for the direct (sin, cos) probe, and R² 0.900 against 0.911 once the direct output is scaled to unit length, so the direct probe's lower R² there is its radius, not its angle; the two angles disagree clip by clip by 13.1°. From point 2 the direct probe is better (8.3° vs 11.2°). | `p1a_support_onset_*_meanpool.json`, `fig1d`, `p1a_support_cartesian_angle.json` |
 | Direction transfer (held-out context) | Direction probe fit on the direction set, read on the speed set at point 9: MAE 4.4° (source CV 4.0°); 8.7° below 1 m/s, 3.3° at 1–4 m/s. On the acceleration set: 5.8°. At point 1: 10.8° (23.9° below 1 m/s). | `p1a_support_transfer_meanpool.json`, `fig1c` |
 | Spatial generalisation | Train on start x < 0, test on x > 0, point 9: R² 0.971 (MAE 4.9°), vs 0.972 within-side. At point 22, mean-pool 0.957 vs disk-pool 0.988. | `p1a_support_spatial_{meanpool,diskpool}.json`, `fig1e` |
 | Direction vs speed subspace (paper C.4 method) | Overlap direction←speed 0.0740 at point 8 (random expectation 0.0781, 5–95% band 0.0756–0.0808); 0.0733 at point 9 (0.0723, band 0.0694–0.0740). Direction vs acceleration 0.0762 and 0.0739, inside or at the edge of the band. The INLP bases are as orthogonal as random ones, yet steering direction still moves the speed readout (§3.3 off-target). | `step2_subspace_angles.json` |
@@ -720,16 +866,21 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
 
 - **Detection vs use.** Detection is easy on this data. A random network, and random features of a 32-number
   trajectory, detect all three variables at R² ≥ 0.85. Use is where the evidence thins. The Part 1 edit moves a
-  held-out linear probe, but it beats a rank-2K random basis only past N ≈ 5 (a rank-matched one from N = 2–7), works
-  in an untrained network too, and leaves an MLP on disjoint clips 19–31° off. On the ladder in `PART2_RATIONALE.md`
-  §2, this project reaches rung 3 at the steered layer and rung 4 only by circular measures. Rung 5 was tested: at
-  point 22 the edit reaches the predictor's forecast; at points ≤ 12 it washes out and does not (§4.5). Along the path
-  the forecast passes through the intermediate directions on the spline and jumps on the chord (−13.4°), in the ring
-  plane only.
-- **Internal world model vs stimulus-response.** For this stimulus class the random-init control answers her question:
-  linear availability is architectural, carrying direction into disk-free tokens is not a training effect, and VideoMAE
-  matches V-JEPA 2 on every Part 1 measure, so none of this is specific to latent prediction or shows that the
-  variables are used to predict. The authors' OpenReview response states that "all 13 models encode motion direction
+  held-out linear probe, but whether it beats a rank-2K random basis depends on the evaluation probe (from N = 5
+  under the paper's, N = 14 under mine; a rank-matched one from N = 2–7), it works in an untrained network too, and it
+  leaves an MLP on disjoint clips 19–31° off. On the ladder in `PART2_RATIONALE.md` §2, this project reaches rung 3 at
+  the steered layer and rung 4 only by circular measures. Rung 5 was tested: at point 22 and at the encoder output the
+  edit reaches the predictor's forecast; at points ≤ 12 it washes out and does not (§4.5). At point 22 the forecast
+  passes through the intermediate directions on the spline and jumps on the chord (−13.4°); at the encoder output the
+  chord lands as close as the spline or closer.
+- **Internal world model vs stimulus-response, and which readout to trust.** For this stimulus class the random-init
+  control shows that pooled linear availability is architectural and that carrying direction into disk-free tokens is
+  not a training effect. The per-patch probes show what training does add: the random network never gets past a mean
+  per-position R² of 0.39, the regime of fragmented local signal that pooling adds up, while V-JEPA 2 reaches 0.96 by
+  block 6 on the supplied clips and, on a harder stimulus, forms that code with a sharp step at the paper's depth
+  (§3.1). So the emergence zone is a claim about the per-patch readout, which the paper's C.5 says, and a mean-pooled
+  curve can neither confirm nor refute it. VideoMAE matches V-JEPA 2 on every pooled Part 1 measure (I did not run it
+  per patch), so none of this is specific to latent prediction or shows that the variables are used to predict. The authors' OpenReview response states that "all 13 models encode motion direction
   (R²≥.43), regardless of objective", classification CNNs included, so availability is their own finding; training buys
   precision, fewer probes to steer (4 vs 10 to reach 10°[^obj]) and a label-free ring.
 - **The linear representation hypothesis: right about the subspace, wrong about the moves.** Direction lives in a 2-D
@@ -737,14 +888,18 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
   steering corollary is what fails geometrically: in the ring plane the straight path between distant directions
   crosses the empty interior (readout radius 0.61) where the curved path does not (0.86), though in the 64-D edit
   subspace it is no farther from real clips (§4.3). Independent readouts at the steered layer do not care; the
-  predictor's forecast at point 22 does, in angle only (§4.5). The supported statement is "for a cyclic variable the
+  predictor's forecast at point 22 does, in angle only, and at the encoder output it does not (§4.5). The supported statement is "for a cyclic variable the
   hypothesis describes the subspace and misdescribes the moves, geometrically".
 
 ## 7. Limitations and next steps
 
-- **Stimulus.** A single disk on a flat background is nearly pixel-decodable. The main non-reproduction may be a
-  property of the data: the hard set moves the direction onset to point 5 (§3.1). That set has 392 clips and only 8
-  directions, covers direction only and uses one render seed, so it is a pointer, not a reproduction.
+- **Stimulus.** A single disk on a flat background is nearly pixel-decodable. The per-patch step at the paper's depth
+  appears only on the hard rendered set (§3.1), which has 392 clips and 8 directions, covers direction only, uses one
+  render seed and reuses 7 start positions across all (θ, v) cells, so it is a reproduction on one small set, not on
+  the supplied data.
+- **Per-patch probes.** Features are averaged over the 8 time steps at each position, so time structure within a
+  position is not probed; the half-frame test is one pooled probe per half; the rendered sets were read at 10 points
+  only, so their onsets of 4 and 6 are upper bounds. VideoMAE and speed were not run per patch.
 - **Training dynamics.** With intermediate V-JEPA 2 checkpoints, the random-init vs final contrast becomes a curve.
   That is the natural test of when precision and the ring appear.
 - **Predictor readout is a probe; the edit overshoots.** A probe of the pooled forecast, not a rendered future;
@@ -758,7 +913,10 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
 - **Label-free coordinate.** Found only at point 12 and only through my centroid-plane fallback; Goodfire's own
   label-free angle fails its periodicity test at point 12, and point-22 steering and session 2 at points 2, 8 and 22 use
   the labels, as Goodfire's published runs do (§4.1).
-- **Encoder-output steering.** [encoder-output site: see §4.5]
+- **Encoder-output steering.** At point 25, the predictor's input and Goodfire's site, edits reach the forecast
+  (chord 12.5°, interpolating spline 15.7°) but the spline's matched-norm lead over the chord from point 22 does not
+  carry over (+10.8° worse at the chord's norm, 2.1° better at the natural norm; §4.5). The route effect in the forecast
+  is a point-22 result.
 - **Sample size vs d.** Around 1,200 train clips against d = 1,024 makes K a ridge count at a CV-chosen α. The K
   values should be compared across layers only at a fixed α (see the caveat in `p1b_*_dims.json`).
 
@@ -772,24 +930,29 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
   `run_velocity_plane.py`, `run_position_sheet.py`, `run_object_permanence.py`, `run_objective_axis.py`,
   `run_donor_ceiling.py`, `run_two_route.py`, `run_rotating_speed_axis.py`, `run_cosine_tangent.py`,
   `render_hard_stimuli.py`, `make_figures.py`. Session 2: `scripts/session2_box.sh` → `run_session2.py`,
-  `session2_extras.py`, `session2_native_readout.py` (predictor-native probes), `session2_norm_matched.py`, `session2_along_path.py` (forecast along the path, reverse test; `session2_predictor_along_path.json`, `session2_reverse_path.json`). The 70/30 reruns set `WM_SPLIT_PATH=splits/split_paper70.json`. Second look at Part 2 (commit 33a2cbd, clean): `run_ring_occupancy.py`, `run_isometry_linear.py`, `summarize_shift_dependence.py`; `PART2_SECOND_LOOK.md` is the audit record against the Goodfire paper.
+  `session2_extras.py`, `session2_native_readout.py` (predictor-native probes), `session2_norm_matched.py`, `session2_along_path.py` (forecast along the path, reverse test; `session2_predictor_along_path.json`, `session2_reverse_path.json`). The 70/30 reruns set `WM_SPLIT_PATH=splits/split_paper70.json`. Second look at Part 2 (commit 33a2cbd, clean): `run_ring_occupancy.py`, `run_isometry_linear.py`, `summarize_shift_dependence.py`; `PART2_SECOND_LOOK.md` is the audit record against the Goodfire paper. Part 1 follow-ups: `p1a_perpatch.py` (GPU extract + per-patch probes; `p1a_perpatch_direction_*.json`), `run_paperscale_velocity.py`, `run_support_cartesian_angle.py`, `run_audit_robustness.py --items 1 2 3 4` (grouped CV, raw coordinates, sawtooth metrics, evaluation-probe recipe), `run_stop_rules.py --items 1 2` (stop-rule sweep and one-column removal). Part 2 follow-ups: `session2_encoder_output.py` (point 25 and the point-12 labels-order spline), `run_angle_goodfire.py` (Goodfire's periodicity test, `--no-holdout` for all 64 centroids), `run_isometry_linear.py --angle labels`.
 - **Provenance.** Every results JSON records the split sha256 (`98e6310c…`), seeds (split 0, all others 0), git
   commit and a dirty flag. The 20 `p2_steer_*` files and all 32 arc runs were produced at commit 8d3cac8; the other
   Part 2 files at 677b305, 8e552c1, 8829195, 8f08444 or fbf4f72; all with `git_dirty_src_or_scripts: false`. Most
   Part 2 files record split and source paths inside the frozen scratchpad worktree that ran them; the split sha256 and
   the commit are the same as the repository's. The session 2 files were scored at b9c53d0 or 0f34ec2 (the native
-  readout at 8734f4b, the norm-matched rerun at 494afe2, along-path and reverse at 21b27b6) with the dirty flag set.
+  readout at 8734f4b, the norm-matched rerun at 494afe2, along-path and reverse at 21b27b6) with the dirty flag set;
+  the encoder-output and point-12 labels-order files at 3f4c8de (forward at b7d09fc), clean. The per-patch files record
+  commit 4413937; the grouped-CV, raw-coordinate, sawtooth and evaluation-probe files 46a33da, the velocity-only and
+  Cartesian-angle files 6fc2529, the labels isometry and all-centroid angle files 7de664a, all clean.
 - **Numerics.** CPU–GPU parity on 8 clips: worst per-layer max|Δ|/max|x| 8.2e-5 (rule < 1e-3); GPU batch-8 vs
   batch-16 gap 1.31× the CPU–CPU gap (rule ≤ 2×). Frame hashes and disk masks match, and 27/27 sha256 checks of the
   downloaded activations pass[^gpu].
 - **Cost.** GPU session 1 (RTX 4080 SUPER, Vast): 37.7 billed minutes, $0.19[^gpu]. Session 2 box (RTX 4060 Ti,
   $0.198/h): $0.512 to the end of session 2 (the run itself $0.311); $1.19 over 6.00 billed hours as of 22:44 ET, box
   still running, including the native-readout extraction (0.09 h, $0.018), the norm-matched rerun (0.137 h, $0.027),
-  the along-path forward (0.34 h, $0.067) and the reverse test (0.365 h, $0.072); $0.006 egress[^cost]. No other box's cost is recorded.
-- **Tests.** `pytest --collect-only` collects 179 tests at the commit of this report.
+  the along-path forward (0.34 h, $0.067) and the reverse test (0.365 h, $0.072); $0.006 egress[^cost]. The per-patch
+  run on the same box took 1.65 h ($0.33; box totals not refreshed since), and the encoder-output forward 817 s of GPU
+  time with no separate cost recorded (`session2_encoder_output.json`, `forward.seconds_total`). No other box's cost is recorded.
+- **Tests.** `pytest --collect-only` collects 202 tests at the commit of this report.
 
 [^gpu]: `artifacts/gpu_session1.json`.
-[^ptxt]: Line numbers in `refs/physics_paper.txt` (text of arXiv 2602.07050): (a) 1211 vs 1172; (b) 1207 vs 1243 and 1266; (c) 1245–1246; (d) 430–431 vs 1256 and 1269. Our numbers: `p1b_*` (`K`, `K_loose`), `results/split70/COMPARISON.md`, `p1c_direction_L9_strict.json` (`strict_eval`), `p1c_direction_L9.json`.
+[^ptxt]: Line numbers in `refs/physics_paper.txt` (text of arXiv 2602.07050): (a) 1211 vs 1172; (b) 1207 vs 1243 and 1266; (c) 1245–1246; (d) 430–431 vs 1256 and 1269; (e) 669 vs 1243; (f) 245 vs 671; (g) 1244 vs 1256 and 1269, Table 3 at 958, 1217 vs 970–973, 402–403; (h) Table 3 rows 949–951. Our numbers: `p1b_*` (`K`, `K_loose`), `results/split70/COMPARISON.md`, `p1c_direction_L9_strict.json` (`strict_eval`), `p1c_direction_L9.json`.
 [^s1]: `results/p1a_direction_direction_meanpool.json` (n_train 1200, n_test 300); `results/p1a_paperscale_speed_speed.json` (speed train 1228).
 [^steer]: `results/p2_steer_*` (n_test_clips 308 for speed/acceleration; `sagitta_per_target`; `n_knot_clips` 632, `n_probe_clips` 480).
 [^recipe]: `results/p1a_probe_recipe_check.json`.
@@ -806,7 +969,7 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
 [^sheet]: `results/p2_sheet_speed_L{12,19}.json` (`verdict`, `summary`).
 [^bake]: `results/p2_bakeoff_direction_direction_L{12,22}_contiguous.json`.
 [^s2]: `results/session2_plan.json` (`targets`: 4 per carrier, all in 303.75°–343.125°), `results/session2_renderer_validation.json`, `results/session2_stimuli_validation.json`.
-[^fig22]: `loose_threshold` in each `p1b_*` file: R² < 0.3 for direction and R² < 0.1 for speed and acceleration, the thresholds of the paper's Fig. 22. For speed and acceleration the K at that threshold equals the nested K at every V-JEPA point except acceleration at onset (493 vs 466). `K_loose_censored` is true only for VideoMAE acceleration at point 22, where K_loose = 87 is a floor (the sequence stopped while R² was still above 0.1); the V-JEPA files predate the flag.
+[^fig22]: `loose_threshold` in each `p1b_*` file: R² < 0.3 for direction and R² < 0.1 for speed and acceleration, the thresholds of the paper's Fig. 22. For speed and acceleration the K at that threshold equals the nested K at every V-JEPA point except acceleration at onset (493 vs 466). `K_loose_censored` is set only in the VideoMAE files (true for acceleration at point 22, where K_loose = 87 is a floor); the V-JEPA files predate the flag, and there speed and acceleration K_loose is also a floor at every point (the MAE rule stops the sequence while R² is still 0.15–0.20) except nested acceleration at onset, where R² reaches 0.071 (`rounds[].cv_r2`, `paper.rounds[].test_r2`).
 [^stim]: `results/stimuli/{paper_layout,hard}/p1a_direction_direction_meanpool{,_random}.json`; `results/session2_stimuli_validation.json`.
 [^s70]: `results/split70/comparison.json`, `results/split70/COMPARISON.md`, `results/split70_p2/COMPARISON.md` and `results/split70_p2/p2_steer_*_contiguous.json`; 80/20 null p from `results/p1c_{direction,speed,acceleration}_L9.json`.
 [^tr]: `results/p2_two_route_direction_L12_L22.json`.
@@ -825,3 +988,14 @@ constant-velocity clip has the same frame set). A speed probe transfers to rever
 [^interp]: `results/p2_interp_labels_summary.json` (`heldout_reconstruction.labels_order.contiguous`, `seed0_interp_labels`, `arcs_interp_labels`, `delta_ratio_spline_over_chord`), `results/p2_interp_labels/`, `results/arcs_interp/`.
 [^ext]: `results/p2_extrapolation_linear_ext.json` (`runs.*.{smoothing_linear_ext,interp_linear_ext_goodfire_code,stored_smoothing_cubic_ext}`), `results/p2_linear_ext/`, `results/p2_linear_ext_interp/`.
 [^iso]: `results/p2_isometry_goodfire_method.json` (`layers.{8,12,22}.new.{interp,smooth}.{geo,lin}_pearson`).
+[^isol]: `results/p2_isometry_goodfire_labels.json` (`layers.{8,12,22}.labels_angle.{interp,smooth}.{geo,lin}_pearson`; `unsupervised_angle` rows reproduce the label-free figures; `geo_below_chord_labels_angle` false at every point).
+[^pp]: `results/p1a_perpatch_direction_{vjepa2,vjepa2_constvel,random,vjepa2_hard,vjepa2_paper_layout}.json` (`curves.{perpos_mean_r2,pooled_mean_r2,pooled_frac_ge_0.5,cross_half_r2,meanpool_r2}`, `onsets.*`, `layers[].halves` for the cross-half MAE, `methods`, `provenance.time_averaging`); `figures/fig1g_perpatch_direction.png`, `fig1h_perpatch_heatmaps.png`; rendered-set layout (7 shared starts) in `results/session2_stimuli_validation.json` (`layout.start_rule`) and `scripts/render_hard_stimuli.py`.
+[^gcv]: `results/p1a_grouped_cv.json` (`sets.{direction,speed}_{vjepa2,random}.{stratified,direction_grouped,start_grouped,speed_grouped}.{onset,onset_ci}`); `figures/fig1i_grouped_cv.png`.
+[^psv]: `results/p1a_paperscale_velocity_only.json` (`summary`, `models.vjepa2.n392_velocity.onset_per_seed`).
+[^raw]: `results/p1b_raw_coordinates.json` (`cells.{direction,speed}_L{8,9}.{raw,stored_zscored}.{nested_K,paper_K}`).
+[^saw]: `results/p1b_sawtooth_metrics.json` (`cells.{direction,speed}_L{8,9}.{ridge_nested,ridge_paper,adam_b64,adam_full}.stats.{r2,bacc8,acc15}`); consecutive readout angles from `sawtooth.mean_consecutive_angle_deg` in `results/p1b_direction_direction_meanpool_L{2,8,9,22}.json`; the paper's teeth read from its Fig. 23 by eye.
+[^evp]: `results/p1c_direction_evalprobe_recipe.json` (`stored`, `recipe_results.{ridge_alpha_1e-3,adam_c11}.{eval_probe,n_to_10deg,random_basis_p,rank_matched_p}`); the stored floor N from `random_nulls.rows[].random_basis.empirical_p_to_target` in `results/p1c_direction_L{9,22}.json`.
+[^enc]: `results/session2_encoder_output.json` (`per_arm.*.{unmatched,chord_norm,natural_twin_norm}`, `spline_minus_chord`, `spline_minus_chord.point22_stored`, `unedited`); `scripts/session2_encoder_output.py`.
+[^il12]: `results/session2_interp_labels_L12.json` (`spline_labels`, `stored_point12.spline`, `stored_spline_edit_norm_recomputed`).
+[^stop]: `results/p1b_stop_rules.json` (`cells.*.{nested,paper}.{K,stored_stop_trigger,r2_at_stored_stop}`, `common_r2_stop_points_8_9`).
+[^onecol]: `results/p1b_one_column_removal.json` (`cells.direction.{two_column_stored,one_col_alternate,one_col_top_sv}.{ridge_nested,ridge_paper,adam_b64,adam_full}`).
