@@ -1,4 +1,4 @@
-"""Sigmoid onset criterion (the paper authors' OpenReview rebuttal, as summarised in sonia_joseph.md l.153-154):
+"""Sigmoid onset criterion (the paper authors' OpenReview rebuttal, as summarised in our reading notes):
 fit a 4-parameter logistic in layer index, accept a transition if fit R² > 0.9, inflection ≤ 50% depth and the peak
 ≥ 15 pp above chance."""
 import numpy as np
