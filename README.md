@@ -45,8 +45,9 @@ rank. (REPORT §3.2).
 
 **Steering.** With our ridge basis, five probes steer to 8.7° from the target, as judged by a probe fit on the unsteered test clips and applied to their steered versions, as in the paper's C.12 (a split-half judge gives 14.7°). That beats a same-rank random subspace
 (54.9°, p 0.035) but not the full-rank random basis (11.8°, p 0.22). With the paper's Adam probe sequence, 18 probes are
-needed to reach 10°, judged by our ridge probe; the judge recipe alone moves the ridge count from 5 to 3 or 4, and the
-Adam basis has not been scored with an Adam judge (REPORT §3.3).
+needed to reach 10° under our ridge judge, and with the paper's Adam judge as well the count is 11 at first crossing and
+19 sustained, consistent with the paper's ≈ 20; our ridge basis needs 3–6 under every judge. So the count depends on the
+optimiser and the judge (REPORT §3.3).
 
 **Acceleration.** In the supplied set every clip starts at rest, so acceleration, mean speed and displacement are
 identical by construction. On a rendered grid that decorrelates them, signed acceleration appears in pooled features
