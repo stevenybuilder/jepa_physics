@@ -401,3 +401,12 @@ Audit = re-derivation from pixels and feature files (scratchpad qa_accel/s2_supp
 | p1-zone footer, notes | partial reproduction: supplied clips transfer 0.82 at point 1 rising to 0.95 with no dip; untrained 0.61 → 0.74 (QA #467); MAE 56° vs 11° offset caveat (QA #468); per-patch R² 0.95 vs the paper's Table 4 0.72 (QA #469) | results/p1a_perpatch_direction_vjepa2.json, results/p1a_perpatch_direction_random.json; REPORT §3.1 |
 | headline caption, line | 11.3° = interpolating spline (Goodfire A.3, language-task recipe); 44.2° = our smoother on their B.1 world-model recipe (QA #472) | results/session2_predictor_native_readout.json per_layer.22.{spline,spline_smooth} |
 | papers column, notes | Musa et al. 2026 (Joseph's group): spline steering inside V-JEPA 2, in sample (QA #471); §7 l.390–395 poses the use question; §6.3 tests how the code forms (QA #470) | refs/physics_paper.txt; lit_review.md l.15, l.385 |
+
+## QA #43 (fire at 22:19 ET)
+
+| Slide | Number | Source (file → key) |
+|---|---|---|
+| p1-reproduce title, notes; p1-steer notes | 18 Adam probes judged by our ridge α = 100 probe; judge recipe alone moves the ridge count 5 → 3 (α = 1e-3) / 4 (Adam judge); Adam basis × Adam judge not yet scored (rerun in progress, results/p1c_direction_L9_adam_judge.json) (QA #475) | results/p1c_direction_L9_adam_basis.json eval_probe.alpha; results/p1c_direction_evalprobe_recipe.json recipe_results.*.n_to_10deg |
+| p1-steer notes, vs-paper cell | judge fit on the unsteered test clips and read on their steered versions (C.12 l.1245); split-half 14.7° (QA #476) | src/wm/steer.py:run_steering eval_probe_cv(Xte, Y[te]) |
+| p1-zone title, alt, notes | block 9 per seed 0.077 / 0.385 / 0.082 (no permutation baseline, not "chance"); block 12 0.42 / 0.69 / 0.63 below block 1 on every seed; 16 0.36 / 0.58 / 0.60; block-1 level back at 22 (0.76); loss begins block 4 (seed 0) / 5 (seeds 1–2) (QA #477, #478); Table 4 comparison removed (QA #479) | results/p1a_perpatch_hard_seeds.json by_point[].cross_half_r2.per_seed |
+| headline line, papers title | "Our smoother" (B.1-style, departs from B.1); "Prior work … none asked" (three author groups) (QA #480) | — |
