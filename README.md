@@ -6,13 +6,13 @@ multi-probe steering experiments of Joseph et al. (2026). Part 2 builds spline (
 (2026) and asks whether the predictor consumes the code at values the spline never saw.
 
 **Short version: readable is not used.** Direction is decodable from every patch by block 6, but a frame-wide edit at
-block 12 is repaired before the predictor sees it. Only a late edit, or an edit on the object's own tokens, reaches the
+block 12 is mostly undone before the predictor sees it. A late edit, or an edit on the object's own tokens, reaches the
 forecast. Curved edits keep the heading on the way; straight edits land as close at the endpoint.
 
-<p align="center"><img src="talk/figures_v2/fig_read_vs_use.png" width="820" alt="Top: per-patch direction R² by block. Bottom: forecast heading error after an edit at each block; only the block-22 edit moves the forecast."></p>
+<p align="center"><img src="talk/figures_v2/fig_read_vs_use.png" width="820" alt="Top: per-patch direction R² by block. Bottom: forecast heading error after an edit at each block; the block-22 edit moves the forecast most."></p>
 
 - Full write-up with every number and its source file: [REPORT.md](REPORT.md)
-- 15-minute talk (28 slides, speaker notes): https://claude.ai/artifact/JdPJ1Yig3LpL5KntZCJo88
+- 15-minute talk (29 slides, speaker notes): https://claude.ai/artifact/JdPJ1Yig3LpL5KntZCJo88
 - Every reported number is in `results/*.json`; the talk's numbers are indexed in [talk/slides_v2/NUMBERS.md](talk/slides_v2/NUMBERS.md)
 
 ## Getting started
@@ -59,10 +59,10 @@ python scripts/run_step2.py --dataset direction --layer-role paper              
 python scripts/run_step3.py --dataset direction --layer-role paper                 # steering on held-out clips vs random-basis nulls
 
 # 2. Part 2: splines, lines and the ring on held-out contiguous arcs (CPU)
-python scripts/run_part2.py --dataset direction --layer 12 --holdout contiguous
-python scripts/run_part2.py --dataset direction --layer 22 --holdout contiguous
-python scripts/run_bakeoff.py --dataset speed        --layer 19      # lines: spline vs chord
-python scripts/run_bakeoff.py --dataset acceleration --layer 21
+python scripts/run_part2.py --dataset direction --layer 12 --holdout contiguous --spline smooth
+python scripts/run_part2.py --dataset direction --layer 22 --holdout contiguous --spline smooth
+python scripts/run_bakeoff.py --dataset speed        --layer 19 --spline smooth   # lines: spline vs chord
+python scripts/run_bakeoff.py --dataset acceleration --layer 21 --spline smooth
 for L in 12 22; do                                                   # six edits on 16 seeds, then the table
   python scripts/run_bakeoff_unified_16arc.py --layer $L --seeds 0 1 2 3 4 5 6 7   --out results/endpoint_diagnosis_raw/unified_L${L}_a.json
   python scripts/run_bakeoff_unified_16arc.py --layer $L --seeds 8 9 10 11 12 13 14 15 --out results/endpoint_diagnosis_raw/unified_L${L}_b.json
@@ -71,7 +71,8 @@ python scripts/aggregate_bakeoff_unified_16arc.py                    # -> result
 
 # 3. Through the predictor: edit at a block, run V-JEPA 2's predictor, read the forecast (GPU)
 python scripts/run_session2.py plan && python scripts/run_session2.py forward --batch-size 16 && python scripts/run_session2.py score
-python scripts/session2_native_readout.py                                          # forecast heading: 11.3° / 27.2° / 92.1°
+python scripts/session2_native_readout.py extract && python scripts/session2_native_readout.py score   # forecast heading: 11.3° / 27.2° / 92.1°
+python scripts/run_position_predictor.py plan && python scripts/run_position_predictor.py forward --batch-size 16 && python scripts/run_position_predictor.py score   # start-position edit through the predictor
 python scripts/run_token_patching.py plan && python scripts/run_token_patching.py forward && python scripts/run_token_patching.py score   # which tokens carry the code
 
 # 4. Figures
@@ -105,7 +106,9 @@ keep the readout on the ring (radius at least 0.80, and 0.71 at the chord's size
 **The predictor decides.** A frame-wide edit at block 12 is repaired (forecast 79.7° from target against 92.1°
 unedited); the same edit on the disk's tokens reaches it (44.7°). At block 22 the spline's forecast heading lands 11.3°
 from target and the chord's 27.2°. Token patching shows the forecast reads direction from the disk through block 12
-(0.88 of the effect) and from the whole frame by block 22 (0.22 from the disk).
+(0.88 of the effect) and from the whole frame by block 22 (0.22 from the disk). Position behaves the same way: a
+start-position edit at block 22 closes 0.35 of the gap to the target cell in the forecast (a real twin 0.78), an edit at
+block 12 closes 0.01 and reads R 0.009 at the encoder's exit; sheet and chord tie (48 carriers, 2 held-out cells).
 
 **Controls and negatives.** A "contact" edit writes a post-contact heading, not a contact (a no-wall heading edit turns
 the forecast more, 0.77 against 0.48). The within-clip time code tracks the token slot, not the content, and
