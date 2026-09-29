@@ -339,5 +339,31 @@ Audit = re-derivation from pixels and feature files (scratchpad qa_accel/s2_supp
 | p1-scaling notes | untrained direction CV peaks: ViT-L 0.868, ViT-H 0.856, ViT-g 0.846 (quoted as 0.85–0.87) | models.{vitl,vith,vitg}_random.variables.direction.summary_cv.peak_score |
 | p1-scaling title, line, notes, figure right | hard-render half-frame transfer: ViT-H (seed 0) −2.44 at block 8 → 0.40 at 9 (recovery point 9); second dip −0.33 at 12, −1.63 at 13; ViT-L −1.42 at 8 → 0.08 at 9 (recovery point 9) | zone_halfframe_hard.vith.{points,cross_half_r2,summary}; zone_halfframe_hard.vitl.{cross_half_r2,summary} (ViT-L source results/p1a_perpatch_direction_vjepa2_hard.json) |
 | p1-scaling notes | bf16 parity on ViT-L only: median relative L2 error 0.52% (direction), 0.50% (speed), 0.53% (acceleration); min cosine 0.9957 | parity_vitl_bf16.{direction,speed,acceleration}.{rel_l2_err_median,cos_min} |
-| p1-scaling notes | ViT-g untrained acceleration/axay in flight at merge | provenance.notes[0] |
+| p1-scaling notes | ~~ViT-g untrained acceleration/axay in flight at merge~~ SUPERSEDED: final merge (file 20:55) has vitg_random acceleration and axay | models.vitg_random.variables.{acceleration,axay} |
+| p1-scaling notes | trained direction peaks flat after a third of depth: CV R² 0.973–0.991 (ViT-L), 0.985–0.989 (ViT-H), 0.971–0.992 (ViT-g); peak blocks 22 / 18 / 38 | models.*_pretrained.variables.direction.{layers[frac ≥ 1/3].cv_mean, summary_cv.peak} |
+| p1-scaling notes | patch embedding (point 0) direction CV R²: trained ViT-H 0.709, ViT-g 0.718, ViT-L 0.100; untrained ViT-H 0.045 (ViT-L 0.058, ViT-g 0.058); unexplained | models.*.variables.direction.layers[0].cv_mean |
 | p1-scaling figure | fig_p1_scaling.png (deck palette; x = block ÷ depth excluding the post-LN point; test R² curves, CV onset dots) | talk/make_talk_figs_v2.py scaling |
+
+## Round 15 (user: six physics variables; Part 1 / Part 2 dividers; figure label collisions)
+
+| Slide | Number / claim | Source (file → key) |
+|---|---|---|
+| p2-variables | "Which tokens" row removed (binding stays on p2-binding); six rows Direction, Speed, Acceleration, Position, Contact, Frame count; title "Six variables are readable…" | — |
+| p2-variables Position (shape "plane") | start position occupies its own 2-D plane, orthogonal to direction within the null (block 12 dir|pos overlap 0.0017) | results/p5_motion_geometry.json → exp1_whitened_metric.points.vjepa2.12.pairs["dir\|pos"].overlap; REPORT subspaces paragraph |
+| p2-variables Position (steered ●) | in-subspace position edit moves the start-position readout 5.2 / 7.5 natural spreads (speed set, blocks 12 / 22), 5.7 / 9.2 (acceleration set) | results/p5_motion_geometry.json → exp2_interference_leakage.sets.{speed,acceleration}.{12,22}.natural.pos.pos.mean |
+| p2-variables Position (forecast) | changed from "yes" to "untested": no position edit was read through the predictor (only the encoder); REPORT reports forecast per-step position readouts as unreliable (−0.18 vs 0.91) | REPORT §4.x acceleration-through-predictor paragraph (l.1747); no results file for a position edit through the predictor |
+| p1-scaling title, line, notes (QA #426) | ViT-H half-frame transfer after the first recovery: 0.398 at 9, −0.051 [−0.139, −0.014] at 10, 0.089 at 11, −0.332 at 12, −1.627 at 13, 0.406 at 14 and positive after; durable recovery 14 = 0.4375 of depth vs ViT-L 9 = 0.375; first recovery 9 in both (0.375 / 0.281) | results/p5_scaling_layerwise.json → zone_halfframe_hard.vith.{points,cross_half_r2,cross_half_r2_ci95}; zone_halfframe_hard.{vitl,vith}.summary.recovery_point |
+| p1-scaling notes (QA #428) | patch-embedding values labelled as CV R² (0.709 / 0.718 / 0.100 / 0.045); test R² 0.739 / 0.740 / 0.035 / 0.010 (ViT-H, ViT-g, ViT-L trained; ViT-H untrained) | models.{vith,vitg,vitl}_pretrained, vith_random .variables.direction.layers[0].{cv_mean,test_r2} |
+
+## Round 15 add-on (backup slide p2-heads; results/p5_motion_heads.json, landed 21:01 ET)
+
+| Slide | Number | Source (file → key) |
+|---|---|---|
+| p2-heads title, notes | 125 of 128 heads (blocks 6–13) have previous-slot disk / background density > 5 (127 > 2); block medians 37.5–75.0; top 6 hold 32% of the excess | part_A.vjepa2.{n_heads_ratio_gt_5, n_heads_ratio_gt_2, block_median_ratio, top6_of_128_share_of_excess} |
+| p2-heads notes | phantom (mask rolled 8, 8 patches) block medians 1.07–8.95 | part_A.vjepa2.block_median_phantom_ratio |
+| p2-heads notes, figure rings | 19 heads under the weak label, 9 under the strict one (prev beats same, next and far with prev/far CI > 1; phantom below real: b6h7, b7h15, b8h14, b9h4, b10h4, b11h6, b12h3, b13h3, b13h8), three with prev/same above 10 (b7h15 13.32, b11h6 13.27, b13h8 13.31; blocks 7, 11, 13), none of those three ablated; phantom/real 0.58 / 0.29 / 0.12. Of the 9, four sit in ablated blocks and were zeroed singly (b8h14 0.011, b9h4 0.008, b10h4 0.017, b12h3 0.016 block-12 drop); only b10h4 is in the joint top 8 | part_A.vjepa2.table[{7,15},{11,6},{13,8}].{prev_over_same_density,next_over_bg_density,far_over_bg_density,phantom_prev_over_bg_density}; top_tracking_heads_joined[].direction_p12_drop = null |
+| p2-heads notes | weak "tracking" label (prev/same CI > 1): 19 of 128 trained, 69 untrained at ratios 0.76–1.51, so not evidence | part_A.vjepa2.n_heads_labelled_tracking; part_A.random.{n_heads_labelled_tracking, table[].prev_over_bg_density} |
+| p2-heads line, notes, figure right | joint top-8 ablation (b9h9, b12h6, b10h4, b8h2, b10h12, b12h13, b10h6, b8h15): block-12 direction R² drop 0.040 [0.035, 0.045] vs random count-matched 0.207 / 0.123 / 0.174 / 0.220; block 22: 0.0051 [0.0037, 0.0066] vs 0.0019–0.0066 | part_B.vjepa2.direction.{p12,p22}.drops.{global_top,global_rand0..3}; part_B.vjepa2.plan.top_global |
+| p2-heads (Q&A) | largest single head b12h4 0.312 at point 12; ≤ 0.0054 at point 22; speed top-8 0.059 vs random 0.009–0.582 | part_B.vjepa2.summary.direction_p12.12.max_head_drop; direction_p22.*.max_head_drop; speed_p12.global |
+| p2-heads notes | unablated baseline 0.9882 vs stored fp32 0.9885; untrained ablation invalid in bf16 (unablated R² −15.74); untrained attention max ratio 1.51 | part_B.vjepa2.direction.p12.baseline; part_B.random.direction.p12.baseline.test_r2_box_unablated; part_A.random.block_max_ratio |
+| p2-variables Position (forecast) | see Round 15 table above | — |

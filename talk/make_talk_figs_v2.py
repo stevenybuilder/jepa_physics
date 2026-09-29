@@ -125,8 +125,8 @@ def binding_by_depth():
                 fontweight="medium")
     ax.axhline(share, color=TERRA, lw=2, ls=(0, (5, 4)), alpha=0.8)
     ax.axhline(1 - share, color=GREY, lw=2, ls=(0, (5, 4)))
-    ax.text(0.2, share + 0.03, f"disk's share of tokens {share:.0%}", color=TERRA, ha="left", va="bottom", fontsize=NOTE)
-    ax.text(0.2, 1 - share - 0.03, f"background's share {1 - share:.0%}", color=SOFT, ha="left", va="top",
+    ax.text(0.2, share + 0.05, f"disk's share of tokens {share:.0%}", color=TERRA, ha="left", va="bottom", fontsize=NOTE)
+    ax.text(0.2, 1 - share - 0.05, f"background's share {1 - share:.0%}", color=SOFT, ha="left", va="top",
             fontsize=NOTE)
     ax.set_xlim(-0.5, 28.5)
     ax.set_xticks(pts)
@@ -303,11 +303,13 @@ def sheet_v2():
         for yy, (l, c, val, path) in zip(ys, rows):
             log(f"{base}.{path}", round(val, 4))
             ax.barh(yy, val, color=c, height=0.5)
-            ax.text(val + xmax * 0.03, yy, fmt.format(val), va="center", fontsize=NOTE, color=c if c != GREY else SOFT)
+            vx = max(val, floor) if fl else val
+            ax.text(vx + xmax * 0.03, yy, fmt.format(val), va="center", fontsize=NOTE, color=c if c != GREY else SOFT)
+            if fl:
+                ax.plot([floor, floor], [yy - 0.3, yy + 0.3], color=OCHRE, ls="--", lw=2)
             ax.text(0, yy + 0.36, l, fontsize=NOTE - 2, color=c if c != GREY else SOFT)
         if fl:
-            ax.axvline(floor, color=OCHRE, ls="--", lw=2)
-            ax.text(floor, len(rows) - 0.35, "probe floor", fontsize=NOTE - 4, color=INK, ha="center")
+            ax.text(xmax, len(rows) - 0.3, f"dashes: probe floor {floor:.1f}°", fontsize=NOTE - 4, color=INK, ha="right")
         ax.set_xlim(0, xmax)
         ax.set_ylim(-0.5, len(rows))
         ax.set_yticks([])
@@ -392,11 +394,11 @@ def contact():
     a1.fill_between(xs, lo, hi, color=TERRA, alpha=0.18, lw=0)
     a1.plot(xs, ys, "-o", color=TERRA, ms=10)
     a1.axvline(0, color=GREY, ls="--", lw=2)
-    a1.text(0.2, 1.02, "contact", fontsize=28, color=SOFT)
+    a1.text(0.5, 1.02, "contact", fontsize=28, color=SOFT)
     a1.set_ylim(0, 1.1); a1.set_yticks([0, 0.5, 1]); a1.set_xticks([-6, -3, 0, 3, 6])
     a1.set_xlabel("frame pair relative to contact", fontsize=30)
     a1.set_ylabel("share of the turn decoded", fontsize=30)
-    a1.text(-6, 0.95, "encoder, block 22", fontsize=30, color=TERRA)
+    a1.text(0.8, 0.2, "encoder, block 22", fontsize=28, color=TERRA)
     sx = list(range(1, len(keys) + 1))
     ic = J("p5_contact_in_context.json")["results"]["forecast"]["steps"]
     ick = sorted(ic, key=lambda s: int(s.split("_")[0][4:]))
@@ -407,8 +409,8 @@ def contact():
     a2.plot(sx, seen, "s", ms=16, color=TERRA)
     a2.plot(sx, fc, "o", ms=16, color=TERRA, mfc=BG, mew=3)
     a2.text(0.6, 1.05, "real future (encoder)", fontsize=26, color=INK)
-    a2.text(0.6, 0.62, "forecast, bounce seen", fontsize=26, color=TERRA)
-    a2.text(0.6, 0.25, "forecast, bounce unseen", fontsize=26, color=TERRA)
+    a2.text(0.6, 0.65, "forecast, bounce seen", fontsize=26, color=TERRA)
+    a2.text(0.6, 0.31, "forecast, bounce unseen", fontsize=26, color=TERRA)
     a2.set_ylim(0, 1.1); a2.set_yticks([0, 0.5, 1])
     a2.set_xticks(sx); a2.set_xlim(0.5, len(keys) + 0.5)
     a2.set_xlabel("future step after the context", fontsize=30)
@@ -445,17 +447,17 @@ def part1_panels():
     a2.axhline(0.1, color=GREY, lw=1.5, ls=":")
     a2.set_ylim(0, 1.05); a2.set_yticks([0, 0.5, 1]); a2.set_xlim(0, 90)
     a2.set_xlabel("dimensions erased, block 9"); a2.set_ylabel("heading decoded (R²)")
-    a2.text(88, 0.88, "random", ha="right", fontsize=20, color=SOFT)
-    a2.text(88, 0.6, f"{K} probes = {2 * K} dims", ha="right", fontsize=20, color=TERRA)
+    a2.text(88, 0.80, "random", ha="right", fontsize=20, color=SOFT)
+    a2.text(3, 0.30, f"{K} probes\n= {2 * K} dims", ha="left", fontsize=20, color=TERRA, linespacing=1.3)
     B = J("p1c_direction_L9_nulls200.json")["bases"]
     rt, at = B["ridge"]["table"], B["adam"]["table"]
     a3.plot([r["n"] for r in rt], [r["rank_matched"]["median"] for r in rt], color=GREY, ls="--", lw=2.5)
     a3.plot([r["n"] for r in at if r["n"] <= 37], [r["learned_mae_to_target"] for r in at if r["n"] <= 37],
             color=TERRA, lw=2.5, ls=(0, (4, 3)))
     a3.plot([r["n"] for r in rt], [r["learned_mae_to_target"] for r in rt], color=TERRA)
-    a3.text(36, 74, "random, same rank", ha="right", fontsize=20, color=SOFT)
-    a3.text(11, 7, "ridge probes", fontsize=20, color=TERRA)
-    a3.text(13, 34, "Adam probes", fontsize=20, color=TERRA)
+    a3.text(36, 82, "random, same rank", ha="right", fontsize=20, color=SOFT)
+    a3.text(16, 26, "ridge, solid", fontsize=20, color=TERRA)
+    a3.text(16, 38, "Adam, dashed", fontsize=20, color=TERRA)
     a3.set_ylim(0, 95); a3.set_yticks([0, 45, 90]); a3.set_xlim(0, 37)
     a3.set_xlabel("probes used to steer"); a3.set_ylabel("heading error (°)")
     for ax in (a1, a2, a3):
@@ -496,7 +498,7 @@ def scaling():
     a2.axhline(0, color=GREY, lw=1.5)
     a2.axvspan(8.5, 9.5, color=OCHRE, alpha=0.25, lw=0)
     a2.text(9.8, 0.75, "block 9", fontsize=20, color=INK)
-    a2.set_xticks([1, 9, 16, 24, 32]); a2.set_ylim(-2.8, 1.1); a2.set_yticks([-2, -1, 0, 1])
+    a2.set_xticks([1, 9, 14, 24, 32]); a2.set_ylim(-2.8, 1.1); a2.set_yticks([-2, -1, 0, 1])
     a2.set_xlabel("block"); a2.set_ylabel("half-frame transfer (R²)")
     a2.text(32, -2.2, "ViT-L", ha="right", fontsize=20, color=INK)
     a2.text(32, -2.6, "ViT-H, seed 0", ha="right", fontsize=20, color=TERRA)
@@ -504,6 +506,82 @@ def scaling():
         ax.tick_params(labelsize=20); ax.xaxis.label.set_size(20); ax.yaxis.label.set_size(20)
     f.subplots_adjust(left=0.07, right=0.99, bottom=0.2, top=0.96)
     save(f, "fig_p1_scaling.png")
+
+
+def zone_invariance():
+    """Ported from make_talk_figs.py (p1-zone figure) with the top label moved clear of the curve."""
+    print("zone_invariance")
+    d = J("p1a_perpatch_hard_seeds.json")["by_point"]
+    pts = [b["point"] for b in d]
+    f, ax = plt.subplots(figsize=(1100 / 96, 550 / 96))
+    ax.axvspan(8, 9, color=OCHRE, alpha=0.35, lw=0)
+    ax.axhline(0, color=SOFT, lw=1.5)
+    for key, col in (("perpos_mean_r2", TERRA), ("cross_half_r2", INK)):
+        seeds = sorted(d[0][key]["per_seed"])
+        for sd in seeds:
+            ax.plot(pts, [b[key]["per_seed"][sd] for b in d], color=col, lw=1.5, alpha=0.3)
+        ax.plot(pts, [b[key]["mean"] for b in d], "-o", color=col, ms=9)
+    ax.text(22, 1.16, "decodable per patch", color=TERRA, ha="right", va="bottom", fontsize=22)
+    ax.text(22, -0.18, "transfers across the frame", color=INK, ha="right", va="top", fontsize=22)
+    ax.text(9.4, -1.75, "paper's zone", color=INK, ha="left", va="center", fontsize=22)
+    ax.set_xlim(0, 23)
+    ax.set_ylim(-2.3, 1.5)
+    ax.set_yticks([-1, 0, 1])
+    ax.set_xticks([1, 4, 8, 12, 16, 20])
+    ax.set_xlabel("block")
+    ax.set_ylabel("test R²")
+    f.tight_layout()
+    save(f, "zone_invariance.png")
+
+
+def heads():
+    """p2-heads backup: left, per-head previous-slot disk / background attention density (blocks 6-13, log scale),
+    global top-8 terracotta, tracking-criterion heads ringed; right, direction-probe R2 drop for the joint top-8 ablation
+    vs four count-matched random 8-head sets, read at points 12 and 22, with clip-bootstrap CIs."""
+    print("fig_p2_heads")
+    d = J("p5_motion_heads.json")
+    A = d["part_A"]["vjepa2"]
+    top = {tuple(h) for h in d["part_B"]["vjepa2"]["plan"]["top_global"]}
+    trk = {(7, 15), (11, 6), (13, 8)}  # the 3 of the 9 strict heads with prev/same > 10 (REPORT 4.7)
+    log("part_A.vjepa2.n_heads_ratio_gt_5 / n_heads_labelled_tracking", (A["n_heads_ratio_gt_5"], A["n_heads_labelled_tracking"]))
+    f, (a1, a2) = plt.subplots(1, 2, figsize=(W / 96, (W * 470 / 1616) / 96), gridspec_kw={"wspace": 0.3, "width_ratios": [1.2, 1]})
+    import random as _r
+    rng = _r.Random(0)
+    for row in A["table"]:
+        b, h, r = row["block"], row["head"], row["prev_over_bg_density"]
+        x = b + rng.uniform(-0.22, 0.22)
+        if (b, h) in top:
+            a1.plot([x], [r], "o", ms=11, color=TERRA, zorder=3)
+        else:
+            a1.plot([x], [r], "o", ms=7, color=GREY, alpha=0.8, zorder=2)
+        if (b, h) in trk:
+            a1.plot([x], [r], "o", ms=15, mfc="none", mec=INK, mew=1.8, zorder=4)
+    a1.set_yscale("log"); a1.set_ylim(0.5, 9000)
+    a1.axhline(1, color=GREY, lw=1.5, ls=":")
+    a1.set_xticks(range(6, 14)); a1.set_xlim(5.5, 13.5)
+    a1.set_xlabel("block"); a1.set_ylabel("prev-slot disk ÷ background")
+    a1.text(13.4, 1.4, "1 = no preference", ha="right", fontsize=17, color=SOFT)
+    a1.text(5.6, 3500, "top 8 ablated", fontsize=18, color=TERRA)
+    a1.text(8.6, 3500, "ringed: prev ÷ same slot > 10", fontsize=18, color=INK)
+    S = d["part_B"]["vjepa2"]["direction"]
+    for i, p in enumerate(("p12", "p22")):
+        dr = S[p]["drops"]
+        vals = [("global_top", TERRA)] + [(f"global_rand{k}", GREY) for k in range(4)]
+        for j, (k, c) in enumerate(vals):
+            x = i * 6 + j
+            m = dr[k]["r2_drop"]; lo, hi = dr[k]["ci95"]
+            log(f"part_B.vjepa2.direction.{p}.drops.{k}", (round(m, 4), [round(lo, 4), round(hi, 4)]))
+            a2.bar(x, m, color=c, width=0.8)
+            a2.plot([x, x], [lo, hi], color=INK, lw=2)
+    a2.set_xticks([2, 8]); a2.set_xticklabels(["read at block 12", "read at block 22"])
+    a2.set_ylim(0, 0.26); a2.set_yticks([0, 0.1, 0.2])
+    a2.set_ylabel("direction R² drop")
+    a2.text(5.4, 0.15, "top 8 zeroed", fontsize=18, color=TERRA)
+    a2.text(5.4, 0.12, "random 8-head sets", fontsize=18, color=SOFT)
+    for ax in (a1, a2):
+        ax.tick_params(labelsize=20); ax.xaxis.label.set_size(20); ax.yaxis.label.set_size(20)
+    f.subplots_adjust(left=0.08, right=0.99, bottom=0.2, top=0.96)
+    save(f, "fig_p2_heads.png")
 
 
 def coordinate_competition():
@@ -526,7 +604,7 @@ def coordinate_competition():
                 log(f"{base}.{m}.{p}.primary_speedset.per_candidate.polar2.minus_cartesian", round(y, 4))
         ax.fill_between(xs, lo, hi, color=c, alpha=0.2, lw=0)
         ax.plot(xs, ys, color=c, lw=4)
-        ax.text(25.4, ys[-1], lab, va="center", fontsize=FS - 2, color=c if c != GREY else SOFT)
+        ax.text(25.9, ys[-1], lab, va="center", fontsize=FS - 2, color=c if c != GREY else SOFT)
     ax.axhline(0, color=INK, lw=1.5)
     ax.set_xlim(0, 25); ax.set_xticks([0, 5, 10, 15, 20, 25])
     ax.set_ylim(-0.03, 0.04); ax.set_yticks([-0.02, 0, 0.02, 0.04])
@@ -649,7 +727,7 @@ if __name__ == "__main__":
     ap.add_argument("--only", nargs="*", default=None, help="run only these figure functions")
     a = ap.parse_args()
     style(a.font)
-    FIGS = [read_vs_use, binding_by_depth, chord_vs_spline, heading_path, sheet, coordinates, sheet_v2, bakeoff_unified, contact, part1_panels, coordinate_competition, splines3, part1_single, scaling]
+    FIGS = [read_vs_use, binding_by_depth, chord_vs_spline, heading_path, sheet, coordinates, sheet_v2, bakeoff_unified, contact, part1_panels, coordinate_competition, splines3, part1_single, scaling, zone_invariance, heads]
     for fn in FIGS:
         if a.only is None or fn.__name__ in a.only:
             fn()
