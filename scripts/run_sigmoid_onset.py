@@ -106,7 +106,7 @@ rows, boot = run(1)
 rows0, boot0 = run(0)
 
 out = {"criterion": {
-    "source": "our own summary file sonia_joseph.md l.153-154 (a summary of the paper authors' OpenReview rebuttal, "
+    "source": "our own reading notes (a summary of the paper authors' OpenReview rebuttal, "
               "https://openreview.net/forum?id=aijGVmEG9Y; the rebuttal itself was not re-read here)",
     "quote": "Asked to define \"transition point\", the rebuttal introduced a sigmoid criterion: R² > 0.9, inflection "
              "≤ 50% depth, peak ≥ 15 pp above chance",
