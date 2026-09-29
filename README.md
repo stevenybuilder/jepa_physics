@@ -22,7 +22,7 @@ The full write-up is [REPORT.md](REPORT.md). The 15-minute talk is at https://cl
 | Part 2: splines for speed, acceleration, direction | Periodic cubic splines through class centroids in a PCA subspace, plus lines and a direction × speed sheet. | `run_part2.py`, `run_velocity_sheet_predictor.py` | `results/p2_steer_*`, `results/p5_velocity_sheet_*` | §4.1, §4.3 |
 | How splines are built, shown and evaluated | Built on knot clips only; plotted as rings, lines and sheets; scored at held-out targets, along the path and through the predictor. | `run_bakeoff_unified_16arc.py`, `run_session2.py` | `results/p2_bakeoff_unified_16arc.json`, `results/session2_*` | §4.2, §4.5 |
 | The circular structure of direction | Direction lies on a ring; we test its angle coordinate and which frame describes it best. | `run_geometry_checks.py`, `run_coordinate_competition.py` | `results/p2_geometry_*`, `results/p5_coordinate_competition.json` | §4.1, §4.4 |
-| A meaningful held-out steering evaluation | A whole 45° arc of directions is held out of spline construction, on 16 arcs; readers are fit on separate probe clips; the predictor's forecast and rendered twins serve as judge and ceiling. | as above | as above | §4.2, §7.1 |
+| A meaningful held-out steering evaluation | A whole 45° arc of directions is held out of spline construction, on 16 seeds (15 arcs); readers are fit on separate probe clips; the predictor's forecast and rendered twins serve as judge and ceiling. | as above | as above | §4.2, §7.1 |
 | Comparison with the multi-probe method | Six steering arms on one arc set, including the Part 1 probe subspace, plus predictor-level tests. | `run_bakeoff_unified_16arc.py` | `results/p2_bakeoff_unified_16arc.json` | §4.3, §4.4 |
 | Encoder frozen; extraction and pooling documented | No weights are updated. Activations are the mean over all 2,048 tokens (8 × 16 × 16) at each point, 16 frames at 256², no crop. | `src/wm/extract.py` | `artifacts/` (not in git) | §2 |
 | Fit data separated from evaluation data | One stratified 80/20 split per dataset; probe fitting, layer choice, nullspace and spline construction use train folds only; Part 2 uses knot folds 0–2, probe folds 3–4 and the held-out test fold. | `make_splits.py` | `splits/split_v1.json` | §2, §4.2 |
@@ -49,7 +49,7 @@ needed to reach 10° (REPORT §3.3).
 
 **Acceleration.** In the supplied set every clip starts at rest, so acceleration, mean speed and displacement are
 identical by construction. On a rendered grid that decorrelates them, signed acceleration appears in pooled features
-at block 8 and is about zero at blocks 1–4. The magnitude |a| is weak everywhere (REPORT §2, §5).
+at block 8 and is about zero there at blocks 1–4, while time-ordered per-tubelet features read it from block 1 (0.53 at block 1, 0.50 at block 4). The magnitude |a| is weak everywhere (REPORT §2, §5).
 
 **Model size.** ViT-L, ViT-H and ViT-g all read direction in the first tenth of depth (onset 0.083, 0.094 and 0.10 of
 depth). Untrained copies read 0.85–0.87 from block 1, so the early onset is mostly architecture. On the harder render (ViT-H only, one seed) the zone moves earlier as a fraction of depth by its first recovery and later by its durable recovery, so its size dependence is unsettled (REPORT §3.5).
@@ -58,7 +58,7 @@ depth). Untrained copies read 0.85–0.87 from block 1, so the early onset is mo
 
 **Construction.** Our default is a smoothing spline through class centroids in a 64-dimensional PCA subspace (the
 paper's B.1 vision-model recipe), with the paper's A.3 interpolating periodic cubic spline run as a separate arm; the
-headline 11.3° through the predictor below is the interpolating arm, and our smoother gives 44.2° there. We also fit a knot-cross-validated smoother and straight edits (the raw
+headline 11.3° through the predictor below is the interpolating arm, and our smoother gives 44.2° there, not because of its size but because on that arc it already misses in the encoder (10.7° against 3.6° for the chord). We also fit a knot-cross-validated smoother and straight edits (the raw
 chord between centroids, and a straight edit in cos θ, sin θ, cos 2θ, sin 2θ). Speed and acceleration lie on lines, so
 splines add nothing there. Direction lies on a ring (REPORT §4.1).
 
@@ -66,11 +66,12 @@ splines add nothing there. Direction lies on a ring (REPORT §4.1).
 clips. We score endpoint error and the readout radius along the path (REPORT §4.2).
 
 **Endpoints and paths.** At held-out endpoints the raw chord lands closer than the paper's spline (0.8° at block 22)
-and our smoother (1.5° at block 12, 2.3° at block 22, over 16 arcs); only the exploratory knot-cross-validated smoother
+and our smoother (1.5° at block 12, 2.3° at block 22, over 16 seeds (15 arcs)); only the exploratory knot-cross-validated smoother
 edges it, by 0.4–0.5°. The curves win on the path: every curved arm keeps a higher readout radius, while the chord cuts
-across the ring's hollow, and taking the long way round at block 22 the spline keeps 0.96 [0.95, 0.97] of its readout
-mass on intermediate directions with a minimum radius of 0.79 [0.77, 0.81], against 0.055 [0.05, 0.06] for the raw chord
-(REPORT §4.1, §4.3).
+across the ring's hollow (forced for any straight edit between near-opposite headings, so not evidence on its own). The
+evidence is the order: going either 180° route to the antipode at block 22, our smoother's readout on an independent MLP
+rises steadily from 2° to 178° along the path, while the raw chord's stays within 11° until halfway and then jumps to
+155–180° (REPORT §4.1, §4.3).
 
 **Through the predictor.** Edits at block 12 spread over the whole frame are repaired by the encoder (79.7° from target
 against 92.1° unedited at natural size). The same edit on the disk's own tokens reaches the forecast (44.7°). At block
@@ -93,7 +94,7 @@ along its tangent). Conceptor steering and energy geodesics add nothing over the
 
 ## Comparison with the multi-probe method
 
-The probe subspace is simple and needs no curve. It lands close at held-out endpoints (4.12° at block 12 over 16 arcs),
+The probe subspace is simple and needs no curve. It lands close at held-out endpoints (4.12° at block 12 over 16 seeds (15 arcs)),
 but its tie with the chord at block 22 uses a 1.5× larger edit, and at equal size it misses by 22.8° (REPORT §4.3).
 Splines follow the ring, so they keep the readout on the manifold along the path and steer the forecast's heading
 better through the predictor. They need a trustworthy coordinate, though: on a label-free angle the paper's spline

@@ -757,14 +757,21 @@ label-free recovery here is my extension, the centroid-plane fallback, and it wo
   (circular SD 110° probe, 140° MLP). The endpoints are identical by construction (MLP error 26° at point 12)[^tr]
   (`figures/fig4e_two_route_direction_L12_L22.png`).
 - **Two routes, held out** (`figures/fig_two_route_heldout.png`)[^trh]. The test above builds its spline on all 64
-  values. Here it runs on the 16 held-out arcs of §4.3: PCA-64, centroids and spline are fit without the arc, the
+  values. Here it runs on the 16 held-out arcs of §4.3 (16 seeds, 15 distinct arcs: seeds 4 and 8 coincide; without
+  the duplicate the point-22 endpoint contrast below moves from +2.35° to +2.47°), with our FITPACK smoother on the labels
+  coordinate, not the paper's interpolating spline: PCA-64, centroids and spline are fit without the arc, the
   readouts on disjoint probe-fold clips, carriers are test clips, and the mean is over arcs with a bootstrap CI over
   arcs. The target h is a held-out value and the source its antipode h − 180°, so the two spline routes enter the held
   arc from opposite sides. On the probe readout each route puts 0.95–0.97 of its interior waypoints' mass on its own
   half-ring (point 12: via +90° 0.96 [0.95, 0.97], via −90° 0.95 [0.94, 0.97]; point 22: 0.96 / 0.97), in order
   (Spearman 0.98–0.99 at point 12, 1.00 at point 22), and keeps a minimum readout radius of 0.73 / 0.77 from a start of
-  1.00 (point 22: 0.79 / 0.81). The chord's radius falls to 0.08 [0.08, 0.09] (point 22: 0.07), and each of its halves
-  carries 0.32–0.45 of that mass. The independent MLP agrees (0.84–0.87 for the spline routes). The endpoint does not
+  1.00 (point 22: 0.79 / 0.81). The chord's radius falls to 0.08 [0.08, 0.09] (point 22: 0.07), but that is forced: a
+  linear readout of a straight edit between near-opposite headings must pass near zero, so the radius is not evidence on
+  its own. Each chord half carries 0.32–0.45 of the intermediate mass (raw chord 0.36 / 0.37 at point 22; paired spline −
+  chord +0.64 [0.56, 0.72], 16/16 seeds), but the metric has a floor, because readout scatter near the endpoints snaps to
+  neighbouring 5.6° grid values. The evidence is the ordering: on the independent MLP readout the spline route's offset
+  rises monotonically from 2° to 178° along the path (MLP ordering 0.97 / 0.98), while the raw chord's stays at 2–11° up
+  to s ≈ 0.5 and then jumps to 155–180° (MLP ordering 0.67 / 0.69). Both routes go 180° round the ring to the antipode. The endpoint does not
   favour the spline: 10.7° [6.3, 17.8] against 8.5° for the smoothed-knot chord and 6.6° for the raw chord at point 12
   (spline − raw chord +4.1° [0.1, 10.5]), and 6.3° against 6.2° and 4.0° at point 22 (+2.4° [1.2, 3.7]). With the held
   arc between two kept endpoints instead (source h − 90°, target h + 90°), the route that crosses the held arc reads
@@ -1029,7 +1036,8 @@ arcs, and the spline's advantage is on the path (readout radius, ordering, and t
 not at the endpoint. The predictor-level results of §4.5 used the interpolating spline and are unaffected.
 
 **All six arms on one arc set (unified bake-off)**[^bake16]. The comparisons above were run piecemeal (different arms on
-different arc sets, some on the headline arc only). The unified run puts every arm on the same 16 contiguous 45° arcs at
+different arc sets, some on the headline arc only). The unified run puts every arm on the same 16 contiguous 45° arcs (16 seeds, 15 distinct arcs: seeds 4
+and 8 coincide; without the duplicate the FITPACK − chord endpoint gap at point 22 moves from +2.26° to +2.37°) at
 both points (point 12 on the stored label-free angle, point 22 on the labels angle), 8 held-out targets × 48 test
 clips per arc, an 11-waypoint walk, each arm at its own norm and rescaled per clip and per waypoint to the raw chord's
 norm; intervals are a clip bootstrap within arc (all targets of a clip together, 1000 draws) on the mean over arcs of
@@ -1509,7 +1517,10 @@ rerun on the labels order the edit is 1.40× the centroid change and the forecas
 from the twin, like every other point-12 arm[^il12]. So the point-12 failure is wash-out, not knot order. The 180°-flip
 column equals 180° minus the target column by construction; only the position flip (distance to the twin reflected
 about its tubelet-0 centroid) is an independent check. Unmatched, the spline's lead over the chord
-(11.3° vs 27.2°) is confounded with a larger edit (0.91× vs 0.65×; the point-12 contrast and flip null are not).
+(11.3° vs 27.2°) is confounded with a larger edit (0.91× vs 0.65×; the point-12 contrast and flip null are not). Our
+smoothing spline's 44.2° is not a size effect: its edit is 0.62 of the twin change against the chord's 0.65, and at the
+chord's norm it still reads 39.1° (chord 27.2°). On this arc (seed 0) it already misses at block 22 in the encoder,
+10.7° against 3.6° for the chord at nearly the same norm (12.40 against 12.68), and the predictor amplifies the miss.
 *Norm-matched rerun*[^nm]: point-22 edits rescaled per (carrier, target) to a common norm, same carriers, targets and
 probes (chord and unedited forecasts match the cache exactly). Cells: to target / paired target − flip / R dir / px:
 
@@ -2130,7 +2141,7 @@ power calculation.
 | Layer-wise probes (§3.1) | clip | direction 1,200 train / 300 test; speed and acceleration 1,228 / 308 | 5 CV folds inside train (grouped-fold rerun in `p1a_grouped_cv.json`); onset on out-of-fold predictions | fold SD for R² (no bootstrap); 200-draw clip bootstrap for onset | direction CV R² 0.980 ± 0.0011 SD (point 9), 0.9905 ± 0.0003 (peak, point 22); onset 2 [2, 2] | fold SD, not an SE: the 5 folds' training sets overlap by 75%, so 2 × SD/√5 ≈ 0.001 R² understates the uncertainty and is not an independent-sample interval; onset resolved to one sampled point |
 | INLP (§3.2) | CV fold | 5 folds over 1,200 train clips; random-removal control 10 seeds | nested K on held-out folds | none (per-fold K reported) | K = 37 (fold range 33–42, mean 38.2); paper protocol 46 | no interval: ±4.5 probes is the spread of per-fold K, each fit on 4/5 of train, not an interval on the pooled K |
 | Multi-probe steer (§3.3) | random basis draw (the null), not clips | 300 test clips; 200 null draws (p floor 0.005) | the evaluation probe is fit on the same 300 steered clips (C.12's protocol), so nothing is held out from the reader | permutation p against rank-2K and rank-matched nulls; no clip-level interval on the learned MAE | N = 10: 3.12° against rank-2K null 8.63° ± 4.18 SD (p 0.040); N = 1: 78.4° against 78.2° ± 2.45 (p 0.55) | not an MDE on the learned curve: the null's spread (2 SDs ≈ 8° at N = 10) |
-| Endpoint bake-off, 6 arms (§4.3) | clip within arc (all a clip's targets together) | 16 arcs × 8 targets × 48 test clips | 45° arc of 8 values; probe folds for the reader | 1000-draw clip bootstrap; statistic = mean over arcs of per-arc means | FITPACK − raw chord +1.48° [1.27, 1.69] (point 12), +2.26° [2.09, 2.42] (point 22); interpolating − chord +0.81° [0.74, 0.89] (point 22) | 0.1–0.2° (paired); ≈ 1° at the chord's norm. Arc-level: see below |
+| Endpoint bake-off, 6 arms (§4.3) | clip within arc (all a clip's targets together) | 16 seeds (15 distinct arcs; seeds 4 and 8 coincide, results unchanged without the duplicate) × 8 targets × 48 test clips | 45° arc of 8 values; probe folds for the reader | 1000-draw clip bootstrap; statistic = mean over arcs of per-arc means | FITPACK − raw chord +1.48° [1.27, 1.69] (point 12), +2.26° [2.09, 2.42] (point 22); interpolating − chord +0.81° [0.74, 0.89] (point 22) | 0.1–0.2° (paired); ≈ 1° at the chord's norm. Arc-level: see below |
 | Predictor as judge, direction (§4.5) | carrier | 200 carriers × 4 targets | 45° arc; readers fit on unedited forecasts of probe clips | 1000-draw carrier bootstrap | spline − chord at the chord's norm −7.74° [−10.64, −4.98]; along the path −13.4° [−15.7, −11.0] | ≈ 2.3–2.8° |
 | Disk-token sweep (§4.5) | carrier | 200 × 4 | as above | 1000-draw carrier bootstrap | source-disk-only 44.7° [38.8, 50.4]; source − union +3.8° [2.3, 5.3]; Fourier on source tokens − chord −7.7° [−10.6, −5.1] | 1.5° (paired) to 6° (arm means) |
 | Natural-norm point 12, disk tokens, background control (§4.5) | carrier | 200 × 4 | as above | 1000-draw carrier bootstrap | chord 79.7° [72.5, 86.6] vs 92.1° unedited; spline − chord +8.1° [6.5, 9.7]; disk tokens 40.8° [35.6, 46.3]; background same-count − disk +48.0° [41.9, 54.6], energy-matched +39.3° [32.9, 46.0] | 1.6° (paired) to 7° (unpaired arm means) |
