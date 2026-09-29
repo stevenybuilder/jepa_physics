@@ -16423,7 +16423,7 @@
  "provenance": {
   "split_file": "splits/split_hard.json",
   "split_sha256": "d1455879ce9ecb1839edea446e2d664aad6531da63688809e4d163d8a284b439",
-  "commit": "ab0d8666e20ee2bb58afd0402c68e9b2795297a0",
+  "commit": "4002277c620509ed81c64c673f1822e73eb42320",
   "points": [
    1,
    4,
@@ -16444,7 +16444,7 @@
   "subset": "all clips of the set",
   "time_averaging": "per-position features are averaged over the 8 token time steps before probing (one 1024-vector per spatial position per clip); the paper does not state whether its per-patch probes use per-token or time-averaged features",
   "half_frame_design": "the half-frame test fits ONE pooled probe over the 128 positions of one half (columns 0-7 or 8-15; every (clip, position) is a sample) and scores it on the other half's positions of test clips; the paper does not state its half-frame probe design",
-  "pooled_probe_path_note": "run at commit ab0d866 with the pooled/half probes in numpy float64 on CPU; later commits moved them to the GPU (fp32 chunked grams, float64 sums/eigh), parity on this set's points 1 and 8: pooled mean R2 and cross-half R2 equal to 1e-4, same alphas. Provenance time_averaging / half_frame_design fields added post hoc (they describe the method, not a rerun)"
+  "pooled_probe_path_note": "run at commit 4002277 with the pooled/half probes in numpy float64 on CPU; later commits moved them to the GPU (fp32 chunked grams, float64 sums/eigh), parity on this set's points 1 and 8: pooled mean R2 and cross-half R2 equal to 1e-4, same alphas. Provenance time_averaging / half_frame_design fields added post hoc (they describe the method, not a rerun)"
  },
  "subset": null
 }

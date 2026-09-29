@@ -411,7 +411,7 @@ Audit = re-derivation from pixels and feature files (scratchpad qa_accel/s2_supp
 | p1-zone title, alt, notes | block 9 per seed 0.077 / 0.385 / 0.082 (no permutation baseline, not "chance"); block 12 0.42 / 0.69 / 0.63 below block 1 on every seed; 16 0.36 / 0.58 / 0.60; block-1 level back at 22 (0.76); loss begins block 4 (seed 0) / 5 (seeds 1–2) (QA #477, #478); Table 4 comparison removed (QA #479) | results/p1a_perpatch_hard_seeds.json by_point[].cross_half_r2.per_seed |
 | headline line, papers title | "Our smoother" (B.1-style, departs from B.1); "Prior work … none asked" (three author groups) (QA #480) | — |
 
-## #475 rerun (ce3123d, 22:25 ET)
+## #475 rerun (f12f52a, 22:25 ET)
 
 | Slide | Number | Source (file → key) |
 |---|---|---|
