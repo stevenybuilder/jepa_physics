@@ -48,7 +48,7 @@ identical by construction. On a rendered grid that decorrelates them, signed acc
 at block 8 and is about zero at blocks 1–4. The magnitude |a| is weak everywhere (REPORT §2, §5).
 
 **Model size.** ViT-L, ViT-H and ViT-g all read direction in the first tenth of depth (onset 0.083, 0.094 and 0.10 of
-depth). Untrained copies read 0.85–0.87 from block 1, so the early onset is mostly architecture (REPORT §3.5).
+depth). Untrained copies read 0.85–0.87 from block 1, so the early onset is mostly architecture. On the harder render (ViT-H only, one seed) the zone moves earlier as a fraction of depth by its first recovery and later by its durable recovery, so its size dependence is unsettled (REPORT §3.5).
 
 ## Part 2: what we did and found
 
@@ -70,7 +70,7 @@ against 92.1° unedited at natural size). The same edit on the disk's own tokens
 Without the heading probe the picture is mixed: at matched size the chord moves the whole forecast further (recovery
 0.234 against 0.186), and the spline only keeps a small twin-identification lead (REPORT §4.5). Token patching shows the
 direction the forecast carries comes from the disk's tokens through block 12 (0.88) and from the whole frame by block 22
-(0.22 from the disk) (REPORT §4.6). Almost every attention head attends to the disk's previous position, but ablating the eight that do so most costs the direction probe less than random heads of the same number (0.040 against 0.124–0.220 of R²), so the code is not concentrated in a few heads (REPORT §4.7).
+(0.22 from the disk) (REPORT §4.6). Almost every attention head attends to the disk's previous position, but at the ablated blocks the eight that do so most matter no more than random heads of the same number (0.040 against 0.124–0.220 of R²), a null; the few heads specific to the previous slot were not ablated (REPORT §4.7).
 
 **Other variables.** A joint direction × speed sheet beats composed one-dimensional edits on forecast direction (29.8°
 against 34.5°) but not a direction-only ring edit (28.2°) (REPORT §4.4). A "contact" edit writes a post-contact heading,
