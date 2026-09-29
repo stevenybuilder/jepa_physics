@@ -96,10 +96,11 @@ ridge probes steer to 8.7° on held-out clips; with the paper's Adam probes the 
 <p align="center"><img src="talk/figures_v2/fig_part1_panels.png" width="920" alt="Part 1 panels: decoded R² by block for three variables with untrained baselines; nullspace erasure curve at block 9; steering error against number of probes for ridge and Adam bases and random controls."></p>
 
 **Part 2: speed and acceleration are lines, direction is a ring.** Splines add nothing on a line. On the ring, at
-held-out endpoints (16 seeds over 15 arcs) the straight chord lands as close as any curve at block 22, within 0.8° to
-2.3°, and at block 12 the paper's interpolating spline overshoots the ring (34.5° against the chord's 6.7°). What the
-curves buy is the path: at their own size they keep the readout on the ring (radius at least 0.80, and 0.71 at the
-chord's size) where the chord drops to 0.59 to 0.63.
+held-out endpoints (16 seeds over 15 arcs) the straight chord lands as close as the curves at block 22, within 0.8° to
+2.3° (only an exploratory knot-cross-validated smoother edges it, by 0.4°), and at block 12 the paper's interpolating
+spline overshoots the ring (34.5° against the chord's 6.7°). These are additive edits; under the paper's replacement
+rule the chord's lead is larger (1.6° against 4.8° at block 22). What the curves buy is the path: at their own size they
+keep the readout on the ring (radius at least 0.80, and 0.71 at the chord's size) where the chord drops to 0.59 to 0.61.
 
 **The predictor decides.** A frame-wide edit at block 12 is repaired (forecast 79.7° from target against 92.1°
 unedited); the same edit on the disk's tokens reaches it (44.7°). At block 22 the spline's forecast heading lands 11.3°
