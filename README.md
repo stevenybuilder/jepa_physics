@@ -37,7 +37,7 @@ pooled readout here. What training adds is a per-patch direction code: V-JEPA 2 
 block 6, while an untrained copy never exceeds 0.39. On a harder rendered set the zone does appear, as a handover
 (means over three render seeds): a direction code that transfers across the two halves of the frame at block 1 (0.71)
 stops transferring by block 8 (−1.43; at block 4 two of the three seeds still transfer, +0.16 / +0.15), recovers only to
-about chance at block 9 (0.18) and transfers durably later (0.58 at block 12). That reproduces the paper's C.5 only in part: its claim that generalisation appears after the zone holds on the hard render, but its claim that early layers hold no code that generalises across the frame does not hold on either stimulus (the supplied clips transfer 0.82 at block 1).
+near zero at block 9 on two seeds and 0.39 on the third (mean 0.18) and more at block 12 (0.58, still below block 1 on every seed), returning to the block-1 level only at block 22 (0.76). That reproduces the paper's C.5 only in part: its claim that generalisation appears after the zone holds on the hard render, but its claim that early layers hold no code that generalises across the frame does not hold on either stimulus (the supplied clips transfer 0.82 at block 1).
 
 **Nullspace.** At block 9, 37 probes are needed before direction is at chance (46 under the paper's protocol), against 39 for speed and 41 for acceleration. After
 whitening, one two-output probe does the job, so the count mostly reflects the shape of the covariance, not an intrinsic
@@ -45,7 +45,8 @@ rank. (REPORT §3.2).
 
 **Steering.** With our ridge basis, five probes steer to 8.7° from the target, as judged by a probe fit on the unsteered test clips and applied to their steered versions, as in the paper's C.12 (a split-half judge gives 14.7°). That beats a same-rank random subspace
 (54.9°, p 0.035) but not the full-rank random basis (11.8°, p 0.22). With the paper's Adam probe sequence, 18 probes are
-needed to reach 10° (REPORT §3.3).
+needed to reach 10°, judged by our ridge probe; the judge recipe alone moves the ridge count from 5 to 3 or 4, and the
+Adam basis has not been scored with an Adam judge (REPORT §3.3).
 
 **Acceleration.** In the supplied set every clip starts at rest, so acceleration, mean speed and displacement are
 identical by construction. On a rendered grid that decorrelates them, signed acceleration appears in pooled features

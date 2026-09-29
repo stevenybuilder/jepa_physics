@@ -14,7 +14,7 @@ per-position R² is 0.96 at block 6, while the random-init network pools to 0.86
 per-position R² never exceeds 0.39; on a harder rendered set the half-frame jump replicates at the paper's depth on all
 three seeds, a shape the random-init network never shows. (2) Every variable needs tens of probes at the paper's layer,
 far outside a random-removal band, and Step 3 reproduces in shape and, with C.11's Adam probe sequence, the basis C.12
-steers along, in count: it takes 18 to reach 10°, where the paper reports ≈ 12° at about 20. (3) Direction lies on a
+steers along, in count: it takes 18 to reach 10°, where the paper reports ≈ 12° at about 20 (judged by our ridge (α = 100) probe; the judge recipe alone moves the ridge count from 5 to 3 (α = 1e-3) or 4 (Adam judge), and the Adam basis has not been scored with an Adam judge). (3) Direction lies on a
 ring, and at held-out direction values the spline path stays on the ring while the straight path cuts across the hollow
 in the ring plane (in the 64-D subspace it is as close to real clips at point 12 and closer at point 22):
 the minimum readout radius is higher for the spline on every arc (point 22 on the labels angle[^src]).
@@ -22,7 +22,7 @@ the minimum readout radius is higher for the spline on every arc (point 22 on th
 **Two disagreements with the paper.** (1) On the harder set transfer does not appear only after the Physics Emergence Zone (blocks 8–9): it is 0.7 at
 point 1, and the per-position curve rises most between points 4 and 6 on every seed, though under the 90%-of-max rule
 its onset is 9 / 8 / 8, her depth, and the sigmoid inflection 5.7–5.9 (§3.1): partial agreement on a harder stimulus,
-not on the supplied one. What the zone is on that set: a heading code that transfers across the two halves of the frame at point 1 (half-frame R² 0.71, mean of three seeds) stops transferring through points 4–8 (−1.43 at point 8) and transfers again from point 9 (0.58 at point 12), so the sequence is shared → position-specific → shared, not the local → global transition C.5 (l.994–995) reads from its own data; the untrained copy never transfers[^seeds]. Physics is readable before the zone; what the zone marks on this stimulus is where a shared code is rebuilt. (2) Whether speed needs
+not on the supplied one. What the zone is on that set: a heading code that transfers across the two halves of the frame at point 1 (half-frame R² 0.71, mean of three seeds) stops transferring from point 4 (seed 0) or 5 (seeds 1–2) to point 8 (−1.43 at point 8), recovers to near zero at point 9 (mean 0.18) and more at point 12 (0.58, still below point 1 on every seed), returning to the point-1 level only at point 22 (0.76), so the sequence is shared → position-specific → shared, not the local → global transition C.5 (l.994–995) reads from its own data; the untrained copy never transfers[^seeds]. Physics is readable before the zone; what the zone marks on this stimulus is where a shared code is rebuilt. (2) Whether speed needs
 fewer probes than direction depends on the stop rule and the probe recipe more than on the network. Under ridge on the
 same clips speed needs fewer under C.11's thresholds (7 of 8 cells in probes, 8 of 8 in the paper's unit, dimensions),
 and the paper's plotted Fig. 22 sits with that rule for speed (≈ 28 at layer 8, where Fig. 23's speed curve ends near
@@ -154,7 +154,7 @@ verdict; §2 lists every deviation from the paper and what the parity audit chan
 **What the parity audit changed.** A paper-first audit of our own methods moved eight verdicts:
 
 - Part 1, the Physics Emergence Zone: read per patch on the hard render across three seeds, the 90%-of-max onset is 9 / 8 / 8 (her depth) while the largest rise is at points 4 → 6 on every seed, and the half-frame dip-and-jump at points 8 → 9 (paper layers 7 → 8) is training-specific (§3.1).
-- Part 1, Step 3: with our refit of the paper's C.11 Adam probe sequence as the steering basis the probe count reproduces, 18 probes to 10° and 16 to the paper's 12° at about 20 (§3.3).
+- Part 1, Step 3: with our refit of the paper's C.11 Adam probe sequence as the steering basis the probe count reproduces, 18 probes to 10° and 16 to the paper's 12° at about 20 (§3.3; judged by our ridge (α = 100) probe; the judge recipe alone moves the ridge count from 5 to 3 (α = 1e-3) or 4 (Adam judge), and the Adam basis has not been scored with an Adam judge).
 - Part 1: a covariance-weighted edit built from one probe steers to 3–5°, outside the probe's plane, as does the same construction on a random 2-D subspace (median 4.2°), so the learned probe adds specificity, not reach (§3.3, §6).
 - Part 2: the isometry verdict is set by the knot coordinate; under every label-free ordering point 22 is a tie (spline only under the basic interval in the fully faithful run), and Goodfire's own angle loses to the chord at point 12 (§4.4).
 - Part 2: at the encoder output the verdict is mixed (the spline trails the chord by 10.8° at the chord's norm and leads by 2.1° at the natural norm), and in scalar extrapolation the spline trails the chord by 0.02–0.06 (§4.5, §4.3).
@@ -321,18 +321,17 @@ the same clips reaches 0.57 at point 6 and 0.60–0.62 from point 8, so the trai
 random curve rises 0.36 → 0.61 with a 90% onset of 7. Cross-half transfer
 is 0.69–0.73 at point 1, negative at points 7 and 8 on every seed (−1.03 to −1.84 at 8), positive at 9 on every seed
 (jump +1.50 / +1.42 / +1.92), then 0.58 ± 0.15 at 12 and 0.76 ± 0.03 at 22; the dip begins at points 4–5 (seed 1: −1.16 at 5, +0.22 at 6, −1.03 at 8, so its 5 → 6 recovery of +1.37 nearly
-matches its 8 → 9 one; seed 2: −0.43 at 5). The recovery at 9 is only to about chance (0.08 / 0.39 / 0.08); the
-point-1 level returns by point 22. The random network shows no dip: on seed 0 its cross-half rises monotonically from
+matches its 8 → 9 one; seed 2: −0.43 at 5). The recovery at 9 is near zero on two seeds and 0.39 on the third (0.08 / 0.39 / 0.08, mean 0.18; there is no
+permutation baseline for half-frame transfer); block 12 stays below block 1 on every seed (0.42 / 0.69 / 0.63 against
+0.69 / 0.73 / 0.71), transfer dips again at 16 (0.36 / 0.58 / 0.60), and the point-1 level returns only at point 22 (0.76). The random network shows no dip: on seed 0 its cross-half rises monotonically from
 −0.72 at point 1 to +0.27 at points 8–9 (8 → 9 change −0.01), and on seed 1 it stays negative throughout (−0.21 at 9,
 8 → 9 change +0.22). So the dip-and-jump shape is training-specific; the level at point 9 is not. The negative
 values are a between-half miscalibration, not a mirror flip: at point 8 the cross-half MAE is 56° against 11° within a
 half, where a left-right mirror of 8 directions would give 90°. The half-frame probe standardises the other half with the
 training half's statistics (`scripts/p1a_perpatch.py:pooled_probe`), so a mean offset between halves alone would give a
 strongly negative R² with this MAE; the negative transfer at points 7–8 therefore means the shared code is lost or
-offset, and the per-half standardisation control that would tell the two apart was not run. Our per-patch unit also
-differs from the paper's: each of the 16 × 16 positions averages the 8 time steps (`scripts/p1a_perpatch.py:extract`),
-so it sees the disk's whole passage, and our per-patch R² at the zone is 0.98 on the supplied clips and 0.95 on the hard
-render against the paper's Table 4 baseline of 0.72; the onset comparison is between units at different levels. On the paper-layout set the per-position onset is 6 and
+offset, and the per-half standardisation control that would tell the two apart was not run. Our per-patch unit averages the 8 time steps
+at each of the 16 × 16 positions (`scripts/p1a_perpatch.py:extract`), so each position sees the disk's whole passage. On the paper-layout set the per-position onset is 6 and
 cross-half transfer is already 0.81 at block 1, so the hard set's dip comes from the rendering (each render seed changes the 7 starts and the floor texture
 together, so seed-to-seed swings cannot be assigned to either). Caveats: per-position
 features are averaged over the 8 time steps; the half-frame test is one pooled probe per half; the rendered sets sample
@@ -341,7 +340,7 @@ bounds; they reuse 7 start positions across all (θ, v) pairs; each hard set is 
 redundancy" was not measured; only spatial spread (share of positions above R² 0.5) was.
 
 **Verdict.** On a harder stimulus, across three render seeds, one part of the paper's signature replicates: the half-frame
-jump. Transfer dips to −1.0 to −1.8 at point 8 and jumps back to about chance at point 9 on every seed (paper layers
+jump. Transfer dips to −1.0 to −1.8 at point 8 and jumps back to near zero at point 9 (0.08 / 0.39 / 0.08) (paper layers
 7 → 8), a shape the random network lacks. C.5 makes two claims, and the reproduction is partial: (a) that early layers
 hold no per-region code that generalises does not reproduce on either stimulus (the hard render transfers 0.71 at point
 1; the supplied clips transfer 0.82 at point 1 rising to 0.96 with no dip, and even the untrained copy transfers 0.61 →
@@ -551,7 +550,7 @@ p = 0.048 at every N (mean 87.4° at N = 1). Source: `p1c_direction_L{2,9,22}.js
 - **The paper's steering basis** (point 9, direction)[^adamb]. C.12 steers along C.11's Adam probe sequence, not a
   ridge one. Refitting that sequence (lr 1e-3, wd 1e-4, batch 64; it reproduces the stored Adam run and stops at K = 84)
   and steering with it: N = 1 / 2 / 3 / 5 / 10 / 20 / 84 give 84.1° / 81.1° / 77.7° / 69.2° / 27.9° / 7.3° / 2.9° to
-  target (ridge basis: 78.4° / 61.1° / 25.4° / 8.7° / 3.1° / 2.9° / 2.7° at N = 37). Eighteen Adam probes reach 10°,
+  target (ridge basis: 78.4° / 61.1° / 25.4° / 8.7° / 3.1° / 2.9° / 2.7° at N = 37). Eighteen Adam probes reach 10° (judged by our ridge (α = 100) probe; the judge recipe alone moves the ridge count from 5 to 3 (α = 1e-3) or 4 (Adam judge), and the Adam basis has not been scored with an Adam judge; `p1c_direction_evalprobe_recipe.json` `recipe_results.*.n_to_10deg`),
   against five ridge probes (the ridge basis judged by the α = 100 evaluation probe, fit on the unsteered test clips and applied to their steered versions, as in the paper's C.12;
   the split-half judge gives 12.4° / 17.1° at N = 5, mean 14.7°; with 200 draws the five ridge probes' 8.7° is not
   distinguishable from the 74-dimensional random basis, median 11.8°, p 0.22, first beaten at N = 9, while the
@@ -580,7 +579,7 @@ p = 0.048 at every N (mean 87.4° at N = 1). Source: `p1c_direction_L{2,9,22}.js
   sentence that steering "along a single feature direction or probe axis produces little to no change" holds here for
   the along-axis edit. The oracle (W = the evaluation probe) gives 0° by construction.
 
-**Verdict.** Fig. 24's shape reproduces, and so does its count once the basis is the paper's: 18 Adam probes to 10°
+**Verdict.** Fig. 24's shape reproduces, and so does its count once the basis is the paper's (judged by our ridge probe; the judge recipe alone moves counts by 1–2 probes): 18 Adam probes to 10°
 against its about 20, where a ridge basis needs 3–5 (3–4 under the near-unregularised and Adam evaluation probes, 5
 under my CV-chosen one; C.12 gives no recipe). The ridge probes beat a random subspace of their own rank from N = 2–7
 (N = 3 under the near-unregularised probes) and a rank-2K random basis from N = 4 under those probes (200 draws) but only from
@@ -2062,7 +2061,7 @@ these are heads with high attention to the disk, not heads that prefer the previ
   not a training effect. The per-patch probes show what training does add: the random network never gets past a mean
   per-position R² of 0.39, the regime of fragmented local signal that pooling adds up, while V-JEPA 2 reaches 0.96 by
   block 6 on the supplied clips and, on a harder stimulus, forms that code with its largest rise at points 4 → 6 on every render seed and, across the paper's depth, loses
-  half-frame transfer and jumps back to chance, which the random network never does (§3.1). So the zone is a claim about the per-patch readout, which the paper's C.5 says, and a mean-pooled
+  half-frame transfer and jumps back to near zero, which the random network never does (§3.1). So the zone is a claim about the per-patch readout, which the paper's C.5 says, and a mean-pooled
   curve can neither confirm nor refute it. VideoMAE matches V-JEPA 2 on every pooled Part 1 measure and, from point 8, per patch (§3.1), so none of this is specific to latent prediction or shows that the variables are used to predict. The authors' OpenReview response states that "all 13 models encode motion direction
   (R²≥.43), regardless of objective", classification CNNs included, so availability is their own finding; training buys
   precision, fewer probes to steer (4 vs 10 to reach 10°[^obj]) and a label-free ring.
@@ -2151,7 +2150,7 @@ power calculation.
 |---|---|---|---|---|---|---|
 | Layer-wise probes (§3.1) | clip | direction 1,200 train / 300 test; speed and acceleration 1,228 / 308 | 5 CV folds inside train (grouped-fold rerun in `p1a_grouped_cv.json`); onset on out-of-fold predictions | fold SD for R² (no bootstrap); 200-draw clip bootstrap for onset | direction CV R² 0.980 ± 0.0011 SD (point 9), 0.9905 ± 0.0003 (peak, point 22); onset 2 [2, 2] | fold SD, not an SE: the 5 folds' training sets overlap by 75%, so 2 × SD/√5 ≈ 0.001 R² understates the uncertainty and is not an independent-sample interval; onset resolved to one sampled point |
 | INLP (§3.2) | CV fold | 5 folds over 1,200 train clips; random-removal control 10 seeds | nested K on held-out folds | none (per-fold K reported) | K = 37 (fold range 33–42, mean 38.2); paper protocol 46 | no interval: ±4.5 probes is the spread of per-fold K, each fit on 4/5 of train, not an interval on the pooled K |
-| Multi-probe steer (§3.3) | random basis draw (the null), not clips | 300 test clips; 200 null draws (p floor 0.005) | the evaluation probe is fit on the same 300 steered clips (C.12's protocol), so nothing is held out from the reader | permutation p against rank-2K and rank-matched nulls; no clip-level interval on the learned MAE | N = 10: 3.12° against rank-2K null 8.63° ± 4.18 SD (p 0.040); N = 1: 78.4° against 78.2° ± 2.45 (p 0.55) | not an MDE on the learned curve: the null's spread (2 SDs ≈ 8° at N = 10) |
+| Multi-probe steer (§3.3) | random basis draw (the null), not clips | 300 test clips; 200 null draws (p floor 0.005) | the evaluation probe is fit on the 300 unsteered test clips and applied to their steered versions (C.12's protocol), so the reader is not held out from those clips | permutation p against rank-2K and rank-matched nulls; no clip-level interval on the learned MAE | N = 10: 3.12° against rank-2K null 8.63° ± 4.18 SD (p 0.040); N = 1: 78.4° against 78.2° ± 2.45 (p 0.55) | not an MDE on the learned curve: the null's spread (2 SDs ≈ 8° at N = 10) |
 | Endpoint bake-off, 6 arms (§4.3) | clip within arc (all a clip's targets together) | 16 seeds (15 distinct arcs; seeds 4 and 8 coincide, results unchanged without the duplicate) × 8 targets × 48 test clips | 45° arc of 8 values; probe folds for the reader | 1000-draw clip bootstrap; statistic = mean over arcs of per-arc means | FITPACK − raw chord +1.48° [1.27, 1.69] (point 12), +2.26° [2.09, 2.42] (point 22); interpolating − chord +0.81° [0.74, 0.89] (point 22) | 0.1–0.2° (paired); ≈ 1° at the chord's norm. Arc-level: see below |
 | Predictor as judge, direction (§4.5) | carrier | 200 carriers × 4 targets | 45° arc; readers fit on unedited forecasts of probe clips | 1000-draw carrier bootstrap | spline − chord at the chord's norm −7.74° [−10.64, −4.98]; along the path −13.4° [−15.7, −11.0] | ≈ 2.3–2.8° |
 | Disk-token sweep (§4.5) | carrier | 200 × 4 | as above | 1000-draw carrier bootstrap | source-disk-only 44.7° [38.8, 50.4]; source − union +3.8° [2.3, 5.3]; Fourier on source tokens − chord −7.7° [−10.6, −5.1] | 1.5° (paired) to 6° (arm means) |
