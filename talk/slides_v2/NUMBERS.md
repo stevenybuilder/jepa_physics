@@ -410,3 +410,9 @@ Audit = re-derivation from pixels and feature files (scratchpad qa_accel/s2_supp
 | p1-steer notes, vs-paper cell | judge fit on the unsteered test clips and read on their steered versions (C.12 l.1245); split-half 14.7° (QA #476) | src/wm/steer.py:run_steering eval_probe_cv(Xte, Y[te]) |
 | p1-zone title, alt, notes | block 9 per seed 0.077 / 0.385 / 0.082 (no permutation baseline, not "chance"); block 12 0.42 / 0.69 / 0.63 below block 1 on every seed; 16 0.36 / 0.58 / 0.60; block-1 level back at 22 (0.76); loss begins block 4 (seed 0) / 5 (seeds 1–2) (QA #477, #478); Table 4 comparison removed (QA #479) | results/p1a_perpatch_hard_seeds.json by_point[].cross_half_r2.per_seed |
 | headline line, papers title | "Our smoother" (B.1-style, departs from B.1); "Prior work … none asked" (three author groups) (QA #480) | — |
+
+## #475 rerun (ce3123d, 22:25 ET)
+
+| Slide | Number | Source (file → key) |
+|---|---|---|
+| p1-reproduce title, notes; p1-steer notes | n_to_10deg: ridge basis 5 / 3 / 4 / 6 under ridge α100 / ridge α1e-3 / Adam C.11 judge / split-half; Adam basis 18 / 11 / 11 first crossing, 19 sustained / 22; at N=5 under the Adam judge ridge 8.0° beats all 20 same-rank random draws (median 86.6°, p 1/21), Adam 72.2° vs 79.4° (p 0.38) | results/p1c_direction_L9_adam_judge.json → per basis × judge n_to_10deg, sustained, mae_at_n, random_null |
