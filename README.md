@@ -1,128 +1,123 @@
-# V-JEPA 2 physics take-home
+# Reading and steering motion in V-JEPA 2
 
-This repository probes and steers the frozen V-JEPA 2 ViT-L/16 encoder on the supplied disk clips. It repeats the
-layer-wise probing, nullspace and multi-probe steering experiments of Joseph et al. (arXiv 2602.07050), with a partial
-reproduction: the pooled Physics Emergence Zone does not appear on the supplied clips, the direction-versus-speed
-probe-count contrast does not hold, and the steering dose-response reproduces with the paper's Adam basis only. It
-extends them with
-spline (manifold) steering after Wurgaft et al. (arXiv 2605.05115). The short version: readable is not the same as used.
-Edits reach the predictor's forecast late in the encoder, or earlier only through the object's own tokens. A curved
-edit steers the forecast's heading code, while a straight edit of the same size moves the whole forecast further.
+Layer-wise probing, nullspace erasure and steering of physical variables (direction, speed, acceleration) in the
+frozen V-JEPA 2 ViT-L/16 encoder, judged by the model's own predictor. Part 1 repeats the probing, nullspace and
+multi-probe steering experiments of Joseph et al. (2026). Part 2 builds spline (manifold) edits after Wurgaft et al.
+(2026) and asks whether the predictor consumes the code at values the spline never saw.
 
-The full write-up is [REPORT.md](REPORT.md). The 15-minute talk is at https://claude.ai/artifact/JdPJ1Yig3LpL5KntZCJo88
-(deck sources in `talk/`).
+**Short version: readable is not used.** Direction is decodable from every patch by block 6, but a frame-wide edit at
+block 12 is repaired before the predictor sees it. Only a late edit, or an edit on the object's own tokens, reaches the
+forecast. Curved edits keep the heading on the way; straight edits land as close at the endpoint.
 
-## What the take-home asked, and where each ask is answered
+<p align="center"><img src="talk/figures_v2/fig_read_vs_use.png" width="820" alt="Top: per-patch direction R² by block. Bottom: forecast heading error after an edit at each block; only the block-22 edit moves the forecast."></p>
 
-| Instruction | What we did | Scripts | Results | REPORT |
-|---|---|---|---|---|
-| Part 1.1 Layer-wise probing | Ridge probes at all 26 read points for direction, speed and acceleration, with onsets, an untrained copy and per-patch probes; layer curves in `figures/fig1_layer_curves.png`, sizes in `figures/fig_scaling_layerwise.png`. | `run_step1.py`, `extract.py` | `results/p1a_*` | §3.1 |
-| Part 1.2 Iterative nullspace probing | INLP at the paper's layer, with nested and paper-protocol counts, an Adam rerun and a whitened count. | `run_step2.py`, `run_step2_dims.py` | `results/p1b_*` | §3.2 |
-| Part 1.3 Multi-probe steering on held-out data | Steering in the span of the first N probes, on test clips never used to build the basis, against random-basis nulls; the judge is a probe fit on the unsteered test clips and applied to their steered versions, as in the paper's C.12, and we also report a split-half judge. | `run_step3.py` | `results/p1c_*` | §3.3 |
-| Part 2: splines for speed, acceleration, direction | Periodic cubic splines through class centroids in a PCA subspace, plus lines and a direction × speed sheet. | `run_part2.py`, `run_velocity_sheet_predictor.py` | `results/p2_steer_*`, `results/p5_velocity_sheet_*` | §4.1, §4.3 |
-| How splines are built, shown and evaluated | Built on knot clips only; plotted as rings, lines and sheets; scored at held-out targets, along the path and through the predictor. | `run_bakeoff_unified_16arc.py`, `run_session2.py` | `results/p2_bakeoff_unified_16arc.json`, `results/session2_*` | §4.2, §4.5 |
-| The circular structure of direction | Direction lies on a ring; we test its angle coordinate and which frame describes it best. | `run_geometry_checks.py`, `run_coordinate_competition.py` | `results/p2_geometry_*`, `results/p5_coordinate_competition.json` | §4.1, §4.4 |
-| A meaningful held-out steering evaluation | A whole 45° arc of directions is held out of spline construction, on 16 seeds (15 arcs); readers are fit on separate probe clips; the predictor's forecast and rendered twins serve as judge and ceiling. | as above | as above | §4.2, §7.1 |
-| Comparison with the multi-probe method | Six steering arms on one arc set, including the Part 1 probe subspace, plus predictor-level tests. | `run_bakeoff_unified_16arc.py` | `results/p2_bakeoff_unified_16arc.json` | §4.3, §4.4 |
-| Encoder frozen; extraction and pooling documented | No weights are updated. Activations are the mean over all 2,048 tokens (8 × 16 × 16) at each point, 16 frames at 256², no crop. | `src/wm/extract.py` | `artifacts/` (not in git) | §2 |
-| Fit data separated from evaluation data | One stratified 80/20 split per dataset; probe fitting, layer choice, nullspace and spline construction use train folds only; Part 2 uses knot folds 0–2, probe folds 3–4 and the held-out test fold. | `make_splits.py` | `splits/split_v1.json` | §2, §4.2 |
-| Supplied data unchanged; artifacts stored elsewhere | The data is read in place; derived files live in `artifacts/`, `results/` and `figures/`. | | | §8 |
-| Deliverable: a 15-minute presentation | The talk above, with speaker notes and a number ledger (`talk/slides_v2/NUMBERS.md`). | `talk/` | | |
+- Full write-up with every number and its source file: [REPORT.md](REPORT.md)
+- 15-minute talk (27 slides, speaker notes): https://claude.ai/artifact/JdPJ1Yig3LpL5KntZCJo88
+- Every reported number is in `results/*.json`; the talk's numbers are indexed in [talk/slides_v2/NUMBERS.md](talk/slides_v2/NUMBERS.md)
 
-## Part 1: what we did and found
+## Getting started
 
-**Probing.** On the supplied clips direction is already readable after one block (pooled R² 0.875), and speed and
-acceleration are readable from block 1 too (REPORT §3.1). So the paper's Physics Emergence Zone does not appear in the
-pooled readout here. What training adds is a per-patch direction code: V-JEPA 2 reaches a mean per-position R² of 0.96 by
-block 6, while an untrained copy never exceeds 0.39. On a harder rendered set the zone does appear, as a handover
-(means over three render seeds): a direction code that transfers across the two halves of the frame at block 1 (0.71)
-stops transferring by block 8 (−1.43; at block 4 two of the three seeds still transfer, +0.16 / +0.15), recovers only to
-near zero at block 9 on two seeds and 0.39 on the third (mean 0.18) and more at block 12 (0.58, still below block 1 on every seed), returning to the block-1 level only at block 22 (0.76). That reproduces the paper's C.5 only in part: its claim that generalisation appears after the zone holds on the hard render, but its claim that early layers hold no code that generalises across the frame does not hold on either stimulus (the supplied clips transfer 0.82 at block 1).
+Python 3.11. A 16 GB GPU is needed for activation extraction (about 40 minutes for all six runs on an RTX 4080 SUPER)
+and for the predictor tests (about 20 minutes each on an RTX 4060 Ti). Everything else runs on CPU.
 
-**Nullspace.** At block 9, 37 probes are needed before direction is at chance (46 under the paper's protocol), against 39 for speed and 41 for acceleration. After
-whitening, one two-output probe does the job, so the count mostly reflects the shape of the covariance, not an intrinsic
-rank. (REPORT §3.2).
+```bash
+git clone https://github.com/stevenybuilder/jepa_physics && cd jepa_physics
+python3.11 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt          # torch 2.2.2, transformers 4.56.2 (facebook/vjepa2-vitl-fpc64-256 downloads on first use)
+python -m pytest -q                      # unit tests, CPU, a few minutes
+```
 
-**Steering.** With our ridge basis, five probes steer to 8.7° from the target, as judged by a probe fit on the unsteered test clips and applied to their steered versions, as in the paper's C.12 (a split-half judge gives 14.7°). That beats a same-rank random subspace
-(54.9°, p 0.035) but not the full-rank random basis (11.8°, p 0.22). With the paper's Adam probe sequence, 18 probes are
-needed to reach 10° under our ridge judge, and with the paper's Adam judge as well the count is 11 at first crossing and
-19 sustained, consistent with the paper's ≈ 20; our ridge basis needs 3–6 under every judge. So the count depends on the
-optimiser and the judge (REPORT §3.3).
+Place the supplied take-home data at `vjepa-physics-takehome-4E00/data/` (the three `manifest.jsonl` files and
+`videos/`). The code only reads it. Derived files go to `artifacts/` (activations, git-ignored), `results/` (JSON)
+and `figures/`.
 
-**Acceleration.** In the supplied set every clip starts at rest, so acceleration, mean speed and displacement are
-identical by construction. On a rendered grid that decorrelates them, signed acceleration appears in pooled features
-at block 8 and is about zero there at blocks 1–4, while time-ordered per-tubelet features read it from block 1 (0.53 at block 1, 0.50 at block 4). The magnitude |a| is weak everywhere (REPORT §2, §5).
+## Reproduce
 
-**Model size.** ViT-L, ViT-H and ViT-g all read direction in the first tenth of depth (onset 0.083, 0.094 and 0.10 of
-depth). Untrained copies read 0.85–0.87 from block 1, so the early onset is mostly architecture. On the harder render (ViT-H only, one seed) the zone moves earlier as a fraction of depth by its first recovery and later by its durable recovery, so its size dependence is unsettled (REPORT §3.5).
+Each step reads the previous step's outputs from disk, so any step can be rerun alone.
 
-## Part 2: what we did and found
+```bash
+# 0. Activations: mean-pooled tokens at all 26 read points, per dataset (GPU)
+for d in direction speed acceleration; do
+  for m in vjepa2 random; do                                       # trained encoder and an untrained copy
+    python scripts/extract.py run   --dataset $d --model $m --batch-size 16
+    python scripts/extract.py merge --dataset $d --model $m
+  done
+done
+python scripts/make_splits.py                                      # one stratified 80/20 split -> splits/split_v1.json
 
-**Construction.** Our default is a smoothing spline through class centroids in a 64-dimensional PCA subspace (the
-paper's B.1 vision-model recipe), with the paper's A.3 interpolating periodic cubic spline run as a separate arm; the
-headline 11.3° through the predictor below is the interpolating arm, and our smoother gives 44.2° there, not because of its size but because on that arc it already misses in the encoder (10.7° against 3.6° for the chord). We also fit a knot-cross-validated smoother and straight edits (the raw
-chord between centroids, and a straight edit in cos θ, sin θ, cos 2θ, sin 2θ). Speed and acceleration lie on lines, so
-splines add nothing there. Direction lies on a ring (REPORT §4.1).
+# 1. Part 1: layer-wise probes, iterative nullspace, multi-probe steering (CPU)
+for d in direction speed acceleration; do python scripts/run_step1.py --dataset $d; done
+python scripts/run_step2.py --dataset direction --layer-role paper                 # INLP at the paper's layer
+python scripts/run_step3.py --dataset direction --layer-role paper                 # steering on held-out clips vs random-basis nulls
 
-**Evaluation.** Each held-out arc of 8 directions is never used to build a curve. Readers are fit on separate probe
-clips. We score endpoint error and the readout radius along the path (REPORT §4.2).
+# 2. Part 2: splines, lines and the ring on held-out contiguous arcs (CPU)
+python scripts/run_part2.py --dataset direction --layer 12 --holdout contiguous
+python scripts/run_part2.py --dataset direction --layer 22 --holdout contiguous
+python scripts/run_bakeoff.py --dataset speed        --layer 19      # lines: spline vs chord
+python scripts/run_bakeoff.py --dataset acceleration --layer 21
+for L in 12 22; do                                                   # six edits on 16 seeds, then the table
+  python scripts/run_bakeoff_unified_16arc.py --layer $L --seeds 0 1 2 3 4 5 6 7   --out results/endpoint_diagnosis_raw/unified_L${L}_a.json
+  python scripts/run_bakeoff_unified_16arc.py --layer $L --seeds 8 9 10 11 12 13 14 15 --out results/endpoint_diagnosis_raw/unified_L${L}_b.json
+done
+python scripts/aggregate_bakeoff_unified_16arc.py                    # -> results/p2_bakeoff_unified_16arc.json
 
-**Endpoints and paths.** At held-out endpoints the raw chord lands closer than the paper's spline (0.8° at block 22)
-and our smoother (1.5° at block 12, 2.3° at block 22, over 16 seeds (15 arcs)); only the exploratory knot-cross-validated smoother
-edges it, by 0.4–0.5°. These comparisons use our additive edit; under the paper's A.6 replacement rules the chord's lead
-is larger (1.63° against 4.83° for the paper's spline at block 22). The curves win on the path: every curved arm keeps a higher readout radius, while the chord cuts
-across the ring's hollow (forced for any straight edit between near-opposite headings, so not evidence on its own). The
-evidence is the order: going either 180° route to the antipode at block 22, our smoother's readout on an independent MLP
-rises steadily from 2° to 178° along the path, while the raw chord's stays within 11° until halfway and then climbs 11° → 17° → 65° → 155° over waypoints 24–27; a
-rank ordering cannot show such a jump (a perfect step still scores 0.866), so the per-waypoint offsets are the evidence (REPORT §4.1, §4.3).
+# 3. Through the predictor: edit at a block, run V-JEPA 2's predictor, read the forecast (GPU)
+python scripts/run_session2.py plan && python scripts/run_session2.py forward --batch-size 16 && python scripts/run_session2.py score
+python scripts/session2_native_readout.py                                          # forecast heading: 11.3° / 27.2° / 92.1°
+python scripts/run_token_patching.py plan && python scripts/run_token_patching.py forward && python scripts/run_token_patching.py score   # which tokens carry the code
 
-**Through the predictor.** Edits at block 12 spread over the whole frame are repaired by the encoder (79.7° from target
-against 92.1° unedited at natural size). The same edit on the disk's own tokens reaches the forecast (44.7°). At block
-22 the spline's forecast heading is much closer to the target than the chord's (11.3° against 27.2° at own size).
-Without the heading probe the picture is mixed: at matched size the chord moves the whole forecast further (recovery
-0.234 against 0.186), and the spline only keeps a small twin-identification lead (REPORT §4.5). Token patching shows the
-direction the forecast carries comes from the disk's tokens through block 12 (0.88) and from the whole frame by block 22
-(0.22 from the disk) (REPORT §4.6). Almost every attention head puts high density on the disk's tokens, but at the ablated blocks the eight with the highest previous-slot density matter no more than random heads of the same number (0.040 against 0.124–0.220 of R²), a null; of the nine heads that prefer the previous slot under a strict criterion, the three strongest sit in blocks that were not ablated, and the paper's local-attention masking test was not run (REPORT §4.7).
+# 4. Figures
+python scripts/make_figures.py            # report figures -> figures/
+python talk/make_talk_figs_v2.py         # talk figures -> talk/figures_v2/ (the two shown here)
+```
 
-**Other variables.** A joint direction × speed sheet beats composed one-dimensional edits on forecast direction (29.8°
-against 34.5°) but not a direction-only ring edit (28.2°) (REPORT §4.4). A "contact" edit writes a post-contact heading,
-not a contact: a heading edit with no wall turns the forecast further (0.77 against 0.48) (REPORT §4.5). The within-clip
-time code tracks the token slot, not the frames' content (slot coefficient 0.956), and a push along it does not advance
-the forecast at block 22 (REPORT §5).
+`scripts/README.md` lists every script with what it produces and the REPORT section it feeds. The harder render,
+the acceleration grid, model-size and attention-head follow-ups are there too.
 
-**Failure cases.** The Part 1 probe subspace at the chord's size misses by 22.8° at block 22. The paper's spline fails on
-our label-free point-12 angle (34.5°). The straight Fourier edit is slightly worse than the chord through the predictor
-(+2.9°), and extrapolates in the encoder but not through the predictor (32.2° against 22.2° for the spline continued
-along its tangent). Conceptor steering and energy geodesics add nothing over the chord (REPORT §4.4).
+## Findings
 
-## Comparison with the multi-probe method
+**Part 1: the paper's picture reproduces in part.** Direction, speed and acceleration are readable from block 1 in the
+pooled readout (direction R² 0.875), so the Physics Emergence Zone does not show on the supplied clips; on a harder
+render it appears as a handover, where a code that transfers across the frame at block 1 stops transferring by block 8
+and returns by block 22. At block 9, 37 ridge probes erase direction (one after whitening). Five ridge probes steer to
+8.7° on held-out clips; with the paper's Adam probes the count is 11 to 19, consistent with its about 20.
 
-The probe subspace is simple and needs no curve. It lands close at held-out endpoints (4.12° at block 12 over 16 seeds (15 arcs)),
-but its tie with the chord at block 22 uses a 1.5× larger edit, and at equal size it misses by 22.8° (REPORT §4.3).
-Splines follow the ring, so they keep the readout on the manifold along the path and steer the forecast's heading
-better through the predictor. They need a trustworthy coordinate, though: on a label-free angle the paper's spline
-overshoots off the ring. Neither method moves the whole forecast most of the way to the real counterfactual, and both
-are repaired at mid-depth unless the edit is placed on the object's tokens (REPORT §4.4, §4.5).
+<p align="center"><img src="talk/figures_v2/fig_part1_panels.png" width="920" alt="Part 1 panels: decoded R² by block for three variables with untrained baselines; nullspace erasure curve at block 9; steering error against number of probes for ridge and Adam bases and random controls."></p>
 
-## Limitations
+**Part 2: speed and acceleration are lines, direction is a ring.** Splines add nothing on a line. On the ring, at
+held-out endpoints (16 seeds over 15 arcs) the straight chord lands as close as any curve at block 22, within 0.8° to
+2.3°, and at block 12 the paper's interpolating spline overshoots the ring (34.5° against the chord's 6.7°). What the
+curves buy is the path: at their own size they keep the readout on the ring (radius at least 0.80, and 0.71 at the
+chord's size) where the chord drops to 0.59 to 0.63.
 
-One stimulus family, one frame rate and one render. The predictor results read the forecast's heading code with a
-probe, not a rendered future. Some follow-ups are small (48 to 200 carriers, or one arc) and are flagged in REPORT §7.1.
-The session-2 cache of twin forecasts does not match a recompute, and this is unresolved (REPORT §7). The acceleration
-grid covers only |a| ≤ 3 m/s² and cannot separate acceleration from initial speed. The Physics Emergence Zone reproduces
-only on the harder render, not on the supplied clips.
+**The predictor decides.** A frame-wide edit at block 12 is repaired (forecast 79.7° from target against 92.1°
+unedited); the same edit on the disk's tokens reaches it (44.7°). At block 22 the spline's forecast heading lands 11.3°
+from target and the chord's 27.2°. Token patching shows the forecast reads direction from the disk through block 12
+(0.88 of the effect) and from the whole frame by block 22 (0.22 from the disk).
 
-## Repository layout and how to reproduce
+**Controls and negatives.** A "contact" edit writes a post-contact heading, not a contact (a no-wall heading edit turns
+the forecast more, 0.77 against 0.48). The within-clip time code tracks the token slot, not the content, and
+pushing it moves the forecast's disk sideways rather than forward in time. Conceptor steering and energy geodesics add nothing over the chord. Without the heading probe the
+chord moves the whole forecast further at matched size (recovery 0.234 against 0.186).
 
-- `src/wm/`: library code (extraction, probes, INLP, steering, manifolds, the predictor readout).
-- `scripts/`: one entry point per experiment. Part 1: `extract.py`, `make_splits.py`, `run_step1.py`, `run_step2.py`,
-  `run_step3.py`. Part 2: `run_part2.py`, `run_bakeoff_unified_16arc.py`, `run_session2.py`,
-  `session2_direction_natural_norm.py`, `session2_disk_token_sweep.py`, `run_token_patching.py`,
-  `run_coordinate_competition.py`, `run_accel_grid.py`, `run_scaling_layerwise.py`. Figures: `make_figures.py`.
-- `tests/`: run with `.venv/bin/python -m pytest -q`.
-- `results/`: every number, as JSON; 313 of the 334 files carry a provenance block (split hash, commit, dirty flag).
-- `figures/`: plots used in the report and talk.
-- `talk/`: deck sources and `NUMBERS.md`.
-- `splits/split_v1.json`: the train/test split.
-- `artifacts/`: activations and other large derived files (git-ignored).
-- The supplied data stays read-only in `vjepa-physics-takehome-4E00/data/`.
+**Limitations.** One stimulus family, one render, one frame rate. The predictor results read a heading code with a
+probe, not a rendered future. Some follow-ups use 48 to 200 carriers or one arc; REPORT §7 lists each.
+
+## Repository layout
+
+```
+src/wm/        library: extraction, splits, probes, INLP, steering, splines, predictor readout
+scripts/       one entry point per experiment (scripts/README.md is the index)
+tests/         pytest suite
+splits/        the train/test split used everywhere
+results/       every number as JSON, with a provenance block (split hash, commit)
+figures/       plots for the report; talk/figures_v2/ for the talk
+talk/          deck sources (deck_v2.json, slides_v2/*.html) and NUMBERS.md
+REPORT.md      the full write-up
+```
+
+## References
+
+- Joseph et al., *Interpreting Physics in Video World Models*, arXiv:2602.07050, 2026.
+- Wurgaft et al. (Goodfire), manifold (spline) steering, arXiv:2605.05115, 2026.
+- Assran et al., *V-JEPA 2*, 2025. Weights via Hugging Face `facebook/vjepa2-vitl-fpc64-256`.
