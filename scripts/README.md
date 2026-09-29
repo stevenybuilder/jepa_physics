@@ -127,6 +127,7 @@ Scripts that load the Goodfire authors' spline code expect `git clone https://gi
 | `run_position_sheet.py` | `results/p2_sheet_{tag}.json` | 5 |
 | `run_velocity_sheet.py`, `run_velocity_sheet_v2.py`, `fig_velocity_sheet_v2.py` | `results/p5_velocity_sheet{,_v2}.json`, `figures/fig_velocity_sheet_v2.png` | 5 |
 | `run_velocity_sheet_predictor.py` **GPU** | `results/p5_velocity_sheet_predictor.json` | 5 |
+| `run_position_predictor.py` **GPU** (`plan`, `forward`, `score`) | `results/session2_position_predictor.json` (start-position edit at blocks 12/22 through the predictor) | 4.5, 5 |
 | `run_time_manifold.py`, `run_time_controls.py`, `run_time_positional.py` | `results/p5_time_manifold{,_controls}.json`, `results/p5_time_positional.json` | 5 |
 | `run_time_shuffle.py` **GPU**, `time_static.py` **GPU** | `results/p5_time_shuffle.json`, `results/p5_time_static_control.json` | 5 |
 | `time_predictor.py`, `time_patch_predictor.py` **GPU** | `results/p5_time_predictor.json`, `results/p5_time_patch_predictor.json` | 5 |
