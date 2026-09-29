@@ -1,7 +1,10 @@
 # V-JEPA 2 physics take-home
 
-This repository probes and steers the frozen V-JEPA 2 ViT-L/16 encoder on the supplied disk clips. It reproduces the
-layer-wise probing, nullspace and multi-probe steering results of Joseph et al. (arXiv 2602.07050) and extends them with
+This repository probes and steers the frozen V-JEPA 2 ViT-L/16 encoder on the supplied disk clips. It repeats the
+layer-wise probing, nullspace and multi-probe steering experiments of Joseph et al. (arXiv 2602.07050), with a partial
+reproduction: the pooled Physics Emergence Zone does not appear on the supplied clips, the direction-versus-speed
+probe-count contrast does not hold, and the steering dose-response reproduces with the paper's Adam basis only. It
+extends them with
 spline (manifold) steering after Wurgaft et al. (arXiv 2605.05115). The short version: readable is not the same as used.
 Edits reach the predictor's forecast late in the encoder, or earlier only through the object's own tokens. A curved
 edit steers the forecast's heading code, while a straight edit of the same size moves the whole forecast further.
@@ -13,9 +16,9 @@ The full write-up is [REPORT.md](REPORT.md). The 15-minute talk is at https://cl
 
 | Instruction | What we did | Scripts | Results | REPORT |
 |---|---|---|---|---|
-| Part 1.1 Layer-wise probing | Ridge probes at all 26 read points for direction, speed and acceleration, with onsets, an untrained copy and per-patch probes. | `run_step1.py`, `extract.py` | `results/p1a_*` | §3.1 |
+| Part 1.1 Layer-wise probing | Ridge probes at all 26 read points for direction, speed and acceleration, with onsets, an untrained copy and per-patch probes; layer curves in `figures/fig1_layer_curves.png`, sizes in `figures/fig_scaling_layerwise.png`. | `run_step1.py`, `extract.py` | `results/p1a_*` | §3.1 |
 | Part 1.2 Iterative nullspace probing | INLP at the paper's layer, with nested and paper-protocol counts, an Adam rerun and a whitened count. | `run_step2.py`, `run_step2_dims.py` | `results/p1b_*` | §3.2 |
-| Part 1.3 Multi-probe steering on held-out data | Steering in the span of the first N probes, evaluated on test clips never used to build the basis, against random-basis nulls. | `run_step3.py` | `results/p1c_*` | §3.3 |
+| Part 1.3 Multi-probe steering on held-out data | Steering in the span of the first N probes, on test clips never used to build the basis, against random-basis nulls; the paper's judge is a probe fit in-sample on the steered test clips, so we also report a split-half judge. | `run_step3.py` | `results/p1c_*` | §3.3 |
 | Part 2: splines for speed, acceleration, direction | Periodic cubic splines through class centroids in a PCA subspace, plus lines and a direction × speed sheet. | `run_part2.py`, `run_velocity_sheet_predictor.py` | `results/p2_steer_*`, `results/p5_velocity_sheet_*` | §4.1, §4.3 |
 | How splines are built, shown and evaluated | Built on knot clips only; plotted as rings, lines and sheets; scored at held-out targets, along the path and through the predictor. | `run_bakeoff_unified_16arc.py`, `run_session2.py` | `results/p2_bakeoff_unified_16arc.json`, `results/session2_*` | §4.2, §4.5 |
 | The circular structure of direction | Direction lies on a ring; we test its angle coordinate and which frame describes it best. | `run_geometry_checks.py`, `run_coordinate_competition.py` | `results/p2_geometry_*`, `results/p5_coordinate_competition.json` | §4.1, §4.4 |
@@ -31,15 +34,16 @@ The full write-up is [REPORT.md](REPORT.md). The 15-minute talk is at https://cl
 **Probing.** On the supplied clips direction is already readable after one block (pooled R² 0.875), and speed and
 acceleration are readable from block 1 too (REPORT §3.1). So the paper's Physics Emergence Zone does not appear in the
 pooled readout here. What training adds is a per-patch direction code: V-JEPA 2 reaches a mean per-position R² of 0.96 by
-block 6, while an untrained copy never exceeds 0.39. On a harder rendered set the zone does appear, as a handover: a
-direction code that transfers across the two halves of the frame at block 1 (0.71) stops transferring through blocks
-4–8 (−1.43 at block 8) and transfers again from block 9 (0.58 at block 12).
+block 6, while an untrained copy never exceeds 0.39. On a harder rendered set the zone does appear, as a handover
+(means over three render seeds): a direction code that transfers across the two halves of the frame at block 1 (0.71)
+stops transferring by block 8 (−1.43; at block 4 two of the three seeds still transfer, +0.16 / +0.15), recovers only to
+about chance at block 9 (0.18) and transfers durably later (0.58 at block 12).
 
-**Nullspace.** At block 9, 37 probes are needed before direction is at chance (46 under the paper's protocol). After
+**Nullspace.** At block 9, 37 probes are needed before direction is at chance (46 under the paper's protocol), against 39 for speed and 41 for acceleration. After
 whitening, one two-output probe does the job, so the count mostly reflects the shape of the covariance, not an intrinsic
 rank. (REPORT §3.2).
 
-**Steering.** With our ridge basis, five probes steer to 8.7° from the target. That beats a same-rank random subspace
+**Steering.** With our ridge basis, five probes steer to 8.7° from the target, as judged by a probe fit in-sample on the steered test clips (14.7° under a split-half judge). That beats a same-rank random subspace
 (54.9°, p 0.035) but not the full-rank random basis (11.8°, p 0.22). With the paper's Adam probe sequence, 18 probes are
 needed to reach 10° (REPORT §3.3).
 
@@ -70,7 +74,7 @@ against 92.1° unedited at natural size). The same edit on the disk's own tokens
 Without the heading probe the picture is mixed: at matched size the chord moves the whole forecast further (recovery
 0.234 against 0.186), and the spline only keeps a small twin-identification lead (REPORT §4.5). Token patching shows the
 direction the forecast carries comes from the disk's tokens through block 12 (0.88) and from the whole frame by block 22
-(0.22 from the disk) (REPORT §4.6). Almost every attention head attends to the disk's previous position, but at the ablated blocks the eight that do so most matter no more than random heads of the same number (0.040 against 0.124–0.220 of R²), a null; the few heads specific to the previous slot were not ablated (REPORT §4.7).
+(0.22 from the disk) (REPORT §4.6). Almost every attention head puts high density on the disk's tokens, but at the ablated blocks the eight with the highest previous-slot density matter no more than random heads of the same number (0.040 against 0.124–0.220 of R²), a null; of the nine heads that prefer the previous slot under a strict criterion, the three strongest sit in blocks that were not ablated, and the paper's local-attention masking test was not run (REPORT §4.7).
 
 **Other variables.** A joint direction × speed sheet beats composed one-dimensional edits on forecast direction (29.8°
 against 34.5°) but not a direction-only ring edit (28.2°) (REPORT §4.4). A "contact" edit writes a post-contact heading,
@@ -108,7 +112,7 @@ only on the harder render, not on the supplied clips.
   `session2_direction_natural_norm.py`, `session2_disk_token_sweep.py`, `run_token_patching.py`,
   `run_coordinate_competition.py`, `run_accel_grid.py`, `run_scaling_layerwise.py`. Figures: `make_figures.py`.
 - `tests/`: run with `.venv/bin/python -m pytest -q`.
-- `results/`: every number, as JSON with a provenance block (split hash, commit, dirty flag).
+- `results/`: every number, as JSON; 313 of the 334 files carry a provenance block (split hash, commit, dirty flag).
 - `figures/`: plots used in the report and talk.
 - `talk/`: deck sources and `NUMBERS.md`.
 - `splits/split_v1.json`: the train/test split.

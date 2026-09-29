@@ -36,7 +36,7 @@ more under the caption's)[^adamsc]. The firm disagreement is
 the sawtooth: neither the ridge curves nor the paper's literal Adam recipe give a direction-specific one. **One addition to its steering result.** An edit along one probe's axis
 fails (78° with the ridge probe, 84° with the Adam probe; §7.2 says > 80°); an edit built from that probe but weighted by the activation covariance, which leaves the
 probe's plane, reaches 3.2°, and so does the same construction on a random 2-D subspace (median 4.2°, p = 0.24), so what
-the learned probe buys is specificity, not target error. Across model size (ViT-L / ViT-H / ViT-g) direction becomes readable in the first tenth of depth (onset 0.083 / 0.094 / 0.10 of depth) while untrained copies read 0.85–0.87 from block 1, so the early onset is mostly architecture and training lifts the ceiling to 0.99; on the hard render (ViT-H only, seed 0) the half-frame transfer first recovers at absolute block 9 in both sizes (0.28 of depth for ViT-H against 0.375) but recovers durably only at block 14 for ViT-H (0.44), so the direction of the shift depends on the rule (§3.5). Almost every head attends to the disk's previous position, yet at the ablated blocks the eight that do so most matter no more than random heads of the same number (0.040 against 0.12–0.22 of point-12 direction R²), a null; the three heads that are specific to the previous slot sit at blocks Part B did not ablate (§4.7).
+the learned probe buys is specificity, not target error. Across model size (ViT-L / ViT-H / ViT-g) direction becomes readable in the first tenth of depth (onset 0.083 / 0.094 / 0.10 of depth) while untrained copies read 0.85–0.87 from block 1, so the early onset is mostly architecture and training lifts the ceiling to 0.99; on the hard render (ViT-H only, seed 0) the half-frame transfer first recovers at absolute block 9 in both sizes (0.28 of depth for ViT-H against 0.375) but recovers durably only at block 14 for ViT-H (0.44), so the direction of the shift depends on the rule (§3.5). Almost every head puts high attention density on the disk's tokens, yet at the ablated blocks the eight with the highest previous-slot density matter no more than random heads of the same number (0.040 against 0.12–0.22 of point-12 direction R²), a null that neither tests nor contradicts the paper's local-attention masking result (§4.7).
 
 **One structural finding.** After the Physics Emergence Zone the direction code is better described in polar than in Cartesian coordinates at matched rank, as one harmonic (cos θ, sin θ) plus speed; the untrained copy is Cartesian from point 1 on (§4.4)[^coord]. This is an encoding result: in steering on constant-velocity carriers at the chord's norm Cartesian edits beat polar 2-D edits. That the ring is band-limited to k ≤ 2 comes from the centroid DFT (§3.2), not from this competition, which does not show the second harmonic is needed. In a rank-matched competition scored on held-out clips, the rank-2 head-to-head polar (cos θ, sin θ) minus Cartesian (v cos θ, v sin θ) is +0.015 [0.009, 0.022] held-out R² at point 12 and +0.009 [−0.001, 0.018] at point 22, ties at points 1–8 and excludes zero from point 9 on (except points 11 and 22); the untrained copy prefers Cartesian from point 1 on (−0.009 to −0.020; a tie at point 0). No candidate reaches the matched-rank knot-PC ceiling (margins −0.07 to −0.38), so this is a comparison between hand-built frames, not "the model's own coordinates". An earlier search that picked a 5-feature polar-Fourier frame at 6 of 7 points was a rank effect. A straight edit in (cos θ, sin θ, cos 2θ, sin 2θ) still crosses the ring's hollow like the chord (minimum path radius 0.61 / 0.63); through the predictor it is slightly worse than the chord frame-wide at block 22 (28.6° against 25.7°; paired Fourier − chord +2.9° [1.0, 4.5] at natural size, +4.0° [2.3, 5.6] at own size; the paper's spline 12.3°) and best on block-12 disk tokens at the natural norm (33.0° against 40.8°; at own norm every disk-token arm stays at the unedited level, 89–103° against 92.1°). On a rendered grid where acceleration is decorrelated from mean speed, signed acceleration beyond mean speed and displacement appears in the averaged features at the zone (R² 0.37 at block 8, 0.44 at 12; about 0 at blocks 1–4, a tight null; untrained ≈ 0) and in time-ordered per-tubelet features from block 1 (0.53); the paper's Cartesian (ax, ay) target is about 0 in averaged features through block 12 (0.17 / 0.46 at blocks 16 / 22); and the magnitude |a| is not readable before the zone, becomes readable through the signed code at the zone (0.22 / 0.44 at blocks 8 / 9, per-tubelet) and is weak by a direct linear probe late (0.12–0.16 at blocks 16–22), not distinguishable from zero under a cell-level bootstrap. On the supplied set, where every clip starts at rest, acceleration, mean speed and displacement are identical by construction. Whether it is a direct code or the per-step speed sequence is not decided: acceleration is an exact linear function of the per-step speeds, so removing in-set decoded speeds zeroes it by construction, while a speed decoder fit on other clips leaves 0.32 / 0.46 (points 12 / 22), room for a direct code; the paper's single-MLP claim cannot be tested as designed (§5).
 
@@ -608,7 +608,7 @@ the split of record so that Part 1 and Part 2 read the same clips.
 and ViT-g (40), each trained and untrained (same config, random init, seed 0). The x-axis is block / L, with the patch
 embedding at 0; curves are held-out test R², and onsets are the first point at ≥ 90% of the CV maximum (200-draw clip
 bootstrap). ViT-H and ViT-g run in bf16 autocast; that precision was checked on ViT-L only (16 clips per set: median
-relative L2 error 0.5%, cosine ≥ 0.9957); the untrained ViT-H and ViT-g arms also ran in bf16, with no untrained parity
+relative L2 error 0.5%, rising to 7.2% / 9.3% at the last two read points; cosine ≥ 0.9957); the untrained ViT-H and ViT-g arms also ran in bf16, with no untrained parity
 measured. The ViT-L arm re-probed the stored Part 1 fp32 features, so its match to the Part 1 files (within 2e-13 on every
 variable and both copies) checks probe determinism, not the new extractor; the size comparison therefore mixes fp32 ViT-L
 extraction with bf16 ViT-H / ViT-g, and the extractor's only evidence is the 16-clip parity per set.
@@ -1965,7 +1965,11 @@ set. The held-out-arc numbers in this file use a clip bootstrap whose intervals 
 ### 4.7 Do heads that attend to the disk's previous position carry the direction code?
 
 This is our disk-attention test, not the paper's §6.3 / App. C.6 attention-distance metric, which was not run (it needs
-a rerun of the attention pass)[^heads]. *Part A* scores every head at blocks 6–13 on 300 train clips: queries are the
+a rerun of the attention pass, and C.6 does not specify how per-head distance is aggregated, so that metric is itself
+under-specified)[^heads]. Nor was the paper's causal test run: suppressing local attention in the emergence zone, by
+masking weights to nearby tokens and renormalising the remainder (C.6 l.1026–1027), and reading direction R² (Tab. 2:
+0.97 → 0.83 with temporal masking t = 3, 0.14 with spatial s = 3 plus temporal). Our head-ablation null neither tests nor
+contradicts that result. *Part A* scores every head at blocks 6–13 on 300 train clips: queries are the
 disk's tokens at slot t, and the score is the attention density on the disk's tokens one slot earlier over the density on
 background tokens, with same-slot, next-slot and far-slot (≥ 2 slots away) ratios beside it and a phantom control (the
 disk mask rolled by 8 × 8 patches, the same trajectory shape with no object there). By default a head is labelled
@@ -1980,10 +1984,10 @@ trained and untrained head counts are not compared. Requiring the previous slot 
 the phantom mask leaves 9 heads; only three of them put more than ten times the same-slot density on the previous slot,
 block 7 head 15 (previous-slot 1,052× [1,000, 1,108], previous over same 13.3 [12.9, 13.8]), block 11 head 6 (989×, 13.3)
 and block 13 head 8 (116×, 13.3), and their phantom-to-real ratios are 0.58 / 0.29 / 0.12, so only block 13 head 8 is
-mostly object-specific. We quote 19 under the weak criterion and 3 under the strict one.
+mostly object-specific. We quote 19 under the weak criterion and 9 under the strict one, of which 3 have prev/same > 10.
 
 *Part B* zero-ablates heads (their slice of the input to the attention output projection) at blocks 8, 9, 10 and 12 and
-reads the fixed Part 1 probe at point 12 and point 22 on the 300 direction test clips (154 speed test clips). The
+reads the fixed Part 1 probe at point 12 and point 22 on the 300 direction test clips (and 154 of the 308 speed test clips). The
 unablated baselines, 0.9882 (point 12) and 0.9918 (point 22), match the Part 1 fp32 scores (0.9885 / 0.9919). The eight
 heads with the highest previous-slot ratio across those blocks (block 9 head 9, 12/6, 10/4, 8/2, 10/12, 12/13, 10/6 and
 8/15; only 10/4 is labelled tracking) cost 0.040 [0.035, 0.045] of the point-12 direction R² when ablated together, less
@@ -1997,8 +2001,12 @@ The untrained copy's Part B is invalid: in bf16 its unablated baseline does not 
 (direction R² −15.7 against 0.876, because the random-init probe amplifies the ~0.5% feature error), the file flags it,
 and an fp32 rerun was not run, so there is no untrained ablation control. The result is a null: the heads with the
 highest previous-slot density at the ablated blocks matter no more than random head sets of the same size, and the
-probed direction code is not concentrated in a few heads. The three previous-slot-specific heads live at blocks 7, 11 and
-13, which Part B never ablated (blocks 8, 9, 10 and 12); ablating them is a named next step.
+probed direction code is not concentrated in a few heads. Four of the nine strict-criterion heads sit in ablated blocks
+and were zeroed alone (block 8 head 14, 9/4, 10/4, 12/3), costing 0.011 / 0.008 / 0.017 / 0.016 of point-12 R², within
+each block's single-head range; only the three with prev/same > 10 (blocks 7, 11 and 13) were never ablated, and ablating
+them is a named next step. Note too that the score is previous-slot density over background: 108 of 128 heads put more
+density on the disk's current slot than on its previous one (block 9 head 9: 4,065× current against 683× previous), so
+these are heads with high attention to the disk, not heads that prefer the previous slot.
 
 ## 5. Beyond the three variables
 
@@ -2104,7 +2112,7 @@ probed direction code is not concentrated in a few heads. The three previous-slo
 - **The acceleration comparison is on our grid, not the paper's clips.** The magnitude result (§5) uses 240 rendered
   clips in which |a| is decorrelated from speed and displacement; the paper's own acceleration clips, which start from
   rest, were not tested, so the source of its early-layer number is inferred, not shown.
-- **Not run from the paper's appendix:** C.6 (attention-distance analysis), C.7 (neuron direction tuning) and C.8 (neuron
+- **Not run from the paper's appendix:** the §6.3 / Tab. 2 local-attention masking test, C.6 (attention-distance analysis), C.7 (neuron direction tuning) and C.8 (neuron
   speed tuning). C.9 (feature dimensionality) is the nullspace analysis of §3.2.
 - **Sample size vs d.** Around 1,200 train clips against d = 1,024 makes K a ridge count at a CV-chosen α. The K
   values should be compared across layers only at a fixed α (see the caveat in `p1b_*_dims.json`).
