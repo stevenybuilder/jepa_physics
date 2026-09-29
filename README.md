@@ -56,17 +56,21 @@ depth). Untrained copies read 0.85–0.87 from block 1, so the early onset is mo
 
 ## Part 2: what we did and found
 
-**Construction.** We fit the paper's interpolating periodic cubic spline through class centroids in a 64-dimensional
-PCA subspace, together with our own smoothing spline, a knot-cross-validated smoother, and straight edits (the raw
+**Construction.** Our default is a smoothing spline through class centroids in a 64-dimensional PCA subspace (the
+paper's B.1 vision-model recipe), with the paper's A.3 interpolating periodic cubic spline run as a separate arm; the
+headline 11.3° through the predictor below is the interpolating arm, and our smoother gives 44.2° there. We also fit a knot-cross-validated smoother and straight edits (the raw
 chord between centroids, and a straight edit in cos θ, sin θ, cos 2θ, sin 2θ). Speed and acceleration lie on lines, so
 splines add nothing there. Direction lies on a ring (REPORT §4.1).
 
 **Evaluation.** Each held-out arc of 8 directions is never used to build a curve. Readers are fit on separate probe
 clips. We score endpoint error and the readout radius along the path (REPORT §4.2).
 
-**Endpoints and paths.** At held-out endpoints the raw chord ties or beats our smoothing spline (paired +1.48° at block
-12 and +2.26° at block 22 over 16 arcs). Every curved arm keeps a higher readout radius along the path, while the chord
-cuts across the ring's hollow (REPORT §4.3).
+**Endpoints and paths.** At held-out endpoints the raw chord lands closer than the paper's spline (0.8° at block 22)
+and our smoother (1.5° at block 12, 2.3° at block 22, over 16 arcs); only the exploratory knot-cross-validated smoother
+edges it, by 0.4–0.5°. The curves win on the path: every curved arm keeps a higher readout radius, while the chord cuts
+across the ring's hollow, and taking the long way round at block 22 the spline keeps 0.96 [0.95, 0.97] of its readout
+mass on intermediate directions with a minimum radius of 0.79 [0.77, 0.81], against 0.055 [0.05, 0.06] for the raw chord
+(REPORT §4.1, §4.3).
 
 **Through the predictor.** Edits at block 12 spread over the whole frame are repaired by the encoder (79.7° from target
 against 92.1° unedited at natural size). The same edit on the disk's own tokens reaches the forecast (44.7°). At block
