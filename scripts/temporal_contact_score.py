@@ -1,5 +1,6 @@
 """Scoring for scripts/run_temporal_contact.py (local CPU): results/p5_temporal_locality.json,
 results/p5_contact_dynamics.json and their figures."""
+import sys as _sys, pathlib as _pl; _sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[1] / "src"))  # run without installing wm
 import json
 from pathlib import Path
 

@@ -1,5 +1,5 @@
 """Goodfire A.5 isometry test with its linear baseline, and with behaviour spaces that are not built from the steered
-activations (PART2_SECOND_LOOK.md section B). CPU only, stored activations.
+activations (the Part 2 second-look note, section B). CPU only, stored activations.
 
 Goodfire §2.3 / A.5: Pearson r between pairwise geodesic distances on the activation manifold M_h and on the behaviour
 manifold M_y (r = 0.89-0.999 across their tasks), against r between straight-line (chord) distances in activation
@@ -43,6 +43,7 @@ from pathlib import Path
 import numpy as np
 from scipy.stats import spearmanr
 
+import sys as _sys, pathlib as _pl; _sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[1] / "src"))  # run without installing wm
 from wm import manifold as mf
 from wm.data import PROJECT_ROOT
 from wm.p2_data import load_inputs

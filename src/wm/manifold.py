@@ -18,7 +18,7 @@ paper's sense. Two stand-ins are provided, and neither is called "behaviour":
     probe's output space (the predicted value, or (sin, cos) for direction). Weakest rung: it is a probe again.
   - NearestRealReadout: agreement with V-JEPA's own activations on real clips that have the target value.
     M_y is the set of real-clip activation centroids at each value, at the layer being read. Applied at later
-    layers after propagating the edit, this is the strongest offline readout (nonobvious_components.md §5.3, §8).
+    layers after propagating the edit, this is the strongest offline readout (the implementation-pitfalls note §5.3, §8).
 """
 from dataclasses import dataclass
 from typing import Protocol
@@ -437,7 +437,7 @@ HOLDOUT_DESIGNS = ("scattered", "contiguous", "extrapolation")
 
 
 def heldout_design(values, design, periodic, seed=0, block=8, every=4, extend="cubic"):
-    """Held-out label values for one of three designs (spec.md section 6 item 1). values must be sorted (np.unique).
+    """Held-out label values for one of three designs (project spec section 6 item 1). values must be sorted (np.unique).
 
     scattered:     every 4th value (heldout_mask; interior for scalars). A local interpolation check only.
     contiguous:    one block of `block` consecutive values. Direction: a 45 degree arc (8 of 64) starting at an index

@@ -21,7 +21,7 @@ def _cached():
         return False
 
 
-pytestmark = [pytest.mark.slow, pytest.mark.skipif(not _cached(), reason="videomae-large weights not cached")]
+pytestmark = [pytest.mark.slow, pytest.mark.network, pytest.mark.skipif(not _cached(), reason="videomae-large weights not cached")]
 
 
 @pytest.fixture(scope="module")

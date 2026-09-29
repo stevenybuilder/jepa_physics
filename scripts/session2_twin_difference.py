@@ -1,4 +1,4 @@
-"""Twin-difference arm (papers.md: Liu et al. 2608.15156, low-rank carriers from counterfactual-minus-factual hidden
+"""Twin-difference arm (Liu et al. 2608.15156, low-rank carriers from counterfactual-minus-factual hidden
 differences): the strongest linear baseline not yet run on the session-2 carriers.
 
 Fit set (disjoint from everything evaluated): knot clips (train folds 0-2; never carriers, never read probes), 2 per

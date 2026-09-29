@@ -20,6 +20,7 @@ from pathlib import Path
 
 import numpy as np
 
+import sys as _sys, pathlib as _pl; _sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[1] / "src"))  # run without installing wm
 from wm import bakeoff as bo
 from wm import manifold as mf
 from wm import motiongeom as mg

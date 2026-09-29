@@ -1,4 +1,4 @@
-"""Local intrinsic dimension and density where the model reads (PART2_SECOND_LOOK.md section D, "To make the full
+"""Local intrinsic dimension and density where the model reads (the Part 2 second-look note, section D, "To make the full
 claim"). CPU only, stored meanpool activations, direction set; roles as run_part2 (knot folds 0-2 fit every space and
 the spline, probe folds 3-4 + test clips are held out, test clips are the steering carriers).
 
@@ -41,6 +41,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
+import sys as _sys, pathlib as _pl; _sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[1] / "src"))  # run without installing wm
 from wm import geometry_checks as gc
 from wm import manifold as mf
 from wm.data import PROJECT_ROOT

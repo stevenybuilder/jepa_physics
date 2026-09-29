@@ -1,5 +1,5 @@
-"""Unseen-donor transplant ceiling for Part 2's contiguous-arc direction steering (JEPA_STEERING_LESSONS.md section 6
-P3; PART2_RATIONALE.md section 6).
+"""Unseen-donor transplant ceiling for Part 2's contiguous-arc direction steering (the steering-lessons note, section 6
+P3; the Part 2 design note, section 6).
 
 Question: the spline and chord endpoints reach nearest-real R ~ 0.2 at held-out targets. Is that the most any PCA-64
 edit can do (a ceiling of editing inside PCA-64), or are spline and line merely indifferent choices far below what a
@@ -29,6 +29,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
+import sys as _sys, pathlib as _pl; _sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[1] / "src"))  # run without installing wm
 from wm import manifold as mf
 from wm.bakeoff import MLPReadout, arm_deltas
 from wm.data import PROJECT_ROOT

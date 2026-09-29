@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # GPU session 2: local driver + box-side run order. Nothing here rents, stops or destroys an instance.
-# Before touching a shared box: read /Users/stevenyang/Documents/GPU_RESOURCE_BOARD.md and record the lease
+# Before touching a shared box: read your GPU resource board (if any) and record the lease
 # (project world_mechanics_takehome, purpose "session 2 propagation + predictor", output root $REMOTE).
 #
 # Box image and pins (same as artifacts/gpu_session1.json): pytorch/pytorch:2.2.2-cuda12.1-cudnn8-runtime

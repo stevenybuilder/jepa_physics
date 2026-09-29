@@ -21,6 +21,7 @@ from pathlib import Path
 import numpy as np
 from joblib import Parallel, delayed
 
+import sys as _sys, pathlib as _pl; _sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[1] / "src"))  # run without installing wm
 from wm.data import PROJECT_ROOT
 from wm.provenance import provenance
 

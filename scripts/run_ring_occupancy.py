@@ -1,5 +1,5 @@
 """Is direction's ring a dense, occupied manifold at the level of real clips, or only a ring of centroids?
-(PART2_SECOND_LOOK.md section D.) CPU only, stored meanpool activations; roles exactly as run_part2 (knot folds 0-2
+(the Part 2 second-look note, section D.) CPU only, stored meanpool activations; roles exactly as run_part2 (knot folds 0-2
 build, probe folds 3-4 are the real-clip reference, test clips are carriers and the floor).
 
 A. Occupancy of the ring plane (no steering). The ring plane is the supervised circular chart X ~ mu + A[cos, sin]
@@ -33,6 +33,7 @@ from pathlib import Path
 
 import numpy as np
 
+import sys as _sys, pathlib as _pl; _sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[1] / "src"))  # run without installing wm
 from wm import geometry_checks as gc
 from wm import manifold as mf
 from wm.data import PROJECT_ROOT

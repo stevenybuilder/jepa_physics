@@ -47,6 +47,7 @@ the arc-level spread mean +/- 2 SD / sqrt(16) over per-arc means. chord_raw repo
   python scripts/run_coordinate_competition.py steer    --workers 32 --out <dir>
   python scripts/run_coordinate_competition.py assemble --out <dir>
 """
+import sys as _sys, pathlib as _pl; _sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[1] / "src"))  # run without installing wm
 import argparse
 import hashlib
 import importlib.util

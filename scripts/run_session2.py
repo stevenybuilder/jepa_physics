@@ -737,7 +737,7 @@ def score_stage(args):
              "stage's own zero-edit pass (same device), so device noise cancels.",
         "shuffled_target": "edit toward target j scored against target (j+1) mod T of the same carrier (value and "
                            "twin); no extra forward pass",
-        "behaviour_rung": "readouts a and b are not behaviour (PART2_RATIONALE §7); the predictor file is"}
+        "behaviour_rung": "readouts a and b are not behaviour (Part 2 design note §7); the predictor file is"}
     write(Path(args.results_dir) / f"session2_propagation{args.tag}.json", prop, stage="score",
           forward_dir=str(fdir), mask_index=None)
 

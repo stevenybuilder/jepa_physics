@@ -1,4 +1,4 @@
-"""Steering bake-off at matched delivered norm (spec.md section 6 item 9; the "fewer probes" question).
+"""Steering bake-off at matched delivered norm (project spec section 6 item 9; the "fewer probes" question).
 
 Every arm moves test clips toward a held-out target value; each clip's edit is rescaled to the same ||delta||
 (the spline arm's), so arms differ only in where they put that norm. Arms, with their edit rank:

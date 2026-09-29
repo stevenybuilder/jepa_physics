@@ -2,7 +2,7 @@
 
 The cites slide shows paper years only, from the "Slide citations" section of our reading list (not included).
 
-Every number shown on a slide, with the file and key it was read from. Numbers inside figures are drawn from the same files by `talk/make_talk_figs.py`. Speaker-note numbers are sourced in each `<aside>`.
+Every number shown on a slide, with the file and key it was read from. Numbers inside figures are drawn from the same files by `talk/make_talk_figs_v2.py`. Speaker-note numbers are sourced in each `<aside>`.
 
 | Slide | Number on slide | File → key |
 |---|---|---|
@@ -434,3 +434,6 @@ Audit = re-derivation from pixels and feature files (scratchpad qa_accel/s2_supp
 | p2-compare | bake-off figure regenerated with legend "across 16 seeds, 15 arcs" (seeds 4 and 8 coincide); new blob 2254de541a0522e8a4667a6460791d07; alt text and limits notes say 16 seeds over 15 arcs | results/p2_bakeoff_unified_16arc.json (unchanged) |
 | p2-variables (v79, QA #492/#493) | column header "forecast uses it"; frame count ○ means not used as time (the push moves the disk 15.5 px sideways and turns it 47.9°, notes); contact shape cell blank | results/p5_time_patch_predictor.json → arms.22.tp+2 |
 | p1-steer (v79, QA #494) | "same-rank random directions do not" (6 of 200 draws reach the ridge value at five probes, p 0.035) | results/p1c_direction_L9_nulls200.json → bases.ridge.table[n=5].n_draws_le_learned |
+| p2-variables (v80) | header cell "variable" and every grid cell non-empty (the live viewer collapses empty cells); contact shape "binary"; three lesson lines under the table: position plane edited in the encoder, untested through the forecast (REPORT §4, position sheet; p5_motion_geometry dir|pos overlap 0.0017); contact seen 0.84 / unseen 0.07, edit writes a heading 0.77 vs 0.48; frame count slot index (untrained too), push does not advance the forecast | results/p5_contact_in_context.json; p5_contact_steer_heading_control.json; p5_time_shuffle.json; p5_time_patch_predictor.json |
+| p1-zone (v80, QA #501) | title: "is near zero at 9 and back only at 22" (per-seed block 9: 0.08 / 0.39 / 0.08; block 22: 0.76) | results/p1a_perpatch_hard_seeds.json → by_point |
+| p2-variables (v81) | one six-row table: variable, shape, what the forecast does with it. Direction 11.3° vs 92° (session2_predictor_native_readout); speed code moves, displacement not (session3_speed_predictor); acceleration 1.8 vs 3.5 (session3_acceleration_predictor 1.818 / 3.462); position edited in the encoder, forecast untested; contact 0.84 / 0.07, edit writes a heading (0.77 vs 0.48); frame count slot index, untrained encoder too, push does not advance (p5_time_shuffle, p5_time_patch_predictor) | as listed |

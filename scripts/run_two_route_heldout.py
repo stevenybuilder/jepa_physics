@@ -1,4 +1,4 @@
-"""Held-out two-route 180-degree test (PART2_SECOND_LOOK.md B.5; lit_review.md item 3(b), the long way round).
+"""Held-out two-route 180-degree test (the Part 2 second-look note, B.5; literature review item 3(b), the long way round).
 
 scripts/run_two_route.py is exploratory: its spline is built on all 64 values. Here every run uses run_part2's
 contiguous held-out design (run_part2.build(..., "contiguous", seed, spline="smooth"): one 45-degree arc of 8 values
@@ -37,6 +37,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
+import sys as _sys, pathlib as _pl; _sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[1] / "src"))  # run without installing wm
 from wm import manifold as mf
 from wm.bakeoff import MLPReadout
 from wm.data import PROJECT_ROOT

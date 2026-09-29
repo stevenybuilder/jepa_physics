@@ -1,3 +1,8 @@
 # Talk
 
-Seventeen slides for the 15-minute presentation (README deliverable). Source files for the deck: deck.json (order, sections) and slides/*.html (one slide per file, speaker notes in <aside>). Figures referenced by asset id are the PNGs in ../figures/ named in each slide alt text and footer. Published copy: https://claude.ai/artifact/JdPJ1Yig3LpL5KntZCJo88 (private).
+The 27-slide deck for the 15-minute presentation (README deliverable).
+
+- `deck_v2.json`: slide order and sections.
+- `slides_v2/*.html`: one slide per file, speaker notes in `<aside>`.
+- `figures_v2/`: the PNGs the slides reference, drawn by `make_talk_figs_v2.py` from `results/`.
+- `slides_v2/NUMBERS.md`: every number shown on a slide, with the results file and key it was read from.

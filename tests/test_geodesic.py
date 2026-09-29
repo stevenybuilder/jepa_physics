@@ -3,12 +3,22 @@ import importlib.util
 from pathlib import Path
 
 import numpy as np
+import pytest
 import torch
 
 ROOT = Path(__file__).resolve().parents[1]
+_DEFAULT_DTYPE = torch.get_default_dtype()
 spec = importlib.util.spec_from_file_location("rg", ROOT / "scripts" / "run_geodesic.py")
 rg = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(rg)
+spec.loader.exec_module(rg)                      # the script sets torch's default dtype to float64 at import
+torch.set_default_dtype(_DEFAULT_DTYPE)          # do not leak it into other test modules
+
+
+@pytest.fixture(autouse=True)
+def _float64_default():
+    torch.set_default_dtype(torch.float64)       # as the script runs
+    yield
+    torch.set_default_dtype(_DEFAULT_DTYPE)
 
 
 def _ring(n=400, r=1.0, noise=0.03, dim=4, seed=0):

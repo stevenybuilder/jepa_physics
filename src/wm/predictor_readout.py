@@ -1,4 +1,4 @@
-"""The V-JEPA 2 predictor as a behavioural readout of an activation edit (spec §6 item 5b, PART2_RATIONALE §7 rung 3).
+"""The V-JEPA 2 predictor as a behavioural readout of an activation edit (spec §6 item 5b, Part 2 design note §7 rung 3).
 
 What the checkpoint contains (facebook/vjepa2-vitl-fpc64-256, model.safetensors, 587 tensors): the 24-block encoder
 (384 tensors + embeddings + final LN) AND the trained predictor: 12 blocks of width 384, 12 heads (192 tensors),

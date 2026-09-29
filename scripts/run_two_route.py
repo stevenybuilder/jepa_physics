@@ -1,4 +1,4 @@
-"""Two-route 180-degree test on the direction ring (JEPA_STEERING_LESSONS.md section 6; PART2_RATIONALE.md section 6).
+"""Two-route 180-degree test on the direction ring (the steering-lessons note, section 6; the Part 2 design note, section 6).
 EXPLORATORY: the spline is built on all 64 values, so no target is held out.
 
 For source theta and target theta + 180 (the 32 antipodal pairs, run in both directions: every one of the 64 values is
@@ -24,6 +24,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
+import sys as _sys, pathlib as _pl; _sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[1] / "src"))  # run without installing wm
 from wm import geometry_checks as gc
 from wm import manifold as mf
 from wm.bakeoff import MLPReadout

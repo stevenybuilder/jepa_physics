@@ -13,6 +13,9 @@ from wm.extract import (IMAGENET_MEAN, IMAGENET_STD, MODEL_ID, N_POINTS, N_TOKEN
 
 DEVICE = torch.device("cpu")
 
+# downloads facebook/vjepa2-vitl-fpc64-256 (~1.3 GB) on first use and runs the encoder on CPU: opt in with -m slow
+pytestmark = [pytest.mark.slow, pytest.mark.network]
+
 
 @pytest.fixture(scope="module")
 def speed8():

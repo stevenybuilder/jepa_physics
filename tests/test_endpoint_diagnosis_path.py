@@ -3,8 +3,13 @@ import importlib.util
 from pathlib import Path
 
 import numpy as np
+import pytest
 
 from wm import manifold as mf
+
+# the script loads the authors' spline code from a local clone of goodfire-ai/causalab (not vendored; see README)
+if not (Path(__file__).resolve().parents[1] / "refs" / "causalab" / "causalab" / "methods" / "spline").is_dir():
+    pytest.skip("needs github.com/goodfire-ai/causalab cloned at refs/causalab", allow_module_level=True)
 
 _p = Path(__file__).resolve().parents[1] / "scripts" / "run_endpoint_diagnosis_path.py"
 _s = importlib.util.spec_from_file_location("edp", _p)

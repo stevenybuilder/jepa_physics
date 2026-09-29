@@ -29,7 +29,8 @@ python -m pytest -q                      # unit tests, CPU, a few minutes
 
 Place the supplied take-home data at `vjepa-physics-takehome-4E00/data/` (the three `manifest.jsonl` files and
 `videos/`). The code only reads it. Derived files go to `artifacts/` (activations, git-ignored), `results/` (JSON)
-and `figures/`.
+and `figures/`. The bake-off arms that use the Goodfire authors' spline code expect their repository at
+`refs/causalab` (`git clone https://github.com/goodfire-ai/causalab refs/causalab`, commit `1b6f43a`).
 
 ## Reproduce
 
@@ -43,14 +44,17 @@ for d in direction speed acceleration; do
     python scripts/extract.py merge --dataset $d --model $m
   done
 done
+python scripts/run_qa.py                                           # checks every clip decodes -> results/qa_*.json
 python scripts/make_splits.py                                      # one stratified 80/20 split -> splits/split_v1.json
 
 # 1. Part 1: layer-wise probes, iterative nullspace, multi-probe steering (CPU)
 for d in direction speed acceleration; do
   python scripts/run_step1.py --dataset $d                          # trained encoder
   python scripts/run_step1.py --dataset $d --model random           # untrained control
+  python scripts/run_step1.py --dataset $d --shuffled               # shuffled-label control
 done
-python scripts/p1a_perpatch.py extract --sets supplied hard && python scripts/p1a_perpatch.py probe --sets supplied hard   # per-patch probes (GPU extract, CPU probe)
+# per-patch probes, the harder render and the untrained seeds: p1a_perpatch.py extract/probe/seeds and
+# render_hard_stimuli.py (GPU); exact invocations in scripts/README.md
 python scripts/run_step2.py --dataset direction --layer-role paper                 # INLP at the paper's layer
 python scripts/run_step3.py --dataset direction --layer-role paper                 # steering on held-out clips vs random-basis nulls
 

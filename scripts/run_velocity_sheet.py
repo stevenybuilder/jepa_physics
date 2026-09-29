@@ -41,6 +41,7 @@ import numpy as np
 from joblib import Parallel, delayed
 from scipy.interpolate import RBFInterpolator
 
+import sys as _sys, pathlib as _pl; _sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[1] / "src"))  # run without installing wm
 from wm import manifold as mf
 from wm import timeman as tm
 from wm.data import PROJECT_ROOT

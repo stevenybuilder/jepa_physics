@@ -1,7 +1,7 @@
 """Shift dependence of the spline-minus-chord gaps, pooled over the stored contiguous-arc direction runs (no new
 compute: reads results/p2_steer_direction_direction_L{L}_contiguous.json and results/arcs/L{L}_s{1..16}/).
 
-PART2_RATIONALE.md section 4 pre-registered that the spline advantage is ~0 below ~45 degrees of angular shift and
+The Part 2 design note (section 4) pre-registered that the spline advantage is ~0 below ~45 degrees of angular shift and
 grows toward 180. run_part2 stores the paired gaps (manifold - linear, same clip and target) by shift bin in
 gaps.manifold_minus_linear.<metric>.by_shift; this script collects them per run and reports, per shift bin, the mean
 and SD across runs and the number of runs whose 95% CI excludes 0 in each direction. Seeds 4 and 8 drew the same arc;
@@ -16,6 +16,7 @@ from pathlib import Path
 
 import numpy as np
 
+import sys as _sys, pathlib as _pl; _sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[1] / "src"))  # run without installing wm
 from wm.data import PROJECT_ROOT
 from wm.provenance import provenance
 

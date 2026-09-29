@@ -1,4 +1,4 @@
-"""Rotating-code detector on the speed set (JEPA_STEERING_LESSONS.md section 6 P1): is the speed axis the same at
+"""Rotating-code detector on the speed set (the steering-lessons note, section 6 P1): is the speed axis the same at
 every direction (a cylinder: speed x ring) or does it rotate with direction (a cone, or anything else where the
 speed read-out direction depends on theta)?
 
@@ -30,6 +30,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.linear_model import RidgeCV
 
+import sys as _sys, pathlib as _pl; _sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[1] / "src"))  # run without installing wm
 from wm.data import PROJECT_ROOT
 from wm.p2_data import load_inputs
 from wm.provenance import layer_role, provenance

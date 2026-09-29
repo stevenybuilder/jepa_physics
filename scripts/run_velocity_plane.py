@@ -1,4 +1,4 @@
-"""Ring or velocity plane? (spec.md section 6; lit-review item 5). Per layer, on train clips:
+"""Ring or velocity plane? (project spec section 6; literature review item 5). Per layer, on train clips:
 
   1. direction set: Procrustes R^2 of the 64 direction centroids onto (cos theta, sin theta);
   2. speed set (crosses 64 speeds with direction): Procrustes R^2 of speed-bin x direction-bin cell centroids onto
@@ -24,6 +24,7 @@ from sklearn.linear_model import RidgeCV
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
+import sys as _sys, pathlib as _pl; _sys.path.insert(0, str(_pl.Path(__file__).resolve().parents[1] / "src"))  # run without installing wm
 from wm import geometry_checks as gc
 from wm import manifold as mf
 from wm.data import PROJECT_ROOT

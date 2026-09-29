@@ -1,4 +1,4 @@
-"""Predictor forecast read ALONG the steering path at point 22 (PART2_SECOND_LOOK B.1, gap 1).
+"""Predictor forecast read ALONG the steering path at point 22 (the Part 2 second-look note, B.1, gap 1).
 
 Same 200 carriers x 4 held-out targets as session2_norm_matched.py. Paths are rebuilt exactly as run_session2.plan
 builds them at point 22 (PCA-64 on knot clips at the kept values, interpolating and smoothing periodic splines, chord

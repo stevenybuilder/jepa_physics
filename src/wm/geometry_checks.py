@@ -1,4 +1,4 @@
-"""Cheap geometry checks to run before trusting any spline (nonobvious_components.md §6-7, lessons file D.2).
+"""Cheap geometry checks to run before trusting any spline (the implementation-pitfalls note §6-7, lessons file D.2).
 
 Each check is one function returning a small dict of plain numbers. They all work on stored activations.
 """
