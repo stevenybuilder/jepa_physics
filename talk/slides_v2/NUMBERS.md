@@ -392,3 +392,12 @@ Audit = re-derivation from pixels and feature files (scratchpad qa_accel/s2_supp
 | p2-compare footer | 16 seeds over 15 distinct arcs (seeds 4 and 8 draw the same arc, block 46); figure legend still says 16 arcs (QA #461) | results/p2_bakeoff_unified_16arc.json arcs |
 | p2-splines notes | smoother 44.19 vs chord 27.25 is not size: edit 0.62 vs 0.65 of the twin change; 39.13 at the chord's norm; encoder miss on this arc at block 22, 10.72 vs 3.59 at norms 12.40 vs 12.68 (QA #462) | results/session2_predictor_native_readout.json per_layer.22.{spline_smooth,chord} |
 | found notes | acceleration beyond mean speed per tubelet 0.53 at block 1 (pooled ≈0) (QA #464) | results/p5_accel_decorrelated.json timepool block 1 |
+
+## QA #42 (fire at 22:05 ET)
+
+| Slide | Number | Source (file → key) |
+|---|---|---|
+| p1-zone title, alt, notes | half-frame transfer per seed: block 1 0.69 / 0.73 / 0.71; blocks 7 and 8 negative on all three seeds; block 9 0.077 / 0.385 / 0.082 (mean 0.18, chance); mean 0.58 at 12, 0.76 at 22; block 4 +0.16 / +0.15 on seeds 1, 2 (QA #466) | results/p1a_perpatch_hard_seeds.json → by_point[].cross_half_r2.per_seed |
+| p1-zone footer, notes | partial reproduction: supplied clips transfer 0.82 at point 1 rising to 0.95 with no dip; untrained 0.61 → 0.74 (QA #467); MAE 56° vs 11° offset caveat (QA #468); per-patch R² 0.95 vs the paper's Table 4 0.72 (QA #469) | results/p1a_perpatch_direction_vjepa2.json, results/p1a_perpatch_direction_random.json; REPORT §3.1 |
+| headline caption, line | 11.3° = interpolating spline (Goodfire A.3, language-task recipe); 44.2° = our smoother on their B.1 world-model recipe (QA #472) | results/session2_predictor_native_readout.json per_layer.22.{spline,spline_smooth} |
+| papers column, notes | Musa et al. 2026 (Joseph's group): spline steering inside V-JEPA 2, in sample (QA #471); §7 l.390–395 poses the use question; §6.3 tests how the code forms (QA #470) | refs/physics_paper.txt; lit_review.md l.15, l.385 |
