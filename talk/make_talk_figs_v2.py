@@ -466,6 +466,46 @@ def part1_panels():
 
 
 # ---------------------------------------------------------------- 11. coordinate competition, rank 2 (Finding 2, rescoped)
+def scaling():
+    """p1-scaling backup: direction readability vs depth fraction for ViT-L/H/g (test R2, CV onset dots),
+    and the hard-render per-patch half-frame transfer for ViT-L and ViT-H (seed 0) by block."""
+    print("fig_p1_scaling")
+    d = J("p5_scaling_layerwise.json")
+    f, (a1, a2) = plt.subplots(1, 2, figsize=(W / 96, (W * 470 / 1616) / 96), gridspec_kw={"wspace": 0.28, "width_ratios": [1.15, 1]})
+    cols = {"vitl": INK, "vith": TERRA, "vitg": OCHRE}
+    for m, c in cols.items():
+        for init, ls, lw in (("pretrained", "-", 3.5), ("random", "--", 2.2)):
+            v = d["models"][f"{m}_{init}"]["variables"]["direction"]
+            L = [l for l in v["layers"] if not l.get("post_ln")]
+            xs = [l["frac"] for l in L]; ys = [l["test_r2"] for l in L]
+            a1.plot(xs, ys, ls=ls, color=c, lw=lw)
+            if init == "pretrained":
+                on = v["summary_cv"]["onset"]; lo = [l for l in L if l["point"] == on][0]
+                a1.plot([lo["frac"]], [lo["test_r2"]], "o", ms=11, color=c, mec=BG, mew=2)
+                log(f"{m}_pretrained direction cv onset", (on, round(v["summary_cv"]["onset_frac"], 3)))
+    a1.set_ylim(0, 1.05); a1.set_yticks([0, 0.5, 1]); a1.set_xticks([0, 0.25, 0.5, 0.75, 1])
+    a1.set_xlabel("block ÷ depth"); a1.set_ylabel("direction read (R²)")
+    a1.text(1.0, 0.36, "ViT-L, 24", ha="right", fontsize=20, color=INK)
+    a1.text(1.0, 0.25, "ViT-H, 32", ha="right", fontsize=20, color=TERRA)
+    a1.text(1.0, 0.14, "ViT-g, 40", ha="right", fontsize=20, color="#9A7B12")
+    a1.text(1.0, 0.03, "dashed: untrained · dot: onset", ha="right", fontsize=17, color=SOFT)
+    z = d["zone_halfframe_hard"]
+    for m, c in (("vitl", INK), ("vith", TERRA)):
+        a2.plot(z[m]["points"], z[m]["cross_half_r2"], "-o", color=c, lw=3, ms=6)
+        log(f"zone_halfframe_hard.{m}.summary", z[m]["summary"])
+    a2.axhline(0, color=GREY, lw=1.5)
+    a2.axvspan(8.5, 9.5, color=OCHRE, alpha=0.25, lw=0)
+    a2.text(9.8, 0.75, "block 9", fontsize=20, color=INK)
+    a2.set_xticks([1, 9, 16, 24, 32]); a2.set_ylim(-2.8, 1.1); a2.set_yticks([-2, -1, 0, 1])
+    a2.set_xlabel("block"); a2.set_ylabel("half-frame transfer (R²)")
+    a2.text(32, -2.2, "ViT-L", ha="right", fontsize=20, color=INK)
+    a2.text(32, -2.6, "ViT-H, seed 0", ha="right", fontsize=20, color=TERRA)
+    for ax in (a1, a2):
+        ax.tick_params(labelsize=20); ax.xaxis.label.set_size(20); ax.yaxis.label.set_size(20)
+    f.subplots_adjust(left=0.07, right=0.99, bottom=0.2, top=0.96)
+    save(f, "fig_p1_scaling.png")
+
+
 def coordinate_competition():
     print("fig_coordinate_competition_deck")
     E = J("p5_coordinate_competition.json")["encoding"]
@@ -609,7 +649,7 @@ if __name__ == "__main__":
     ap.add_argument("--only", nargs="*", default=None, help="run only these figure functions")
     a = ap.parse_args()
     style(a.font)
-    FIGS = [read_vs_use, binding_by_depth, chord_vs_spline, heading_path, sheet, coordinates, sheet_v2, bakeoff_unified, contact, part1_panels, coordinate_competition, splines3, part1_single]
+    FIGS = [read_vs_use, binding_by_depth, chord_vs_spline, heading_path, sheet, coordinates, sheet_v2, bakeoff_unified, contact, part1_panels, coordinate_competition, splines3, part1_single, scaling]
     for fn in FIGS:
         if a.only is None or fn.__name__ in a.only:
             fn()

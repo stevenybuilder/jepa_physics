@@ -96,9 +96,11 @@ def precision_flags():
             "cudnn_allow_tf32": torch.backends.cudnn.allow_tf32}
 
 
-def load_model(kind, device):
+def load_model(kind, device, model_id=MODEL_ID, n_blocks=24, width=WIDTH):
     """kind = 'vjepa2' (pretrained), 'random' (same architecture, torch.manual_seed(0) init) or 'videomae'
-    (MCG-NJU/videomae-large encoder)."""
+    (MCG-NJU/videomae-large encoder). model_id / n_blocks / width select another V-JEPA 2 encoder size
+    (ViT-H: facebook/vjepa2-vith-fpc64-256, 32, 1280; ViT-g: facebook/vjepa2-vitg-fpc64-256, 40, 1408);
+    the defaults are the ViT-L used everywhere else."""
     if kind == "videomae":
         model = VideoMAEModel.from_pretrained(VIDEOMAE_ID, dtype=torch.float32)
         model = model.to(device=device, dtype=torch.float32).eval()
@@ -109,9 +111,9 @@ def load_model(kind, device):
         assert (c.image_size, c.patch_size, c.tubelet_size, c.num_frames) == (VM_SIZE, PATCH, TUBELET, N_FRAMES)
         return model
     if kind == "vjepa2":
-        model = VJEPA2Model.from_pretrained(MODEL_ID, dtype=torch.float32)
+        model = VJEPA2Model.from_pretrained(model_id, dtype=torch.float32)
     elif kind == "random":
-        config = VJEPA2Config.from_pretrained(MODEL_ID)
+        config = VJEPA2Config.from_pretrained(model_id)
         torch.manual_seed(0)
         model = VJEPA2Model(config)
     else:
@@ -119,7 +121,7 @@ def load_model(kind, device):
     model = model.to(device=device, dtype=torch.float32).eval()
     for p in model.parameters():
         p.requires_grad_(False)
-    assert len(model.encoder.layer) == 24 and model.config.hidden_size == WIDTH
+    assert len(model.encoder.layer) == n_blocks and model.config.hidden_size == width
     return model
 
 
@@ -200,6 +202,29 @@ def encode(model, pixel_values):
     points = list(hs[:24]) + [captured["block24"], hs[24]]
     assert len(points) == N_POINTS
     return points, out
+
+
+@torch.no_grad()
+def encode_meanpool(model, pixel_values, amp=False):
+    """V-JEPA 2 forward (any encoder size) returning only token means, pooled on the fly by forward hooks so no
+    per-token hidden state is kept: float32 numpy [B, n_blocks + 2, width] = [emb, block 1..L (pre-LN), final post-LN],
+    the same 26-point layout as encode() for ViT-L. amp=True runs the forward under bf16 autocast (mean taken in fp32)."""
+    pooled = {}
+    mean = lambda o: (o[0] if isinstance(o, tuple) else o).float().mean(dim=1)   # noqa: E731
+    enc = model.encoder
+    hooks = [enc.embeddings.register_forward_hook(lambda m, i, o: pooled.__setitem__(0, mean(o))),
+             enc.layernorm.register_forward_hook(lambda m, i, o: pooled.__setitem__(len(enc.layer) + 1, mean(o)))]
+    for k, layer in enumerate(enc.layer):
+        hooks.append(layer.register_forward_hook(lambda m, i, o, k=k: pooled.__setitem__(k + 1, mean(o))))
+    try:
+        with torch.autocast("cuda", dtype=torch.bfloat16, enabled=amp):
+            model(pixel_values_videos=pixel_values, skip_predictor=True)
+    finally:
+        for h in hooks:
+            h.remove()
+    n = len(enc.layer) + 2
+    assert sorted(pooled) == list(range(n)), sorted(pooled)
+    return torch.stack([pooled[k] for k in range(n)], dim=1).cpu().numpy()
 
 
 def pool(points, masks, grid=GRID):

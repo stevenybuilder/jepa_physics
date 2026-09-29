@@ -329,3 +329,15 @@ Audit = re-derivation from pixels and feature files (scratchpad qa_accel/s2_supp
 | limits notes | block 12, disk tokens (union), matched dose: spline heading 100.2° vs chord 40.8° (spline − chord +59.4° [53.2, 65.8]) while spline forced choice leads, 0.163 vs 0.075 (+0.087 [0.043, 0.126]) | results/session2_probefree_matched_size.json → matched.D12_natural_union.{spline,chord}.heading_err_deg.mean (100.24, 40.85); matched.D12_natural_union.spline_minus_chord.{heading_err_deg,forced_choice_frac} |
 | found, p2-compare notes | matched size (block 22): spline 12.3° vs chord 25.7° heading with recovery 0.186 vs 0.234; own size, separately: 11.3° vs 27.2° | matched.P22_natural.*; results/session2_fourier4_predictor.json → task1.table.P22.own.{spline,chord}.err_to_target.mean |
 | limits notes | cache mismatch now quoted on the twin-change scale only (median ≈ 7%, max ≈ 1.3 twin changes) | as Round 11 row (lead's QA #397 figures) |
+
+## Round 14 (backup slide p1-scaling; results/p5_scaling_layerwise.json, written 20:48)
+
+| Slide | Number | Source (file → key) |
+|---|---|---|
+| p1-scaling title, notes, figure dots | direction CV onset (first point ≥ 90% of max CV R²): ViT-L block 2 (0.083 of depth, CI [2, 2]), ViT-H 3 (0.094, [3, 3]), ViT-g 4 (0.100, [4, 4]); all ≤ 0.10 = "first tenth" | models.{vitl,vith,vitg}_pretrained.variables.direction.summary_cv.{onset,onset_frac,onset_ci} |
+| p1-scaling subtitle | ViT-L direction CV R² 0.875 at block 1 (test 0.888) on the supplied clips | models.vitl_pretrained.variables.direction.layers[1].{cv_mean,test_r2}; definitions.readability_not_zone |
+| p1-scaling notes | untrained direction CV peaks: ViT-L 0.868, ViT-H 0.856, ViT-g 0.846 (quoted as 0.85–0.87) | models.{vitl,vith,vitg}_random.variables.direction.summary_cv.peak_score |
+| p1-scaling title, line, notes, figure right | hard-render half-frame transfer: ViT-H (seed 0) −2.44 at block 8 → 0.40 at 9 (recovery point 9); second dip −0.33 at 12, −1.63 at 13; ViT-L −1.42 at 8 → 0.08 at 9 (recovery point 9) | zone_halfframe_hard.vith.{points,cross_half_r2,summary}; zone_halfframe_hard.vitl.{cross_half_r2,summary} (ViT-L source results/p1a_perpatch_direction_vjepa2_hard.json) |
+| p1-scaling notes | bf16 parity on ViT-L only: median relative L2 error 0.52% (direction), 0.50% (speed), 0.53% (acceleration); min cosine 0.9957 | parity_vitl_bf16.{direction,speed,acceleration}.{rel_l2_err_median,cos_min} |
+| p1-scaling notes | ViT-g untrained acceleration/axay in flight at merge | provenance.notes[0] |
+| p1-scaling figure | fig_p1_scaling.png (deck palette; x = block ÷ depth excluding the post-LN point; test R² curves, CV onset dots) | talk/make_talk_figs_v2.py scaling |
