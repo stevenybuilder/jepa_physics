@@ -18,7 +18,7 @@ The full write-up is [REPORT.md](REPORT.md). The 15-minute talk is at https://cl
 |---|---|---|---|---|
 | Part 1.1 Layer-wise probing | Ridge probes at all 26 read points for direction, speed and acceleration, with onsets, an untrained copy and per-patch probes; layer curves in `figures/fig1_layer_curves.png`, sizes in `figures/fig_scaling_layerwise.png`. | `run_step1.py`, `extract.py` | `results/p1a_*` | §3.1 |
 | Part 1.2 Iterative nullspace probing | INLP at the paper's layer, with nested and paper-protocol counts, an Adam rerun and a whitened count. | `run_step2.py`, `run_step2_dims.py` | `results/p1b_*` | §3.2 |
-| Part 1.3 Multi-probe steering on held-out data | Steering in the span of the first N probes, on test clips never used to build the basis, against random-basis nulls; the paper's judge is a probe fit in-sample on the steered test clips, so we also report a split-half judge. | `run_step3.py` | `results/p1c_*` | §3.3 |
+| Part 1.3 Multi-probe steering on held-out data | Steering in the span of the first N probes, on test clips never used to build the basis, against random-basis nulls; the judge is a probe fit on the unsteered test clips and applied to their steered versions, as in the paper's C.12, and we also report a split-half judge. | `run_step3.py` | `results/p1c_*` | §3.3 |
 | Part 2: splines for speed, acceleration, direction | Periodic cubic splines through class centroids in a PCA subspace, plus lines and a direction × speed sheet. | `run_part2.py`, `run_velocity_sheet_predictor.py` | `results/p2_steer_*`, `results/p5_velocity_sheet_*` | §4.1, §4.3 |
 | How splines are built, shown and evaluated | Built on knot clips only; plotted as rings, lines and sheets; scored at held-out targets, along the path and through the predictor. | `run_bakeoff_unified_16arc.py`, `run_session2.py` | `results/p2_bakeoff_unified_16arc.json`, `results/session2_*` | §4.2, §4.5 |
 | The circular structure of direction | Direction lies on a ring; we test its angle coordinate and which frame describes it best. | `run_geometry_checks.py`, `run_coordinate_competition.py` | `results/p2_geometry_*`, `results/p5_coordinate_competition.json` | §4.1, §4.4 |
@@ -37,13 +37,13 @@ pooled readout here. What training adds is a per-patch direction code: V-JEPA 2 
 block 6, while an untrained copy never exceeds 0.39. On a harder rendered set the zone does appear, as a handover
 (means over three render seeds): a direction code that transfers across the two halves of the frame at block 1 (0.71)
 stops transferring by block 8 (−1.43; at block 4 two of the three seeds still transfer, +0.16 / +0.15), recovers only to
-about chance at block 9 (0.18) and transfers durably later (0.58 at block 12).
+about chance at block 9 (0.18) and transfers durably later (0.58 at block 12). That reproduces the paper's C.5 only in part: its claim that generalisation appears after the zone holds on the hard render, but its claim that early layers hold no code that generalises across the frame does not hold on either stimulus (the supplied clips transfer 0.82 at block 1).
 
 **Nullspace.** At block 9, 37 probes are needed before direction is at chance (46 under the paper's protocol), against 39 for speed and 41 for acceleration. After
 whitening, one two-output probe does the job, so the count mostly reflects the shape of the covariance, not an intrinsic
 rank. (REPORT §3.2).
 
-**Steering.** With our ridge basis, five probes steer to 8.7° from the target, as judged by a probe fit in-sample on the steered test clips (14.7° under a split-half judge). That beats a same-rank random subspace
+**Steering.** With our ridge basis, five probes steer to 8.7° from the target, as judged by a probe fit on the unsteered test clips and applied to their steered versions, as in the paper's C.12 (a split-half judge gives 14.7°). That beats a same-rank random subspace
 (54.9°, p 0.035) but not the full-rank random basis (11.8°, p 0.22). With the paper's Adam probe sequence, 18 probes are
 needed to reach 10° (REPORT §3.3).
 

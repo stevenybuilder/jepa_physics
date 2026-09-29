@@ -326,7 +326,13 @@ point-1 level returns by point 22. The random network shows no dip: on seed 0 it
 −0.72 at point 1 to +0.27 at points 8–9 (8 → 9 change −0.01), and on seed 1 it stays negative throughout (−0.21 at 9,
 8 → 9 change +0.22). So the dip-and-jump shape is training-specific; the level at point 9 is not. The negative
 values are a between-half miscalibration, not a mirror flip: at point 8 the cross-half MAE is 56° against 11° within a
-half, where a left-right mirror of 8 directions would give 90°. On the paper-layout set the per-position onset is 6 and
+half, where a left-right mirror of 8 directions would give 90°. The half-frame probe standardises the other half with the
+training half's statistics (`scripts/p1a_perpatch.py:pooled_probe`), so a mean offset between halves alone would give a
+strongly negative R² with this MAE; the negative transfer at points 7–8 therefore means the shared code is lost or
+offset, and the per-half standardisation control that would tell the two apart was not run. Our per-patch unit also
+differs from the paper's: each of the 16 × 16 positions averages the 8 time steps (`scripts/p1a_perpatch.py:extract`),
+so it sees the disk's whole passage, and our per-patch R² at the zone is 0.98 on the supplied clips and 0.95 on the hard
+render against the paper's Table 4 baseline of 0.72; the onset comparison is between units at different levels. On the paper-layout set the per-position onset is 6 and
 cross-half transfer is already 0.81 at block 1, so the hard set's dip comes from the rendering (each render seed changes the 7 starts and the floor texture
 together, so seed-to-seed swings cannot be assigned to either). Caveats: per-position
 features are averaged over the 8 time steps; the half-frame test is one pooled probe per half; the rendered sets sample
@@ -336,8 +342,10 @@ redundancy" was not measured; only spatial spread (share of positions above R² 
 
 **Verdict.** On a harder stimulus, across three render seeds, one part of the paper's signature replicates: the half-frame
 jump. Transfer dips to −1.0 to −1.8 at point 8 and jumps back to about chance at point 9 on every seed (paper layers
-7 → 8), a shape the random network lacks; the paper's stronger claim, that probes "begin to generalize to unseen regions
-only after the emergence zone", does not hold here, since transfer is already 0.7 at point 1. The sharp per-patch
+7 → 8), a shape the random network lacks. C.5 makes two claims, and the reproduction is partial: (a) that early layers
+hold no per-region code that generalises does not reproduce on either stimulus (the hard render transfers 0.71 at point
+1; the supplied clips transfer 0.82 at point 1 rising to 0.96 with no dip, and even the untrained copy transfers 0.61 →
+0.74), while (b) that generalisation appears after the zone reproduces on the hard render only. The sharp per-patch
 rise does not: the largest rise is at points 4 → 6 on every seed, the 90% onset is 8 on two seeds and 9 on one, and the
 random network's per-position curve also plateaus by point 6. A 5-fold refit on seed 0 gives per-fold onsets 8, 9, 9,
 8, 8 on the stored stratified folds and 9 in all five folds when whole start positions are held out (per-position
@@ -544,7 +552,7 @@ p = 0.048 at every N (mean 87.4° at N = 1). Source: `p1c_direction_L{2,9,22}.js
   ridge one. Refitting that sequence (lr 1e-3, wd 1e-4, batch 64; it reproduces the stored Adam run and stops at K = 84)
   and steering with it: N = 1 / 2 / 3 / 5 / 10 / 20 / 84 give 84.1° / 81.1° / 77.7° / 69.2° / 27.9° / 7.3° / 2.9° to
   target (ridge basis: 78.4° / 61.1° / 25.4° / 8.7° / 3.1° / 2.9° / 2.7° at N = 37). Eighteen Adam probes reach 10°,
-  against five ridge probes (the ridge basis judged by the α = 100 evaluation probe fit in-sample on the steered clips;
+  against five ridge probes (the ridge basis judged by the α = 100 evaluation probe, fit on the unsteered test clips and applied to their steered versions, as in the paper's C.12;
   the split-half judge gives 12.4° / 17.1° at N = 5, mean 14.7°; with 200 draws the five ridge probes' 8.7° is not
   distinguishable from the 74-dimensional random basis, median 11.8°, p 0.22, first beaten at N = 9, while the
   rank-matched null gives 54.9°, p 0.035) and the paper's about 20; at N = 5 the Adam basis is at
@@ -2123,6 +2131,9 @@ these are heads with high attention to the disk, not heads that prefer the previ
 - **The acceleration comparison is on our grid, not the paper's clips.** The magnitude result (§5) uses 240 rendered
   clips in which |a| is decorrelated from speed and displacement; the paper's own acceleration clips, which start from
   rest, were not tested, so the source of its early-layer number is inferred, not shown.
+- **Half-frame transfer standardisation.** The half-frame probe standardises with the training half's statistics, so the
+  negative transfer at points 7–8 on the hard render may be a mean offset between halves rather than a lost code; a
+  per-half standardisation control was not run (§3.1).
 - **Not run from the paper's appendix:** the §6.3 / Tab. 2 local-attention masking test, C.6 (attention-distance analysis), C.7 (neuron direction tuning) and C.8 (neuron
   speed tuning). C.9 (feature dimensionality) is the nullspace analysis of §3.2.
 - **Sample size vs d.** Around 1,200 train clips against d = 1,024 makes K a ridge count at a CV-chosen α. The K
