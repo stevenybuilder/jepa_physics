@@ -46,7 +46,11 @@ done
 python scripts/make_splits.py                                      # one stratified 80/20 split -> splits/split_v1.json
 
 # 1. Part 1: layer-wise probes, iterative nullspace, multi-probe steering (CPU)
-for d in direction speed acceleration; do python scripts/run_step1.py --dataset $d; done
+for d in direction speed acceleration; do
+  python scripts/run_step1.py --dataset $d                          # trained encoder
+  python scripts/run_step1.py --dataset $d --model random           # untrained control
+done
+python scripts/p1a_perpatch.py extract --sets supplied hard && python scripts/p1a_perpatch.py probe --sets supplied hard   # per-patch probes (GPU extract, CPU probe)
 python scripts/run_step2.py --dataset direction --layer-role paper                 # INLP at the paper's layer
 python scripts/run_step3.py --dataset direction --layer-role paper                 # steering on held-out clips vs random-basis nulls
 
@@ -71,16 +75,19 @@ python scripts/make_figures.py            # report figures -> figures/
 python talk/make_talk_figs_v2.py         # talk figures -> talk/figures_v2/ (the two shown here)
 ```
 
-`scripts/README.md` lists every script with what it produces and the REPORT section it feeds. The harder render,
-the acceleration grid, model-size and attention-head follow-ups are there too.
+`scripts/README.md` lists every script with what it produces and the REPORT section it feeds: the harder render
+(`render_hard_stimuli.py`), the paper's Adam probe recipe (`run_step3_adam_basis.py`, `run_step3_adam_judge.py`),
+the acceleration grid, model size and attention heads.
 
 ## Findings
 
 **Part 1: the paper's picture reproduces in part.** Direction, speed and acceleration are readable from block 1 in the
-pooled readout (direction R² 0.875), so the Physics Emergence Zone does not show on the supplied clips; on a harder
-render it appears as a handover, where a code that transfers across the frame at block 1 stops transferring by block 8
-and returns by block 22. At block 9, 37 ridge probes erase direction (one after whitening). Five ridge probes steer to
-8.7° on held-out clips; with the paper's Adam probes the count is 11 to 19, consistent with its about 20.
+pooled readout (direction R² 0.875, and 0.848 from an untrained copy of the encoder), so the Physics Emergence Zone
+does not show on the supplied clips, where every clip starts at rest and acceleration equals mean speed. On a harder
+render the zone appears as a handover: a code that transfers across the frame at block 1 stops transferring by block 8
+and returns by block 22, and the untrained copy never transfers at block 1. At block 9, 37 ridge probes erase direction
+under nested cross-validation (46 scored on test, 84 to 96 with the paper's Adam recipe, one after whitening). Five
+ridge probes steer to 8.7° on held-out clips; with the paper's Adam probes the count is 11 to 19, near its about 20.
 
 <p align="center"><img src="talk/figures_v2/fig_part1_panels.png" width="920" alt="Part 1 panels: decoded R² by block for three variables with untrained baselines; nullspace erasure curve at block 9; steering error against number of probes for ridge and Adam bases and random controls."></p>
 

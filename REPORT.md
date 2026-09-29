@@ -22,7 +22,7 @@ the minimum readout radius is higher for the spline on every arc (point 22 on th
 **Two disagreements with the paper.** (1) On the harder set transfer does not appear only after the Physics Emergence Zone (blocks 8–9): it is 0.7 at
 point 1, and the per-position curve rises most between points 4 and 6 on every seed, though under the 90%-of-max rule
 its onset is 9 / 8 / 8, her depth, and the sigmoid inflection 5.7–5.9 (§3.1): partial agreement on a harder stimulus,
-not on the supplied one. What the zone is on that set: a heading code that transfers across the two halves of the frame at point 1 (half-frame R² 0.71, mean of three seeds) stops transferring from point 4 (seed 0) or 5 (seeds 1–2) to point 8 (−1.43 at point 8), recovers to near zero at point 9 (mean 0.18) and more at point 12 (0.58, still below point 1 on every seed), returning to the point-1 level only at point 22 (0.76), so the sequence is shared → position-specific → shared, not the local → global transition C.5 (l.994–995) reads from its own data; the untrained copy never transfers[^seeds]. Physics is readable before the zone; what the zone marks on this stimulus is where a shared code is rebuilt. (2) Whether speed needs
+not on the supplied one. What the zone is on that set: a heading code that transfers across the two halves of the frame at point 1 (half-frame R² 0.71, mean of three seeds) stops transferring from point 4 (seed 0) or 5 (seeds 1–2) to point 8 (−1.43 at point 8), recovers to near zero at point 9 (mean 0.18) and more at point 12 (0.58, still below point 1 on every seed), returning to the point-1 level only at point 22 (0.76), so the sequence is shared → position-specific → shared, not the local → global transition C.5 (l.994–995) reads from its own data; the untrained copy does not transfer at point 1 (−0.72 on render seed 0, negative on seed 1) and shows no dip; one of its seeds climbs to 0.51 by point 22 while the other stays negative, so the late return is not specific to training, the early transfer and the dip are[^seeds]. Physics is readable before the zone; what the zone marks on this stimulus is where a shared code is rebuilt. (2) Whether speed needs
 fewer probes than direction depends on the stop rule and the probe recipe more than on the network. Under ridge on the
 same clips speed needs fewer under C.11's thresholds (7 of 8 cells in probes, 8 of 8 in the paper's unit, dimensions),
 and the paper's plotted Fig. 22 sits with that rule for speed (≈ 28 at layer 8, where Fig. 23's speed curve ends near
@@ -87,7 +87,7 @@ verdict; §2 lists every deviation from the paper and what the parity audit chan
   the pixels finds the block-1 ridge R² for acceleration, 0.977 ± 0.002, falls to −0.006 ± 0.008 once pixel-measured mean
   speed and displacement are partialled out (untrained 0.913 → −0.004), and a speed probe fit on the constant-speed set
   scores 0.975 on the acceleration clips (slope 0.299 s against the kinematic 0.3125 s)[^aaudit]. The paper's
-  acceleration set has the same identity (l.681–684, "initialized at rest"). A rendered grid resolves it
+  acceleration set has the same identity (l.681–684, "initialized at rest"; throughout, "l.nnn" and `refs/*.txt` line citations refer to a plain-text copy of the paper's arXiv LaTeX source, which is not included in this repository). A rendered grid resolves it
   after the fact (240 clips, 4 mean speeds × 5 accelerations including decelerations, correlation of acceleration with
   mean speed 0.000; §5): there the introduction's claim (l.121–123, echoed by Table 1) that acceleration "can be
   approximated directly by a single MLP" without a velocity intermediate becomes partly testable: signed acceleration is
@@ -2070,7 +2070,7 @@ these are heads with high attention to the disk, not heads that prefer the previ
   trajectory, detect all three variables at R² ≥ 0.85. Use is where the evidence thins. The Part 1 edit moves a
   held-out linear probe, but whether it beats a rank-2K random basis depends on the evaluation probe (from N = 4
   under the near-unregularised probes, N = 9 under mine, 200 draws; a rank-matched one from N = 2–7), it works in an untrained network too, and it
-  leaves an MLP on disjoint clips 17–23° off. On the ladder in `PART2_RATIONALE.md` §2, this project reaches rung 3 at
+  leaves an MLP on disjoint clips 17–23° off. On the evidence ladder in our Part 2 design notes (not included), this project reaches rung 3 at
   the steered layer and rung 4 only by circular measures. Rung 5 was tested: at point 22 and at the encoder output the
   edit reaches the predictor's forecast; at points ≤ 12 it washes out and does not (§4.5). At point 22 the forecast
   passes through the intermediate directions on the spline and jumps on the chord (−13.4°); at the encoder output the
@@ -2271,7 +2271,7 @@ Planned in the spec and not run: the last-frame-only control of the layer curves
 - **Tests.** `pytest --collect-only` collects 221 tests at the commit of this report.
 
 [^gpu]: `artifacts/gpu_session1.json`.
-[^ptxt]: Line numbers in `refs/physics_paper.txt` (text of arXiv 2602.07050): (a) 1211 vs 1172; (b) 1207 vs 1243 and 1266; (c) 1245–1246; (d) 430–431 vs 1256 and 1269; (e) 669 vs 1243; (f) 245 vs 671; (g) 1244 vs 1256 and 1269, Table 3 at 958, 1217 vs 970–973, 402–403; (h) Table 3 rows 949–951. Our numbers: `p1b_*` (`K`, `K_loose`), `results/split70/COMPARISON.md`, `p1c_direction_L9_strict.json` (`strict_eval`), `p1c_direction_L9.json`.
+[^ptxt]: Line numbers in `refs/physics_paper.txt` (text of the arXiv 2602.07050 source; not included): (a) 1211 vs 1172; (b) 1207 vs 1243 and 1266; (c) 1245–1246; (d) 430–431 vs 1256 and 1269; (e) 669 vs 1243; (f) 245 vs 671; (g) 1244 vs 1256 and 1269, Table 3 at 958, 1217 vs 970–973, 402–403; (h) Table 3 rows 949–951. Our numbers: `p1b_*` (`K`, `K_loose`), `results/split70/COMPARISON.md`, `p1c_direction_L9_strict.json` (`strict_eval`), `p1c_direction_L9.json`.
 [^s1]: `results/p1a_direction_direction_meanpool.json` (n_train 1200, n_test 300); `results/p1a_paperscale_speed_speed.json` (speed train 1228).
 [^steer]: `results/p2_steer_*` (n_test_clips 308 for speed/acceleration; `sagitta_per_target`; `n_knot_clips` 632, `n_probe_clips` 480).
 [^recipe]: `results/p1a_probe_recipe_check.json`.
