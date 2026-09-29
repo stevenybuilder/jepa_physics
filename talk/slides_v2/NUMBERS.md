@@ -267,3 +267,23 @@ Plain names on slides: "straight edit" = raw-centroid chord (chord_raw / linear_
 | p2-binding notes | no-probe token-swap shares 0.77 / 0.23; disks alone 4% carry 0.82 | from the QA fire #34 raw re-derivation (not re-read per key in this pass) |
 | p2-compare notes | paper's spline 34.5° at block 12 uses label-free knot ordering (label-ordered 7.2° vs chord 5.7°) | results/p2_bakeoff_unified_16arc.json (keys.points: 12 = unsupervised angle) ; results/p2_endpoint_diagnosis.json configs.L12_labels.arcs16.arms.{add:causalab_interp,add:chord_raw}.probe.mean (7.23, 5.67) |
 | p2-splines (figure fig_splines3.png, regenerated) | PCA plane fit on kept knot clips only | talk/make_talk_figs_v2.py splines3 |
+
+## Round 9 (QA Part 1 fire #32, ledger #382–#389)
+
+| Slide | Number | Source (file → key) |
+|---|---|---|
+| p1-reproduce notes; p2-variables notes | decorrelated |a| through the signed code: 0.22 at block 8, 0.44 at block 9 (time-ordered features); ≤0.07 at blocks 1–4 | results/p5_accel_decorrelated_magnitude.json → models.vjepa2.points.{8,9}.timepool.abs_a_from_abs_signed_ridge.r2 (0.215, 0.442) |
+| p1-reproduce notes; p1-steer title | full 74-dim random null first beaten (p < 0.05, sustained) at nine ridge probes, p 0.040; at five p 0.22, median 11.8° | results/p1c_direction_L9_nulls200.json → bases.ridge.first_n.rank_2K.p_lt_0.05.{first_n,first_n_sustained} = 9; bases.ridge.all_n[n=9].rank_2K.p = 0.0398; [n=5].rank_2K.{p,median} (supersedes "ten beat it", which read the 12-row table) |
+| p1-zone notes | hard render, largest per-position rise at blocks 4→6 on all three seeds: +0.29 / +0.25 / +0.24; 8→9 is +0.09 / +0.07 / +0.07 | results/p1a_perpatch_hard_seeds.json → by_point[point].perpos_mean_r2.per_seed, differences on common_points (0.286, 0.245, 0.237) |
+| papers notes | "direction becomes accessible only at the Physics Emergence Zone"; probes trained with Adam | refs/physics_paper.txt l.47, l.121; l.1206 |
+| p1-reproduce figure | label "(mean speed on this set)" on the acceleration curve | talk/make_talk_figs_v2.py part1_panels → talk/figures_v2/fig_p1_reproduce.png (= fig_part1_panels.png) |
+
+## Round 9 add-on (narrative frame; twin-free dose landed)
+
+| Slide | Number | Source (file → key) |
+|---|---|---|
+| p2-binding notes | twin-free dose profile 49.6° (probe-split clips) / 49.5° (all probe clips) vs per-token 44.7°, uniform 65.8°; recovers 77% [0.70, 0.82] of the uniform-to-per-token gap; residual over per-token +4.9° [3.7, 6.3] paired, n = 200 | results/session2_disk_token_sweep_twinfree.json → table.src_chord_twinfree_bin.err_to_target.mean (49.55); table.src_chord_twinfree_all.err_to_target.mean (49.49); frac_of_uniform_to_pertoken_gap_recovered.bin.{ratio,ci95} (0.768); paired.twinfree_bin_minus_pertoken.{mean,ci95} (4.90) |
+| p2-compare (visible line, notes) | minimum path radius at block 22, 16 arcs: chord 0.61; curves 0.88 (our smoother), 0.92 (paper's spline), 0.94 (cross-validated); straight arms 0.60–0.63 | results/p2_bakeoff_unified_16arc.json → table.{chord_raw,fitpack_smooth,interp_causalab_lam0,causalab_lam_cv,fourier2_4d,probe_qr}.radius_min.22.mean. The lead's "0.63 vs 0.86" is the single headline arc (headline_arc.12.chord_raw 0.632, fitpack_smooth 0.865); the slide uses the 16-arc block-22 values |
+| p2-compare notes | conceptor (COAST) gate overshoots to 165.0° at block 12 | REPORT.md §4.4 conceptor table, row "COAST gate, uncentred"; results/p2_coast_faithful_L12.json |
+| p2-compare notes | energy geodesic dips into the hollow like the chord: min radius kNN / KDE 0.71 / 0.62 at block 12, 0.65 / 0.63 at 22, vs spline 0.88 / 0.85; 0 of 56 + 56 solves converged | results/p2_geodesic_direction_L{12,22}_full.json → headline.pooled_arms_mean.*.probe_radius_min; convergence (REPORT.md §4.4, headline arc only) |
+| p2-compare, p1-zone notes | edits at blocks 2–12 wash out within four blocks (82–88° four blocks later) | REPORT.md §4.6 wash-out table |

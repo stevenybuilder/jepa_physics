@@ -434,7 +434,8 @@ def part1_panels():
     a1.text(24, 0.12, "dashed: untrained", ha="right", fontsize=20, color=SOFT)
     a1.text(24, 0.30, "direction", ha="right", fontsize=20, color=TERRA)
     a1.text(24, 0.44, "speed", ha="right", fontsize=20, color=INK)
-    a1.text(24, 0.58, "acceleration", ha="right", fontsize=20, color=BLUE)
+    a1.text(24, 0.66, "acceleration", ha="right", fontsize=20, color=BLUE)
+    a1.text(24, 0.58, "(mean speed on this set)", ha="right", fontsize=17, color=BLUE)
     b = J("p1b_direction_direction_meanpool_L9.json")
     rr = b["rounds"]; K = b["K"]
     log("p1b_direction_direction_meanpool_L9.json K", K)
