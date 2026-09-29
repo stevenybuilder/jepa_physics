@@ -108,7 +108,8 @@ unedited); the same edit on the disk's tokens reaches it (44.7°). At block 22 t
 from target and the chord's 27.2°. Token patching shows the forecast reads direction from the disk through block 12
 (0.88 of the effect) and from the whole frame by block 22 (0.22 from the disk). Position behaves the same way: a
 start-position edit at block 22 closes 0.35 of the gap to the target cell in the forecast (a real twin 0.78), an edit at
-block 12 closes 0.01 and reads R 0.009 at the encoder's exit; sheet and chord tie (48 carriers, 2 held-out cells).
+block 12 closes 0.01 and reads R 0.009 at the encoder's exit; sheet and chord land within a pixel of each other (48
+carriers, 2 targets each from 4 held-out cells; no paired test).
 
 **Controls and negatives.** A "contact" edit writes a post-contact heading, not a contact (a no-wall heading edit turns
 the forecast more, 0.77 against 0.48). The within-clip time code tracks the token slot, not the content, and
