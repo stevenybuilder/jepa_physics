@@ -383,3 +383,12 @@ Audit = re-derivation from pixels and feature files (scratchpad qa_accel/s2_supp
 | p2-shapes notes (#456) | encoder, block 22, joint: smoothing sheet 4.33 vs interpolating 1-D curves in turn 6.98; like for like interpolating sheet 4.67 vs 6.98 (smoothing sheet vs smoothing 1-D 4.33 vs 8.20) | results/p5_velocity_sheet_v2.json → results.22.block2.joint.own.summary.{sheet,sheet_tps_interp,seq_global_interp,seq_global}.err_dir.mean |
 | p1-zone title | hard-render half-frame transfer, three-seed means: 0.708 (block 1), −0.136 (4; seeds 1, 2 still positive 0.162, 0.154), −0.362 (6), −1.082 (7), −1.432 (8; all seeds negative at 7 and 8), 0.181 (9), 0.303 (10), 0.580 (12) | results/p1a_perpatch_hard_seeds.json → by_point[].cross_half_r2.{mean,per_seed} |
 | found notes (item 5) | acceleration beyond mean speed on decorrelated clips ≈0 (blocks 1–4), 0.37 (8), 0.79 (22); supplied clips start at rest | as Round 10 rows (results/p5_accel_decorrelated.json) |
+
+## QA #41 (fire at 21:47 ET)
+
+| Slide | Number | Source (file → key) |
+|---|---|---|
+| p2-compare line, notes | antipode, either 180° route: smoother MLP ordering 0.966 [0.957, 0.974] (via +90) / 0.975 (via −90); raw chord MLP ordering 0.666 / 0.688 per half; chord intermediate mass 0.360 / 0.370 (metric has a floor from endpoint scatter); radius floor 0.055 forced by linearity | results/p2_two_route_heldout_L22.json → over_arcs.antipode_in_arc.{via_plus90,via_minus90}.mlp_ordering; chord_raw.{mlp_ordering_plus_half,mlp_ordering_minus_half,probe_intermediate_mass_*_half,probe_radius_min} |
+| p2-compare footer | 16 seeds over 15 distinct arcs (seeds 4 and 8 draw the same arc, block 46); figure legend still says 16 arcs (QA #461) | results/p2_bakeoff_unified_16arc.json arcs |
+| p2-splines notes | smoother 44.19 vs chord 27.25 is not size: edit 0.62 vs 0.65 of the twin change; 39.13 at the chord's norm; encoder miss on this arc at block 22, 10.72 vs 3.59 at norms 12.40 vs 12.68 (QA #462) | results/session2_predictor_native_readout.json per_layer.22.{spline_smooth,chord} |
+| found notes | acceleration beyond mean speed per tubelet 0.53 at block 1 (pooled ≈0) (QA #464) | results/p5_accel_decorrelated.json timepool block 1 |
