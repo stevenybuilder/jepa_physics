@@ -42,7 +42,7 @@ the learned probe buys is specificity, not target error. Across model size (ViT-
 
 **One new thing.** Frame-wide edits at points ≤ 12 wash out within a few blocks and barely reach the predictor's forecast, though the same edit placed on the disk's tokens at block 12 does reach it (40.8° from target on the disk-plus-twin set, 44.7° on the source disk alone, 33.0° for the four-number edit, against 92.1° unedited; §4.5); point-22
 edits survive to the output, and along the point-22 path the forecast's heading code follows the intermediate
-directions along the spline and jumps along the chord (−13.4° paired, −31.3° at large shifts). This causal headline is
+directions along the spline and jumps along the chord (−13.4° paired, −31.3° at large shifts; §4.5, with size matched only at the endpoint). This causal headline is
 about the heading readout of the forecast, not the whole forecast: without the heading probe every block-22 edit leaves
 the forecast nearer the source's forecast than the twin's (forced choice ≤ 0.12), moving it a fifth to a quarter of the
 way (whole-forecast recovery 0.15–0.26; twin identification 0.31–0.33 against chance 0.25 and 0.92 for the real twin),
@@ -1061,7 +1061,11 @@ both points (point 12 on the stored label-free angle, point 22 on the labels ang
 clips per arc, an 11-waypoint walk, each arm at its own norm and rescaled per clip and per waypoint to the raw chord's
 norm; intervals are a clip bootstrap within arc (all targets of a clip together, 1000 draws) on the mean over arcs of
 per-arc means. It reproduces the stored FITPACK headline path radius exactly (min radius 0.8616 against 0.6289 for the
-raw chord at K = 50 on the headline arc, stored and recomputed identical to 1e-15; 0.865 / 0.632 at K = 11).
+raw chord at K = 50 on the headline arc, stored and recomputed identical to 1e-15; 0.865 / 0.632 at K = 11). Every chord-versus-spline number here is under our additive edit (the shift is added and each clip's residual kept,
+`src/wm/manifold.py:manifold_coords` mode "shift" and `linear_coords`); the paper's A.6 rule instead replaces the top-64
+PCs (manifold arm) or the whole activation (linear arm). Under the paper's rules over the 16 seeds[^epd] the paper's
+spline lands 4.83° off and the chord 1.63° at point 22 (chord ahead by 3.2°), and 6.80° against 1.50° at point 12 on the
+labels coordinate (5.3°), so the 0.8° gap and "only the knot-CV smoother edges it" hold for the additive rule only.
 
 | arm (own norm) | pt 12 endpoint err | pt 12 R | pt 12 radius min / mean | pt 22 endpoint err | pt 22 R | pt 22 radius min / mean |
 |---|---:|---:|---:|---:|---:|---:|
@@ -1078,7 +1082,10 @@ Paired against the raw chord (arm − chord, own norm): endpoint +27.9° [27.4, 
 +0.04° [−0.11, 0.18] at point 22. Minimum path radius: +0.21, +0.32, +0.27, +0.02, +0.03 at point 12 and +0.31,
 +0.33, +0.28, +0.02, −0.01 at point 22, every interval excluding zero except the probe arm's mean radius at 22.
 Monotone fraction: the three spline arms 0.84 / 1.00 / 1.00 at point 12 and ≥ 0.999 at point 22, the three straight
-arms 0.96–0.98. This resolves the path-radius caveat: the path advantage is a property of every curved arm, not of our
+arms 0.96–0.98. Through the predictor the same contrast holds along the path, not only in the encoder: the forecast's heading follows
+the intermediate directions for the spline and jumps for the chord (paired −13.4° [−15.7, −11.0], −31.3° at shifts
+≥ 135°, minimum forecast radius 0.26 against 0.53; §4.5), with size matched only at the endpoint. This resolves the
+path-radius caveat: the path advantage is a property of every curved arm, not of our
 FITPACK smoother alone, and the straight edit in polar-harmonic coordinates, which is among the best endpoint arms at own
 norm (4.75° against 4.12° for the probe-subspace steer at point 12; 3.68°, best, at point 22) but loses to the chord at the
 chord's norm at point 22 (+2.13° [1.94, 2.32]), has the chord's radius profile (it dips to 0.61–0.63 mid-path like the chord). Three qualifications. (i) At
@@ -1138,7 +1145,7 @@ higher-rank edits. **Strengths of the spline**: it closes around the circle and
 keeps intermediate states on the ring in its plane (not closer to real clips in 64-D; §4.3). Its coordinate can be found
 without labels only at point 12, through my centroid-plane fallback; Goodfire's own label-free angle fails its
 periodicity test there, and point-22 steering and session 2 at points 2, 8 and 22 use the labels (§4.1). **Limitations**:
-at held-out endpoints the paper's raw-centroid chord lands 1.5° / 2.3° closer than our smoothing spline over 16 arcs (5.0° / 7.0° on the headline arc), and it ties
+at held-out endpoints the paper's raw-centroid chord lands 1.5° / 2.3° closer than our smoothing spline over 16 arcs (5.0° / 7.0° on the headline arc) under our additive edit; under the paper's literal A.6 replacement rules on the headline arc our smoother reads 9.9° / 11.8° against 1.5° / 0.7° for the full-activation chord at points 12 / 22 (and over 16 seeds the paper's spline 4.83° against the chord's 1.63° at point 22)[^epd]; and it ties
 only the chord between its own smoothed knots; the interpolating version rebuilds held-out centroids worse
 than the smoothing one and edits 1.4–1.6× more than the chord (hence smoothing); on scalars it adds nothing inside the
 knots and, as a smoothing spline, trails the chord by 0.02–0.06 in extrapolation even continued along its end tangent as

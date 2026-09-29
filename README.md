@@ -69,11 +69,12 @@ clips. We score endpoint error and the readout radius along the path (REPORT §4
 
 **Endpoints and paths.** At held-out endpoints the raw chord lands closer than the paper's spline (0.8° at block 22)
 and our smoother (1.5° at block 12, 2.3° at block 22, over 16 seeds (15 arcs)); only the exploratory knot-cross-validated smoother
-edges it, by 0.4–0.5°. The curves win on the path: every curved arm keeps a higher readout radius, while the chord cuts
+edges it, by 0.4–0.5°. These comparisons use our additive edit; under the paper's A.6 replacement rules the chord's lead
+is larger (1.63° against 4.83° for the paper's spline at block 22). The curves win on the path: every curved arm keeps a higher readout radius, while the chord cuts
 across the ring's hollow (forced for any straight edit between near-opposite headings, so not evidence on its own). The
 evidence is the order: going either 180° route to the antipode at block 22, our smoother's readout on an independent MLP
-rises steadily from 2° to 178° along the path, while the raw chord's stays within 11° until halfway and then jumps to
-155–180° (REPORT §4.1, §4.3).
+rises steadily from 2° to 178° along the path, while the raw chord's stays within 11° until halfway and then climbs 11° → 17° → 65° → 155° over waypoints 24–27; a
+rank ordering cannot show such a jump (a perfect step still scores 0.866), so the per-waypoint offsets are the evidence (REPORT §4.1, §4.3).
 
 **Through the predictor.** Edits at block 12 spread over the whole frame are repaired by the encoder (79.7° from target
 against 92.1° unedited at natural size). The same edit on the disk's own tokens reaches the forecast (44.7°). At block
