@@ -320,3 +320,12 @@ Audit = re-derivation from pixels and feature files (scratchpad qa_accel/s2_supp
 | headline, found, p2-compare notes (p2-compare subtitle, found row "Curve steers heading") | block 22, all tokens, both edits at the twin's change size (median norm 19.07): spline vs chord forced choice 0.059 vs 0.094 (paired −0.035 [−0.052, −0.019]); recovery 0.186 vs 0.234 (−0.048 [−0.057, −0.040]); twin identification 0.331 vs 0.312 (+0.019 [+0.001, +0.037]); heading error 12.3° vs 25.7° (−13.4 [−15.6, −11.1]); n = 200 | results/session2_probefree_matched_size.json → matched.P22_natural.{spline,chord,spline_minus_chord}.{forced_choice_frac,recovery_full,twin_id_acc,heading_err_deg}; matched.P22_natural.edit_size.*.median (19.068) |
 | (not on slides; for Q&A) | block 12 disk tokens (union), matched size: spline − chord forced choice +0.087 [0.043, 0.126], twin ID −0.024 [−0.045, −0.003], heading +59.4°; at the spline's own size forced choice +0.034 [−0.016, 0.081] | matched.D12_natural_union.spline_minus_chord.*; ladder.D12.spline_minus_chord_all_pairs.forced_choice_frac |
 | limits notes | probe-free readouts reward edit size | ladder.P22 / ladder.D12 (rungs and chord_interp_at_spline_size) |
+
+## Round 13 (QA fire #37)
+
+| Slide | Number | Source (file → key) |
+|---|---|---|
+| p2-compare, found (singular "the spline", block 22) | Fourier-4 frame minus chord, block 22 heading error: +4.03° [2.28, 5.56] own size, +2.94° [1.01, 4.51] natural size (n = 200); the Fourier frame is worse than the chord | results/session2_fourier4_predictor.json → task1.paired.P22.{own,natural}.fourier_minus_chord.err |
+| limits notes | block 12, disk tokens (union), matched dose: spline heading 100.2° vs chord 40.8° (spline − chord +59.4° [53.2, 65.8]) while spline forced choice leads, 0.163 vs 0.075 (+0.087 [0.043, 0.126]) | results/session2_probefree_matched_size.json → matched.D12_natural_union.{spline,chord}.heading_err_deg.mean (100.24, 40.85); matched.D12_natural_union.spline_minus_chord.{heading_err_deg,forced_choice_frac} |
+| found, p2-compare notes | matched size (block 22): spline 12.3° vs chord 25.7° heading with recovery 0.186 vs 0.234; own size, separately: 11.3° vs 27.2° | matched.P22_natural.*; results/session2_fourier4_predictor.json → task1.table.P22.own.{spline,chord}.err_to_target.mean |
+| limits notes | cache mismatch now quoted on the twin-change scale only (median ≈ 7%, max ≈ 1.3 twin changes) | as Round 11 row (lead's QA #397 figures) |
