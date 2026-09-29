@@ -312,3 +312,11 @@ Audit = re-derivation from pixels and feature files (scratchpad qa_accel/s2_supp
 | limits notes | cache mismatch median 1.6% of the forecast's size ≈ 7% of a typical twin change; max ≈ 1.3 twin changes; ceiling 9.1° cached vs 9.26° recomputed | lead's QA #397 figures from REPORT §7 (not re-derived per key in this pass); supersedes the Round-QA#34 "1.6 percent of the twin change, at most 31" wording |
 | p2-variables notes | Cartesian (ax, ay), mean-pooled, speed and displacement regressed out: ≈0 through block 12 (−0.008 … −0.003), 0.174 at 16, 0.456 at 22; leave-one-cell-out signed a 0.42 / 0.53 / 0.83 at 8 / 12 / 22 | results/p5_accel_decorrelated_cartesian_loco.json → models.vjepa2.points.{1,4,8,9,12,16,22}.meanpool.per_clip_folds.cartesian.mean.r2; points.{8,12,22}.meanpool.leave_one_cell_out.signed_a.r2 (0.420, 0.533, 0.830) |
 | found notes, p2-shapes subtitle | frame wording: polar plus speed "fits best among hand-built frames"; no "native/own coordinate" | REPORT l.41; 4-D Fourier frame explains 0.33 / 0.29 of variance |
+
+## Round 12 (matched-size probe-free comparison)
+
+| Slide | Number | Source (file → key) |
+|---|---|---|
+| headline, found, p2-compare notes (p2-compare subtitle, found row "Curve steers heading") | block 22, all tokens, both edits at the twin's change size (median norm 19.07): spline vs chord forced choice 0.059 vs 0.094 (paired −0.035 [−0.052, −0.019]); recovery 0.186 vs 0.234 (−0.048 [−0.057, −0.040]); twin identification 0.331 vs 0.312 (+0.019 [+0.001, +0.037]); heading error 12.3° vs 25.7° (−13.4 [−15.6, −11.1]); n = 200 | results/session2_probefree_matched_size.json → matched.P22_natural.{spline,chord,spline_minus_chord}.{forced_choice_frac,recovery_full,twin_id_acc,heading_err_deg}; matched.P22_natural.edit_size.*.median (19.068) |
+| (not on slides; for Q&A) | block 12 disk tokens (union), matched size: spline − chord forced choice +0.087 [0.043, 0.126], twin ID −0.024 [−0.045, −0.003], heading +59.4°; at the spline's own size forced choice +0.034 [−0.016, 0.081] | matched.D12_natural_union.spline_minus_chord.*; ladder.D12.spline_minus_chord_all_pairs.forced_choice_frac |
+| limits notes | probe-free readouts reward edit size | ladder.P22 / ladder.D12 (rungs and chord_interp_at_spline_size) |
