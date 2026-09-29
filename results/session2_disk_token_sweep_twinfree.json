@@ -1,0 +1,366 @@
+{
+ "question": "QA #362: does the per-token dose (twin's ||h_twin[i] - h_src[i]||) carry the twin's geometry? Replace it with a twin-free profile from probe-split clips at the target angle (or all probe clips); direction, token set, forward, predictor and reader unchanged",
+ "n_carriers": 200,
+ "n_targets": 4,
+ "definitions": {
+  "doc": "Twin-free per-token dose for the source-disk chord edit (QA #362).\n\nsession2_disk_token_sweep.py (results/session2_disk_token_sweep.json) edits the source-disk token set (dilate(disk(src)),\ncontext tubelets 0-3) at point 12 along unit(chord12) with a per-token dose n_i = ||h_twin[i] - h_src[i]|| (44.7 deg to\ntarget) or a uniform dose mean_{set} n_i (65.8 deg). The per-token profile comes from the carrier's own twin, so the\ntwin's geometry (where its disk goes) can enter through the dose. This adds twin-free dose profiles:\n\n  p_bin[i] = mean over probe-split clips k with theta_k == target (7-8 clips; carriers are test-split rows, never in the\n             probe split) of ||h_k[i] - h_src[i]||  (context-only encoding, point 12; never the carrier's twin)\n  p_all[i] = the same mean over all 480 probe-split clips (no target information at all)\nArms (all: direction unit(chord12), token set src, point 12, same forward / predictor / reader as the stored arms)\n  src_chord_1x              per-token twin dose (rerun of the stored arm; parity + pairing)\n  src_chord_uniform         uniform dose mean_{set} n_i (rerun)\n  src_chord_twinfree_bin    p_bin rescaled so its set mean = mean_{set} n_i (the uniform arm's one twin scalar):\n                            twin-free SHAPE at the same total dose as the uniform and per-token arms\n  src_chord_twinfree_all    p_all rescaled the same way\n  src_chord_twinfree_bin_raw  p_bin as is (twin-free shape AND magnitude)\nReaders: predictor-native direction probe on the step-mean pooled forecast, err to target (deg, mean over the 4 targets\nper carrier), R; CI = bootstrap over carriers (run_session2.boot_ci, 1000, seed 0), paired differences likewise.",
+  "err_to_target": "predictor-native probe, step-mean forecast, mean over 4 targets per carrier (deg); CI = bootstrap over carriers, 1000 draws, seed 0",
+  "frac_of_uniform_to_pertoken_gap_recovered": "(err_uniform - err_twinfree) / (err_uniform - err_pertoken), ratio of carrier means, carrier bootstrap"
+ },
+ "table": {
+  "src_chord_1x": {
+   "dose": "pertoken",
+   "direction": "chord12",
+   "token_set": "src",
+   "point": 12,
+   "err_to_target": {
+    "mean": 44.65726960458597,
+    "ci95": [
+     38.83919567405141,
+     50.4491699154492
+    ],
+    "n": 200
+   },
+   "R": {
+    "mean": 0.602414691776557,
+    "ci95": [
+     0.5547371811508641,
+     0.6484560411977953
+    ],
+    "n": 200
+   },
+   "edited_tokens_median": 76.0,
+   "per_token_dose_mean_median": 56.7403564453125,
+   "edit_energy_median": 287800.625,
+   "meanpool_shift_median": 4.099449157714844
+  },
+  "src_chord_uniform": {
+   "dose": "uniform",
+   "direction": "chord12",
+   "token_set": "src",
+   "point": 12,
+   "err_to_target": {
+    "mean": 65.76579022722964,
+    "ci95": [
+     58.957896642061485,
+     72.3343295808235
+    ],
+    "n": 200
+   },
+   "R": {
+    "mean": 0.4320499485221642,
+    "ci95": [
+     0.39107135114225555,
+     0.4721429933148331
+    ],
+    "n": 200
+   },
+   "edited_tokens_median": 76.0,
+   "per_token_dose_mean_median": 56.7403564453125,
+   "edit_energy_median": 237784.984375,
+   "meanpool_shift_median": 4.099449634552002
+  },
+  "src_chord_twinfree_bin": {
+   "dose": "bin_matched",
+   "direction": "chord12",
+   "token_set": "src",
+   "point": 12,
+   "err_to_target": {
+    "mean": 49.55320019775055,
+    "ci95": [
+     43.49537849157232,
+     55.45875054634193
+    ],
+    "n": 200
+   },
+   "R": {
+    "mean": 0.5746131414945626,
+    "ci95": [
+     0.5237185471633419,
+     0.6260262745150715
+    ],
+    "n": 200
+   },
+   "edited_tokens_median": 76.0,
+   "per_token_dose_mean_median": 56.7403564453125,
+   "edit_energy_median": 268380.0,
+   "meanpool_shift_median": 4.099449634552002
+  },
+  "src_chord_twinfree_all": {
+   "dose": "all_matched",
+   "direction": "chord12",
+   "token_set": "src",
+   "point": 12,
+   "err_to_target": {
+    "mean": 49.49228669414342,
+    "ci95": [
+     43.41476953260901,
+     55.408992939208325
+    ],
+    "n": 200
+   },
+   "R": {
+    "mean": 0.575589256543156,
+    "ci95": [
+     0.524453940508254,
+     0.6274663534697548
+    ],
+    "n": 200
+   },
+   "edited_tokens_median": 76.0,
+   "per_token_dose_mean_median": 56.7403564453125,
+   "edit_energy_median": 267611.25,
+   "meanpool_shift_median": 4.09945011138916
+  },
+  "src_chord_twinfree_bin_raw": {
+   "dose": "bin_raw",
+   "direction": "chord12",
+   "token_set": "src",
+   "point": 12,
+   "err_to_target": {
+    "mean": 44.998502760275876,
+    "ci95": [
+     39.531845334444384,
+     50.628869379396434
+    ],
+    "n": 200
+   },
+   "R": {
+    "mean": 0.7949012473062611,
+    "ci95": [
+     0.6938908610249127,
+     0.8982549579689321
+    ],
+    "n": 200
+   },
+   "edited_tokens_median": 76.0,
+   "per_token_dose_mean_median": 73.64961242675781,
+   "edit_energy_median": 460462.75,
+   "meanpool_shift_median": 5.433732986450195
+  }
+ },
+ "paired": {
+  "twinfree_bin_minus_pertoken": {
+   "mean": 4.895930593164581,
+   "ci95": [
+    3.6766953359068575,
+    6.277180013638625
+   ],
+   "n": 200
+  },
+  "twinfree_bin_minus_uniform": {
+   "mean": -16.21259002947909,
+   "ci95": [
+    -20.338922506722145,
+    -12.393051004108246
+   ],
+   "n": 200
+  },
+  "twinfree_all_minus_pertoken": {
+   "mean": 4.835017089557442,
+   "ci95": [
+    3.6244945939083006,
+    6.207551911078303
+   ],
+   "n": 200
+  },
+  "twinfree_all_minus_uniform": {
+   "mean": -16.27350353308623,
+   "ci95": [
+    -20.44420410877795,
+    -12.466914356105663
+   ],
+   "n": 200
+  },
+  "twinfree_bin_minus_twinfree_all": {
+   "mean": 0.060913503607139215,
+   "ci95": [
+    -0.08433889405134692,
+    0.22822214555197798
+   ],
+   "n": 200
+  },
+  "twinfree_bin_raw_minus_pertoken": {
+   "mean": 0.34123315568990686,
+   "ci95": [
+    -2.238909458011446,
+    2.9459865156886487
+   ],
+   "n": 200
+  },
+  "twinfree_bin_raw_minus_uniform": {
+   "mean": -20.76728746695377,
+   "ci95": [
+    -26.00715920081883,
+    -15.584984389709842
+   ],
+   "n": 200
+  },
+  "uniform_minus_pertoken": {
+   "mean": 21.108520622643674,
+   "ci95": [
+    17.09902548506303,
+    25.577872124596905
+   ],
+   "n": 200
+  }
+ },
+ "frac_of_uniform_to_pertoken_gap_recovered": {
+  "bin": {
+   "ratio": 0.7680590373579953,
+   "ci95": [
+    0.7002964797104066,
+    0.8231553373070628
+   ]
+  },
+  "all": {
+   "ratio": 0.770944767944998,
+   "ci95": [
+    0.7069437636246712,
+    0.8250619134039782
+   ]
+  }
+ },
+ "profile_vs_twin_dose_pearson_over_set_tokens": {
+  "p_bin_median": 0.5791964530944824,
+  "p_all_median": 0.5787213444709778
+ },
+ "stored_arms_copied": {
+  "src_chord_1x": {
+   "mean": 44.65725977326184,
+   "ci95": [
+    38.83918911354995,
+    50.44915868617053
+   ],
+   "n": 200
+  },
+  "src_chord_uniform": {
+   "mean": 65.76578577931409,
+   "ci95": [
+    58.95789224676494,
+    72.3343227566917
+   ],
+   "n": 200
+  },
+  "union_chord_1x": {
+   "mean": 40.84678422878539,
+   "ci95": [
+    35.567821310641044,
+    46.26954748816345
+   ],
+   "n": 200
+  }
+ },
+ "stored_references": {
+  "unedited_err": {
+   "mean": 92.1359196651028,
+   "ci95": [
+    84.91964632446592,
+    98.66836577454721
+   ],
+   "n": 200
+  },
+  "twin_ceiling_err": {
+   "mean": 9.107052529406685,
+   "ci95": [
+    8.14834474355287,
+    10.094900883830324
+   ],
+   "n": 200
+  }
+ },
+ "parity_rerun_vs_stored_sweep": {
+  "src_chord_1x": {
+   "forecast_rel_maxabs": 1.256360064871842e-06,
+   "stored_err_mean": 44.65725977326184,
+   "rerun_err_mean": 44.65726960458597,
+   "shard": "box2"
+  },
+  "src_chord_uniform": {
+   "forecast_rel_maxabs": 1.338406377726642e-06,
+   "stored_err_mean": 65.76578577931409,
+   "rerun_err_mean": 65.76579022722964,
+   "shard": "box2"
+  }
+ },
+ "forward": {
+  "seconds": 567.1854331493378,
+  "seconds_probe_encode": 70.2450692653656,
+  "lock_wait_seconds": 1.1205673217773438e-05,
+  "n_carriers": 200,
+  "arms": [
+   [
+    "src_chord_1x",
+    "pertoken"
+   ],
+   [
+    "src_chord_uniform",
+    "uniform"
+   ],
+   [
+    "src_chord_twinfree_bin",
+    "bin_matched"
+   ],
+   [
+    "src_chord_twinfree_all",
+    "all_matched"
+   ],
+   [
+    "src_chord_twinfree_bin_raw",
+    "bin_raw"
+   ]
+  ],
+  "point": 12,
+  "n_probe": 480,
+  "bin_sizes": {
+   "303.75": 8,
+   "309.375": 8,
+   "315.0": 8,
+   "320.625": 8,
+   "326.25": 8,
+   "331.875": 8,
+   "337.5": 8,
+   "343.125": 7
+  },
+  "probe_cache_dtype": "float16",
+  "deltas_sha256": "b646018d7aa94933c819f2a73cba8cfd09b5b831fef640dec162b150d52f059c",
+  "plan_sha256": "2531e7a67f305c40f9747f495034d055c7a989a054d6ff6ba136504dddb8bb2d",
+  "batch_size": 12,
+  "torch_threads": 4,
+  "script_sha256": "1f5202a5326b8d6855692b31fa02d98c995e91da646e9208d51d16f4b11f5464",
+  "gpu": "NVIDIA GeForce RTX 4060 Ti",
+  "torch": "2.2.2"
+ },
+ "provenance": {
+  "split_file": "/Users/stevenyang/Documents/world_mechanics_takehome/splits/split_v1.json",
+  "split_sha256": "98e6310c40bf29e81bd8b6bf4b1ac603b89e4104d40ac1047b15dd5dc2be2df2",
+  "seeds": {
+   "bootstrap": 0
+  },
+  "commit": "3025adc86ddeaf429fb031feeb04672b82e88ca2",
+  "dirty": true,
+  "git_commit": "3025adc86ddeaf429fb031feeb04672b82e88ca2",
+  "git_dirty_src_or_scripts": true,
+  "timestamp_utc": "2026-09-28T23:55:56+00:00",
+  "stage": "disk_token_sweep_twinfree_score",
+  "caches": {
+   "twinfree_pred_npz": "92fab02e8591b2cb126521ae1d109365e1db6670c048f0c0d46df019e8babff2",
+   "twinfree_forward_info_json": "8a9c353a125333fd71243c51003713ff4fe4e4ef2f47d554df08eff4c7834c8f",
+   "sweep_deltas_npz": "b646018d7aa94933c819f2a73cba8cfd09b5b831fef640dec162b150d52f059c",
+   "twinfree_plan_npz": "2531e7a67f305c40f9747f495034d055c7a989a054d6ff6ba136504dddb8bb2d",
+   "stored_sweep_json": "6f683346d9482226d38f9d529c98f1412e4980bbb62c67706f7bf4da75571806"
+  },
+  "script": "scripts/session2_disk_token_sweep_twinfree.py",
+  "script_sha256": "1f5202a5326b8d6855692b31fa02d98c995e91da646e9208d51d16f4b11f5464",
+  "forward_script_sha256": "1f5202a5326b8d6855692b31fa02d98c995e91da646e9208d51d16f4b11f5464",
+  "box": {
+   "instance": "53255833",
+   "label": "box 5",
+   "gpu": "NVIDIA GeForce RTX 4060 Ti"
+  },
+  "gpu_seconds": {
+   "this_forward": 567.1854331493378,
+   "smoke": 80.35382318496704
+  }
+ }
+}
