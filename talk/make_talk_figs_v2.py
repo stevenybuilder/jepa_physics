@@ -364,7 +364,7 @@ def bakeoff_unified():
     axes[0].set_yticks(ys)
     axes[0].set_yticklabels([l for _, l, _ in arms], fontsize=FS)
     axes[1].tick_params(axis="y", length=0)
-    f.text(0.98, 0.02, "whiskers: across 16 arcs · filled: keeps ≥0.8 of the heading on the way · *exploratory",
+    f.text(0.98, 0.02, "whiskers: across 16 seeds, 15 arcs · filled: keeps ≥0.8 of the heading on the way · *exploratory",
            ha="right", fontsize=FS - 2, color=SOFT)
     f.subplots_adjust(left=0.24, right=0.98, top=0.96, bottom=0.27)
     save(f, "fig_bakeoff_unified.png")

@@ -1,6 +1,6 @@
 # Visible numbers in slides_v2
 
-The cites slide shows paper years only, from papers.md → "Slide citations".
+The cites slide shows paper years only, from the "Slide citations" section of our reading list (not included).
 
 Every number shown on a slide, with the file and key it was read from. Numbers inside figures are drawn from the same files by `talk/make_talk_figs.py`. Speaker-note numbers are sourced in each `<aside>`.
 
@@ -400,7 +400,7 @@ Audit = re-derivation from pixels and feature files (scratchpad qa_accel/s2_supp
 | p1-zone title, alt, notes | half-frame transfer per seed: block 1 0.69 / 0.73 / 0.71; blocks 7 and 8 negative on all three seeds; block 9 0.077 / 0.385 / 0.082 (mean 0.18, chance); mean 0.58 at 12, 0.76 at 22; block 4 +0.16 / +0.15 on seeds 1, 2 (QA #466) | results/p1a_perpatch_hard_seeds.json → by_point[].cross_half_r2.per_seed |
 | p1-zone footer, notes | partial reproduction: supplied clips transfer 0.82 at point 1 rising to 0.95 with no dip; untrained 0.61 → 0.74 (QA #467); MAE 56° vs 11° offset caveat (QA #468); per-patch R² 0.95 vs the paper's Table 4 0.72 (QA #469) | results/p1a_perpatch_direction_vjepa2.json, results/p1a_perpatch_direction_random.json; REPORT §3.1 |
 | headline caption, line | 11.3° = interpolating spline (Goodfire A.3, language-task recipe); 44.2° = our smoother on their B.1 world-model recipe (QA #472) | results/session2_predictor_native_readout.json per_layer.22.{spline,spline_smooth} |
-| papers column, notes | Musa et al. 2026 (Joseph's group): spline steering inside V-JEPA 2, in sample (QA #471); §7 l.390–395 poses the use question; §6.3 tests how the code forms (QA #470) | refs/physics_paper.txt; lit_review.md l.15, l.385 |
+| papers column, notes | Musa et al. 2026 (Joseph's group): spline steering inside V-JEPA 2, in sample (QA #471); §7 l.390–395 poses the use question; §6.3 tests how the code forms (QA #470) | refs/physics_paper.txt; literature review notes (not included) |
 
 ## QA #43 (fire at 22:19 ET)
 
@@ -424,3 +424,11 @@ Audit = re-derivation from pixels and feature files (scratchpad qa_accel/s2_supp
 | p2-compare line, notes | chord_raw MLP offset by waypoint (antipode route): 10.6°, 16.6°, 64.9°, 154.6° at waypoints 24–27; spline 2.5° → 177.7° monotone (QA #483) | results/p2_two_route_heldout_L22.json per_waypoint.antipode_in_arc.chord_raw.mlp_offset_circmean; via_plus90 |
 | p2-compare notes; headline notes | all deck edits additive (shift + residual kept); under the paper's A.6 replace rule over 16 seeds the chord leads the paper's spline 1.63 vs 4.83 (3.2°) at block 22 and 1.50 vs 6.80 (5.3°) at block 12 (QA #482) | results/p2_endpoint_diagnosis.json decomposition.*.paper_protocol |
 | p2-compare notes | along-path forecast: spline − chord −13.40° [−15.66, −10.99]; min forecast radius 0.528 spline vs 0.258 chord; size matched at the endpoint only (QA #484) | results/session2_predictor_along_path.json |
+
+## Deck v77 (28 Sep, late): tables simplified on the user's request
+
+| Slide | Change | Source |
+|---|---|---|
+| p2-variables | cells are now one key only (● yes · ◐ in part · ○ no · — not tested); no coloured words. Speed and acceleration "moves the forecast" ◐ (speed code moves, disk does not; acceleration 1.82 vs 3.46 unedited, twin 0.83); Position —; Contact steerable ○ (heading control 0.77 vs 0.48), forecast ◐ (seen bounce 0.84, none anticipated); Frame count ○ | same rows as above (#197, #226, #238, #258, #266) |
+| cites | rebuilt as a three-column grid (paper, title, used here for); no numbers | — |
+| p2-compare | bake-off figure regenerated with legend "across 16 seeds, 15 arcs" (seeds 4 and 8 coincide); new blob 2254de541a0522e8a4667a6460791d07; alt text and limits notes say 16 seeds over 15 arcs | results/p2_bakeoff_unified_16arc.json (unchanged) |
