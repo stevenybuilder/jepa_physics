@@ -12,7 +12,7 @@ forecast. Curved edits keep the heading on the way; straight edits land as close
 <p align="center"><img src="talk/figures_v2/fig_read_vs_use.png" width="820" alt="Top: per-patch direction R² by block. Bottom: forecast heading error after an edit at each block; only the block-22 edit moves the forecast."></p>
 
 - Full write-up with every number and its source file: [REPORT.md](REPORT.md)
-- 15-minute talk (27 slides, speaker notes): https://claude.ai/artifact/JdPJ1Yig3LpL5KntZCJo88
+- 15-minute talk (28 slides, speaker notes): https://claude.ai/artifact/JdPJ1Yig3LpL5KntZCJo88
 - Every reported number is in `results/*.json`; the talk's numbers are indexed in [talk/slides_v2/NUMBERS.md](talk/slides_v2/NUMBERS.md)
 
 ## Getting started

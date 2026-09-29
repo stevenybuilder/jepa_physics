@@ -1,6 +1,6 @@
 # Talk
 
-The 27-slide deck for the 15-minute presentation (README deliverable).
+The 28-slide deck for the 15-minute presentation (README deliverable).
 
 - `deck_v2.json`: slide order and sections.
 - `slides_v2/*.html`: one slide per file, speaker notes in `<aside>`.
