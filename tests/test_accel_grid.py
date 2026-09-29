@@ -95,3 +95,40 @@ def test_abs_of_signed_recovers_magnitude_from_a_signed_code():
     X = a[:, None] * rng.standard_normal(20) + 0.1 * rng.standard_normal((n, 20))
     p = ag.abs_of_signed_oof(X, a, folds)
     assert ag.r2(np.abs(a), p) > 0.9
+
+
+def test_loco_folds_never_share_a_cell_between_train_and_test():
+    plan = ag.design(per_cell=6, seed=0)
+    cells = [tuple(c["cell"]) for c in plan]
+    f = ag.loco_folds(cells)
+    assert f.max() + 1 == len(ag.GRID_M) * len(ag.GRID_A)
+    for k in np.unique(f):
+        te = {c for c, g in zip(cells, f) if g == k}
+        tr = {c for c, g in zip(cells, f) if g != k}
+        assert len(te) == 1 and not te & tr
+
+
+def test_cartesian_targets_and_partial_scores():
+    a, th = np.array([2.0, -1.0]), np.array([90.0, 0.0])
+    ax, ay = ag.cartesian_targets(a, th)
+    assert np.allclose(ax, [0, -1]) and np.allclose(ay, [2, 0])
+    rng = np.random.default_rng(3)
+    plan = ag.design(per_cell=12, seed=0)
+    a = np.array([c["acceleration_mps2"] for c in plan])
+    m = np.array([c["mean_speed_mps"] for c in plan])
+    th = np.array([c["theta_degrees"] for c in plan])
+    ax, ay = ag.cartesian_targets(a, th)
+    X = np.column_stack([ax, ay, m]) @ rng.standard_normal((3, 30)) + 0.05 * rng.standard_normal((len(a), 30))
+    r = ag.partial_targets_scores(X, a, th, np.column_stack([m, m * ag.T_CLIP]),
+                                  ag.loco_folds([c["cell"] for c in plan]), nb=100)
+    assert r["cartesian"]["mean"]["r2"] > 0.9 and r["signed_a"]["r2"] < 0.2
+
+
+def test_cellblock_ci_is_wider_when_clips_in_a_cell_share_error():
+    rng = np.random.default_rng(4)
+    cells = [(i, 0) for i in range(20) for _ in range(12)]
+    y = rng.standard_normal(240)
+    p = y + np.repeat(rng.standard_normal(20), 12)                  # error shared within each cell
+    cb = ag.cellblock_ci([y], [p], cells, nb=300)["components"][0]
+    clip = ag.boot_r2(y, p, nb=300)["ci95"]
+    assert cb[1] - cb[0] > clip[1] - clip[0]

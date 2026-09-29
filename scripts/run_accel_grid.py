@@ -21,8 +21,10 @@ initial speed v0 = m - 0.3125 a, final speed v(0.625 s) = m + 0.3125 a, both > 0
                        speed sequence) -> results/p5_accel_decorrelated.json, figures/fig_accel_decorrelated.png.
   magnitude (Mac, CPU) QA #358: |a| (the paper's target) beside signed a, ridge plain and with mean speed +
                        displacement partialled, same folds / bootstrap -> results/p5_accel_decorrelated_magnitude.json.
+  cartloco (Mac, CPU)  QA #383/#384: Cartesian (ax, ay), signed a and |a|, partialled ridge, under the per-clip folds
+                       and leave-one-cell-out -> results/p5_accel_decorrelated_cartesian_loco.json.
 
-  python scripts/run_accel_grid.py render|extract|score|magnitude [--out artifacts/accel_grid] [--n-smoke 8]
+  python scripts/run_accel_grid.py render|extract|score|magnitude|cartloco [--out artifacts/accel_grid] [--n-smoke 8]
 """
 import argparse
 import json
@@ -260,6 +262,77 @@ def abs_of_signed_oof(X, a, folds):
             inner[ite] = _ridge(X[tr[~ite]], a[tr[~ite]]).predict(X[tr[ite]])
         c = np.polyfit(np.abs(inner), np.abs(a[tr]), 1)
         out[te] = np.polyval(c, np.abs(_ridge(X[tr], a[tr]).predict(X[te])))
+    return out
+
+
+def loco_folds(cells):
+    """Leave-one-cell-out: fold id = design-cell index, so every clip of a (mean speed, a) cell is held out
+    together and the test cell's (m, a) combination is never seen in training (QA #384)."""
+    keys = sorted({tuple(c) for c in cells})
+    return np.array([keys.index(tuple(c)) for c in cells])
+
+
+def cartesian_targets(a, theta_deg):
+    """Cartesian acceleration (ax, ay) = a (cos th, sin th): the paper's Table 1 acceleration target (QA #383)."""
+    th = np.radians(np.asarray(theta_deg, float))
+    return np.asarray(a, float) * np.cos(th), np.asarray(a, float) * np.sin(th)
+
+
+def boot_r2_multi(ys, ps, nb=NB, seed=0):
+    """Per-component R^2 and their mean, with 95% CIs from shared clip-bootstrap draws."""
+    rng = np.random.default_rng(seed)
+    ys, ps = [np.asarray(y, float) for y in ys], [np.asarray(q, float) for q in ps]
+    n, draws = len(ys[0]), []
+    for _ in range(nb):
+        i = rng.integers(0, n, n)
+        draws.append([r2(y[i], q[i]) for y, q in zip(ys, ps)])
+    draws = np.array(draws)
+    point = [r2(y, q) for y, q in zip(ys, ps)]
+    ci = lambda x: [float(v) for v in np.percentile(x, [2.5, 97.5])]                     # noqa: E731
+    return {"components": [{"r2": point[k], "ci95": ci(draws[:, k])} for k in range(len(ys))],
+            "mean": {"r2": float(np.mean(point)), "ci95": ci(draws.mean(1))}}
+
+
+NB_CELL = 1000
+
+
+def cellblock_ci(ys, ps, cells, nb=NB_CELL, seed=0):
+    """95% CI of R^2 (per component and their mean) under a cell-block bootstrap: resample the design cells with
+    replacement and take all clips of each drawn cell (the clips of a cell are not independent). ys/ps: lists."""
+    rng = np.random.default_rng(seed)
+    keys = sorted({tuple(c) for c in cells})
+    idx = [np.flatnonzero([tuple(c) == k for c in cells]) for k in keys]
+    ys, ps = [np.asarray(y, float) for y in ys], [np.asarray(q, float) for q in ps]
+    draws = []
+    for _ in range(nb):
+        i = np.concatenate([idx[j] for j in rng.integers(0, len(keys), len(keys))])
+        draws.append([r2(y[i], q[i]) for y, q in zip(ys, ps)])
+    draws = np.array(draws)
+    ci = lambda x: [float(v) for v in np.percentile(x, [2.5, 97.5])]                     # noqa: E731
+    return {"components": [ci(draws[:, k]) for k in range(len(ys))], "mean": ci(draws.mean(1))}
+
+
+def partial_targets_scores(X, a, theta_deg, nuis, folds, nb=NB, seed=0, cells=None, keep=None):
+    """Partialled ridge (mean speed + displacement out of features and target inside each training fold) for signed
+    a, |a| and Cartesian (ax, ay) under a given fold assignment."""
+    ax, ay = cartesian_targets(a, theta_deg)
+    out, cart = {}, []
+    for name, y in (("signed_a", a), ("abs_a", np.abs(a)), ("ax", ax), ("ay", ay)):
+        yr, pr = partial_ridge_oof(X, y, nuis, folds)
+        if keep is not None:
+            keep[name] = np.stack([yr, pr])
+        if name in ("ax", "ay"):
+            cart.append((yr, pr))
+        else:
+            out[name] = boot_r2(yr, pr, nb, seed)
+            if cells is not None:
+                out[name]["ci95_cellblock"] = cellblock_ci([yr], [pr], cells)["components"][0]
+    out["cartesian"] = boot_r2_multi([c[0] for c in cart], [c[1] for c in cart], nb, seed)
+    if cells is not None:
+        cb = cellblock_ci([c[0] for c in cart], [c[1] for c in cart], cells)
+        for k in range(2):
+            out["cartesian"]["components"][k]["ci95_cellblock"] = cb["components"][k]
+        out["cartesian"]["mean"]["ci95_cellblock"] = cb["mean"]
     return out
 
 
@@ -572,6 +645,125 @@ def magnitude(args):
     print("wrote", args.result)
 
 
+def _cartloco_cell(out, model, L, oof_dir=None):
+    info, clips, a, m, v0, disp, S_true, folds = _load_plan(out)
+    th = np.array([c["theta_degrees"] for c in clips])
+    lf = loco_folds([c["cell"] for c in clips])
+    feat = np.load(Path(out) / f"feat_{model}.npz")
+    n, t0 = len(a), time.time()
+    X = {"meanpool": np.asarray(feat["meanpool"][:, L], np.float64),
+         "timepool": np.asarray(feat["timepool"][:, L], np.float64).reshape(n, -1)}
+    nuis = np.column_stack([m, disp])
+    cells = [c["cell"] for c in clips]
+    r, keep = {}, {}
+    for k, v in X.items():
+        r[k] = {}
+        for cv, fo in (("per_clip_folds", folds), ("leave_one_cell_out", lf)):
+            kp = {}
+            r[k][cv] = partial_targets_scores(v, a, th, nuis, fo, cells=cells, keep=kp)
+            keep.update({f"{k}__{cv}__{t}": arr for t, arr in kp.items()})
+    if oof_dir:
+        np.savez(Path(oof_dir) / f"oof_{model}_L{L}.npz", **keep)
+    print(model, L, f"{time.time() - t0:.0f}s", {k: {cv: (round(w["signed_a"]["r2"], 3), round(w["abs_a"]["r2"], 3),
+                                                          round(w["cartesian"]["mean"]["r2"], 3)) for cv, w in v.items()}
+                                                  for k, v in r.items()}, flush=True)
+    return model, L, r
+
+
+def cartloco(args):
+    """QA #383 (Cartesian acceleration, the paper's Table 1 target) and #384 (leave-one-cell-out CV) ->
+    results/p5_accel_decorrelated_cartesian_loco.json."""
+    import os
+    from joblib import Parallel, delayed
+    from wm.provenance import provenance, sha256_file
+    out = Path(args.out)
+    pts = [int(p) for p in args.points.split(",")] if args.points else list(POINTS)
+    models = args.models.split(",")
+    info, clips, a, m, v0, disp, S_true, folds = _load_plan(out)
+    th = np.array([c["theta_degrees"] for c in clips])
+    ax, ay = cartesian_targets(a, th)
+    lf = loco_folds([c["cell"] for c in clips])
+    cells = Parallel(n_jobs=args.jobs)(delayed(_cartloco_cell)(out, mo, L, args.oof_dir) for mo in models for L in pts)
+    corr = lambda x, y: float(np.corrcoef(x, y)[0, 1])                                   # noqa: E731
+    res = {"n_clips": len(a), "qa": ["#383", "#384"],
+           "design_correlations": {"ax~mean_speed": corr(ax, m), "ay~mean_speed": corr(ay, m), "ax~ay": corr(ax, ay),
+                                   "ax~signed_a": corr(ax, a), "ay~signed_a": corr(ay, a)},
+           "folds": {"per_clip_folds": {"k": N_FOLDS, "rule": "folds_by_cell(seed 0), the signed run's folds: each "
+                                        "clip its own group, each cell's clips spread over the 5 folds"},
+                     "leave_one_cell_out": {"k": int(lf.max() + 1), "rule": "loco_folds: hold out all 12 clips of one "
+                                            "(mean speed, a) cell; R^2 on the pooled out-of-fold predictions"}},
+           "models": {mo: {"points": {}} for mo in models}}
+    for mo, L, r in cells:
+        res["models"][mo]["points"][str(L)] = r
+    res["keys"] = {
+        "models[m].points[L].{meanpool,timepool}.{per_clip_folds,leave_one_cell_out}": "ridge with mean speed and "
+            "displacement OLS-regressed out of features and target on the training folds (test rows residualised with "
+            "train coefficients), R^2 of the held-out residual target, 95% clip bootstrap (2,000 draws, seed 0). "
+            "signed_a reproduces the signed run's ridge_a_partial_mean_speed_displacement under per_clip_folds.",
+        "cartesian": "ax = a cos(theta), ay = a sin(theta), each ridge-read separately; components [ax, ay] and their "
+                     "mean, CIs from shared bootstrap draws",
+        "inner_alpha_cv": "ridge alpha chosen by 5-fold KFold(shuffle, seed 0) over the training clips in both schemes "
+                          "(not grouped by cell), as run_accel_grid._ridge"}
+    res["provenance"] = provenance(
+        seeds={"design": 0, "folds": 0, "bootstrap": 0, "ridge_inner_cv_kfold": 0, "random_init_torch_manual_seed": 0},
+        points=pts, script="scripts/run_accel_grid.py (stage cartloco)",
+        script_sha256=sha256_file(Path(__file__)), plan_sha256=sha256_file(out / "plan.json"),
+        feature_sha256={f"feat_{mo}.npz": sha256_file(out / f"feat_{mo}.npz") for mo in models},
+        threads=os.environ.get("OMP_NUM_THREADS"), compute="Mac CPU, features already on disk; no GPU")
+    res["keys"]["ci95_cellblock"] = ("95% CI from a cell-block bootstrap: 1,000 draws (seed 0) resampling the 20 "
+                                     "(mean speed, a) cells with replacement, all 12 clips of each drawn cell, over "
+                                     "the same pooled out-of-fold predictions as ci95 (clip bootstrap)")
+    res["provenance"]["seeds"]["cellblock_bootstrap"] = 0
+    res["provenance"]["oof_predictions_dir"] = args.oof_dir
+    Path(args.result).write_text(json.dumps(res, indent=1))
+    print("wrote", args.result)
+    if args.oof_dir:
+        cellboot_supplement(args, pts, models)
+
+
+def cellboot_supplement(args, pts, models):
+    """Cell-block CIs for the magnitude stage's partialled signed a and |a| scores, from the saved per-clip-fold
+    OOF predictions (the magnitude stage's ridge_partial_mean_speed_displacement; identical fits) ->
+    results/p5_accel_decorrelated_cellboot.json."""
+    from wm.provenance import provenance, sha256_file
+    out = Path(args.out)
+    info, clips, a, m, v0, disp, S_true, folds = _load_plan(out)
+    cells = [c["cell"] for c in clips]
+    mag = json.loads((PROJECT_ROOT / "results" / "p5_accel_decorrelated_magnitude.json").read_text())
+    res = {"n_clips": len(a), "n_cells": len({tuple(c) for c in cells}), "qa": "acceleration audit: cell-block CIs",
+           "models": {mo: {"points": {}} for mo in models}}
+    for mo in models:
+        for L in pts:
+            z = np.load(Path(args.oof_dir) / f"oof_{mo}_L{L}.npz")
+            res["models"][mo]["points"][str(L)] = cell = {}
+            for pool in ("meanpool", "timepool"):
+                cell[pool] = {}
+                for t in ("signed_a", "abs_a"):
+                    yr, pr = z[f"{pool}__per_clip_folds__{t}"]
+                    ref = mag["models"][mo]["points"][str(L)][pool][t]["ridge_partial_mean_speed_displacement"]
+                    assert abs(r2(yr, pr) - ref["r2"]) < 1e-9, (mo, L, pool, t)
+                    cell[pool][t] = {"ridge_partial_mean_speed_displacement": {
+                        "r2": ref["r2"], "ci95_clip": ref["ci95"],
+                        "ci95_cellblock": cellblock_ci([yr], [pr], cells)["components"][0]}}
+    res["keys"] = {"ridge_partial_mean_speed_displacement": "the magnitude stage's (and, for signed_a, the signed "
+                   "run's) partialled ridge under the per-clip folds; r2 and ci95_clip copied from "
+                   "p5_accel_decorrelated_magnitude.json after asserting the refit OOF predictions reproduce r2; "
+                   "ci95_cellblock: 1,000 draws (seed 0) over the 20 cells",
+                   "not_covered": "plain ridge, abs_a_from_abs_signed_ridge, MLP readouts and the signed run's "
+                                  "decoded-speed readouts: their OOF predictions were not saved and need a refit"}
+    res["provenance"] = provenance(
+        seeds={"design": 0, "folds": 0, "cellblock_bootstrap": 0}, points=pts,
+        script="scripts/run_accel_grid.py (stage cartloco, cellboot_supplement)",
+        script_sha256=sha256_file(Path(__file__)), plan_sha256=sha256_file(out / "plan.json"),
+        feature_sha256={f"feat_{mo}.npz": sha256_file(out / f"feat_{mo}.npz") for mo in models},
+        source_result_sha256={"p5_accel_decorrelated_magnitude.json": sha256_file(
+            PROJECT_ROOT / "results" / "p5_accel_decorrelated_magnitude.json")},
+        oof_predictions_dir=args.oof_dir)
+    dst = PROJECT_ROOT / "results" / "p5_accel_decorrelated_cellboot.json"
+    dst.write_text(json.dumps(res, indent=1))
+    print("wrote", dst)
+
+
 def _lstsq_pred(Ztr, ytr, Zte):
     D = lambda Z: np.column_stack([np.ones(len(Z)), Z])                            # noqa: E731
     return D(Zte) @ np.linalg.lstsq(D(Ztr), ytr, rcond=None)[0]
@@ -622,7 +814,7 @@ def figure(res, path):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("stage", choices=["render", "extract", "score", "merge", "magnitude"])
+    ap.add_argument("stage", choices=["render", "extract", "score", "merge", "magnitude", "cartloco"])
     ap.add_argument("--out", default=str(ART))
     ap.add_argument("--per-cell", type=int, default=PER_CELL)
     ap.add_argument("--n-smoke", type=int, default=0)
@@ -633,6 +825,8 @@ def main():
     ap.add_argument("--points", default="", help="score: comma-separated subset of POINTS (default all)")
     ap.add_argument("--no-merge", action="store_true")
     ap.add_argument("--no-mlp", action="store_true", help="magnitude: skip the MLP readouts")
+    ap.add_argument("--oof-dir", default=None, help="cartloco: save OOF predictions here and write the cell-block "
+                    "supplement results/p5_accel_decorrelated_cellboot.json")
     ap.add_argument("--jobs", type=int, default=7, help="magnitude: parallel (model, point) cells")
     ap.add_argument("--box", default="vast 53255833 (box 5, RTX 4060 Ti 16 GB)")
     ap.add_argument("--result", default=str(PROJECT_ROOT / "results" / "p5_accel_decorrelated.json"))
@@ -640,7 +834,9 @@ def main():
     args = ap.parse_args()
     if args.stage == "magnitude" and args.result == ap.get_default("result"):
         args.result = str(PROJECT_ROOT / "results" / "p5_accel_decorrelated_magnitude.json")
-    {"render": render, "extract": extract, "score": score, "merge": merge, "magnitude": magnitude}[args.stage](args)
+    if args.stage == "cartloco" and args.result == ap.get_default("result"):
+        args.result = str(PROJECT_ROOT / "results" / "p5_accel_decorrelated_cartesian_loco.json")
+    {"render": render, "extract": extract, "score": score, "merge": merge, "magnitude": magnitude, "cartloco": cartloco}[args.stage](args)
 
 
 if __name__ == "__main__":
