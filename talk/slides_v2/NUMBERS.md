@@ -416,3 +416,11 @@ Audit = re-derivation from pixels and feature files (scratchpad qa_accel/s2_supp
 | Slide | Number | Source (file → key) |
 |---|---|---|
 | p1-reproduce title, notes; p1-steer notes | n_to_10deg: ridge basis 5 / 3 / 4 / 6 under ridge α100 / ridge α1e-3 / Adam C.11 judge / split-half; Adam basis 18 / 11 / 11 first crossing, 19 sustained / 22; at N=5 under the Adam judge ridge 8.0° beats all 20 same-rank random draws (median 86.6°, p 1/21), Adam 72.2° vs 79.4° (p 0.38) | results/p1c_direction_L9_adam_judge.json → per basis × judge n_to_10deg, sustained, mae_at_n, random_null |
+
+## QA #44 (fire at 22:29 ET)
+
+| Slide | Number | Source (file → key) |
+|---|---|---|
+| p2-compare line, notes | chord_raw MLP offset by waypoint (antipode route): 10.6°, 16.6°, 64.9°, 154.6° at waypoints 24–27; spline 2.5° → 177.7° monotone (QA #483) | results/p2_two_route_heldout_L22.json per_waypoint.antipode_in_arc.chord_raw.mlp_offset_circmean; via_plus90 |
+| p2-compare notes; headline notes | all deck edits additive (shift + residual kept); under the paper's A.6 replace rule over 16 seeds the chord leads the paper's spline 1.63 vs 4.83 (3.2°) at block 22 and 1.50 vs 6.80 (5.3°) at block 12 (QA #482) | results/p2_endpoint_diagnosis.json decomposition.*.paper_protocol |
+| p2-compare notes | along-path forecast: spline − chord −13.40° [−15.66, −10.99]; min forecast radius 0.528 spline vs 0.258 chord; size matched at the endpoint only (QA #484) | results/session2_predictor_along_path.json |
