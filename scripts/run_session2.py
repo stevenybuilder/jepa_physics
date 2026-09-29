@@ -58,7 +58,7 @@ ACT_ROOT = PROJECT_ROOT / "artifacts" / "activations"
 STIMULI = PROJECT_ROOT / "artifacts" / "stimuli"
 DATASET = "direction"
 EDIT_ARMS = ("probe_qr", "radius_matched", "spline", "spline_smooth", "chord", "random_matched")
-GPU_S_PER_CLIP = 0.16          # artifacts/gpu_session1.json: RTX 4080 SUPER, batch 16, full 16-frame forward
+GPU_S_PER_CLIP = 0.16          # results/gpu_session1.json: RTX 4080 SUPER, batch 16, full 16-frame forward
 D = 1024
 
 

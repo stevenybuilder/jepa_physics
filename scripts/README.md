@@ -16,7 +16,7 @@ Scripts that load the Goodfire authors' spline code expect `git clone https://gi
 | `run_qa.py` | `results/qa_{dataset}.json` (frame hashes, label checks) | 2 |
 | `make_splits.py` | `splits/split_v1.json` (reads `results/qa_*.json`; `$WM_SPLIT_PATH`, `$WM_TEST_SIZE` for the 70/30 split) | 2 |
 | `extract.py` **GPU** | `artifacts/activations/{dataset}/{model}/` (meanpool, timepool, index) | 2, 3.1 |
-| `check_parity.py` | CPU-vs-GPU extraction parity JSON (`--json`), recorded in `artifacts/gpu_session1.json` | 2 |
+| `check_parity.py` | CPU-vs-GPU extraction parity JSON (`--json`), recorded in `results/gpu_session1.json` | 2 |
 | `check_probe_recipe.py` | `results/p1a_probe_recipe_check.json` (paper Adam probe vs ridge) | 2 |
 | `p1a_perpatch.py` **GPU** | `results/p1a_perpatch_direction_{model}{suffix}.json` | 3.1 |
 

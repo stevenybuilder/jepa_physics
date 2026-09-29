@@ -728,7 +728,7 @@ def run(a):
         sha[f] = {"sha256": h, "box_sha256": box.get(f), "match_box": None if f not in box or h is None else h == box[f]}
     res["provenance"] = {**provenance(seeds={"bootstrap": 0}, pool="scene/object/background", k=64),
                          "activation_sha256": sha,
-                         "gpu_session1_verification": json.loads((PROJECT_ROOT / "artifacts" / "gpu_session1.json")
+                         "gpu_session1_verification": json.loads((PROJECT_ROOT / "results" / "gpu_session1.json")
                                                                  .read_text())["verification"]["sha256"]}
 
     # ---- direction + speed per point, in parallel

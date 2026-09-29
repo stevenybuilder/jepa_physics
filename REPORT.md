@@ -1,7 +1,7 @@
 # V-JEPA 2 physics take-home: report
 
 Every number below comes from a file in `results/` (including `results/split70`, `results/split70_p2`,
-`results/arcs`, `results/stimuli`) or `artifacts/gpu_session1.json`, named in a footnote or in the table's source line.
+`results/arcs`, `results/stimuli`) or `results/gpu_session1.json`, named in a footnote or in the table's source line.
 Paper claims are stated qualitatively and attributed to the paper.
 
 ## 1. Summary
@@ -2273,7 +2273,7 @@ Planned in the spec and not run: the last-frame-only control of the layer curves
   cutoff, and was included.
 - **Tests.** `pytest --collect-only` collects 221 tests at the commit of this report.
 
-[^gpu]: `artifacts/gpu_session1.json`.
+[^gpu]: `results/gpu_session1.json`.
 [^ptxt]: Line numbers in `refs/physics_paper.txt` (text of the arXiv 2602.07050 source; not included): (a) 1211 vs 1172; (b) 1207 vs 1243 and 1266; (c) 1245–1246; (d) 430–431 vs 1256 and 1269; (e) 669 vs 1243; (f) 245 vs 671; (g) 1244 vs 1256 and 1269, Table 3 at 958, 1217 vs 970–973, 402–403; (h) Table 3 rows 949–951. Our numbers: `p1b_*` (`K`, `K_loose`), `results/split70/COMPARISON.md`, `p1c_direction_L9_strict.json` (`strict_eval`), `p1c_direction_L9.json`.
 [^s1]: `results/p1a_direction_direction_meanpool.json` (n_train 1200, n_test 300); `results/p1a_paperscale_speed_speed.json` (speed train 1228).
 [^steer]: `results/p2_steer_*` (n_test_clips 308 for speed/acceleration; `sagitta_per_target`; `n_knot_clips` 632, `n_probe_clips` 480).

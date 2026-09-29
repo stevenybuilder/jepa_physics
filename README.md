@@ -23,7 +23,7 @@ and for the predictor tests (about 20 minutes each on an RTX 4060 Ti). Everythin
 ```bash
 git clone https://github.com/stevenybuilder/jepa_physics && cd jepa_physics
 python3.11 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt          # torch 2.2.2, transformers 4.56.2 (facebook/vjepa2-vitl-fpc64-256 downloads on first use)
+pip install -e .                         # pinned in pyproject.toml: torch 2.2.2, transformers 4.56.2 (facebook/vjepa2-vitl-fpc64-256 downloads on first use)
 python -m pytest -q                      # unit tests, CPU, a few minutes
 ```
 
