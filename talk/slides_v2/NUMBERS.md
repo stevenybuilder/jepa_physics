@@ -94,9 +94,9 @@ Every number shown on a slide, with the file and key it was read from. Numbers i
 
 | Slide | Number on slide | File → key |
 |---|---|---|
-| p2-clock (figure + rail) | V-JEPA 2 0.99 / 1.00 / 1.00 per step, CI [0.983, 0.994] / [0.993, 0.998] / [0.994, 0.998] | results/p5_time_manifold_controls.json → ["speed/vjepa2/timepool_same_subset"].clock.22.spline.{slow,mid,fast}.slope.{mean,ci95} (0.9885, 0.9959, 0.9960); n_clips 100 / 135 / 63 |
-| p2-clock (figure + rail) | untrained copy 0.71 / 0.74 / 0.77, CI [0.63, 0.80] / [0.69, 0.80] / [0.71, 0.83] | same file → ["speed/random/timepool"].clock.22.spline.{slow,mid,fast}.slope.{mean,ci95} (0.7128, 0.7432, 0.7659) |
-| p2-clock (figure + rail) | distance counter 0.21 / 1.01 / 1.59 (hollow ochre) | same file → ["speed/vjepa2/timepool_same_subset"].clock.22.spline.{slow,mid,fast}.odometer_prediction (0.2144, 1.0078, 1.5945); identical under speed/random/timepool |
+| (SUPERSEDED) p2-clock (figure + rail) | V-JEPA 2 0.99 / 1.00 / 1.00 per step, CI [0.983, 0.994] / [0.993, 0.998] / [0.994, 0.998] | results/p5_time_manifold_controls.json → ["speed/vjepa2/timepool_same_subset"].clock.22.spline.{slow,mid,fast}.slope.{mean,ci95} (0.9885, 0.9959, 0.9960); n_clips 100 / 135 / 63 |
+| (SUPERSEDED) p2-clock (figure + rail) | untrained copy 0.71 / 0.74 / 0.77, CI [0.63, 0.80] / [0.69, 0.80] / [0.71, 0.83] | same file → ["speed/random/timepool"].clock.22.spline.{slow,mid,fast}.slope.{mean,ci95} (0.7128, 0.7432, 0.7659) |
+| (SUPERSEDED) p2-clock (figure + rail) | distance counter 0.21 / 1.01 / 1.59 (hollow ochre) | same file → ["speed/vjepa2/timepool_same_subset"].clock.22.spline.{slow,mid,fast}.odometer_prediction (0.2144, 1.0078, 1.5945); identical under speed/random/timepool |
 | p2-clock | supersedes the rail values 1.00 / 1.00 / 1.00 and 0.38 / 1.00 / 1.63 (direction set, block 12, row above), which stay in the notes only | results/p5_time_manifold.json clock["direction/vjepa2/timepool"]["12"] |
 
 ## Deck v56 rewrite (Opus deck designer, 2026-09-28 ~17:40 ET)
@@ -115,7 +115,7 @@ Plain names on slides: "straight edit" = raw-centroid chord (chord_raw / linear_
 | found notes, p2-compare notes | authors' code on our knots, headline arc block 22: −0.48°; CV smoother −0.45° / −0.85°, 16 of 16 (exploratory) | results/p2_endpoint_diagnosis.json → decomposition.L22_labels.headline_seed0.b_smoothing.interp_causalab_lam0.value (−0.48); decomposition.{L22,L12}_labels.arcs16.b_smoothing.reinsch_lam_cv.{value,n_arm_better} (−0.447, 16; −0.847, 16) |
 | (SUPERSEDED by v2 rows below) | 4.3° vs 8.7° | results/p5_velocity_sheet.json → layers.22.steer.joint.summary.sheet.endpoint_err_dir (4.334); joint.summary.seq_dir_then_speed.endpoint_err_dir (8.685) |
 | p2-binding | 0.88 (big number) | as the found row above |
-| p2-binding notes | per-patch R² 0.975 at block 12 | results/p1a_perpatch_direction_vjepa2.json → curves.perpos_mean_r2 at point 12 (0.975) |
+| (SUPERSEDED) p2-binding notes | per-patch R² 0.975 at block 12 | results/p1a_perpatch_direction_vjepa2.json → curves.perpos_mean_r2 at point 12 (0.975) |
 | p2-ring | −0.98 | results/p2_geometry_direction_L12.json → angle.circular_corr (−0.9832) (unchanged row) |
 | p2-radius | 0.23 (big number, steel blue) | results/p2_steer_direction_direction_L12_contiguous_rawchord.json → min(waypoint_readout.linear_raw[3].radius) (0.2305) (unchanged row) |
 | p2-readuse | 11.3° (big number); 92.1° unedited | as the found row above |
@@ -159,7 +159,7 @@ Plain names on slides: "straight edit" = raw-centroid chord (chord_raw / linear_
 | ledger #298 (notes only) | at the smoother's norm 6.64 vs 6.57 (tie) | same file → configs.L22_labels.arcs16.arms.{add_norm:chord_raw@spline_smooth, add:spline_smooth}.probe.mean |
 | p2-compare, found | heading kept midway 0.88 (our smoother) vs 0.60 (straight), 16 of 16 arcs | results/arcs_rawchord/L22_s{1..16}[_labels]/p2_steer_direction_direction_L22_contiguous.json → summary.{manifold,linear_raw}.overall.probe_radius_min, mean over arcs (0.879, 0.600); block 12 0.845 vs 0.584 |
 | p2-compare notes | energy path radius 0.65 vs chord 0.63, smoother 0.85 (block 22); block 12 0.71 / 0.63 / 0.88; 0 of 112 solves converged | results/p2_geodesic_direction_L{22,12}_full.json → headline.pooled_arms_mean.{geo_knn_from_chord,chord,spline}.probe_radius_min (0.653, 0.631, 0.847; 0.709, 0.629, 0.875); convergence.{batched_solves 56, converged 0} per file |
-| p2-coordinates (big number), found | 0.76 vs 0.46 at block 12; winner at 6 of 7 blocks; untrained best x–y 0.34–0.53 | results/p5_motion_geometry.json → exp4_coordinate_search_and_exp5_shortcuts.points.12.per_coordinate.{fourier2_polar,cartesian}.encoding_r2_transfer_to_dirset (0.763, 0.456); winner_by_point (fourier2_polar at 1, 8, 12, 16, 19, 22; fourier_logpolar at 4); random_init.*.cartesian.encoding_r2_transfer_to_dirset (0.340–0.534, best at every point) |
+| (SUPERSEDED) p2-coordinates (big number), found | 0.76 vs 0.46 at block 12; winner at 6 of 7 blocks; untrained best x–y 0.34–0.53 | results/p5_motion_geometry.json → exp4_coordinate_search_and_exp5_shortcuts.points.12.per_coordinate.{fourier2_polar,cartesian}.encoding_r2_transfer_to_dirset (0.763, 0.456); winner_by_point (fourier2_polar at 1, 8, 12, 16, 19, 22; fourier_logpolar at 4); random_init.*.cartesian.encoding_r2_transfer_to_dirset (0.340–0.534, best at every point) |
 | p2-coordinates line | straight 4-D edit ties the best curve: +0.13° [−0.03, 0.29], nearest-real R −0.001; vs raw chord −0.37°, +0.035 | same file → exp3_within_vs_between_and_fourier.fourier_dirset.12.differences.{fourier2_4d-spline_reinsch_cv_pca64, fourier2_4d-raw_chord}.{probe_err_deg,nearest_real_R}.mean |
 | p2-coordinates line | speed and acceleration 19.5° apart; other pairs 79–89° | same file → exp1_whitened_metric.points.vjepa2.12.pairs.*.min_angle_deg |
 | p2-readuse notes | random edit 2% left at block 24 vs 9% | results/p5_repair_attribution_L12.json → attribution_summary.{random12,spline12}.survival_final_block24.mean (0.020, 0.091) |
@@ -195,7 +195,7 @@ Plain names on slides: "straight edit" = raw-centroid chord (chord_raw / linear_
 | p1-overview (figure fig_part1_panels.png, notes) | block-1 R² 0.875 / 0.983 / 0.977, untrained 0.848 / 0.920 / 0.914; K 37 / 39 / 41; 8.7° at N = 5 | results/p1a_{direction_direction,speed_speed,acceleration_acceleration}_meanpool{,_random}.json → layers[1].cv_mean; p1b_{direction,speed,acceleration}_*_meanpool_L9.json → K; p1c_direction_L9.json → random_nulls.rows[n=5].learned.mae_to_target (8.73) |
 | p2-variables notes | frame-count patch −0.17 [−0.32, −0.005] (block 22), 0.34 (block 12); later-slot tokens 0.84 / 1.56; pooled −0.21; real window 1.15 | results/p5_time_patch_predictor.json → arms.{22,12}.{tp+2,tok+2}.advance_fraction; pooled_push_same_clips.22.sp+2; references.win+2 |
 | p2-variables notes | radial edit moves forecast disk 15–30 px; relative speed R² 0.969 (untrained 0.204); acceleration forecast 1.82 vs 3.46 unedited (twin 0.83) | results/p5_radial_steering_L22.json → radial.{r025,r05,r15,r2}.pos_shift_px.mean; p5_relational_motion.json → headline.best_by_target.abs_v_rel; session3_acceleration_predictor.json → predictor.21.own.spline.direct_err_to_target.mean, twin_reference.direct.{unedited_err_to_target,twin_forecast_err_to_target} |
-| p2-shapes notes | sheet − ring-only through the predictor: +1.54 [−1.93, 5.13] own norm; +6.72 [2.82, 10.38] at the sheet's norm (n = 48) | results/p5_velocity_sheet_predictor.json → paired.{own,sheet_norm}.sheet_minus_ring1d_dir_err |
+| (SUPERSEDED) p2-shapes notes | sheet − ring-only through the predictor: +1.54 [−1.93, 5.13] own norm; +6.72 [2.82, 10.38] at the sheet's norm (n = 48) | results/p5_velocity_sheet_predictor.json → paired.{own,sheet_norm}.sheet_minus_ring1d_dir_err |
 
 ## Round 5 (~19:00 ET)
 
@@ -230,3 +230,40 @@ Plain names on slides: "straight edit" = raw-centroid chord (chord_raw / linear_
 | p2-variables, vs-paper notes | acceleration after an out-of-set speed decoder: 0.32 / 0.46 (timepool, blocks 12 / 22) | results/p5_accel_decorrelated.json → models.vjepa2.points.{12,22}.timepool.ridge_a_partial_transfer_speed_seq |
 | headline notes | 9% vs 2% survival: 16 carriers, one arc | results/p5_repair_attribution_L12.json → attribution_summary.{spline12,random12}.survival_final_block24 (n 16) |
 | p2-readuse (line), found, limits notes | source-disk tokens only (76 tokens): chord 44.7 [38.8, 50.4], R 0.60; polar straight 37.0; twin-only tokens 91.5; label-ordered spline 68.1; blocks 8 / 16 / 19: 86.0 / 69.1 / 76.5 | results/session2_disk_token_sweep.json → table.{src_chord_1x,src_fourier4_1x,twinonly_chord_1x,src_spline_labels_1x,src_chord_L8_1x,src_chord_L16_1x,src_chord_L19_1x}.err_to_target.mean; .R.mean |
+
+## Round 7 (~20:00 ET)
+
+| Slide | Number | File → key |
+|---|---|---|
+| p2-contact (line), p2-variables (steered ●, notes) | injected bounce: forecast turn 0.48 (block 22, all tokens), 0.45 (block 12, disk tokens); random ≈ 0; wrong-heading −0.27; pasted twin tokens 0.82 | results/p5_contact_steer.json → results.points.22.conditions.a_pool_loo.forecast_turn_fraction_step_mean.all (0.478); points.12.conditions.b_disk_loo (0.449); c_rand_pool (−0.022); d_far_pool (−0.266); e_own_tokens (0.822) |
+| p1-layers | 0.875 / 0.848; speed 0.98, acceleration 0.98 at block 1 | results/p1a_{direction_direction,speed_speed,acceleration_acceleration}_meanpool{,_random}.json → layers[1].cv_mean |
+| p1-nullspace | 37 / 39 / 41; random 0.98 | results/p1b_*_meanpool_L9.json → K; p1b_direction_direction_meanpool_L9.json → random.rows[].cv_r2 |
+| (SUPERSEDED) p1-steer | 3.6° at N = 8 vs random 9.2° (p05 4.1); 8.7° at N = 5 (random 12.8, p05 6.2) | results/p1c_direction_L9.json → random_nulls.rows[n].{learned.mae_to_target, random_basis.mae_to_target.{mean,p05}} |
+| p2-splines (figure fig_splines3.png) | held-out values and blocks | results/p2_steer_{speed_speed_L19,acceleration_acceleration_L21,direction_direction_L22}_contiguous.json → held_out_values; curves recomputed by talk/make_talk_figs_v2.py splines3 from artifacts/activations via wm.p2_data.load_inputs (knot clips, PCA-64, smoothing spline) |
+| p1-steer (title, big number, line, figure) | ridge 8.73° at N = 5 vs same-rank random median 54.9 (p 0.035, 200 draws); Adam 69.2° at N = 5 (median 69.9, p 0.49), first ≤ 10° at N = 18 (9.32); split-half judge 14.7 at N = 5 | results/p1c_direction_L9_nulls200.json → bases.{ridge,adam}.table[n].{learned_mae_to_target, rank_matched.{median,p}}; evalprobe_variants.split_half.all_n[n=5] |
+| p1-nullspace notes | speed and acceleration stop on the MAE rule at R² 0.20 / 0.16 | results/p1b_{speed_speed,acceleration_acceleration}_meanpool_L9.json → rounds[K].cv_r2 (0.197, 0.160; K 39, 41) |
+| p2-coordinates notes | polar-frame straight edit through the predictor: 28.6 vs chord 25.7 vs spline 12.3 (block 22, natural norm) | results/session2_fourier4_predictor.json → task1.table.P22.natural.{fourier,chord,spline}.err_to_target.mean |
+| p2-variables relative speed (shape ◐, steered ●) | ordered but curved; edit leaves v1, v2 unchanged | results/p5_relational_shape.json (ordered but curved; residual 0.39–0.44) |
+
+## Round 8 (~20:45 ET)
+
+| Slide | Number | File → key |
+|---|---|---|
+| headline notes, limits notes | probe-free: every block-22 edit moves the whole forecast 0.15–0.26 of the way to the twin's; natural norm spline 0.186 vs chord 0.234 (recovery) | results/session2_fourier4_predictor.json → task1.table.P22.{own,natural}.{fourier,spline,chord}.recovery_full.mean |
+| p2-compare (line, notes) | probe steer at the chord's norm, block 22: 22.8° [22.0, 23.7], R 0.00 | results/p2_bakeoff_unified_16arc.json → table.probe_qr@chord_norm.{err_end,R_end_test}.22 |
+| p1-reproduce (figure fig_p1_reproduce.png = fig_part1_panels.png, notes) | as p1-layers / p1-nullspace / p1-steer rows | same files; steering panel now same-rank median (p1c_direction_L9_nulls200.json bases.ridge.table[].rank_matched.median) and Adam basis (bases.adam.table) |
+| p1-reproduce notes, p2-variables notes | acceleration magnitude on decorrelated clips readable only after block 12 (≤0.07 at blocks 1–9) | results/p5_accel_decorrelated_magnitude.json (lead's summary, commit ecec750; not re-verified per key) |
+| p2-contact (line) | seen 0.84; unseen 0.07 (native 0.17, at most 0.29); injected 0.48 | p5_contact_in_context.json; p5_contact_probe_domain.json a_reader_refits.{transfer,native,+all_xfit}; p5_contact_steer.json |
+| p2-binding notes | disk-token edit 44.7 (twin dose) vs 65.8 (uniform dose) | results/session2_disk_token_sweep.json → table.{src_chord_1x,src_chord_uniform}.err_to_target.mean |
+| p2-contact (title, line, notes), p2-variables (Contact steered "heading only") | heading edit without a wall 0.77 [0.68, 0.86] vs bounce edit 0.48 at block 22 (paired −0.29 [−0.38, −0.21]); block 12 disk tokens 0.46 vs 0.45 (paired −0.011 [−0.033, 0.009]) | results/p5_contact_steer_heading_control.json → results.points.{22,12}.forecast_turn_fraction_step_mean.{h_pool_loo,a_pool_loo,h_disk_loo,b_disk_loo}; results.points.*.paired |
+| headline notes | own-norm probe-free: forced choice 0.045 vs 0.016, recovery 0.172 vs 0.154, twin id 0.331 vs 0.310 | results/session2_fourier4_predictor.json → task1.table.P22.own.{spline,chord}.{forced_choice_frac,recovery_full,twin_id_acc}.mean |
+| limits notes | cached vs recomputed twin forecasts: median 1.6%, max 31%; ceiling 9.1° cached, 9.3° recomputed | ledger #375 (QA fire #34); not re-verified per key |
+| p1-reproduce notes | 74-dim random basis at N = 5: median 11.8, p 0.22; beaten at N = 10, p 0.04 | results/p1c_direction_L9_nulls200.json → bases.ridge.table[n].rank_2K.{median,p} (ledger says first beaten at N = 9; the table has no N = 9 row) |
+| p2-variables notes | signed acceleration 0.44 / 0.79; magnitude 0.12–0.16 at blocks 16–22 | p5_accel_decorrelated.json (partial R², verified); p5_accel_decorrelated_magnitude.json (lead's summary) |
+| headline (line "Block-12 edit: 9% left; random 2%") | 9% vs 2% survival at block 24, separate 16-carrier repair run (smoothing spline, one target, one seed; chord 11%) | results/p5_repair_attribution_L12.json → attribution_summary.{spline12,random12,rawchord12}.survival_final_block24.mean (0.091, 0.020, 0.107) |
+| headline notes | 11.3° own norm (12.3° natural); probe-free recovery 0.17, null 0.08 | results/session2_predictor_native_readout.json per_layer.22.spline; session2_fourier4_predictor.json task1.table.P22.{own,natural}.{spline,null}.{err_to_target,recovery_full} |
+| p2-shapes notes | heading probe at the sheet's norm: ring 21.9 vs sheet 29.8 (paired +7.89 [6.12, 9.68]) | results/p5_velocity_sheet_predictor_n200.json → paired.sheet_norm.sheet_minus_ring1d_dir_err |
+| p2-variables (cell "not as time", notes) | block-12 slot-code patch +0.34 [0.21, 0.49]; reversed slots at block 22 −0.40 | results/p5_time_patch_predictor.json → arms.12.tp+2.advance_fraction; arms.22.tp_rev.advance_fraction |
+| p2-binding notes | no-probe token-swap shares 0.77 / 0.23; disks alone 4% carry 0.82 | from the QA fire #34 raw re-derivation (not re-read per key in this pass) |
+| p2-compare notes | paper's spline 34.5° at block 12 uses label-free knot ordering (label-ordered 7.2° vs chord 5.7°) | results/p2_bakeoff_unified_16arc.json (keys.points: 12 = unsupervised angle) ; results/p2_endpoint_diagnosis.json configs.L12_labels.arcs16.arms.{add:causalab_interp,add:chord_raw}.probe.mean (7.23, 5.67) |
+| p2-splines (figure fig_splines3.png, regenerated) | PCA plane fit on kept knot clips only | talk/make_talk_figs_v2.py splines3 |

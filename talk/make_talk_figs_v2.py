@@ -443,22 +443,20 @@ def part1_panels():
     a2.plot([r["dims_removed"] for r in rn], [r["cv_r2"] for r in rn], color=GREY, ls="--", lw=2.5)
     a2.axhline(0.1, color=GREY, lw=1.5, ls=":")
     a2.set_ylim(0, 1.05); a2.set_yticks([0, 0.5, 1]); a2.set_xlim(0, 90)
-    a2.set_xlabel("directions erased, block 9"); a2.set_ylabel("heading decoded (R²)")
+    a2.set_xlabel("dimensions erased, block 9"); a2.set_ylabel("heading decoded (R²)")
     a2.text(88, 0.88, "random", ha="right", fontsize=20, color=SOFT)
-    a2.text(88, 0.35, f"{K} probes to erase", ha="right", fontsize=20, color=TERRA)
-    c = J("p1c_direction_L9.json")
-    rows = c["random_nulls"]["rows"]
-    ns = [r["n"] for r in rows]
-    a3.fill_between(ns, [r["random_basis"]["mae_to_target"]["p05"] for r in rows],
-                    [r["random_basis"]["mae_to_target"]["p95"] for r in rows], color=GREY, alpha=0.3, lw=0)
-    a3.plot(ns, [r["learned"]["mae_to_target"] for r in rows], color=TERRA)
-    for r in rows:
-        if r["n"] == 5:
-            log("p1c_direction_L9.json random_nulls.rows[n=5].learned.mae_to_target", round(r["learned"]["mae_to_target"], 2))
+    a2.text(88, 0.6, f"{K} probes = {2 * K} dims", ha="right", fontsize=20, color=TERRA)
+    B = J("p1c_direction_L9_nulls200.json")["bases"]
+    rt, at = B["ridge"]["table"], B["adam"]["table"]
+    a3.plot([r["n"] for r in rt], [r["rank_matched"]["median"] for r in rt], color=GREY, ls="--", lw=2.5)
+    a3.plot([r["n"] for r in at if r["n"] <= 37], [r["learned_mae_to_target"] for r in at if r["n"] <= 37],
+            color=TERRA, lw=2.5, ls=(0, (4, 3)))
+    a3.plot([r["n"] for r in rt], [r["learned_mae_to_target"] for r in rt], color=TERRA)
+    a3.text(36, 74, "random, same rank", ha="right", fontsize=20, color=SOFT)
+    a3.text(11, 7, "ridge probes", fontsize=20, color=TERRA)
+    a3.text(13, 34, "Adam probes", fontsize=20, color=TERRA)
     a3.set_ylim(0, 95); a3.set_yticks([0, 45, 90]); a3.set_xlim(0, 37)
     a3.set_xlabel("probes used to steer"); a3.set_ylabel("heading error (°)")
-    a3.text(36, 70, "random directions", ha="right", fontsize=20, color=SOFT)
-    a3.text(6, 14, "learned probes", fontsize=20, color=TERRA)
     for ax in (a1, a2, a3):
         ax.tick_params(labelsize=20)
         ax.xaxis.label.set_size(20); ax.yaxis.label.set_size(20)
@@ -498,13 +496,119 @@ def coordinate_competition():
     save(f, "fig_coordinate_competition_deck.png")
 
 
+# ---------------------------------------------------------------- 12. the three splines (README Part 2 minimum)
+def splines3():
+    """Knot-clip class means in PCA-64, shown on the top two principal axes of the kept centroids; the curve is fit on
+    the kept knots only (count-weighted smoothing spline as stored in the steer files; periodic for direction, shown in its ring plane), held-out class means hollow.
+    Held-out values and blocks from results/p2_steer_{speed_speed_L19,acceleration_acceleration_L21,
+    direction_direction_L22}_contiguous.json (held_out_values)."""
+    print("fig_splines3")
+    import numpy as np
+    import sys
+    sys.path.insert(0, str(ROOT / "src"))
+    from wm import manifold as mf
+    from wm.p2_data import load_inputs
+    specs = [("speed", 19, "p2_steer_speed_speed_L19_contiguous.json", False, "speed, block 19"),
+             ("acceleration", 21, "p2_steer_acceleration_acceleration_L21_contiguous.json", False, "acceleration, block 21"),
+             ("direction", 22, "p2_steer_direction_direction_L22_contiguous.json", True, "direction, block 22")]
+    FS = 26
+    f, axes = plt.subplots(1, 3, figsize=(W / 96, (W * 560 / 1616) / 96), gridspec_kw={"wspace": 0.12})
+    for ax, (ds, L, fn, per, lab) in zip(axes, specs):
+        d = load_inputs(ds, L)
+        knot = d["role"] == "knot"
+        held = np.array(J(fn)["held_out_values"])
+        kept_rows = knot & ~np.isclose(d["y"][:, None], held[None, :]).any(1)
+        pca = mf.fit_pca(d["X"][kept_rows], 64)          # plane fit on kept knots only, as in the experiment
+        cent = mf.centroids(pca.project(d["X"][knot]), d["y"][knot])
+        keep = ~np.isclose(cent["values"][:, None], held[None, :]).any(1)
+        log(f"{fn} held_out_values", [round(float(h), 3) for h in held])
+        log(f"{ds} L{L}: knot clips / values kept / held out", (int(knot.sum()), int(keep.sum()), int((~keep).sum())))
+        kw = {"angle": "labels"} if per else {}
+        curve = mf.fit_curve(cent, per, keep=keep, spline="smooth", **kw)
+        _, dense = curve.dense(1000)
+        C = cent["C"]
+        mu = C[keep].mean(0)
+        if per:
+            from wm import ellipse as el
+            basis = np.linalg.svd(el.chart_fit(C[keep], np.radians(cent["values"][keep]))["A"], full_matrices=False)[0][:, :2]
+        else:
+            basis = np.linalg.svd(C[keep] - mu, full_matrices=False)[2][:2].T
+        P, Dn = (C - mu) @ basis, (dense - mu) @ basis
+        if per:
+            Dn = np.vstack([Dn, Dn[:1]])
+        ax.plot(*Dn.T, color=TERRA if per else INK, lw=3, zorder=2)
+        ax.scatter(*P[keep].T, s=36, color=GREY, zorder=3)
+        ax.scatter(*P[~keep].T, s=110, facecolor=BG, edgecolor=TERRA, linewidth=2.5, zorder=4)
+        ax.set_aspect("equal", adjustable="datalim")
+        ax.set_axis_off()
+        ax.set_title(lab, fontsize=FS, color=INK, loc="left")
+    f.text(0.99, 0.03, "grey: knot class means · hollow: held-out values · line: spline fit on knots", ha="right",
+           fontsize=FS - 4, color=SOFT)
+    f.subplots_adjust(left=0.02, right=0.99, top=0.9, bottom=0.1)
+    save(f, "fig_splines3.png")
+
+
+# ---------------------------------------------------------------- 13. Part 1, one figure per README step
+def part1_single():
+    print("fig_p1_{layers,nullspace,steer}")
+    FS = 28
+    size = (W / 96, (W * 536 / 972) / 96)
+
+    def finish(f, ax, name, xl, yl):
+        ax.tick_params(labelsize=FS - 2)
+        ax.set_xlabel(xl, fontsize=FS); ax.set_ylabel(yl, fontsize=FS)
+        f.subplots_adjust(left=0.13, right=0.97, top=0.95, bottom=0.17)
+        save(f, name)
+
+    f, ax = plt.subplots(figsize=size)
+    cols = {"direction": TERRA, "speed": INK, "acceleration": BLUE}
+    ypos = {"direction": 0.30, "speed": 0.44, "acceleration": 0.58}
+    for v, c in cols.items():
+        for suf, ls in (("", "-"), ("_random", "--")):
+            L = J(f"p1a_{v}_{v}_meanpool{suf}.json")["layers"]
+            ax.plot([l["point"] for l in L], [l["cv_mean"] for l in L], ls=ls, color=c, lw=4 if ls == "-" else 3)
+            log(f"p1a_{v}_{v}_meanpool{suf}.json layers[1].cv_mean", round(L[1]["cv_mean"], 3))
+        ax.text(24, ypos[v], v, ha="right", fontsize=FS - 2, color=c)
+    ax.text(24, 0.14, "dashed: untrained copy", ha="right", fontsize=FS - 4, color=SOFT)
+    ax.set_ylim(0, 1.05); ax.set_yticks([0, 0.5, 1]); ax.set_xticks([0, 8, 16, 24])
+    finish(f, ax, "fig_p1_layers.png", "block", "decoded (R²)")
+
+    f, ax = plt.subplots(figsize=size)
+    b = J("p1b_direction_direction_meanpool_L9.json")
+    rr, rn, K = b["rounds"], b["random"]["rows"], b["K"]
+    ax.plot([r["dims_removed"] for r in rr], [r["cv_r2"] for r in rr], color=TERRA, lw=4)
+    ax.plot([r["dims_removed"] for r in rn], [r["cv_r2"] for r in rn], color=GREY, ls="--", lw=3)
+    ax.axhline(0.1, color=GREY, lw=1.5, ls=":")
+    ax.text(88, 0.88, "random directions", ha="right", fontsize=FS - 2, color=SOFT)
+    ax.text(88, 0.3, f"{K} probes = {2 * K} dimensions", ha="right", fontsize=FS - 2, color=TERRA)
+    ax.set_ylim(0, 1.05); ax.set_yticks([0, 0.5, 1]); ax.set_xlim(0, 90)
+    finish(f, ax, "fig_p1_nullspace.png", "dimensions erased (2 per probe), block 9", "heading decoded (R²)")
+
+    f, ax = plt.subplots(figsize=size)
+    B = J("p1c_direction_L9_nulls200.json")["bases"]
+    rt, at = B["ridge"]["table"], B["adam"]["table"]
+    ax.plot([r["n"] for r in rt], [r["rank_matched"]["median"] for r in rt], color=GREY, ls="--", lw=3)
+    ax.plot([r["n"] for r in at if r["n"] <= 37], [r["learned_mae_to_target"] for r in at if r["n"] <= 37],
+            color=TERRA, lw=3, ls=(0, (4, 3)))
+    ax.plot([r["n"] for r in rt], [r["learned_mae_to_target"] for r in rt], color=TERRA, lw=4)
+    for r in rt + at:
+        if r["n"] in (5, 18):
+            log(f"p1c_direction_L9_nulls200.json bases.*.table[n={r['n']}] learned / rank_matched median / p",
+                (round(r["learned_mae_to_target"], 2), round(r["rank_matched"]["median"], 2), round(r["rank_matched"]["p"], 3)))
+    ax.text(36, 76, "random, same rank", ha="right", fontsize=FS - 2, color=SOFT)
+    ax.text(11, 8, "ridge probes", fontsize=FS - 2, color=TERRA)
+    ax.text(12, 36, "Adam probes", fontsize=FS - 2, color=TERRA)
+    ax.set_ylim(0, 95); ax.set_yticks([0, 45, 90]); ax.set_xlim(0, 37)
+    finish(f, ax, "fig_p1_steer.png", "probes used to steer, block 9", "heading error (°)")
+
+
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--font", default=None)
     ap.add_argument("--only", nargs="*", default=None, help="run only these figure functions")
     a = ap.parse_args()
     style(a.font)
-    FIGS = [read_vs_use, binding_by_depth, chord_vs_spline, heading_path, sheet, coordinates, sheet_v2, bakeoff_unified, contact, part1_panels, coordinate_competition]
+    FIGS = [read_vs_use, binding_by_depth, chord_vs_spline, heading_path, sheet, coordinates, sheet_v2, bakeoff_unified, contact, part1_panels, coordinate_competition, splines3, part1_single]
     for fn in FIGS:
         if a.only is None or fn.__name__ in a.only:
             fn()
